@@ -206,7 +206,7 @@ function AIAssistant() {
   const [tags, setTags] = useState(AI_TAGS);
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col gap-3.5">
+    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col gap-3.5 h-full">
       <h2 className="text-[17px] font-bold text-[#111] px-1">
         Your personal assistant - Ask anything
       </h2>
@@ -458,7 +458,7 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
           <AIAssistant />
           <div className="flex flex-col gap-4">
             <SalesFunnelCard />
