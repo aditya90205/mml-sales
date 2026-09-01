@@ -39,6 +39,10 @@ import {
   ArrowUpRight,
   Info,
   CalendarDays,
+  Globe,
+  Share2,
+  Smartphone,
+  Store,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -257,11 +261,23 @@ const FUNNEL_LEGEND = [
   { key: "conversion", label: "Conversion", color: "#9CA3AF" },
 ];
 
+/**
+ * The trend line touches each group's "Leads" bar top, then arcs up to a
+ * peak in the gap before the next group — each peak higher than the last,
+ * ending on a rise past the final group. To draw that wave against a
+ * categorical axis, extra unlabeled "peak" slots sit between the four real
+ * week slots; bars are only defined at the real slots so nothing renders
+ * in the gaps.
+ */
 const WEEKLY_FUNNEL_DATA = [
-  { week: "Week 1", range: "1-7 August",   leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 320 },
-  { week: "Week 2", range: "8-14 August",  leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 210 },
-  { week: "Week 3", range: "15-21 August", leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 320 },
-  { week: "Week 4", range: "22-28 August", leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 900 },
+  { week: "Week 1",   range: "1-7 August",   isWeek: true,  leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 320 },
+  { week: "peak-1",   trend: 480 },
+  { week: "Week 2",   range: "8-14 August",  isWeek: true,  leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 320 },
+  { week: "peak-2",   trend: 560 },
+  { week: "Week 3",   range: "15-21 August", isWeek: true,  leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 320 },
+  { week: "peak-3",   trend: 660 },
+  { week: "Week 4",   range: "22-28 August", isWeek: true,  leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 320 },
+  { week: "peak-4",   trend: 900 },
 ];
 
 const LEAD_TYPE_BREAKDOWN = [
@@ -271,13 +287,13 @@ const LEAD_TYPE_BREAKDOWN = [
 ];
 
 const ACQUISITION_SOURCES = [
-  { source: "Website",         totalLeads: 3596, conversion: "2%", color: "#2a78d6", pct: 28 },
-  { source: "Referral",        totalLeads: 2570, conversion: "1%", color: "#eb6834", pct: 20 },
-  { source: "Mobile App",      totalLeads: 2056, conversion: "3%", color: "#1baf7a", pct: 16 },
-  { source: "Facebook Ads",    totalLeads: 1799, conversion: "2%", color: "#eda100", pct: 14 },
-  { source: "Instagram Ads",   totalLeads: 1285, conversion: "1%", color: "#e87ba4", pct: 10 },
-  { source: "Google Ads",      totalLeads: 899,  conversion: "2%", color: "#008300", pct: 7 },
-  { source: "Walk-in / Others", totalLeads: 640, conversion: "1%", color: "#4a3aa7", pct: 5 },
+  { source: "Website",          totalLeads: 3596, conversion: "2%", color: "#6C93D6", icon: "website",   pct: 28 },
+  { source: "Referral",         totalLeads: 2570, conversion: "1%", color: "#26437A", icon: "referral",  pct: 20 },
+  { source: "Mobile App",       totalLeads: 2056, conversion: "3%", color: "#D8BD93", icon: "mobile",    pct: 16 },
+  { source: "Facebook Ads",     totalLeads: 1799, conversion: "2%", color: "#BA6A38", icon: "facebook",  pct: 14 },
+  { source: "Instagram Ads",    totalLeads: 1285, conversion: "1%", color: "#9AA0AC", icon: "instagram", pct: 10 },
+  { source: "Google Ads",       totalLeads: 899,  conversion: "2%", color: "#7A0A17", icon: "google",    pct: 7 },
+  { source: "Walk-in / Others", totalLeads: 640,  conversion: "1%", color: "#26262A", icon: "walkin",    pct: 5 },
 ];
 
 const ACQUISITION_TOTAL_LEADS = "12,845";
@@ -836,12 +852,18 @@ function FunnelBarLabel({ x, y, width, value }) {
   );
 }
 
+function FunnelTrendDot({ cx, cy, payload }) {
+  if (!payload?.isWeek) return null;
+  return <circle cx={cx} cy={cy} r={4} fill="#8B5CF6" />;
+}
+
 function FunnelXAxisTick({ x, y, payload }) {
   const row = WEEKLY_FUNNEL_DATA.find((d) => d.week === payload.value);
+  if (!row?.isWeek) return null;
   return (
     <g transform={`translate(${x},${y})`}>
       <text x={0} y={0} dy={14} textAnchor="middle" fontSize={11} fontWeight={600} fill="#374151">
-        {payload.value}
+        {row.week}
       </text>
       <text x={0} y={0} dy={27} textAnchor="middle" fontSize={9} fill="#9CA3AF">
         {row?.range}
@@ -851,7 +873,8 @@ function FunnelXAxisTick({ x, y, payload }) {
 }
 
 function FunnelTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
+  const row = payload?.[0]?.payload;
+  if (!active || !payload?.length || !row?.isWeek) return null;
   return (
     <div className="bg-white border border-black/10 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] px-3.5 py-3 min-w-[140px]">
       <p className="text-[11px] font-bold text-[#111] mb-1.5">{label}</p>
@@ -862,7 +885,7 @@ function FunnelTooltip({ active, payload, label }) {
               <span className="size-2 rounded-full" style={{ backgroundColor: f.color }} />
               {f.label}
             </span>
-            <span className="font-semibold text-[#111]">{payload[0]?.payload?.[f.key]}</span>
+            <span className="font-semibold text-[#111]">{row[f.key]}</span>
           </p>
         ))}
       </div>
@@ -916,13 +939,13 @@ function LeadsConversionCard() {
       </div>
 
       <div className="h-[300px] w-full overflow-x-auto">
-      <div className="h-full min-w-[420px]">
+      <div className="h-full min-w-[680px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={WEEKLY_FUNNEL_DATA} margin={{ top: 30, right: 8, left: 0, bottom: 8 }} barCategoryGap="24%" barGap={3}>
             <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" />
             <XAxis dataKey="week" axisLine={{ stroke: "rgba(0,0,0,0.08)" }} tickLine={false} tick={<FunnelXAxisTick />} interval={0} />
             <YAxis
-              domain={[0, 900]}
+              domain={[0, 950]}
               ticks={[0, 150, 300, 450, 600, 750, 900]}
               axisLine={false}
               tickLine={false}
@@ -945,7 +968,14 @@ function LeadsConversionCard() {
               <LabelList dataKey="conversion" content={FunnelBarLabel} />
             </Bar>
 
-            <Line type="monotone" dataKey="trend" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 4, fill: "#8B5CF6", strokeWidth: 0 }} isAnimationActive={false} />
+            <Line
+              type="monotone"
+              dataKey="trend"
+              stroke="#8B5CF6"
+              strokeWidth={2}
+              dot={<FunnelTrendDot />}
+              isAnimationActive={false}
+            />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -977,6 +1007,56 @@ function LeadTypeBreakdownCard() {
     </div>
   );
 }
+
+/* Small brand-style glyphs for source identity (lucide has no brand marks). */
+function FacebookGlyph({ size = 13 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="12" fill="#1877F2" />
+      <path d="M15.5 8.5h-1.4c-.5 0-.6.2-.6.7v1.3h2l-.3 2.3h-1.7V19h-2.4v-6.2H9.5v-2.3h1.6V8.9c0-1.9 1-2.9 2.9-2.9h1.5v2.5Z" fill="#fff" />
+    </svg>
+  );
+}
+
+function InstagramGlyph({ size = 13 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <defs>
+        <linearGradient id="igGrad" x1="0" y1="24" x2="24" y2="0">
+          <stop offset="0" stopColor="#FEDA75" />
+          <stop offset="0.35" stopColor="#D62976" />
+          <stop offset="0.7" stopColor="#962FBF" />
+          <stop offset="1" stopColor="#4F5BD5" />
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="24" height="24" rx="7" fill="url(#igGrad)" />
+      <rect x="6.5" y="6.5" width="11" height="11" rx="3.5" stroke="#fff" strokeWidth="1.6" fill="none" />
+      <circle cx="12" cy="12" r="3.1" stroke="#fff" strokeWidth="1.6" fill="none" />
+      <circle cx="17" cy="7" r="1" fill="#fff" />
+    </svg>
+  );
+}
+
+function GoogleGlyph({ size = 13 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24">
+      <path fill="#4285F4" d="M22.6 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.9a5.04 5.04 0 0 1-2.19 3.31v2.75h3.54c2.07-1.9 3.35-4.71 3.35-8.07Z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.54-2.75c-.98.66-2.24 1.05-3.74 1.05-2.87 0-5.3-1.94-6.17-4.54H2.18v2.84A11 11 0 0 0 12 23Z" />
+      <path fill="#FBBC05" d="M5.83 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.65-2.84Z" />
+      <path fill="#EA4335" d="M12 5.36c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.96 1 12 1a11 11 0 0 0-9.82 6.06l3.65 2.84C6.7 7.3 9.13 5.36 12 5.36Z" />
+    </svg>
+  );
+}
+
+const ACQUISITION_ICONS = {
+  website: (props) => <Globe {...props} />,
+  referral: (props) => <Share2 {...props} />,
+  mobile: (props) => <Smartphone {...props} />,
+  facebook: ({ size }) => <FacebookGlyph size={size} />,
+  instagram: ({ size }) => <InstagramGlyph size={size} />,
+  google: ({ size }) => <GoogleGlyph size={size} />,
+  walkin: (props) => <Store {...props} />,
+};
 
 function AcquisitionDonutLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
   const RAD = Math.PI / 180;
@@ -1022,8 +1102,8 @@ function ClientAcquisitionCard() {
                 nameKey="source"
                 cx="50%"
                 cy="50%"
-                innerRadius="62%"
-                outerRadius="98%"
+                innerRadius="52%"
+                outerRadius="100%"
                 paddingAngle={1.5}
                 stroke="#fff"
                 strokeWidth={2}
@@ -1060,18 +1140,26 @@ function ClientAcquisitionCard() {
               </tr>
             </thead>
             <tbody>
-              {ACQUISITION_SOURCES.map((s) => (
-                <tr key={s.source} className="border-b border-black/6 last:border-0">
-                  <td className="px-2 py-2">
-                    <span className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[#374151] whitespace-nowrap">
-                      <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
-                      {s.source}
-                    </span>
-                  </td>
-                  <td className="px-2 py-2 text-[11.5px] text-[#374151] whitespace-nowrap">{s.totalLeads.toLocaleString("en-IN")}</td>
-                  <td className="px-2 py-2 text-[11.5px] text-[#374151] whitespace-nowrap">{s.conversion}</td>
-                </tr>
-              ))}
+              {ACQUISITION_SOURCES.map((s) => {
+                const Icon = ACQUISITION_ICONS[s.icon];
+                return (
+                  <tr key={s.source} className="border-b border-black/6 last:border-0">
+                    <td className="px-2 py-2">
+                      <span className="inline-flex items-center gap-2 text-[11.5px] font-medium text-[#374151] whitespace-nowrap">
+                        <span
+                          className="size-5 rounded-md grid place-items-center shrink-0 overflow-hidden"
+                          style={{ backgroundColor: `${s.color}1A` }}
+                        >
+                          <Icon size={12} style={{ color: s.color }} strokeWidth={1.8} />
+                        </span>
+                        {s.source}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2 text-[11.5px] text-[#374151] whitespace-nowrap">{s.totalLeads.toLocaleString("en-IN")}</td>
+                    <td className="px-2 py-2 text-[11.5px] text-[#374151] whitespace-nowrap">{s.conversion}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
