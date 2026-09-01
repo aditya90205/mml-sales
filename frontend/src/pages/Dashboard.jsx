@@ -261,23 +261,11 @@ const FUNNEL_LEGEND = [
   { key: "conversion", label: "Conversion", color: "#9CA3AF" },
 ];
 
-/**
- * The trend line touches each group's "Leads" bar top, then arcs up to a
- * peak in the gap before the next group — each peak higher than the last,
- * ending on a rise past the final group. To draw that wave against a
- * categorical axis, extra unlabeled "peak" slots sit between the four real
- * week slots; bars are only defined at the real slots so nothing renders
- * in the gaps.
- */
 const WEEKLY_FUNNEL_DATA = [
-  { week: "Week 1",   range: "1-7 August",   isWeek: true,  leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 320 },
-  { week: "peak-1",   trend: 480 },
-  { week: "Week 2",   range: "8-14 August",  isWeek: true,  leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 320 },
-  { week: "peak-2",   trend: 560 },
-  { week: "Week 3",   range: "15-21 August", isWeek: true,  leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 320 },
-  { week: "peak-3",   trend: 660 },
-  { week: "Week 4",   range: "22-28 August", isWeek: true,  leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 320 },
-  { week: "peak-4",   trend: 900 },
+  { week: "Week 1", range: "1-7 August",   leads: 320, contacts: 210, converted: 68, conversion: 68 },
+  { week: "Week 2", range: "8-14 August",  leads: 320, contacts: 210, converted: 68, conversion: 68 },
+  { week: "Week 3", range: "15-21 August", leads: 320, contacts: 210, converted: 68, conversion: 68 },
+  { week: "Week 4", range: "22-28 August", leads: 320, contacts: 210, converted: 68, conversion: 68 },
 ];
 
 const LEAD_TYPE_BREAKDOWN = [
@@ -852,18 +840,12 @@ function FunnelBarLabel({ x, y, width, value }) {
   );
 }
 
-function FunnelTrendDot({ cx, cy, payload }) {
-  if (!payload?.isWeek) return null;
-  return <circle cx={cx} cy={cy} r={4} fill="#8B5CF6" />;
-}
-
 function FunnelXAxisTick({ x, y, payload }) {
   const row = WEEKLY_FUNNEL_DATA.find((d) => d.week === payload.value);
-  if (!row?.isWeek) return null;
   return (
     <g transform={`translate(${x},${y})`}>
       <text x={0} y={0} dy={14} textAnchor="middle" fontSize={11} fontWeight={600} fill="#374151">
-        {row.week}
+        {payload.value}
       </text>
       <text x={0} y={0} dy={27} textAnchor="middle" fontSize={9} fill="#9CA3AF">
         {row?.range}
@@ -874,7 +856,7 @@ function FunnelXAxisTick({ x, y, payload }) {
 
 function FunnelTooltip({ active, payload, label }) {
   const row = payload?.[0]?.payload;
-  if (!active || !payload?.length || !row?.isWeek) return null;
+  if (!active || !payload?.length) return null;
   return (
     <div className="bg-white border border-black/10 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] px-3.5 py-3 min-w-[140px]">
       <p className="text-[11px] font-bold text-[#111] mb-1.5">{label}</p>
@@ -941,11 +923,12 @@ function LeadsConversionCard() {
       <div className="h-[300px] w-full overflow-x-auto">
       <div className="h-full min-w-[680px]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={WEEKLY_FUNNEL_DATA} margin={{ top: 30, right: 8, left: 0, bottom: 8 }} barCategoryGap="24%" barGap={3}>
+          <ComposedChart data={WEEKLY_FUNNEL_DATA} margin={{ top: 30, right: 34, left: 0, bottom: 8 }} barCategoryGap="24%" barGap={3}>
             <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" />
             <XAxis dataKey="week" axisLine={{ stroke: "rgba(0,0,0,0.08)" }} tickLine={false} tick={<FunnelXAxisTick />} interval={0} />
             <YAxis
-              domain={[0, 950]}
+              yAxisId="left"
+              domain={[0, 900]}
               ticks={[0, 150, 300, 450, 600, 750, 900]}
               axisLine={false}
               tickLine={false}
@@ -953,56 +936,54 @@ function LeadsConversionCard() {
               width={36}
               label={{ value: "Count", position: "insideTopLeft", offset: -20, fontSize: 11, fill: "#9CA3AF" }}
             />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              domain={[0, 900]}
+              ticks={[0, 150, 300, 450, 600, 750, 900]}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 10, fill: "#9CA3AF" }}
+              width={36}
+              label={{ value: "Client", position: "insideTopRight", offset: -20, fontSize: 11, fill: "#9CA3AF" }}
+            />
             <Tooltip content={<FunnelTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
 
-            <Bar dataKey="leads" fill={FUNNEL_LEGEND[0].color} barSize={16} radius={[3, 3, 0, 0]}>
+            <Bar yAxisId="left" dataKey="leads" fill={FUNNEL_LEGEND[0].color} barSize={16} radius={[3, 3, 0, 0]}>
               <LabelList dataKey="leads" content={FunnelBarLabel} />
             </Bar>
-            <Bar dataKey="contacts" fill={FUNNEL_LEGEND[1].color} barSize={16} radius={[3, 3, 0, 0]}>
+            <Bar yAxisId="left" dataKey="contacts" fill={FUNNEL_LEGEND[1].color} barSize={16} radius={[3, 3, 0, 0]}>
               <LabelList dataKey="contacts" content={FunnelBarLabel} />
             </Bar>
-            <Bar dataKey="converted" fill={FUNNEL_LEGEND[2].color} barSize={16} radius={[3, 3, 0, 0]}>
+            <Bar yAxisId="left" dataKey="converted" fill={FUNNEL_LEGEND[2].color} barSize={16} radius={[3, 3, 0, 0]}>
               <LabelList dataKey="converted" content={FunnelBarLabel} />
             </Bar>
-            <Bar dataKey="conversion" fill={FUNNEL_LEGEND[3].color} barSize={16} radius={[3, 3, 0, 0]}>
+            <Bar yAxisId="left" dataKey="conversion" fill={FUNNEL_LEGEND[3].color} barSize={16} radius={[3, 3, 0, 0]}>
               <LabelList dataKey="conversion" content={FunnelBarLabel} />
             </Bar>
-
-            <Line
-              type="monotone"
-              dataKey="trend"
-              stroke="#8B5CF6"
-              strokeWidth={2}
-              dot={<FunnelTrendDot />}
-              isAnimationActive={false}
-            />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
       </div>
-    </div>
-  );
-}
 
-function LeadTypeBreakdownCard() {
-  return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4">
-      <div className="flex items-center justify-between gap-3 mb-3 px-1">
-        <h2 className="text-[15px] font-bold text-[#111]">Lead Type Breakdown</h2>
-        <span className="text-[11px] text-[#9CA3AF]">(This Month)</span>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {LEAD_TYPE_BREAKDOWN.map((t) => (
-          <div key={t.label} className="border border-black/8 rounded-xl px-3.5 py-3">
-            <span className="inline-flex items-center gap-1.5 text-[11px] text-[#6B7280]">
-              <span className="size-2 rounded-full" style={{ backgroundColor: t.color }} />
-              {t.label}
-            </span>
-            <p className="text-[18px] font-bold text-[#111] mt-1.5">
-              {t.value} <span className="text-[12px] font-semibold text-[#9CA3AF]">({t.pct})</span>
-            </p>
-          </div>
-        ))}
+      <div className="mt-5 border border-black/8 rounded-xl p-4">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <h3 className="text-[15px] font-bold text-[#111]">Lead Type Breakdown</h3>
+          <span className="text-[11px] text-[#9CA3AF]">(This Month)</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {LEAD_TYPE_BREAKDOWN.map((t) => (
+            <div key={t.label} className="border border-black/8 rounded-xl px-3.5 py-3">
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-[#6B7280]">
+                <span className="size-2 rounded-full" style={{ backgroundColor: t.color }} />
+                {t.label}
+              </span>
+              <p className="text-[18px] font-bold text-[#111] mt-1.5">
+                {t.value} <span className="text-[12px] font-semibold text-[#9CA3AF]">({t.pct})</span>
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -1562,7 +1543,6 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-4 items-start">
           <div className="flex flex-col gap-4 min-w-0">
             <LeadsConversionCard />
-            <LeadTypeBreakdownCard />
           </div>
           <div className="flex flex-col gap-4 min-w-0">
             <ClientAcquisitionCard />
