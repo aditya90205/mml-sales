@@ -33,6 +33,12 @@ import {
   MoreVertical,
   SlidersHorizontal,
   TrendingUp,
+  PieChart as PieChartIcon,
+  Megaphone,
+  MessageCircle,
+  ArrowUpRight,
+  Info,
+  CalendarDays,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -46,6 +52,9 @@ import {
   ReferenceLine,
   LabelList,
   Label,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import TopBar, { USER } from "../components/layout/TopBar";
 import funnelImg from "../assets/pipeline.png";
@@ -234,6 +243,51 @@ const REVENUE_CHART_DATA = [
 
 const REVENUE_Y_TICKS = [0, 1, 2, 3, 4, 5, 6];
 const revenueYTickFormatter = (v) => (v === 0 ? "₹0" : `₹${(v * 0.5).toFixed(1)} Cr`);
+
+const CONVERSION_STATS = [
+  { label: "Total Leads",     value: "2,842", note: "18.6% vs last 8 weeks" },
+  { label: "Total Calls",     value: "1,896", note: "18.6% vs last 8 weeks" },
+  { label: "Total Converted", value: "642",   note: "18.6% vs last 8 weeks" },
+];
+
+const FUNNEL_LEGEND = [
+  { key: "leads",      label: "Leads",      color: "#2a78d6" },
+  { key: "contacts",   label: "Contacts",   color: "#1baf7a" },
+  { key: "converted",  label: "Converted",  color: "#4a3aa7" },
+  { key: "conversion", label: "Conversion", color: "#9CA3AF" },
+];
+
+const WEEKLY_FUNNEL_DATA = [
+  { week: "Week 1", range: "1-7 August",   leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 320 },
+  { week: "Week 2", range: "8-14 August",  leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 210 },
+  { week: "Week 3", range: "15-21 August", leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 320 },
+  { week: "Week 4", range: "22-28 August", leads: 320, contacts: 210, converted: 68, conversion: 68, trend: 900 },
+];
+
+const LEAD_TYPE_BREAKDOWN = [
+  { label: "Hot Leads",  value: 312, pct: "45%", color: "#E8395B" },
+  { label: "Warm Leads", value: 436, pct: "25%", color: "#F59E0B" },
+  { label: "Cold Leads", value: 312, pct: "30%", color: "#3B82F6" },
+];
+
+const ACQUISITION_SOURCES = [
+  { source: "Website",         totalLeads: 3596, conversion: "2%", color: "#2a78d6", pct: 28 },
+  { source: "Referral",        totalLeads: 2570, conversion: "1%", color: "#eb6834", pct: 20 },
+  { source: "Mobile App",      totalLeads: 2056, conversion: "3%", color: "#1baf7a", pct: 16 },
+  { source: "Facebook Ads",    totalLeads: 1799, conversion: "2%", color: "#eda100", pct: 14 },
+  { source: "Instagram Ads",   totalLeads: 1285, conversion: "1%", color: "#e87ba4", pct: 10 },
+  { source: "Google Ads",      totalLeads: 899,  conversion: "2%", color: "#008300", pct: 7 },
+  { source: "Walk-in / Others", totalLeads: 640, conversion: "1%", color: "#4a3aa7", pct: 5 },
+];
+
+const ACQUISITION_TOTAL_LEADS = "12,845";
+
+const RECENT_ANNOUNCEMENTS = [
+  { title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High" },
+  { title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High" },
+  { title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High" },
+  { title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High" },
+];
 
 /* ───────────────────────── Header controls ───────────────────────── */
 
@@ -695,7 +749,8 @@ function GoalsPerformanceCard() {
       </div>
 
       <p className="text-[12px] font-semibold text-[#4B5563] mb-1 px-1">Revenue (INR)</p>
-      <div className="h-[380px] w-full">
+      <div className="h-[380px] w-full overflow-x-auto">
+      <div className="h-full min-w-[720px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={REVENUE_CHART_DATA} margin={{ top: 36, right: 16, left: 0, bottom: 8 }} barCategoryGap="28%">
             <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" />
@@ -752,6 +807,7 @@ function GoalsPerformanceCard() {
           </ComposedChart>
         </ResponsiveContainer>
       </div>
+      </div>
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-2 px-1">
         {REVENUE_LEGEND.map((l) => (
@@ -766,6 +822,325 @@ function GoalsPerformanceCard() {
             {l.label}
           </span>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function FunnelBarLabel({ x, y, width, value }) {
+  if (!value) return null;
+  return (
+    <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={10} fontWeight={700} fill="#374151">
+      {value}
+    </text>
+  );
+}
+
+function FunnelXAxisTick({ x, y, payload }) {
+  const row = WEEKLY_FUNNEL_DATA.find((d) => d.week === payload.value);
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={0} dy={14} textAnchor="middle" fontSize={11} fontWeight={600} fill="#374151">
+        {payload.value}
+      </text>
+      <text x={0} y={0} dy={27} textAnchor="middle" fontSize={9} fill="#9CA3AF">
+        {row?.range}
+      </text>
+    </g>
+  );
+}
+
+function FunnelTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white border border-black/10 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] px-3.5 py-3 min-w-[140px]">
+      <p className="text-[11px] font-bold text-[#111] mb-1.5">{label}</p>
+      <div className="flex flex-col gap-1">
+        {FUNNEL_LEGEND.map((f) => (
+          <p key={f.key} className="flex items-center justify-between gap-4 text-[11px] text-[#6B7280]">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="size-2 rounded-full" style={{ backgroundColor: f.color }} />
+              {f.label}
+            </span>
+            <span className="font-semibold text-[#111]">{payload[0]?.payload?.[f.key]}</span>
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LeadsConversionCard() {
+  const [period, setPeriod] = useState("this_month");
+
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
+      <div className="flex items-center justify-between gap-3 mb-4 px-1 flex-wrap">
+        <div className="flex items-center gap-2.5">
+          <span className="size-9 rounded-xl bg-[#EEF0FE] grid place-items-center shrink-0">
+            <Users size={17} className="text-[#6366F1]" strokeWidth={1.8} />
+          </span>
+          <div>
+            <h2 className="text-[17px] font-bold text-[#111] leading-tight">Leads to Conversion Overview</h2>
+            <p className="text-[11px] text-[#9CA3AF]">Total Leads</p>
+          </div>
+        </div>
+        <PeriodSelect value={period} onChange={setPeriod} />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+        {CONVERSION_STATS.map((s) => (
+          <div key={s.label} className="border border-black/8 rounded-xl px-3.5 py-3">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="size-7 rounded-lg bg-[#EEF0FE] grid place-items-center shrink-0">
+                <Users size={13} className="text-[#6366F1]" strokeWidth={1.8} />
+              </span>
+              <p className="text-[11px] text-[#9CA3AF] leading-snug">{s.label}</p>
+            </div>
+            <p className="text-[18px] font-bold text-[#111] leading-tight">{s.value}</p>
+            <p className="text-[10px] font-semibold text-[#16A34A] mt-1">{s.note}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between gap-3 mb-1 px-1 flex-wrap">
+        <p className="text-[12px] font-semibold text-[#4B5563]">Weekly Lead Funnel Progress</p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          {FUNNEL_LEGEND.map((f) => (
+            <span key={f.key} className="inline-flex items-center gap-1.5 text-[11px] text-[#4B5563]">
+              <span className="size-2.5 rounded-[3px]" style={{ backgroundColor: f.color }} />
+              {f.label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="h-[300px] w-full overflow-x-auto">
+      <div className="h-full min-w-[420px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={WEEKLY_FUNNEL_DATA} margin={{ top: 30, right: 8, left: 0, bottom: 8 }} barCategoryGap="24%" barGap={3}>
+            <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" />
+            <XAxis dataKey="week" axisLine={{ stroke: "rgba(0,0,0,0.08)" }} tickLine={false} tick={<FunnelXAxisTick />} interval={0} />
+            <YAxis
+              domain={[0, 900]}
+              ticks={[0, 150, 300, 450, 600, 750, 900]}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 10, fill: "#9CA3AF" }}
+              width={36}
+              label={{ value: "Count", position: "insideTopLeft", offset: -20, fontSize: 11, fill: "#9CA3AF" }}
+            />
+            <Tooltip content={<FunnelTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
+
+            <Bar dataKey="leads" fill={FUNNEL_LEGEND[0].color} barSize={16} radius={[3, 3, 0, 0]}>
+              <LabelList dataKey="leads" content={FunnelBarLabel} />
+            </Bar>
+            <Bar dataKey="contacts" fill={FUNNEL_LEGEND[1].color} barSize={16} radius={[3, 3, 0, 0]}>
+              <LabelList dataKey="contacts" content={FunnelBarLabel} />
+            </Bar>
+            <Bar dataKey="converted" fill={FUNNEL_LEGEND[2].color} barSize={16} radius={[3, 3, 0, 0]}>
+              <LabelList dataKey="converted" content={FunnelBarLabel} />
+            </Bar>
+            <Bar dataKey="conversion" fill={FUNNEL_LEGEND[3].color} barSize={16} radius={[3, 3, 0, 0]}>
+              <LabelList dataKey="conversion" content={FunnelBarLabel} />
+            </Bar>
+
+            <Line type="monotone" dataKey="trend" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 4, fill: "#8B5CF6", strokeWidth: 0 }} isAnimationActive={false} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      </div>
+    </div>
+  );
+}
+
+function LeadTypeBreakdownCard() {
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl p-4">
+      <div className="flex items-center justify-between gap-3 mb-3 px-1">
+        <h2 className="text-[15px] font-bold text-[#111]">Lead Type Breakdown</h2>
+        <span className="text-[11px] text-[#9CA3AF]">(This Month)</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {LEAD_TYPE_BREAKDOWN.map((t) => (
+          <div key={t.label} className="border border-black/8 rounded-xl px-3.5 py-3">
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-[#6B7280]">
+              <span className="size-2 rounded-full" style={{ backgroundColor: t.color }} />
+              {t.label}
+            </span>
+            <p className="text-[18px] font-bold text-[#111] mt-1.5">
+              {t.value} <span className="text-[12px] font-semibold text-[#9CA3AF]">({t.pct})</span>
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AcquisitionDonutLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
+  const RAD = Math.PI / 180;
+  const r = innerRadius + (outerRadius - innerRadius) * 0.55;
+  const px = cx + r * Math.cos(-midAngle * RAD);
+  const py = cy + r * Math.sin(-midAngle * RAD);
+  if (percent < 0.04) return null;
+  return (
+    <text x={px} y={py} textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={700} fill="#fff">
+      {Math.round(percent * 100)}%
+    </text>
+  );
+}
+
+function ClientAcquisitionCard() {
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
+      <div className="flex items-center justify-between gap-3 mb-4 px-1 flex-wrap">
+        <div className="flex items-center gap-2.5">
+          <span className="size-9 rounded-xl bg-[#EEF0FE] grid place-items-center shrink-0">
+            <PieChartIcon size={16} className="text-[#6366F1]" strokeWidth={1.8} />
+          </span>
+          <div>
+            <h2 className="text-[17px] font-bold text-[#111] leading-tight">Client Acquisition</h2>
+            <p className="text-[11px] text-[#9CA3AF]">Leads by Source</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+        >
+          <CalendarDays size={13} /> This Month
+        </button>
+      </div>
+
+      <div className="flex flex-col md:flex-row items-center gap-4">
+        <div className="relative w-full max-w-[180px] h-[180px] shrink-0">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={ACQUISITION_SOURCES}
+                dataKey="pct"
+                nameKey="source"
+                cx="50%"
+                cy="50%"
+                innerRadius="62%"
+                outerRadius="98%"
+                paddingAngle={1.5}
+                stroke="#fff"
+                strokeWidth={2}
+                isAnimationActive={false}
+                label={AcquisitionDonutLabel}
+                labelLine={false}
+              >
+                {ACQUISITION_SOURCES.map((s) => (
+                  <Cell key={s.source} fill={s.color} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="absolute inset-0 grid place-items-center pointer-events-none">
+            <div className="text-center">
+              <p className="text-[17px] font-bold text-[#111] leading-tight">{ACQUISITION_TOTAL_LEADS}</p>
+              <p className="text-[9px] text-[#9CA3AF]">Total Leads</p>
+              <p className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-[#16A34A] mt-1 whitespace-nowrap">
+                <ArrowUpRight size={10} /> 18.4%
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full min-w-0 overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-black/8">
+                {["Source", "Leads", "Conv."].map((h) => (
+                  <th key={h} className="text-[10px] font-semibold text-[#9CA3AF] uppercase px-2 py-2 whitespace-nowrap">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ACQUISITION_SOURCES.map((s) => (
+                <tr key={s.source} className="border-b border-black/6 last:border-0">
+                  <td className="px-2 py-2">
+                    <span className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[#374151] whitespace-nowrap">
+                      <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                      {s.source}
+                    </span>
+                  </td>
+                  <td className="px-2 py-2 text-[11.5px] text-[#374151] whitespace-nowrap">{s.totalLeads.toLocaleString("en-IN")}</td>
+                  <td className="px-2 py-2 text-[11.5px] text-[#374151] whitespace-nowrap">{s.conversion}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="mt-4 bg-[#F6F5FF] border border-[#E5E2FB] rounded-xl px-3.5 py-2.5 flex items-center gap-2.5">
+        <Info size={14} className="text-[#6366F1] shrink-0" strokeWidth={1.8} />
+        <p className="text-[11px] text-[#4B5563]">Showing total leads &amp; lead conversion percentage by source.</p>
+      </div>
+    </div>
+  );
+}
+
+function RecentAnnouncementsCard() {
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl p-4">
+      <div className="flex items-center justify-between gap-3 mb-3 px-1">
+        <div className="flex items-center gap-2.5">
+          <CalendarClock size={19} className="text-[#374151]" strokeWidth={1.6} />
+          <h2 className="text-[17px] font-bold text-[#111]">Recent Announcements</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-medium text-[#6B7280] bg-[#F1F2F4] rounded-lg px-2.5 py-1">148</span>
+          <Link to="/announcements" className="text-[11px] font-semibold text-[#3B82F6] bg-[#E8F2FE] rounded-lg px-3 py-1 hover:bg-[#DBE9FD] transition-colors">
+            View All
+          </Link>
+        </div>
+      </div>
+
+      <div className="border border-black/8 rounded-xl overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-black/8">
+              {["Title", "Type", "Priority", "Action"].map((h) => (
+                <th key={h} className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {RECENT_ANNOUNCEMENTS.map((a, i) => (
+              <tr key={i} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-2.5">
+                    <span className="size-7 rounded-lg bg-[#E8F2FE] grid place-items-center shrink-0">
+                      <Megaphone size={14} className="text-[#3B82F6]" strokeWidth={1.8} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-bold text-[#111] whitespace-nowrap">{a.title}</p>
+                      <p className="text-[11px] text-[#9CA3AF] whitespace-nowrap">{a.desc}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 py-4">
+                  <span className="inline-block text-[11px] font-semibold text-[#3B82F6] bg-[#E8F2FE] rounded-md px-2.5 py-1">{a.type}</span>
+                </td>
+                <td className="px-4 py-4">
+                  <span className="inline-block text-[11px] font-semibold text-[#E8395B] bg-[#FDECEE] rounded-md px-2.5 py-1">{a.priority}</span>
+                </td>
+                <td className="px-4 py-4">
+                  <button type="button" className="size-8 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center hover:bg-[#FFE8CC] transition-colors" aria-label="Comment">
+                    <MessageCircle size={14} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -1095,6 +1470,17 @@ export default function Dashboard() {
         <MyLeadsCard />
 
         <GoalsPerformanceCard />
+
+        <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-4 items-start">
+          <div className="flex flex-col gap-4 min-w-0">
+            <LeadsConversionCard />
+            <LeadTypeBreakdownCard />
+          </div>
+          <div className="flex flex-col gap-4 min-w-0">
+            <ClientAcquisitionCard />
+            <RecentAnnouncementsCard />
+          </div>
+        </div>
       </div>
     </div>
   );
