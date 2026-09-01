@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Clock, Bell, ArrowUpRight, CheckCheck, User, Settings, LogOut } from "lucide-react";
+import { Clock, Bell, ArrowUpRight, CheckCheck, User, Settings, LogOut, Search } from "lucide-react";
+
 
 const USER = {
   name: "Ankur Sharma",
@@ -208,8 +209,17 @@ export default function TopBar({ page = "Dashboard" }) {
         </span>
       </div>
 
-      {/* Right: bell + profile */}
+      {/* Right: search + bell + profile */}
       <div className="flex items-center gap-2 shrink-0">
+        {/* Search bar — same design as Dashboard */}
+        <div className="flex items-center gap-2 h-[38px] px-3.5 rounded-xl bg-white border border-black/10 w-[230px] focus-within:border-[#7A0A17]/40 transition-colors">
+          <Search size={15} className="text-[#9CA3AF] shrink-0" />
+          <input
+            placeholder="Search here..."
+            className="bg-transparent text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none w-full"
+          />
+        </div>
+
         <NotificationBell />
         <ProfileMenu />
       </div>

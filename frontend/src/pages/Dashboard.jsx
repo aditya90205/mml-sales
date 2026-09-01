@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Search,
   ChevronDown,
   Plus,
   RefreshCw,
@@ -437,14 +436,6 @@ export default function Dashboard() {
         </h1>
 
         <div className="flex items-center gap-2.5 shrink-0">
-          <div className="flex items-center gap-2 h-[38px] px-3.5 rounded-xl bg-white border border-black/10 w-[230px] focus-within:border-[#7A0A17]/40 transition-colors">
-            <Search size={15} className="text-[#9CA3AF] shrink-0" />
-            <input
-              placeholder="Search here..."
-              className="bg-transparent text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none w-full"
-            />
-          </div>
-
           <PeriodSelect value={period} onChange={setPeriod} />
 
           <button
