@@ -1176,46 +1176,25 @@ function RecentAnnouncementsCard() {
         </div>
       </div>
 
-      <div className="border border-black/8 rounded-xl overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-black/8">
-              {["Title", "Type", "Priority", "Action"].map((h) => (
-                <th key={h} className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {RECENT_ANNOUNCEMENTS.map((a, i) => (
-              <tr key={i} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-2.5">
-                    <span className="size-7 rounded-lg bg-[#E8F2FE] grid place-items-center shrink-0">
-                      <Megaphone size={14} className="text-[#3B82F6]" strokeWidth={1.8} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[13px] font-bold text-[#111] whitespace-nowrap">{a.title}</p>
-                      <p className="text-[11px] text-[#9CA3AF] whitespace-nowrap">{a.desc}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-4">
-                  <span className="inline-block text-[11px] font-semibold text-[#3B82F6] bg-[#E8F2FE] rounded-md px-2.5 py-1">{a.type}</span>
-                </td>
-                <td className="px-4 py-4">
-                  <span className="inline-block text-[11px] font-semibold text-[#E8395B] bg-[#FDECEE] rounded-md px-2.5 py-1">{a.priority}</span>
-                </td>
-                <td className="px-4 py-4">
-                  <button type="button" className="size-8 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center hover:bg-[#FFE8CC] transition-colors" aria-label="Comment">
-                    <MessageCircle size={14} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="border border-black/8 rounded-xl divide-y divide-black/8">
+        {RECENT_ANNOUNCEMENTS.map((a, i) => (
+          <div key={i} className="flex items-start gap-3 px-4 py-3.5 hover:bg-[#FAFAFB] transition-colors">
+            <span className="size-7 rounded-lg bg-[#E8F2FE] grid place-items-center shrink-0">
+              <Megaphone size={14} className="text-[#3B82F6]" strokeWidth={1.8} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-bold text-[#111]">{a.title}</p>
+              <p className="text-[11px] text-[#9CA3AF] mt-0.5">{a.desc}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="inline-block text-[10px] font-semibold text-[#3B82F6] bg-[#E8F2FE] rounded-md px-2 py-1">{a.type}</span>
+                <span className="inline-block text-[10px] font-semibold text-[#E8395B] bg-[#FDECEE] rounded-md px-2 py-1">{a.priority}</span>
+              </div>
+            </div>
+            <button type="button" className="size-8 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center hover:bg-[#FFE8CC] transition-colors shrink-0" aria-label="Comment">
+              <MessageCircle size={14} />
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
