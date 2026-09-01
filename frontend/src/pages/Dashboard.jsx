@@ -920,10 +920,15 @@ function LeadsConversionCard() {
         </div>
       </div>
 
-      <div className="h-[300px] w-full overflow-x-auto">
-      <div className="h-full min-w-[680px]">
+      <div className="w-full overflow-x-auto">
+      <div className="min-w-[680px]">
+        <div className="flex items-center justify-between px-[26px] pt-1">
+          <span className="text-[11px] text-[#9CA3AF]">Count</span>
+          <span className="text-[11px] text-[#9CA3AF]">Client</span>
+        </div>
+        <div className="h-[280px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={WEEKLY_FUNNEL_DATA} margin={{ top: 30, right: 34, left: 0, bottom: 8 }} barCategoryGap="24%" barGap={3}>
+          <ComposedChart data={WEEKLY_FUNNEL_DATA} margin={{ top: 8, right: 8, left: 0, bottom: 8 }} barCategoryGap="24%" barGap={3}>
             <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" />
             <XAxis dataKey="week" axisLine={{ stroke: "rgba(0,0,0,0.08)" }} tickLine={false} tick={<FunnelXAxisTick />} interval={0} />
             <YAxis
@@ -934,7 +939,6 @@ function LeadsConversionCard() {
               tickLine={false}
               tick={{ fontSize: 10, fill: "#9CA3AF" }}
               width={36}
-              label={{ value: "Count", position: "insideTopLeft", offset: -20, fontSize: 11, fill: "#9CA3AF" }}
             />
             <YAxis
               yAxisId="right"
@@ -945,7 +949,6 @@ function LeadsConversionCard() {
               tickLine={false}
               tick={{ fontSize: 10, fill: "#9CA3AF" }}
               width={36}
-              label={{ value: "Client", position: "insideTopRight", offset: -20, fontSize: 11, fill: "#9CA3AF" }}
             />
             <Tooltip content={<FunnelTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
 
@@ -961,8 +964,10 @@ function LeadsConversionCard() {
             <Bar yAxisId="left" dataKey="conversion" fill={FUNNEL_LEGEND[3].color} barSize={16} radius={[3, 3, 0, 0]}>
               <LabelList dataKey="conversion" content={FunnelBarLabel} />
             </Bar>
+            <Line yAxisId="right" dataKey="leads" stroke="transparent" dot={false} activeDot={false} legendType="none" isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
+        </div>
       </div>
       </div>
 
