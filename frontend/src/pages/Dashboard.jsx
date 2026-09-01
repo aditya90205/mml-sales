@@ -21,8 +21,6 @@ import {
   CalendarClock,
   History as HistoryIcon,
   ScanFace,
-  Trophy,
-  Medal,
   Target,
   Star,
   Flag,
@@ -38,6 +36,8 @@ import {
 } from "lucide-react";
 import TopBar, { USER } from "../components/layout/TopBar";
 import funnelImg from "../assets/pipeline.png";
+import contestIcon from "../assets/contest.png";
+import leaderboardIcon from "../assets/leaderboard.png";
 
 /* ───────────────────────── Data ───────────────────────── */
 
@@ -465,9 +465,7 @@ function ActiveContestCard() {
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
       <div className="flex items-center justify-between gap-3 mb-3 px-1">
         <div className="flex items-center gap-2.5">
-          <span className="size-7 rounded-lg bg-[#FFF3E4] grid place-items-center">
-            <Trophy size={15} className="text-[#F59E0B]" strokeWidth={1.8} />
-          </span>
+          <img src={contestIcon} alt="" className="size-7 object-contain" />
           <h2 className="text-[17px] font-bold text-[#111]">Active Contest</h2>
         </div>
         <span className="text-[11px] font-medium text-[#6B7280] bg-[#F1F2F4] rounded-lg px-2.5 py-1">32</span>
@@ -522,9 +520,7 @@ function LeaderboardCard() {
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
       <div className="flex items-center justify-between gap-3 mb-3 px-1">
         <div className="flex items-center gap-2.5">
-          <span className="size-7 rounded-lg bg-[#EEF0FE] grid place-items-center">
-            <Medal size={15} className="text-[#6366F1]" strokeWidth={1.8} />
-          </span>
+          <img src={leaderboardIcon} alt="" className="size-7 object-contain" />
           <h2 className="text-[17px] font-bold text-[#111]">Leaderboard</h2>
         </div>
         <span className="text-[11px] font-medium text-[#6B7280] bg-[#F1F2F4] rounded-lg px-2.5 py-1">148</span>

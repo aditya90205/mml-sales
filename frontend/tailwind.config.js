@@ -17,7 +17,8 @@ export default {
       },
       fontFamily: {
         sans: [
-          "Inter",
+          "Instrument Sans Variable",
+          "Instrument Sans",
           "ui-sans-serif",
           "system-ui",
           "-apple-system",
