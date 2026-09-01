@@ -1,85 +1,13 @@
-import { NavLink, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Users,
-  CalendarDays,
-  CheckSquare,
-  Upload,
-  KanbanSquare,
-  Database,
-  Trophy,
-  Gift,
-} from "lucide-react";
-import logo from "../../assets/logo.png";
+import Sidebar from "./Sidebar";
 
-// 9 nav items — labels appear in the hover tooltip.
-const NAV_ITEMS = [
-  { label: "Dashboard",       icon: LayoutDashboard, to: "/dashboard" },
-  { label: "HRMS",            icon: Users,           to: "/hrms" },
-  { label: "Calendar",        icon: CalendarDays,    to: "/calendar" },
-  { label: "Tasks",           icon: CheckSquare,     to: "/tasks" },
-  { label: "Bulk Upload",     icon: Upload,          to: "/bulk-upload" },
-  { label: "Pipeline Board",  icon: KanbanSquare,    to: "/pipeline" },
-  { label: "Client Database", icon: Database,        to: "/clients" },
-  { label: "Leaderboard",     icon: Trophy,          to: "/leaderboard" },
-  { label: "Contest",         icon: Gift,            to: "/contest" },
-];
-
-export default function Sidebar() {
-  const location = useLocation();
-
+export default function Layout({ children }) {
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[58px] z-30 bg-[#7A0A17] flex flex-col">
-      {/* Brand mark — artwork is white with transparent counters, so it sits
-          directly on the maroon rail with no filter. */}
-      <div className="h-[56px] flex items-center justify-center shrink-0 border-b border-white/12">
-        <img
-          src={logo}
-          alt="MakeMyLagan"
-          className="w-8 h-auto object-contain"
-        />
-      </div>
-
-      {/* Nav icons */}
-      <nav className="flex flex-col items-center gap-1.5 pt-4 pb-4 flex-1 overflow-y-auto scrollbar-none">
-        {NAV_ITEMS.map((item) => {
-          const isActive =
-            location.pathname === item.to ||
-            location.pathname.startsWith(item.to + "/");
-
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === "/dashboard"}
-              aria-label={item.label}
-              className={`group relative grid place-items-center size-9 rounded-lg shrink-0 transition-colors duration-150 ${
-                isActive
-                  ? "bg-white/18 text-white"
-                  : "text-white/75 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              <item.icon size={17} strokeWidth={isActive ? 1.9 : 1.6} />
-
-              {/* Active indicator on the rail edge */}
-              {isActive && (
-                <span className="absolute -right-[7px] top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-l-full bg-white" />
-              )}
-
-              {/* Hover tooltip */}
-              <span
-                className="pointer-events-none absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2
-                           bg-[#1a1a1a] text-white text-xs font-medium px-2.5 py-1.5 rounded-lg
-                           whitespace-nowrap shadow-lg opacity-0 group-hover:opacity-100
-                           translate-x-1 group-hover:translate-x-0 transition-all duration-150 z-50"
-              >
-                {item.label}
-                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-[#1a1a1a]" />
-              </span>
-            </NavLink>
-          );
-        })}
-      </nav>
-    </aside>
+    <div className="min-h-screen bg-[#F7F8FA]">
+      <Sidebar />
+      {/* ml matches the 58px icon-only rail */}
+      <main className="ml-[58px] min-h-screen flex flex-col overflow-x-hidden">
+        {children}
+      </main>
+    </div>
   );
 }
