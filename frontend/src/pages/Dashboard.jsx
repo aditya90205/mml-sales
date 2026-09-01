@@ -21,6 +21,20 @@ import {
   CalendarClock,
   History as HistoryIcon,
   ScanFace,
+  Trophy,
+  Medal,
+  Target,
+  Star,
+  Flag,
+  Phone,
+  PhoneOff,
+  MessageSquare,
+  Mail,
+  Calendar,
+  Clock,
+  MoreVertical,
+  SlidersHorizontal,
+  TrendingUp,
 } from "lucide-react";
 import TopBar, { USER } from "../components/layout/TopBar";
 import funnelImg from "../assets/pipeline.png";
@@ -107,6 +121,39 @@ const STATUS_STYLES = {
   approved: "bg-[#E4F8EC] text-[#16A34A]",
   rejected: "bg-[#FDECEE] text-[#E8395B]",
 };
+
+const ACTIVE_CONTESTS = [
+  { id: 1, title: "Mega Lead Hunter", desc: "Generate maximum qualified leads and top the dashboard", timeLeft: "3d 12h Left", timeTone: "text-[#E8395B]", prize: "₹25,000" },
+  { id: 2, title: "Sales Booster",    desc: "Close more deals and boost your sales numbers this month", timeLeft: "5d 18h Left", timeTone: "text-[#F59E0B]", prize: "₹15,000" },
+  { id: 3, title: "Conversion King",  desc: "Convert your meetings into successful memberships",        timeLeft: "7d 27h Left", timeTone: "text-[#16A34A]", prize: "₹35,000" },
+];
+
+const LEADERBOARD = [
+  { rank: 1, name: "Kuhu Sharma",   role: "Senior Sales Manager", branch: "Rajouri Garden",   xp: 102 },
+  { rank: 2, name: "Satish Pal",    role: "Senior Sales Manager", branch: "Gurugram",         xp: 98 },
+  { rank: 3, name: "Aditya Verma",  role: "Senior Sales Manager", branch: "Rajouri Garden",   xp: 94 },
+  { rank: 5, name: "Ankur Sharma",  role: "Senior Sales Manager", branch: "South Extension",  xp: 90, self: true },
+];
+
+const RANK_MEDAL_COLORS = { 1: "#F59E0B", 2: "#9CA3AF", 3: "#B87333" };
+
+const PRIORITY_STYLES = {
+  High:   { color: "#E8395B", bg: "bg-[#FDECEE]" },
+  Medium: { color: "#F59E0B", bg: "bg-[#FFF3E4]" },
+  Low:    { color: "#16A34A", bg: "bg-[#E7F8EF]" },
+};
+
+const LEAD_DOT_COLORS = ["#E8395B", "#F59E0B", "#3B82F6", "#E8395B", "#16A34A", "#F59E0B", "#3B82F6"];
+
+const MY_LEADS = [
+  { id: "MML-ID-D-10428", name: "Kuhu Sharma",    starred: true,  owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P0 - New",              stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, timeAtStage: "2 Days", source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start at 12:00", lost: false },
+  { id: "MML-ID-D-10428", name: "Harshit Sharma", starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P1 - Qualified",        stageTone: "Lost", priority: "High",   leadScore: 7.0, profileCompletion: 50,  timeAtStage: "2 Days", source: "Brand Walking",    followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: true },
+  { id: "MML-ID-D-10428", name: "Ankur Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P2 - Profile Creation", stageTone: null,   priority: "Medium", leadScore: 7.5, profileCompletion: 75,  timeAtStage: "2 Days", source: "Community Events", followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false },
+  { id: "MML-ID-D-10428", name: "Aditya Sharma",  starred: true,  owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P3 - Video Call/Visit", stageTone: "Cold", priority: "Medium", leadScore: 8.5, profileCompletion: 85,  timeAtStage: "2 Days", source: "Channel Partner",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false },
+  { id: "MML-ID-D-10428", name: "Vivek Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P4 - Negotiation",      stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  timeAtStage: "2 Days", source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start at 12:00", lost: false },
+  { id: "MML-ID-D-10428", name: "Rohit Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P5 - Profile Creation", stageTone: "Won",  priority: "Medium", leadScore: 7.5, profileCompletion: 75,  timeAtStage: "2 Days", source: "Manual Sourcing",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false },
+  { id: "MML-ID-D-10428", name: "Virat Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P6 - Service Handover", stageTone: null,   priority: "Low",    leadScore: 8.5, profileCompletion: 90,  timeAtStage: "2 Days", source: "Online - Insta",   followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false },
+];
 
 /* ───────────────────────── Header controls ───────────────────────── */
 
@@ -413,6 +460,272 @@ function PendingTasksCard() {
   );
 }
 
+function ActiveContestCard() {
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
+      <div className="flex items-center justify-between gap-3 mb-3 px-1">
+        <div className="flex items-center gap-2.5">
+          <span className="size-7 rounded-lg bg-[#FFF3E4] grid place-items-center">
+            <Trophy size={15} className="text-[#F59E0B]" strokeWidth={1.8} />
+          </span>
+          <h2 className="text-[17px] font-bold text-[#111]">Active Contest</h2>
+        </div>
+        <span className="text-[11px] font-medium text-[#6B7280] bg-[#F1F2F4] rounded-lg px-2.5 py-1">32</span>
+      </div>
+
+      <div className="border border-black/8 rounded-xl overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-black/8">
+              {["Title", "Time Left", "Prize", "Action"].map((h) => (
+                <th key={h} className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {ACTIVE_CONTESTS.map((c) => (
+              <tr key={c.id} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-2.5">
+                    <span className="size-7 rounded-lg bg-[#E8F2FE] grid place-items-center shrink-0">
+                      <Target size={14} className="text-[#3B82F6]" strokeWidth={1.8} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-bold text-[#111] whitespace-nowrap">{c.title}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className={`px-4 py-4 text-[12px] font-semibold whitespace-nowrap ${c.timeTone}`}>{c.timeLeft}</td>
+                <td className="px-4 py-4 text-[13px] font-bold text-[#111] whitespace-nowrap">{c.prize}</td>
+                <td className="px-4 py-4">
+                  <button
+                    type="button"
+                    className="text-[12px] font-semibold text-[#7A0A17] border border-[#7A0A17]/30 rounded-lg px-4 py-1.5 hover:bg-[#FCF5F6] transition-colors"
+                  >
+                    Join
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function LeaderboardCard() {
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
+      <div className="flex items-center justify-between gap-3 mb-3 px-1">
+        <div className="flex items-center gap-2.5">
+          <span className="size-7 rounded-lg bg-[#EEF0FE] grid place-items-center">
+            <Medal size={15} className="text-[#6366F1]" strokeWidth={1.8} />
+          </span>
+          <h2 className="text-[17px] font-bold text-[#111]">Leaderboard</h2>
+        </div>
+        <span className="text-[11px] font-medium text-[#6B7280] bg-[#F1F2F4] rounded-lg px-2.5 py-1">148</span>
+      </div>
+
+      <div className="border border-black/8 rounded-xl overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-black/8">
+              {["#", "Name", "Branch", "Total XP"].map((h) => (
+                <th key={h} className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {LEADERBOARD.map((p) => (
+              <tr
+                key={p.rank}
+                className={`border-b border-black/8 last:border-0 transition-colors ${p.self ? "bg-[#F6F9FF]" : "hover:bg-[#FAFAFB]"}`}
+              >
+                <td className="px-4 py-4">
+                  {RANK_MEDAL_COLORS[p.rank] ? (
+                    <span
+                      className="size-6 rounded-full grid place-items-center text-[11px] font-bold text-white"
+                      style={{ backgroundColor: RANK_MEDAL_COLORS[p.rank] }}
+                    >
+                      {p.rank}
+                    </span>
+                  ) : (
+                    <span className="text-[13px] font-semibold text-[#6B7280] pl-1.5">{p.rank}.</span>
+                  )}
+                </td>
+                <td className="px-4 py-4">
+                  <p className="text-[13px] font-bold text-[#111] whitespace-nowrap">{p.name}</p>
+                  <p className="text-[11px] text-[#9CA3AF]">{p.role}</p>
+                </td>
+                <td className="px-4 py-4 text-[12px] text-[#6B7280] whitespace-nowrap">{p.branch}</td>
+                <td className="px-4 py-4 text-[13px] font-bold text-[#111] whitespace-nowrap">{p.xp} XP</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function MyLeadsCard() {
+  const [period, setPeriod] = useState("today");
+
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
+      <div className="flex items-center justify-between gap-3 mb-3 px-1 flex-wrap">
+        <button type="button" className="inline-flex items-center gap-1.5 text-[17px] font-bold text-[#111]">
+          My Leads <ChevronDown size={16} className="text-[#9CA3AF]" />
+        </button>
+
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-3.5">
+            {[
+              { label: "Low Probability",    color: "#16A34A" },
+              { label: "Medium Probability", color: "#F59E0B" },
+              { label: "High Probability",   color: "#E8395B" },
+            ].map((f) => (
+              <span key={f.label} className="inline-flex items-center gap-1.5 text-[11px] text-[#6B7280]">
+                <Flag size={12} style={{ color: f.color }} fill={f.color} strokeWidth={0} />
+                {f.label}
+              </span>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+          >
+            <SlidersHorizontal size={13} /> Filter
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPeriod((p) => (p === "today" ? "week" : "today"))}
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+          >
+            {period === "today" ? "Today" : "This Week"}
+            <span className="inline-flex items-center gap-0.5 text-[#16A34A] font-semibold">
+              <TrendingUp size={12} /> 12% (34)
+            </span>
+            <ChevronDown size={14} className="text-[#9CA3AF]" />
+          </button>
+
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            <Plus size={15} />
+            Create Lead
+          </button>
+        </div>
+      </div>
+
+      <div className="border border-black/8 rounded-xl overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-black/8">
+              {[
+                "Client Name", "Owner", "Stage", "Priority", "Lead Score",
+                "Profile Completion", "Time At This Stage", "Source",
+                "Follow Up Time Left", "Actions",
+              ].map((h) => (
+                <th key={h} className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {MY_LEADS.map((lead, i) => {
+              const priority = PRIORITY_STYLES[lead.priority];
+              return (
+                <tr key={i} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: LEAD_DOT_COLORS[i % LEAD_DOT_COLORS.length] }} />
+                      <div className="min-w-0">
+                        <span className="inline-flex items-center gap-1.5">
+                          <p className="text-[13px] font-bold text-[#111] whitespace-nowrap">{lead.name}</p>
+                          {lead.starred && <Star size={12} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />}
+                        </span>
+                        <p className="text-[10px] text-[#9CA3AF] whitespace-nowrap">{lead.id}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <p className="text-[12px] font-medium text-[#374151] whitespace-nowrap">{lead.owner}</p>
+                    <p className="text-[10px] text-[#9CA3AF] whitespace-nowrap">{lead.ownerRole}</p>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <span className="text-[12px] text-[#374151]">{lead.stage}</span>
+                    {lead.stageTone && (
+                      <span className={`ml-1.5 text-[11px] font-semibold ${lead.stageTone === "Won" ? "text-[#16A34A]" : lead.stageTone === "Lost" ? "text-[#E8395B]" : "text-[#3B82F6]"}`}>
+                        ({lead.stageTone})
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md ${priority.bg}`} style={{ color: priority.color }}>
+                      <Flag size={11} fill={priority.color} strokeWidth={0} />
+                      {lead.priority}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className="inline-flex items-center gap-1 text-[13px] font-bold text-[#111]">
+                      {lead.leadScore.toFixed(1)}
+                      <Flag size={11} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} />
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-[12px] text-[#6B7280] whitespace-nowrap">{lead.profileCompletion}%</td>
+                  <td className="px-4 py-4 text-[12px] text-[#6B7280] whitespace-nowrap">{lead.timeAtStage}</td>
+                  <td className="px-4 py-4 text-[12px] text-[#6B7280] whitespace-nowrap">{lead.source}</td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${lead.followUpTone}`}>
+                      <Clock size={11} /> {lead.followUp}
+                    </span>
+                    <p className="text-[10px] text-[#9CA3AF]">{lead.followUpNote}</p>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-1.5">
+                      {lead.lost ? (
+                        <button type="button" className="p-1.5 text-[#E8395B] hover:bg-black/4 rounded-lg transition-colors" aria-label="Call">
+                          <PhoneOff size={14} />
+                        </button>
+                      ) : (
+                        <button type="button" className="p-1.5 text-[#16A34A] hover:bg-black/4 rounded-lg transition-colors" aria-label="Call">
+                          <Phone size={14} />
+                        </button>
+                      )}
+                      <button type="button" className="p-1.5 text-[#F59E0B] hover:bg-black/4 rounded-lg transition-colors" aria-label="Message">
+                        <MessageSquare size={14} />
+                      </button>
+                      <button type="button" className="p-1.5 text-[#3B82F6] hover:bg-black/4 rounded-lg transition-colors" aria-label="Email">
+                        <Mail size={14} />
+                      </button>
+                      <button type="button" className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors" aria-label="Schedule">
+                        <Calendar size={14} />
+                      </button>
+                      <button type="button" className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors" aria-label="More">
+                        <MoreVertical size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 /* ───────────────────────── Page ───────────────────────── */
 
 export default function Dashboard() {
@@ -465,6 +778,13 @@ export default function Dashboard() {
             <PendingTasksCard />
           </div>
         </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <ActiveContestCard />
+          <LeaderboardCard />
+        </div>
+
+        <MyLeadsCard />
       </div>
     </div>
   );
