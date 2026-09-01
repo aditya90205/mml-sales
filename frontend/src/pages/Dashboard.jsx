@@ -488,12 +488,13 @@ function ActiveContestCard() {
             {ACTIVE_CONTESTS.map((c) => (
               <tr key={c.id} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
                 <td className="px-4 py-4">
-                  <div className="flex items-center gap-2.5">
-                    <span className="size-7 rounded-lg bg-[#E8F2FE] grid place-items-center shrink-0">
+                  <div className="flex items-start gap-2.5">
+                    <span className="size-7 rounded-lg bg-[#E8F2FE] grid place-items-center shrink-0 mt-0.5">
                       <Target size={14} className="text-[#3B82F6]" strokeWidth={1.8} />
                     </span>
                     <div className="min-w-0">
                       <p className="text-[13px] font-bold text-[#111] whitespace-nowrap">{c.title}</p>
+                      <p className="text-[11px] text-[#9CA3AF] leading-snug max-w-[220px]">{c.desc}</p>
                     </div>
                   </div>
                 </td>
