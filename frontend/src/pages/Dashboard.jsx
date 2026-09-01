@@ -784,7 +784,7 @@ function GoalsPerformanceCard() {
               <LabelList dataKey="totalLabel" content={TotalAboveBarLabel} />
             </Bar>
 
-            <Bar dataKey="projected" fill="#D1D5DB" barSize={44} radius={[4, 4, 0, 0]}>
+            <Bar dataKey="projected" stackId="tier" fill="#D1D5DB" barSize={44} radius={[4, 4, 0, 0]}>
               <LabelList dataKey="barLabel" content={GreyBarCenterLabel} />
             </Bar>
 
@@ -922,9 +922,10 @@ function LeadsConversionCard() {
 
       <div className="w-full overflow-x-auto">
       <div className="min-w-[680px]">
-        <div className="flex items-center justify-between px-[26px] pt-1">
-          <span className="text-[11px] text-[#9CA3AF]">Count</span>
-          <span className="text-[11px] text-[#9CA3AF]">Client</span>
+        <div className="flex items-center pt-1" style={{ paddingRight: 8 }}>
+          <span className="text-[11px] text-[#9CA3AF] text-right" style={{ width: 36 }}>Count</span>
+          <span className="flex-1" />
+          <span className="text-[11px] text-[#9CA3AF] text-left" style={{ width: 36 }}>Client</span>
         </div>
         <div className="h-[280px] w-full">
         <ResponsiveContainer width="100%" height="100%">
