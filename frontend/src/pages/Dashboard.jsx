@@ -34,6 +34,19 @@ import {
   SlidersHorizontal,
   TrendingUp,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Bar,
+  Line,
+  ReferenceLine,
+  LabelList,
+  Label,
+} from "recharts";
 import TopBar, { USER } from "../components/layout/TopBar";
 import funnelImg from "../assets/pipeline.png";
 import contestIcon from "../assets/contest.png";
@@ -154,6 +167,73 @@ const MY_LEADS = [
   { id: "MML-ID-D-10428", name: "Rohit Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P5 - Profile Creation", stageTone: "Won",  priority: "Medium", leadScore: 7.5, profileCompletion: 75,  timeAtStage: "2 Days", source: "Manual Sourcing",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false },
   { id: "MML-ID-D-10428", name: "Virat Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P6 - Service Handover", stageTone: null,   priority: "Low",    leadScore: 8.5, profileCompletion: 90,  timeAtStage: "2 Days", source: "Online - Insta",   followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false },
 ];
+
+const GOALS_STATS = [
+  { label: "Actual Revenue",    value: "₹1.63 Cr", note: "65% of Target",  noteColor: "#3B82F6" },
+  { label: "Projected Revenue", value: "₹1.55 Cr", note: "102% of Target", noteColor: "#8B5CF6" },
+  { label: "Target (4 Weeks)",  value: "₹2.50 Cr", note: "Total Target",   noteColor: "#0D9488" },
+  { label: "Incentive (4 Weeks)", value: "₹2.29Cr", note: "Total Incentive", noteColor: "#F59E0B" },
+  { label: "Total pack sold",   value: "15",        note: "Subscription Sold", noteColor: "#F59E0B" },
+];
+
+const TIER_COLORS = {
+  basic: "#3B82F6",
+  standard: "#14B8A6",
+  premium: "#8B5CF6",
+  superPremium: "#F59E0B",
+};
+
+const TARGET_LINE_VALUE = 5.9;
+const INCENTIVE_LINE_VALUE = 5.05;
+
+/**
+ * Weeks 1-4 are closed weeks (actual tier mix); weeks 5-8 are the
+ * forward pipeline, drawn as flat grey bars with a dashed projection
+ * line layered on top. Segment heights are split evenly per bar —
+ * only the printed count label differs — since the source design
+ * uses the stack purely to show tier mix, not unit-accurate height.
+ */
+const REVENUE_WEEKS = [
+  { week: "Week 1", weekLabel: "Week 1",                current: false, totalLabel: "₹4.8 Lakh",  height: 1.6, counts: { basic: 2, standard: 2, premium: 1, superPremium: 1 } },
+  { week: "Week 2", weekLabel: "Week 2",                current: false, totalLabel: "₹6.0 Lakh",  height: 2.0, counts: { basic: 1, standard: 1, premium: 1, superPremium: 2 } },
+  { week: "Week 3", weekLabel: "Week 3",                current: false, totalLabel: "₹8.0 Lakh",  height: 2.7, counts: { basic: 3, standard: 3, premium: 1, superPremium: 2 } },
+  { week: "Week 4", weekLabel: "Week 4 (Current Week)", current: true,  totalLabel: "₹10.0 Lakh", height: 3.3, counts: { basic: 2, standard: 1, premium: 3, superPremium: 4 } },
+];
+
+const PROJECTED_WEEKS = [
+  { week: "Week 5", barLabel: "₹12.0 Lakh", pipelineLabel: "₹12 Lakh", height: 4.0 },
+  { week: "Week 6", barLabel: "₹15.0 Lakh", pipelineLabel: "₹15 Lakh", height: 4.6 },
+  { week: "Week 7", barLabel: "₹20.0 Lakh", pipelineLabel: "₹20 Lakh", height: 5.2 },
+  { week: "Week 8", barLabel: "₹25.0 Lakh", pipelineLabel: "₹25 Lakh", height: 5.8 },
+];
+
+const REVENUE_CHART_DATA = [
+  ...REVENUE_WEEKS.map((w) => ({
+    week: w.week,
+    weekLabel: w.weekLabel,
+    current: w.current,
+    totalLabel: w.totalLabel,
+    basic: w.height * (w.counts.basic / (w.counts.basic + w.counts.standard + w.counts.premium + w.counts.superPremium)),
+    standard: w.height * (w.counts.standard / (w.counts.basic + w.counts.standard + w.counts.premium + w.counts.superPremium)),
+    premium: w.height * (w.counts.premium / (w.counts.basic + w.counts.standard + w.counts.premium + w.counts.superPremium)),
+    superPremium: w.height * (w.counts.superPremium / (w.counts.basic + w.counts.standard + w.counts.premium + w.counts.superPremium)),
+    basicCount: w.counts.basic,
+    standardCount: w.counts.standard,
+    premiumCount: w.counts.premium,
+    superPremiumCount: w.counts.superPremium,
+  })),
+  ...PROJECTED_WEEKS.map((w) => ({
+    week: w.week,
+    weekLabel: w.week,
+    projected: w.height,
+    barLabel: w.barLabel,
+    pipeline: w.height + 0.35,
+    pipelineLabel: w.pipelineLabel,
+  })),
+];
+
+const REVENUE_Y_TICKS = [0, 1, 2, 3, 4, 5, 6];
+const revenueYTickFormatter = (v) => (v === 0 ? "₹0" : `₹${(v * 0.5).toFixed(1)} Cr`);
 
 /* ───────────────────────── Header controls ───────────────────────── */
 
@@ -455,6 +535,237 @@ function PendingTasksCard() {
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+/** Small pill label anchored at a fixed fraction of the plot width, used for the Target/Incentive reference lines. */
+function ReferenceLineTag({ viewBox, xFraction, text, bg, color, dy = -12 }) {
+  const { x, width, y } = viewBox;
+  const tx = x + width * xFraction;
+  return (
+    <foreignObject x={tx - 60} y={y + dy - 20} width={120} height={24} style={{ overflow: "visible" }}>
+      <div
+        className="inline-flex items-center justify-center h-full px-2.5 rounded-lg text-[10px] font-semibold whitespace-nowrap"
+        style={{ backgroundColor: bg, color }}
+      >
+        {text}
+      </div>
+    </foreignObject>
+  );
+}
+
+function TierCountLabel({ x, y, width, height, value }) {
+  if (!value || height < 12) return null;
+  return (
+    <text x={x + width / 2} y={y + height / 2} textAnchor="middle" dominantBaseline="central" fontSize={10} fontWeight={700} fill="#fff">
+      {value}
+    </text>
+  );
+}
+
+function TotalAboveBarLabel({ x, y, width, value }) {
+  if (!value) return null;
+  return (
+    <text x={x + width / 2} y={y - 8} textAnchor="middle" fontSize={11} fontWeight={700} fill="#374151">
+      {value}
+    </text>
+  );
+}
+
+function GreyBarCenterLabel({ x, y, width, height, value }) {
+  if (!value) return null;
+  return (
+    <text x={x + width / 2} y={y + height / 2} textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={700} fill="#4B5563">
+      {value}
+    </text>
+  );
+}
+
+function PipelinePointLabel({ x, y, value }) {
+  if (!value) return null;
+  return (
+    <text x={x} y={y - 14} textAnchor="middle" fontSize={11} fontWeight={700} fill="#7C3AED">
+      {value}
+    </text>
+  );
+}
+
+function PipelineDot({ cx, cy, payload }) {
+  if (payload.pipeline == null) return null;
+  return <circle cx={cx} cy={cy} r={5} fill="#fff" stroke="#8B5CF6" strokeWidth={2} />;
+}
+
+function RevenueXAxisTick({ x, y, payload }) {
+  const week = REVENUE_CHART_DATA.find((d) => d.week === payload.value);
+  const isCurrent = week?.current;
+  const [line1, line2] = (week?.weekLabel || payload.value).split(" (");
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={0} dy={14} textAnchor="middle" fontSize={11} fontWeight={isCurrent ? 700 : 500} fill={isCurrent ? "#111" : "#6B7280"}>
+        {line1}
+      </text>
+      {line2 && (
+        <text x={0} y={0} dy={27} textAnchor="middle" fontSize={9} fill="#9CA3AF">
+          ({line2}
+        </text>
+      )}
+    </g>
+  );
+}
+
+function RevenueTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload;
+  const isProjected = row?.projected != null;
+  return (
+    <div className="bg-white border border-black/10 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] px-3.5 py-3 min-w-[150px]">
+      <p className="text-[11px] font-bold text-[#111] mb-1.5">{label}</p>
+      {isProjected ? (
+        <p className="flex items-center justify-between gap-4 text-[11px] text-[#6B7280]">
+          Pipeline value <span className="font-bold text-[#111]">{row.barLabel}</span>
+        </p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {[
+            { key: "basicCount", name: "Basic", color: TIER_COLORS.basic },
+            { key: "standardCount", name: "Standard", color: TIER_COLORS.standard },
+            { key: "premiumCount", name: "Premium", color: TIER_COLORS.premium },
+            { key: "superPremiumCount", name: "Super Premium", color: TIER_COLORS.superPremium },
+          ].map((t) => (
+            <p key={t.key} className="flex items-center justify-between gap-4 text-[11px] text-[#6B7280]">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-2 rounded-full" style={{ backgroundColor: t.color }} />
+                {t.name}
+              </span>
+              <span className="font-semibold text-[#111]">{row[t.key]}</span>
+            </p>
+          ))}
+          <p className="flex items-center justify-between gap-4 text-[11px] text-[#6B7280] mt-1 pt-1 border-t border-black/6">
+            Revenue <span className="font-bold text-[#111]">{row.totalLabel}</span>
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const REVENUE_LEGEND = [
+  { label: "Basic", type: "swatch", color: TIER_COLORS.basic },
+  { label: "Standard", type: "swatch", color: TIER_COLORS.standard },
+  { label: "Premium", type: "swatch", color: TIER_COLORS.premium },
+  { label: "Super Premium", type: "swatch", color: TIER_COLORS.superPremium },
+  { label: "Projected Revenue Pipeline", type: "line", color: "#8B5CF6", dashed: true },
+  { label: "Target", type: "line", color: "#0D9488", dashed: false },
+  { label: "Incentive", type: "line", color: "#F59E0B", dashed: true },
+];
+
+function GoalsPerformanceCard() {
+  const [period, setPeriod] = useState("this_month");
+
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
+      <div className="flex items-center justify-between gap-3 mb-4 px-1 flex-wrap">
+        <div className="flex items-center gap-2.5">
+          <span className="size-9 rounded-xl bg-[#EEF0FE] grid place-items-center">
+            <Users size={17} className="text-[#6366F1]" strokeWidth={1.8} />
+          </span>
+          <div>
+            <h2 className="text-[17px] font-bold text-[#111] leading-tight">My Goals &amp; Performance</h2>
+            <p className="text-[11px] text-[#9CA3AF]">Total Leads</p>
+          </div>
+        </div>
+        <PeriodSelect value={period} onChange={setPeriod} />
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
+        {GOALS_STATS.map((s) => (
+          <div key={s.label} className="border border-black/8 rounded-xl px-3.5 py-3">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="size-7 rounded-lg bg-[#EEF0FE] grid place-items-center shrink-0">
+                <Users size={13} className="text-[#6366F1]" strokeWidth={1.8} />
+              </span>
+              <p className="text-[11px] text-[#9CA3AF] leading-snug">{s.label}</p>
+            </div>
+            <p className="text-[16px] font-bold text-[#111] leading-tight">{s.value}</p>
+            <p className="text-[10px] font-semibold mt-1" style={{ color: s.noteColor }}>{s.note}</p>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-[12px] font-semibold text-[#4B5563] mb-1 px-1">Revenue (INR)</p>
+      <div className="h-[380px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={REVENUE_CHART_DATA} margin={{ top: 36, right: 16, left: 0, bottom: 8 }} barCategoryGap="28%">
+            <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" />
+            <XAxis dataKey="week" axisLine={{ stroke: "rgba(0,0,0,0.08)" }} tickLine={false} tick={<RevenueXAxisTick />} interval={0} />
+            <YAxis
+              domain={[0, 6.4]}
+              ticks={REVENUE_Y_TICKS}
+              tickFormatter={revenueYTickFormatter}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 10, fill: "#9CA3AF" }}
+              width={56}
+            />
+            <Tooltip content={<RevenueTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
+
+            <Bar dataKey="basic" stackId="tier" fill={TIER_COLORS.basic} barSize={44}>
+              <LabelList dataKey="basicCount" content={TierCountLabel} />
+            </Bar>
+            <Bar dataKey="standard" stackId="tier" fill={TIER_COLORS.standard} barSize={44}>
+              <LabelList dataKey="standardCount" content={TierCountLabel} />
+            </Bar>
+            <Bar dataKey="premium" stackId="tier" fill={TIER_COLORS.premium} barSize={44}>
+              <LabelList dataKey="premiumCount" content={TierCountLabel} />
+            </Bar>
+            <Bar dataKey="superPremium" stackId="tier" fill={TIER_COLORS.superPremium} barSize={44} radius={[4, 4, 0, 0]}>
+              <LabelList dataKey="superPremiumCount" content={TierCountLabel} />
+              <LabelList dataKey="totalLabel" content={TotalAboveBarLabel} />
+            </Bar>
+
+            <Bar dataKey="projected" fill="#D1D5DB" barSize={44} radius={[4, 4, 0, 0]}>
+              <LabelList dataKey="barLabel" content={GreyBarCenterLabel} />
+            </Bar>
+
+            <ReferenceLine y={TARGET_LINE_VALUE} stroke="#0D9488" strokeWidth={2}>
+              <Label content={(p) => <ReferenceLineTag viewBox={p.viewBox} xFraction={0.62} text="Target ₹2.50 Cr" bg="#E7F8EF" color="#0D9488" dy={-2} />} />
+            </ReferenceLine>
+            <ReferenceLine y={INCENTIVE_LINE_VALUE} stroke="#F59E0B" strokeWidth={2} strokeDasharray="6 4">
+              <Label content={(p) => <ReferenceLineTag viewBox={p.viewBox} xFraction={0.4} text="Incentive ₹2.29 Cr" bg="#FFF3E4" color="#B45309" dy={-2} />} />
+            </ReferenceLine>
+
+            <Line
+              type="monotone"
+              dataKey="pipeline"
+              stroke="#8B5CF6"
+              strokeWidth={2}
+              strokeDasharray="6 4"
+              dot={<PipelineDot />}
+              activeDot={{ r: 6, fill: "#8B5CF6" }}
+              connectNulls={false}
+              isAnimationActive={false}
+            >
+              <LabelList dataKey="pipelineLabel" content={PipelinePointLabel} />
+            </Line>
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-2 px-1">
+        {REVENUE_LEGEND.map((l) => (
+          <span key={l.label} className="inline-flex items-center gap-1.5 text-[11px] text-[#4B5563]">
+            {l.type === "swatch" ? (
+              <span className="size-2.5 rounded-[3px]" style={{ backgroundColor: l.color }} />
+            ) : (
+              <svg width="16" height="8" viewBox="0 0 16 8">
+                <line x1="0" y1="4" x2="16" y2="4" stroke={l.color} strokeWidth={2} strokeDasharray={l.dashed ? "4 3" : undefined} />
+              </svg>
+            )}
+            {l.label}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -782,6 +1093,8 @@ export default function Dashboard() {
         </div>
 
         <MyLeadsCard />
+
+        <GoalsPerformanceCard />
       </div>
     </div>
   );
