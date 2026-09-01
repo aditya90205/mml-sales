@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
+import PipelineBoard from "./pages/PipelineBoard";
 
 // ── Placeholder for pages not yet built ──────────────────────────────────────
 function Placeholder({ title }) {
@@ -109,7 +110,7 @@ export default function App() {
         <Route path="/calendar"     element={<LayoutRoute><Placeholder title="Calendar" /></LayoutRoute>} />
         <Route path="/tasks"        element={<LayoutRoute><Placeholder title="Tasks" /></LayoutRoute>} />
         <Route path="/bulk-upload"  element={<LayoutRoute><Placeholder title="Bulk Upload" /></LayoutRoute>} />
-        <Route path="/pipeline"     element={<LayoutRoute><Placeholder title="Pipeline Board" /></LayoutRoute>} />
+        <Route path="/pipeline"     element={<LayoutRoute><PipelineBoard /></LayoutRoute>} />
         <Route path="/leaderboard"  element={<LayoutRoute><Placeholder title="Leaderboard" /></LayoutRoute>} />
         <Route path="/contest"      element={<LayoutRoute><Placeholder title="Contest" /></LayoutRoute>} />
 
