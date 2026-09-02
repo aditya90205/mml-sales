@@ -2062,10 +2062,12 @@ export default function HrmsPage() {
                         className="size-6 rounded-full object-cover shrink-0"
                       />
                       <span className="text-[11px] font-bold text-[#374151] truncate">Company</span>
+                      <span className="inline-flex items-center gap-1 shrink-0">
+                        <Download size={13} className="text-[#9CA3AF]" />
+                        <span className="text-[11px] font-bold text-[#6B7280]">{doc.downloads}</span>
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <Download size={13} className="text-[#9CA3AF]" />
-                      <span className="text-[11px] font-bold text-[#6B7280]">{doc.downloads}</span>
                       <button
                         type="button"
                         onClick={() => toast.success(`Downloading ${doc.title}`)}
