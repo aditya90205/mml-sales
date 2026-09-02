@@ -49,6 +49,25 @@ const YEAR_OPTIONS = ["2024", "2025", "2026"];
 
 const EMPLOYEE_OPTIONS = ["Ankur Sharma", "Aditya Sharma", "Kuhu Sharma", "Rohit Sharma", "Priya Raheja"];
 
+const ATTENDANCE_RECORD_OPTIONS = [
+  "Aug 7, 2026 — Login 09:02 AM / Logout 06:10 PM",
+  "Aug 6, 2026 — Login 09:10 AM / Logout 06:00 PM",
+  "Aug 5, 2026 — Login 09:05 AM / Logout 05:55 PM",
+  "Aug 4, 2026 — Login 09:20 AM / Logout 06:15 PM",
+];
+
+const TIME_OPTIONS = (() => {
+  const times = [];
+  for (let h = 7; h <= 20; h++) {
+    for (const m of [0, 30]) {
+      const period = h < 12 ? "AM" : "PM";
+      const hour12 = h % 12 === 0 ? 12 : h % 12;
+      times.push(`${String(hour12).padStart(2, "0")}:${String(m).padStart(2, "0")} ${period}`);
+    }
+  }
+  return times;
+})();
+
 const HRMS_TABS = [
   "Summary",
   "Attendance",
@@ -320,7 +339,13 @@ export default function HrmsPage() {
   // Form Fields
   const [issueText, setIssueText] = useState("");
   const [newShift, setNewShift] = useState("Morning Shift (8:00 AM - 5:00 PM)");
-  const [regularizeReason, setRegularizeReason] = useState("");
+  const [regularizeForm, setRegularizeForm] = useState({
+    employee: "",
+    attendanceRecord: "",
+    clockIn: "",
+    clockOut: "",
+    reason: "",
+  });
   const [expenseForm, setExpenseForm] = useState({
     employee: "",
     purpose: "",
@@ -351,9 +376,9 @@ export default function HrmsPage() {
 
   const handleRegularizeSubmit = (e) => {
     e.preventDefault();
-    if (!regularizeReason.trim()) return;
-    toast.success("Timesheet regularization request submitted.");
-    setRegularizeReason("");
+    if (!regularizeForm.employee || !regularizeForm.clockIn || !regularizeForm.clockOut || !regularizeForm.reason.trim()) return;
+    toast.success("Regularization request submitted for approval.");
+    setRegularizeForm({ employee: "", attendanceRecord: "", clockIn: "", clockOut: "", reason: "" });
     setRegularizeModalOpen(false);
   };
 
@@ -2485,45 +2510,111 @@ export default function HrmsPage() {
       )}
 
       {/* 5. Regularize Modal */}
-      {regularizeModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
-            <button onClick={() => setRegularizeModalOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
-              <X size={18} />
+      <Modal
+        open={regularizeModalOpen}
+        onClose={() => setRegularizeModalOpen(false)}
+        title="Add New Regularization Request"
+        width="max-w-md"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setRegularizeModalOpen(false)}
+              className="px-4 py-2 border border-black/10 rounded-xl text-xs font-bold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+            >
+              Cancel
             </button>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="size-10 rounded-xl bg-[#FCF5F6] text-[#7A0A17] grid place-items-center">
-                <Clock size={20} />
-              </span>
-              <div>
-                <h3 className="text-lg font-bold text-[#111]">Regularize Attendance</h3>
-                <p className="text-xs text-[#6B7280]">Aug 7, 2026 (Login: 09:02 AM | Logout: 06:10 PM)</p>
-              </div>
-            </div>
-            <form onSubmit={handleRegularizeSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#374151] mb-1">Reason for Regularization</label>
-                <textarea
-                  rows={3}
-                  required
-                  value={regularizeReason}
-                  onChange={(e) => setRegularizeReason(e.target.value)}
-                  placeholder="e.g. System delay, Client meeting outstation..."
-                  className="w-full border border-black/15 rounded-xl p-3 text-xs outline-none focus:border-[#7A0A17]"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setRegularizeModalOpen(false)} className="px-4 py-2 border border-black/10 rounded-xl text-xs font-bold text-[#4B5563]">
-                  Cancel
-                </button>
-                <button type="submit" className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl text-xs font-bold">
-                  Submit Request
-                </button>
-              </div>
-            </form>
+            <button
+              type="submit"
+              form="regularize-form"
+              className="px-5 py-2 bg-[#7A0A17] hover:bg-[#600712] text-white rounded-xl text-xs font-bold transition-colors"
+            >
+              Save
+            </button>
+          </>
+        }
+      >
+        <form id="regularize-form" onSubmit={handleRegularizeSubmit} className="space-y-4 text-xs">
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">
+              Employee <span className="text-[#DC2626]">*</span>
+            </label>
+            <select
+              required
+              value={regularizeForm.employee}
+              onChange={(e) => setRegularizeForm({ ...regularizeForm, employee: e.target.value })}
+              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17] bg-white text-[#111827]"
+            >
+              <option value="" disabled>Select employee</option>
+              {EMPLOYEE_OPTIONS.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
           </div>
-        </div>
-      )}
+
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">Attendance Record</label>
+            <select
+              value={regularizeForm.attendanceRecord}
+              onChange={(e) => setRegularizeForm({ ...regularizeForm, attendanceRecord: e.target.value })}
+              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17] bg-white text-[#111827]"
+            >
+              <option value="">Select attendance record</option>
+              {ATTENDANCE_RECORD_OPTIONS.map((rec) => (
+                <option key={rec} value={rec}>{rec}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">
+              Requested Clock In <span className="text-[#DC2626]">*</span>
+            </label>
+            <select
+              required
+              value={regularizeForm.clockIn}
+              onChange={(e) => setRegularizeForm({ ...regularizeForm, clockIn: e.target.value })}
+              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17] bg-white text-[#111827]"
+            >
+              <option value="" disabled>Select time</option>
+              {TIME_OPTIONS.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">
+              Requested Clock Out <span className="text-[#DC2626]">*</span>
+            </label>
+            <select
+              required
+              value={regularizeForm.clockOut}
+              onChange={(e) => setRegularizeForm({ ...regularizeForm, clockOut: e.target.value })}
+              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17] bg-white text-[#111827]"
+            >
+              <option value="" disabled>Select time</option>
+              {TIME_OPTIONS.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">
+              Reason <span className="text-[#DC2626]">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Forgot to clock in due to urgent meeting"
+              value={regularizeForm.reason}
+              onChange={(e) => setRegularizeForm({ ...regularizeForm, reason: e.target.value })}
+              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
+            />
+          </div>
+        </form>
+      </Modal>
 
       {/* 6. Timesheet Details Modal */}
       {timesheetDetailsOpen && (
