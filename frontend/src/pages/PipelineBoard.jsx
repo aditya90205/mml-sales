@@ -5,8 +5,6 @@ import {
   ChevronDown,
   Clock,
   Download,
-  Eye,
-  FileText,
   Flag,
   Hourglass,
   Info,
@@ -15,11 +13,13 @@ import {
   MoreVertical,
   Plus,
   Search,
-  ShieldCheck,
   SlidersHorizontal,
   Star,
 } from "lucide-react";
 import TopBar from "../components/layout/TopBar";
+import eyeIcon from "../assets/eye.png";
+import peopleIcon from "../assets/people.png";
+import fileIcon from "../assets/file.png";
 
 /* ───────────────────────── Data ───────────────────────── */
 
@@ -36,23 +36,23 @@ const PIPELINE_STAGES = [
 const QUICK_GROUPS = [
   {
     title: "Capture & Visits",
-    icon: Eye,
-    color: "#3B82F6",
-    bg: "#E8F2FE",
+    icon: peopleIcon,
+    color: "#6366F1",
+    bg: "#EEF0FE",
     chips: ["Client Intake", "Smart Home & Office Visits", "Video Call Desk"],
   },
   {
     title: "Oversight",
-    icon: ShieldCheck,
+    icon: eyeIcon,
     color: "#16A34A",
     bg: "#E7F8EF",
     chips: ["Cross Branch Flags"],
   },
   {
     title: "Deal Docs",
-    icon: FileText,
-    color: "#6366F1",
-    bg: "#EEF0FE",
+    icon: fileIcon,
+    color: "rgb(245, 158, 11)",
+    bg: "rgb(255, 243, 228)",
     chips: ["Package Pricing", "Quotations", "Discount Request", "Contract & Payment", "P6 Handover"],
   },
 ];
@@ -167,25 +167,46 @@ function QuickLinksRow() {
       {QUICK_GROUPS.map((group, i) => (
         <div
           key={group.title}
-          className={`px-4 py-3.5 ${i === QUICK_GROUPS.length - 1 ? "lg:flex-1 lg:min-w-0" : "lg:shrink-0"} ${
-            i > 0 ? "lg:border-l lg:border-black/8" : ""
-          }`}
+          className={`px-4 py-3.5 ${
+            i === QUICK_GROUPS.length - 1 ? "lg:flex-1 lg:min-w-0" : "lg:shrink-0"
+          } ${i > 0 ? "lg:border-l lg:border-black/8" : ""}`}
         >
+          {/* Group header with PNG icon */}
           <div className="flex items-center gap-2 mb-2.5 whitespace-nowrap">
-            <group.icon size={15} style={{ color: group.color }} strokeWidth={1.8} />
+            <img src={group.icon} alt={group.title} style={{ width: 15, height: 15, objectFit: "contain" }} />
             <p className="text-[13px] font-bold text-[#111]">{group.title}</p>
           </div>
-          <div className="flex flex-wrap gap-2 items-stretch">
+
+          {/* Chips – all same height via min-h + fixed padding */}
+          <div className="flex flex-wrap gap-2">
             {group.chips.map((chip) => (
               <button
                 key={chip}
                 type="button"
-                className="inline-flex items-center gap-1.5 text-[11.5px] font-medium rounded-lg px-2.5 py-1.5 min-h-[38px] transition-colors"
                 style={{ color: group.color, backgroundColor: group.bg }}
+                className="
+                  inline-flex items-center justify-between gap-2
+                  text-[11.5px] font-medium rounded-lg
+                  px-2.5 py-[9px]
+                  min-h-[52px] flex-1 basis-0
+                  transition-colors text-left
+                "
               >
-                <span className="leading-snug">{chip}</span>
+                {/* Label – allow up to 2 lines, clamp overflow */}
                 <span
-                  className="shrink-0 text-[10px] font-semibold bg-white/70 rounded px-1.5 py-0.5"
+                  className="leading-snug flex-1 min-w-0"
+                  style={{
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
+                  {chip}
+                </span>
+                {/* Count badge */}
+                <span
+                  className="shrink-0 text-[10px] font-semibold bg-white/70 rounded px-1.5 py-0.5 self-center"
                   style={{ color: group.color }}
                 >
                   3
