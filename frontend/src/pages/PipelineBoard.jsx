@@ -183,13 +183,13 @@ function QuickLinksRow() {
               <button
                 key={chip}
                 type="button"
-                style={{ color: group.color, backgroundColor: group.bg }}
+                style={{ backgroundColor: group.bg }}
                 className="
                   inline-flex items-center justify-between gap-2
                   text-[11.5px] font-medium rounded-lg
                   px-2.5 py-[9px]
                   min-h-[52px] flex-1 basis-0
-                  transition-colors text-left
+                  transition-colors text-left text-[#111]
                 "
               >
                 {/* Label – allow up to 2 lines, clamp overflow */}
@@ -206,8 +206,7 @@ function QuickLinksRow() {
                 </span>
                 {/* Count badge */}
                 <span
-                  className="shrink-0 text-[10px] font-semibold bg-white/70 rounded px-1.5 py-0.5 self-center"
-                  style={{ color: group.color }}
+                  className="shrink-0 text-[10px] font-semibold bg-white/70 rounded px-1.5 py-0.5 self-center text-[#111]"
                 >
                   3
                 </span>
@@ -482,8 +481,8 @@ export default function PipelineBoard() {
         <QuickLinksRow />
         <BoardToolbar search={search} onSearchChange={setSearch} perPage={perPage} onPerPageChange={setPerPage} />
 
-        {/* Board */}
-        <div className="flex items-start gap-4 overflow-x-auto pb-2 scrollbar-thin">
+        {/* Board – break out of px-5 so scroll area is edge-to-edge */}
+        <div className="-mx-5 flex items-start gap-4 overflow-x-auto pb-2 scrollbar-thin px-5">
           {columns.map(({ stage, leads, nextStageId }) => (
             <PipelineColumn key={stage.id} stage={stage} leads={leads} nextStageId={nextStageId} />
           ))}
