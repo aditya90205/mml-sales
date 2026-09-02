@@ -30,8 +30,12 @@ import {
   MoreVertical,
   ChevronUp,
   BarChart3,
+  LayoutGrid,
+  Lock,
+  Image as ImageIcon,
 } from "lucide-react";
 import TopBar from "../components/layout/TopBar";
+import Modal from "../components/ui/Modal";
 import yellowLoopIcon from "../assets/yellow-loop.png";
 import redBackIcon from "../assets/red-back.png";
 
@@ -42,6 +46,8 @@ const MONTH_OPTIONS = [
 ];
 
 const YEAR_OPTIONS = ["2024", "2025", "2026"];
+
+const EMPLOYEE_OPTIONS = ["Ankur Sharma", "Aditya Sharma", "Kuhu Sharma", "Rohit Sharma", "Priya Raheja"];
 
 const HRMS_TABS = [
   "Summary",
@@ -56,8 +62,36 @@ const HRMS_TABS = [
 ];
 
 const INITIAL_EXPENSES = [
-  { id: 1, location: "Bangalore, India", date: "11-02-2026", amount: "₹4,500", category: "Travel & Stay", status: "Approved" },
-  { id: 2, location: "Delhi, India", date: "11-02-2026", amount: "₹1,200", category: "Client Meal", status: "Pending" },
+  {
+    id: 1,
+    employee: "Ankur Sharma",
+    purpose: "Site Visit",
+    destination: "Rajouri Garden, Delhi",
+    startDate: "24-05-2026",
+    endDate: "24-05-2026",
+    status: "Cancelled",
+    advanceAmount: "21,800.44",
+    advanceStatus: "Active",
+    totalExpenses: "-",
+    documentName: null,
+    description: "Visiting client site or project location to assess requirements, progress, and coordinate implementation activities.",
+    expectedOutcomes: "Lorem Ipsum",
+  },
+  {
+    id: 2,
+    employee: "Ankur Sharma",
+    purpose: "Client Meal",
+    destination: "Connaught Place, Delhi",
+    startDate: "11-02-2026",
+    endDate: "11-02-2026",
+    status: "Approved",
+    advanceAmount: "1,200.00",
+    advanceStatus: "Active",
+    totalExpenses: "₹1,200",
+    documentName: "receipt.pdf",
+    description: "Client lunch meeting to discuss ongoing project requirements and next steps.",
+    expectedOutcomes: "Signed off scope for Q3 rollout.",
+  },
 ];
 
 const INITIAL_LEAVES = [
@@ -236,6 +270,19 @@ function Pagination({ page, totalPages, totalItems, pageSize, itemLabel, onChang
   );
 }
 
+/** Label + icon + value pair used in the Expense Details modal's two-column grid. */
+function DetailField({ icon: Icon, label, children, full = false }) {
+  return (
+    <div className={full ? "col-span-2" : ""}>
+      <p className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wide mb-1">
+        <Icon size={12} />
+        {label}
+      </p>
+      <div className="text-sm font-bold text-[#111827]">{children}</div>
+    </div>
+  );
+}
+
 export default function HrmsPage() {
   const [selectedMonth, setSelectedMonth] = useState("April");
   const [selectedYear, setSelectedYear] = useState("2025");
@@ -274,7 +321,17 @@ export default function HrmsPage() {
   const [issueText, setIssueText] = useState("");
   const [newShift, setNewShift] = useState("Morning Shift (8:00 AM - 5:00 PM)");
   const [regularizeReason, setRegularizeReason] = useState("");
-  const [expenseForm, setExpenseForm] = useState({ location: "", amount: "", category: "Travel" });
+  const [expenseForm, setExpenseForm] = useState({
+    employee: "",
+    purpose: "",
+    destination: "",
+    startDate: "",
+    endDate: "",
+    description: "",
+    expectedOutcomes: "",
+    advanceAmount: "",
+  });
+  const [expenseDocument, setExpenseDocument] = useState(null);
   const [leaveForm, setLeaveForm] = useState({ type: "Casual Leave", startDate: "", endDate: "", comment: "" });
 
   // Handle Submissions
@@ -302,18 +359,29 @@ export default function HrmsPage() {
 
   const handleAddExpense = (e) => {
     e.preventDefault();
-    if (!expenseForm.location || !expenseForm.amount) return;
+    if (!expenseForm.employee || !expenseForm.purpose || !expenseForm.destination || !expenseForm.startDate || !expenseForm.endDate) return;
     const newEntry = {
       id: Date.now(),
-      location: expenseForm.location,
-      date: new Date().toLocaleDateString("en-GB").replace(/\//g, "-"),
-      amount: `₹${expenseForm.amount}`,
-      category: expenseForm.category,
+      employee: expenseForm.employee,
+      purpose: expenseForm.purpose,
+      destination: expenseForm.destination,
+      startDate: expenseForm.startDate,
+      endDate: expenseForm.endDate,
       status: "Pending",
+      advanceAmount: expenseForm.advanceAmount ? Number(expenseForm.advanceAmount).toFixed(2) : "0.00",
+      advanceStatus: "Active",
+      totalExpenses: "-",
+      documentName: expenseDocument?.name || null,
+      description: expenseForm.description,
+      expectedOutcomes: expenseForm.expectedOutcomes,
     };
     setExpenses([newEntry, ...expenses]);
     toast.success("Expense added successfully!");
-    setExpenseForm({ location: "", amount: "", category: "Travel" });
+    setExpenseForm({
+      employee: "", purpose: "", destination: "", startDate: "", endDate: "",
+      description: "", expectedOutcomes: "", advanceAmount: "",
+    });
+    setExpenseDocument(null);
     setAddExpenseOpen(false);
   };
 
@@ -742,9 +810,9 @@ export default function HrmsPage() {
                         key={item.id}
                         className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6 hover:border-black/15 transition-all"
                       >
-                        <div>
-                          <p className="text-xs font-extrabold text-[#111827]">{item.location}</p>
-                          <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">{item.date}</p>
+                        <div className="min-w-0">
+                          <p className="text-xs font-extrabold text-[#111827] truncate">{item.purpose}</p>
+                          <p className="text-[11px] text-[#6B7280] font-medium mt-0.5 truncate">{item.destination} &middot; {item.startDate}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -2498,79 +2566,229 @@ export default function HrmsPage() {
       )}
 
       {/* 7. Add Expense Modal */}
-      {addExpenseOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
-            <button onClick={() => setAddExpenseOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
-              <X size={18} />
+      <Modal
+        open={addExpenseOpen}
+        onClose={() => setAddExpenseOpen(false)}
+        title="Add New Expense"
+        width="max-w-md"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setAddExpenseOpen(false)}
+              className="px-4 py-2 border border-black/10 rounded-xl text-xs font-bold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+            >
+              Cancel
             </button>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="size-10 rounded-xl bg-[#7A0A17] text-white grid place-items-center">
-                <Receipt size={20} />
-              </span>
-              <div>
-                <h3 className="text-lg font-bold text-[#111]">Add Expense Claim</h3>
-                <p className="text-xs text-[#6B7280]">Submit receipt for approval</p>
-              </div>
-            </div>
-            <form onSubmit={handleAddExpense} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-[#374151] mb-1">Location / Event</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Bangalore, India"
-                  value={expenseForm.location}
-                  onChange={(e) => setExpenseForm({ ...expenseForm, location: e.target.value })}
-                  className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-[#374151] mb-1">Amount (₹)</label>
-                <input
-                  type="number"
-                  required
-                  placeholder="e.g. 2500"
-                  value={expenseForm.amount}
-                  onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
-                  className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-3">
-                <button type="button" onClick={() => setAddExpenseOpen(false)} className="px-4 py-2 border border-black/10 rounded-xl font-bold text-[#4B5563]">
-                  Cancel
-                </button>
-                <button type="submit" className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl font-bold">
-                  Add Claim
-                </button>
-              </div>
-            </form>
+            <button
+              type="submit"
+              form="add-expense-form"
+              className="px-5 py-2 bg-[#7A0A17] hover:bg-[#600712] text-white rounded-xl text-xs font-bold transition-colors"
+            >
+              Save
+            </button>
+          </>
+        }
+      >
+        <form id="add-expense-form" onSubmit={handleAddExpense} className="space-y-4 text-xs">
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">
+              Employee <span className="text-[#DC2626]">*</span>
+            </label>
+            <select
+              required
+              value={expenseForm.employee}
+              onChange={(e) => setExpenseForm({ ...expenseForm, employee: e.target.value })}
+              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17] bg-white text-[#111827]"
+            >
+              <option value="" disabled>Select employee</option>
+              {EMPLOYEE_OPTIONS.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
           </div>
-        </div>
-      )}
+
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">
+              Purpose <span className="text-[#DC2626]">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Client Meeting"
+              value={expenseForm.purpose}
+              onChange={(e) => setExpenseForm({ ...expenseForm, purpose: e.target.value })}
+              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">
+              Destination <span className="text-[#DC2626]">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Rajouri Garden"
+              value={expenseForm.destination}
+              onChange={(e) => setExpenseForm({ ...expenseForm, destination: e.target.value })}
+              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">
+              Start Date <span className="text-[#DC2626]">*</span>
+            </label>
+            <input
+              type="date"
+              required
+              value={expenseForm.startDate}
+              onChange={(e) => setExpenseForm({ ...expenseForm, startDate: e.target.value })}
+              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">
+              End Date <span className="text-[#DC2626]">*</span>
+            </label>
+            <input
+              type="date"
+              required
+              value={expenseForm.endDate}
+              onChange={(e) => setExpenseForm({ ...expenseForm, endDate: e.target.value })}
+              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">Description</label>
+            <input
+              type="text"
+              placeholder="e.g. Additional details"
+              value={expenseForm.description}
+              onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
+              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">Expected Outcomes</label>
+            <input
+              type="text"
+              placeholder="e.g. Sign contract"
+              value={expenseForm.expectedOutcomes}
+              onChange={(e) => setExpenseForm({ ...expenseForm, expectedOutcomes: e.target.value })}
+              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">Documents</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                placeholder="Select document file..."
+                value={expenseDocument?.name || ""}
+                className="flex-1 min-w-0 border border-black/15 rounded-xl p-2.5 outline-none bg-[#FAFAFB] text-[#374151]"
+              />
+              <label className="shrink-0 inline-flex items-center gap-1.5 border border-black/15 rounded-xl px-3.5 py-2.5 font-bold text-[#374151] cursor-pointer hover:bg-[#FAFAFB] transition-colors">
+                <ImageIcon size={14} />
+                Browse
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={(e) => setExpenseDocument(e.target.files?.[0] || null)}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">Advance Amount</label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="e.g. 500.00"
+              value={expenseForm.advanceAmount}
+              onChange={(e) => setExpenseForm({ ...expenseForm, advanceAmount: e.target.value })}
+              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
+            />
+          </div>
+        </form>
+      </Modal>
 
       {/* 8. View Expense Detail Modal */}
-      {viewExpense && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
-            <button onClick={() => setViewExpense(null)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
-              <X size={18} />
-            </button>
-            <h3 className="text-base font-bold text-[#111] mb-3">Expense Details</h3>
-            <div className="space-y-2 text-xs">
-              <p><span className="text-[#6B7280]">Location:</span> <strong className="text-[#111]">{viewExpense.location}</strong></p>
-              <p><span className="text-[#6B7280]">Date Submitted:</span> <strong className="text-[#111]">{viewExpense.date}</strong></p>
-              <p><span className="text-[#6B7280]">Amount:</span> <strong className="text-[#7A0A17]">{viewExpense.amount}</strong></p>
-              <p><span className="text-[#6B7280]">Status:</span> <span className="px-2 py-0.5 rounded bg-[#DCFCE7] text-[#15803D] font-bold">{viewExpense.status}</span></p>
+      <Modal
+        open={!!viewExpense}
+        onClose={() => setViewExpense(null)}
+        title="Expense Details"
+        icon={<BarChart3 size={17} />}
+        iconBg="#E7F8EF"
+        iconColor="#16A34A"
+        width="max-w-md"
+      >
+        {viewExpense && (
+          <div className="flex flex-col gap-5 text-xs">
+            <div className="grid grid-cols-2 gap-4">
+              <DetailField icon={LayoutGrid} label="Purpose">{viewExpense.purpose}</DetailField>
+              <DetailField icon={LayoutGrid} label="Destination">{viewExpense.destination}</DetailField>
+              <DetailField icon={LayoutGrid} label="Start Date">{viewExpense.startDate}</DetailField>
+              <DetailField icon={LayoutGrid} label="End Date">{viewExpense.endDate}</DetailField>
+              <DetailField icon={Lock} label="Status">
+                <span
+                  className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                    viewExpense.status === "Approved"
+                      ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                      : viewExpense.status === "Cancelled"
+                      ? "bg-[#FDECEE] text-[#DC2626] border-[#DC2626]/20"
+                      : "bg-[#FFEDD5] text-[#C2410C] border-[#EA580C]/20"
+                  }`}
+                >
+                  {viewExpense.status}
+                </span>
+              </DetailField>
+              <DetailField icon={Lock} label="Advance Amount">
+                <span className="inline-flex items-center gap-2">
+                  ₹{viewExpense.advanceAmount}
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FFEDD5] text-[#C2410C] border border-[#EA580C]/20">
+                    {viewExpense.advanceStatus}
+                  </span>
+                </span>
+              </DetailField>
+              <DetailField icon={LayoutGrid} label="Total Expenses" full>{viewExpense.totalExpenses}</DetailField>
+              <DetailField icon={LayoutGrid} label="Documents" full>
+                {viewExpense.documentName ? (
+                  <span className="inline-flex items-center gap-2 text-[#3B82F6] font-semibold">
+                    <FileText size={14} /> {viewExpense.documentName}
+                  </span>
+                ) : (
+                  <div className="h-32 rounded-xl bg-[#EDEEF1] grid place-items-center text-[#9CA3AF]">
+                    <ImageIcon size={22} />
+                  </div>
+                )}
+              </DetailField>
             </div>
-            <div className="mt-5 flex justify-end">
-              <button type="button" onClick={() => setViewExpense(null)} className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl text-xs font-bold">
-                Close
-              </button>
+
+            <div>
+              <p className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wide mb-1">
+                <FileText size={12} /> Description
+              </p>
+              <p className="text-[13px] text-[#374151] leading-relaxed">{viewExpense.description || "—"}</p>
+            </div>
+
+            <div>
+              <p className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wide mb-1">
+                <FileText size={12} /> Expected Outcomes
+              </p>
+              <p className="text-[13px] text-[#374151] leading-relaxed">{viewExpense.expectedOutcomes || "—"}</p>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* 9. Apply Leave Modal */}
       {applyLeaveOpen && (
