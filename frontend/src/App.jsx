@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import PipelineBoard from "./pages/PipelineBoard";
@@ -29,35 +30,24 @@ export default function App() {
 
   return (
     <BrowserRouter basename={basename}>
-      {/* Toast notifications */}
-      <Toaster
+      {/* Toast notifications with close button & progress timer bar */}
+      <ToastContainer
         position="top-right"
-        toastOptions={{
-          duration: 3500,
-          style: {
-            fontFamily: "ui-sans-serif, system-ui, sans-serif",
-            fontSize: "14px",
-            fontWeight: 500,
-            borderRadius: "12px",
-            padding: "12px 16px",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-          },
-          success: {
-            style: {
-              background: "#eafdec",
-              color: "#12a44a",
-              border: "1px solid #c8f0d4",
-            },
-            iconTheme: { primary: "#12a44a", secondary: "#eafdec" },
-          },
-          error: {
-            style: {
-              background: "#fef1f4",
-              color: "#df264f",
-              border: "1px solid #f7d3d9",
-            },
-            iconTheme: { primary: "#df264f", secondary: "#fef1f4" },
-          },
+        autoClose={3500}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        toastStyle={{
+          fontFamily: "ui-sans-serif, system-ui, sans-serif",
+          fontSize: "13.5px",
+          fontWeight: 500,
+          borderRadius: "12px",
+          boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
         }}
       />
 

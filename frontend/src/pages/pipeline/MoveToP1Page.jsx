@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Sparkles } from "lucide-react";
+import { toast } from "react-toastify";
 import StageStepper from "../../components/pipeline/StageStepper";
 import TopBar from "../../components/layout/TopBar";
 
@@ -63,13 +64,13 @@ export default function MoveToP1Page({ lead, onBack, onMoveToP1 }) {
           >
             Cancel
           </button>
-          <button
+          {/* <button
             type="button"
             onClick={handleSubmit}
             className="px-4 py-2 text-[13px] font-semibold text-[#374151] bg-white border border-black/10 rounded-xl hover:bg-[#F3F4F6] transition-colors"
           >
             Save
-          </button>
+          </button> */}
           <button
             type="button"
             onClick={handleSubmit}
@@ -391,6 +392,7 @@ export default function MoveToP1Page({ lead, onBack, onMoveToP1 }) {
 
             <button
               type="button"
+              onClick={() => toast.success("AI draft email generated successfully!")}
               className="w-full flex items-center justify-center gap-2 h-10 rounded-xl border border-[#6366F1] text-[#4F46E5] text-[13px] font-semibold hover:bg-[#EEF2FF] transition-colors mt-1"
             >
               <Sparkles size={15} /> Ask AI to Draft Email

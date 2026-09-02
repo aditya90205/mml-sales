@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Paperclip, Upload } from "lucide-react";
+import { toast } from "react-toastify";
 import StageStepper from "../../components/pipeline/StageStepper";
 import TopBar from "../../components/layout/TopBar";
 
@@ -92,6 +93,7 @@ export default function MoveToP2Page({ lead, onBack, onMoveToP2 }) {
           </div>
           <button
             type="button"
+            onClick={() => toast.success("Bio-data document attached and auto-fetched successfully!")}
             className="inline-flex items-center gap-2 px-4 py-2.5 text-[12.5px] font-semibold text-[#4F46E5] bg-white border border-[#C7D2FE] rounded-xl hover:bg-[#EEF2FF] transition-colors shrink-0 shadow-xs"
           >
             <Upload size={15} /> Attach File

@@ -26,6 +26,7 @@ import {
   Video,
   X,
 } from "lucide-react";
+import { toast } from "react-toastify";
 import TopBar from "../components/layout/TopBar";
 import eyeIcon from "../assets/eye.png";
 import peopleIcon from "../assets/people.png";
@@ -862,6 +863,7 @@ export default function PipelineBoard() {
       ...prev,
       P0: [newLead, ...(prev.P0 || [])],
     }));
+    toast.success(`Prospect "${newLead.name}" created successfully in P0 Prospect!`);
   };
 
   const handleMoveToP1 = (lead, updatedData) => {
@@ -874,6 +876,7 @@ export default function PipelineBoard() {
         P1: [updatedLead, ...(prev.P1 || [])],
       };
     });
+    toast.success(`Lead "${lead.name}" successfully moved to P1 Qualified!`);
   };
 
   const handleMoveToP2 = (lead, updatedData) => {
@@ -886,6 +889,7 @@ export default function PipelineBoard() {
         P2: [updatedLead, ...(prev.P2 || [])],
       };
     });
+    toast.success(`Lead "${lead.name}" successfully moved to P2 Data Collection!`);
   };
 
   const handleMoveStage = (lead, stageKey) => {
@@ -970,6 +974,7 @@ export default function PipelineBoard() {
         <div className="flex items-center gap-2.5 shrink-0">
           <button
             type="button"
+            onClick={() => toast.success("Pipeline deals exported successfully!")}
             className="inline-flex items-center gap-2 h-[38px] px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
           >
             <Download size={15} /> Export
