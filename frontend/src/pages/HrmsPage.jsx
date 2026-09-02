@@ -2027,8 +2027,8 @@ export default function HrmsPage() {
               {pagedDocuments.map((doc, idx) => (
                 <div
                   key={doc.id}
-                  className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm border-l-4"
-                  style={{ borderLeftColor: DOC_BORDER_COLORS[idx % DOC_BORDER_COLORS.length] }}
+                  className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm border-t-4"
+                  style={{ borderTopColor: DOC_BORDER_COLORS[idx % DOC_BORDER_COLORS.length] }}
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <h3 className="text-sm font-extrabold text-[#111827] leading-snug">{doc.title}</h3>
@@ -2044,27 +2044,33 @@ export default function HrmsPage() {
 
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FEF3C7] text-[#D97706] border border-[#D97706]/20">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FFEDD5] text-[#C2410C] border border-[#EA580C]/20">
                         {doc.category}
                       </span>
                     </div>
                     <span className="text-[10px] font-bold text-[#9CA3AF]">{doc.version}</span>
                   </div>
-                  <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#E0F2FE] text-[#0284C7] border border-[#0284C7]/20 mb-3">
+                  <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#DBEAFE] text-[#2563EB] border border-[#2563EB]/20 mb-3">
                     Published
                   </span>
 
                   <div className="flex items-center justify-between pt-3 border-t border-black/6">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="size-6 rounded-full bg-[#EEF0FE] text-[#6366F1] font-bold text-[10px] grid place-items-center shrink-0">C</span>
+                      <img
+                        src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=80&h=80&fit=crop&crop=face"
+                        alt=""
+                        className="size-6 rounded-full object-cover shrink-0"
+                      />
                       <span className="text-[11px] font-bold text-[#374151] truncate">Company</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                      <Download size={13} className="text-[#9CA3AF]" />
                       <span className="text-[11px] font-bold text-[#6B7280]">{doc.downloads}</span>
                       <button
                         type="button"
                         onClick={() => toast.success(`Downloading ${doc.title}`)}
                         className="text-[#16A34A] hover:opacity-70"
+                        aria-label="Download"
                       >
                         <Download size={14} />
                       </button>
