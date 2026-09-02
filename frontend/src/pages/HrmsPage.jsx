@@ -25,6 +25,13 @@ import {
   FileText,
   Download,
   TrendingUp,
+  Search,
+  Filter,
+  MoreVertical,
+  RefreshCw,
+  RotateCcw,
+  ChevronUp,
+  BarChart3,
 } from "lucide-react";
 import TopBar from "../components/layout/TopBar";
 
@@ -43,8 +50,7 @@ const HRMS_TABS = [
   "Salary & Payslip",
   "Trainings",
   "Incentives",
-  "Goals",
-  "Reviews",
+  "Goals & Reviews",
   "Documents",
   "Asset",
 ];
@@ -105,6 +111,125 @@ const ATTENDANCE_DAYS = [
   { day: "01", week: "Fri", status: "P" },
 ];
 
+const INITIAL_TRAININGS = [
+  { id: 1, program: "Evening Online Session",  track: "Executive Leadership Program",        dateTime: "01-12-2026 23:30 - 31-12-2026 01:30", location: "Zoom Meeting",     locationType: "Virtual",  status: "Completed", score: 95.5, result: "Passed", attendance: 10 },
+  { id: 2, program: "Weekend Intensive Session", track: "Executive Leadership Program",       dateTime: "01-12-2026 23:30 - 31-12-2026 01:30", location: "Conference Hall",  locationType: "Physical", status: "Scheduled", score: 95.5, result: "Passed", attendance: 10 },
+  { id: 3, program: "Virtual Workshop Session", track: "Database Management Certification",   dateTime: "01-12-2026 23:30 - 31-12-2026 01:30", location: "Online Platform",  locationType: "Virtual",  status: "Completed", score: 33.5, result: "Fail",   attendance: 10 },
+  { id: 4, program: "Afternoon Session - Batch B", track: "Database Management Certification", dateTime: "01-12-2026 23:30 - 31-12-2026 01:30", location: "Training Room 2",  locationType: "Physical", status: "Completed", score: 95.5, result: "Passed", attendance: 10 },
+  { id: 5, program: "Morning Onboarding Session", track: "New Hire Onboarding",                dateTime: "05-12-2026 09:30 - 05-12-2026 13:00", location: "Zoom Meeting",     locationType: "Virtual",  status: "Completed", score: 88.0, result: "Passed", attendance: 9 },
+  { id: 6, program: "Sales Certification Sprint", track: "Sales Enablement",                   dateTime: "08-12-2026 10:00 - 08-12-2026 16:00", location: "Conference Hall",  locationType: "Physical", status: "Scheduled", score: 0,    result: null,     attendance: 0 },
+  { id: 7, program: "Compliance Refresher",       track: "Statutory Compliance",                dateTime: "12-12-2026 15:00 - 12-12-2026 17:00", location: "Online Platform",  locationType: "Virtual",  status: "Completed", score: 72.0, result: "Passed", attendance: 8 },
+  { id: 8, program: "Advanced Excel Workshop",    track: "Skill Development",                   dateTime: "15-12-2026 11:00 - 15-12-2026 14:00", location: "Training Room 2",  locationType: "Physical", status: "Completed", score: 41.0, result: "Fail",   attendance: 7 },
+  { id: 9, program: "Leadership Roundtable",      track: "Executive Leadership Program",        dateTime: "20-12-2026 23:30 - 20-12-2026 01:30", location: "Zoom Meeting",     locationType: "Virtual",  status: "Scheduled", score: 0,    result: null,     attendance: 0 },
+];
+
+const INITIAL_GOALS = [
+  { id: 1, title: "Subscription Sold",       employee: "Rahul Sharma",  goalType: "Sales/Subscription",         startDate: "26-08-2026", endDate: "26-08-2026", progress: 55, status: "In Progress", remarks: "Comprehensive quarterly review pending sign-off from the reporting manager before the next cycle begins." },
+  { id: 2, title: "New Clients",             employee: "Rohit Sharma",  goalType: "Client Acquisition",         startDate: "26-08-2026", endDate: "26-08-2026", progress: 55, status: "In Progress", remarks: "Comprehensive quarterly review pending sign-off from the reporting manager before the next cycle begins." },
+  { id: 3, title: "Match",                   employee: "Kushali Verma", goalType: "Matchmaking",                startDate: "26-08-2026", endDate: "26-08-2026", progress: 55, status: "In Progress", remarks: "Comprehensive quarterly review pending sign-off from the reporting manager before the next cycle begins." },
+  { id: 4, title: "Launch New Product Feature", employee: "Adyasha Singh", goalType: "Project Goals",            startDate: "26-08-2026", endDate: "26-08-2026", progress: 55, status: "In Progress", remarks: "Comprehensive quarterly review pending sign-off from the reporting manager before the next cycle begins." },
+  { id: 5, title: "Learn New Software Tools", employee: "Ananya Mishra", goalType: "Learning and Training Goals", startDate: "26-08-2026", endDate: "26-08-2026", progress: 55, status: "In Progress", remarks: "Comprehensive quarterly review pending sign-off from the reporting manager before the next cycle begins." },
+  { id: 6, title: "Expand Technical Expertise", employee: "Akshay Kumar", goalType: "Career Development Goals", startDate: "26-08-2026", endDate: "26-08-2026", progress: 55, status: "In Progress", remarks: "Comprehensive quarterly review pending sign-off from the reporting manager before the next cycle begins." },
+  { id: 7, title: "Reduce Response Time",     employee: "Priya Raheja",  goalType: "Customer Success",           startDate: "26-08-2026", endDate: "26-08-2026", progress: 70, status: "In Progress", remarks: "Comprehensive quarterly review pending sign-off from the reporting manager before the next cycle begins." },
+  { id: 8, title: "Certification Completion", employee: "Vivek Sharma",  goalType: "Learning and Training Goals", startDate: "26-08-2026", endDate: "26-08-2026", progress: 40, status: "In Progress", remarks: "Comprehensive quarterly review pending sign-off from the reporting manager before the next cycle begins." },
+  { id: 9, title: "Team Mentorship",          employee: "Aditya Sharma", goalType: "Career Development Goals",  startDate: "26-08-2026", endDate: "26-08-2026", progress: 85, status: "In Progress", remarks: "Comprehensive quarterly review pending sign-off from the reporting manager before the next cycle begins." },
+];
+
+const DOC_BORDER_COLORS = ["#F59E0B", "#3B82F6", "#16A34A", "#EAB308"];
+
+const INITIAL_DOCUMENTS = [
+  { id: 1, title: "Employee Contract",            category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
+  { id: 2, title: "Offer Letter",                  category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
+  { id: 3, title: "Salary Certificate",            category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
+  { id: 4, title: "Experience Certificate",        category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
+  { id: 5, title: "Data Privacy and Security Policy", category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
+  { id: 6, title: "Emergency Contact Form",        category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
+  { id: 7, title: "Expense Reimbursement Policy",  category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
+  { id: 8, title: "Remote Work Policy",            category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
+  { id: 9, title: "Code of Conduct Policy",        category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
+];
+
+const INITIAL_ASSETS = [
+  { id: 1, name: "TP-Link Wireless Router", category: "Network Equipment", code: "NET002", subCode: "TP001", status: "Available", assignedDate: "15-01-2025", returnDate: null },
+  { id: 2, name: "Cisco Catalyst Switch",   category: "Network Equipment", code: "NET002", subCode: "TP001", status: "Returned",  assignedDate: "15-01-2025", returnDate: "16-01-2026" },
+  { id: 3, name: "Company Car - Honda City 2022", category: "Vehicle",     code: "VEH014", subCode: "HC022", status: "Available", assignedDate: "15-01-2025", returnDate: null },
+  { id: 4, name: "Laptop - Dell Latitude 5420", category: "IT Equipment", code: "IT0088",  subCode: "DL542", status: "Returned",  assignedDate: "15-01-2025", returnDate: "16-01-2026" },
+];
+
+// ── Shared tab pieces ──────────────────────────────────────────────────────
+function TabToolbar({ search, onSearchChange, placeholder = "Search..." }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-center gap-2 flex-1 max-w-md">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder={placeholder}
+            className="w-full bg-white border border-black/12 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#7A0A17]"
+          />
+        </div>
+        <button
+          type="button"
+          className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-2xs flex items-center gap-1"
+        >
+          <Search size={14} /> Search
+        </button>
+        <button
+          type="button"
+          className="bg-white border border-black/12 hover:bg-[#FAFAFB] text-[#374151] text-xs font-bold px-3.5 py-2 rounded-xl shadow-2xs flex items-center gap-1.5"
+        >
+          <Filter size={14} /> Filter
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Pagination({ page, totalPages, totalItems, pageSize, itemLabel, onChange }) {
+  if (totalItems === 0) return null;
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, totalItems);
+  return (
+    <div className="flex items-center justify-between text-xs font-semibold text-[#6B7280]">
+      <p>
+        Showing {start} to {end} of {totalItems} {itemLabel}
+      </p>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          disabled={page <= 1}
+          onClick={() => onChange(page - 1)}
+          className="px-3 py-1.5 rounded-lg border border-black/10 bg-white hover:bg-[#FAFAFB] disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Previous
+        </button>
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => onChange(n)}
+            className={`size-7 rounded-lg font-bold ${
+              n === page ? "bg-[#16A34A] text-white" : "border border-black/10 bg-white hover:bg-[#FAFAFB] text-[#374151]"
+            }`}
+          >
+            {n}
+          </button>
+        ))}
+        <button
+          type="button"
+          disabled={page >= totalPages}
+          onClick={() => onChange(page + 1)}
+          className="px-3 py-1.5 rounded-lg border border-black/10 bg-white hover:bg-[#FAFAFB] disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function HrmsPage() {
   const [selectedMonth, setSelectedMonth] = useState("April");
   const [selectedYear, setSelectedYear] = useState("2025");
@@ -126,6 +251,18 @@ export default function HrmsPage() {
   const [applyLeaveOpen, setApplyLeaveOpen] = useState(false);
   const [leaveCommentView, setLeaveCommentView] = useState(null);
   const [addManualRowOpen, setAddManualRowOpen] = useState(false);
+
+  // Trainings / Goals & Reviews / Documents / Asset tab state
+  const [searchTraining, setSearchTraining] = useState("");
+  const [trainingPage, setTrainingPage] = useState(1);
+  const [searchGoal, setSearchGoal] = useState("");
+  const [goalPage, setGoalPage] = useState(1);
+  const [goalSort, setGoalSort] = useState({ key: null, dir: "asc" });
+  const [expandedRemarks, setExpandedRemarks] = useState({});
+  const [searchDocument, setSearchDocument] = useState("");
+  const [documentPage, setDocumentPage] = useState(1);
+  const [searchAsset, setSearchAsset] = useState("");
+  const [assetPage, setAssetPage] = useState(1);
 
   // Form Fields
   const [issueText, setIssueText] = useState("");
@@ -197,6 +334,51 @@ export default function HrmsPage() {
     setLeaveForm({ type: "Casual Leave", startDate: "", endDate: "", comment: "" });
     setApplyLeaveOpen(false);
   };
+
+  const toggleGoalSort = (key) => {
+    setGoalSort((prev) => ({
+      key,
+      dir: prev.key === key && prev.dir === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const filteredTrainings = INITIAL_TRAININGS.filter((t) =>
+    t.program.toLowerCase().includes(searchTraining.toLowerCase())
+  );
+  const trainingPageSize = 4;
+  const trainingTotalPages = Math.max(1, Math.ceil(filteredTrainings.length / trainingPageSize));
+  const pagedTrainings = filteredTrainings.slice(
+    (trainingPage - 1) * trainingPageSize,
+    trainingPage * trainingPageSize
+  );
+
+  const filteredGoals = INITIAL_GOALS
+    .filter((g) => g.title.toLowerCase().includes(searchGoal.toLowerCase()))
+    .sort((a, b) => {
+      if (!goalSort.key) return 0;
+      const dir = goalSort.dir === "asc" ? 1 : -1;
+      return a[goalSort.key] > b[goalSort.key] ? dir : a[goalSort.key] < b[goalSort.key] ? -dir : 0;
+    });
+  const goalPageSize = 6;
+  const goalTotalPages = Math.max(1, Math.ceil(filteredGoals.length / goalPageSize));
+  const pagedGoals = filteredGoals.slice((goalPage - 1) * goalPageSize, goalPage * goalPageSize);
+
+  const filteredDocuments = INITIAL_DOCUMENTS.filter((d) =>
+    d.title.toLowerCase().includes(searchDocument.toLowerCase())
+  );
+  const documentPageSize = 8;
+  const documentTotalPages = Math.max(1, Math.ceil(filteredDocuments.length / documentPageSize));
+  const pagedDocuments = filteredDocuments.slice(
+    (documentPage - 1) * documentPageSize,
+    documentPage * documentPageSize
+  );
+
+  const filteredAssets = INITIAL_ASSETS.filter((a) =>
+    a.name.toLowerCase().includes(searchAsset.toLowerCase())
+  );
+  const assetPageSize = 10;
+  const assetTotalPages = Math.max(1, Math.ceil(filteredAssets.length / assetPageSize));
+  const pagedAssets = filteredAssets.slice((assetPage - 1) * assetPageSize, assetPage * assetPageSize);
 
   return (
     <div className="flex flex-col flex-1 min-h-screen bg-[#F7F8FA] text-[#111827] font-sans">
@@ -1580,8 +1762,421 @@ export default function HrmsPage() {
           </div>
         )}
 
+        {/* TRAININGS TAB */}
+        {activeTab === "Trainings" && (
+          <div className="flex flex-col gap-6">
+            <TabToolbar search={searchTraining} onSearchChange={(v) => { setSearchTraining(v); setTrainingPage(1); }} />
+
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <div className="overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
+                      <th className="px-4 py-3">#</th>
+                      <th className="px-4 py-3">Program</th>
+                      <th className="px-4 py-3">Date &amp; Time</th>
+                      <th className="px-4 py-3">Location</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Score</th>
+                      <th className="px-4 py-3">Attendance</th>
+                      <th className="px-4 py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+                    {pagedTrainings.map((t, idx) => (
+                      <tr key={t.id} className="hover:bg-[#FAFAFB] transition-colors align-top">
+                        <td className="px-4 py-3 font-bold text-[#6B7280]">{(trainingPage - 1) * trainingPageSize + idx + 1}</td>
+                        <td className="px-4 py-3">
+                          <p className="font-bold">{t.program}</p>
+                          <p className="text-[#9CA3AF] font-medium">{t.track}</p>
+                        </td>
+                        <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{t.dateTime}</td>
+                        <td className="px-4 py-3">
+                          <p>{t.location}</p>
+                          <span
+                            className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md border mt-1 ${
+                              t.locationType === "Virtual"
+                                ? "bg-[#EEF0FE] text-[#6366F1] border-[#6366F1]/20"
+                                : "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
+                            }`}
+                          >
+                            {t.locationType}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                              t.status === "Completed"
+                                ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                                : "bg-[#E0F2FE] text-[#0284C7] border-[#0284C7]/20"
+                            }`}
+                          >
+                            {t.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {t.status === "Completed" ? (
+                            <>
+                              <p className="font-extrabold">{t.score.toFixed(1)}%</p>
+                              <span
+                                className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md mt-1 ${
+                                  t.result === "Passed" ? "bg-[#DCFCE7] text-[#15803D]" : "bg-[#FEE2E2] text-[#DC2626]"
+                                }`}
+                              >
+                                {t.result}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-[#9CA3AF]">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-[#6B7280]">{t.attendance || "—"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => toast.info(`Viewing ${t.program}`)}
+                              className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center"
+                            >
+                              <Eye size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toast.info(`Editing ${t.program}`)}
+                              className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center"
+                            >
+                              <Edit size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toast.info(`Removing ${t.program}`)}
+                              className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4">
+                <Pagination
+                  page={trainingPage}
+                  totalPages={trainingTotalPages}
+                  totalItems={filteredTrainings.length}
+                  pageSize={trainingPageSize}
+                  itemLabel="training sessions"
+                  onChange={setTrainingPage}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* GOALS & REVIEWS TAB */}
+        {activeTab === "Goals & Reviews" && (
+          <div className="flex flex-col gap-6">
+            <TabToolbar search={searchGoal} onSearchChange={(v) => { setSearchGoal(v); setGoalPage(1); }} />
+
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <div className="overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
+                      <th className="px-4 py-3">#</th>
+                      <th className="px-4 py-3">
+                        <button type="button" onClick={() => toggleGoalSort("title")} className="inline-flex items-center gap-1 uppercase">
+                          Title
+                          {goalSort.key === "title" ? (
+                            goalSort.dir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+                          ) : (
+                            <ChevronDown size={12} className="opacity-30" />
+                          )}
+                        </button>
+                      </th>
+                      <th className="px-4 py-3">Employee</th>
+                      <th className="px-4 py-3">Goal Type</th>
+                      <th className="px-4 py-3">
+                        <button type="button" onClick={() => toggleGoalSort("startDate")} className="inline-flex items-center gap-1 uppercase">
+                          Start Date
+                          {goalSort.key === "startDate" ? (
+                            goalSort.dir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+                          ) : (
+                            <ChevronDown size={12} className="opacity-30" />
+                          )}
+                        </button>
+                      </th>
+                      <th className="px-4 py-3">
+                        <button type="button" onClick={() => toggleGoalSort("endDate")} className="inline-flex items-center gap-1 uppercase">
+                          End Date
+                          {goalSort.key === "endDate" ? (
+                            goalSort.dir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+                          ) : (
+                            <ChevronDown size={12} className="opacity-30" />
+                          )}
+                        </button>
+                      </th>
+                      <th className="px-4 py-3">Progress</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+                    {pagedGoals.map((g, idx) => {
+                      const isExpanded = expandedRemarks[g.id];
+                      return (
+                        <tr key={g.id} className="hover:bg-[#FAFAFB] transition-colors align-top">
+                          <td className="px-4 py-3 font-bold text-[#6B7280]">{(goalPage - 1) * goalPageSize + idx + 1}</td>
+                          <td className="px-4 py-3 font-bold">{g.title}</td>
+                          <td className="px-4 py-3">{g.employee}</td>
+                          <td className="px-4 py-3 text-[#6B7280]">{g.goalType}</td>
+                          <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{g.startDate}</td>
+                          <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{g.endDate}</td>
+                          <td className="px-4 py-3 min-w-[220px]">
+                            <div className="flex items-center gap-2">
+                              <div className="h-1.5 w-24 rounded-full bg-[#EDEEF1] overflow-hidden shrink-0">
+                                <div className="h-full rounded-full bg-[#16A34A]" style={{ width: `${g.progress}%` }} />
+                              </div>
+                              <span className="font-bold text-[#111827] shrink-0">{g.progress}%</span>
+                            </div>
+                            <p className={`text-[11px] text-[#374151] mt-1.5 ${isExpanded ? "" : "line-clamp-1"}`}>
+                              <span className="text-[#DC2626] font-bold">Remarks: </span>
+                              {g.remarks}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => setExpandedRemarks((p) => ({ ...p, [g.id]: !p[g.id] }))}
+                              className="inline-flex items-center gap-1 text-[10px] font-bold text-[#3B82F6] mt-0.5"
+                            >
+                              {isExpanded ? "Show less" : "Show more"}
+                              <ChevronDown size={11} className={isExpanded ? "rotate-180 transition-transform" : "transition-transform"} />
+                            </button>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="inline-block text-[11px] font-bold px-2.5 py-1 rounded-lg border bg-[#E0F2FE] text-[#0284C7] border-[#0284C7]/20 whitespace-nowrap">
+                              {g.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => toast.info(`Viewing ${g.title}`)}
+                                className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center"
+                              >
+                                <Eye size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => toast.info(`Editing ${g.title}`)}
+                                className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center"
+                              >
+                                <Edit size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => toast.info(`Viewing progress history for ${g.title}`)}
+                                className="size-7 rounded-lg bg-[#EEF0FE] text-[#6366F1] hover:bg-[#DCE0FC] grid place-items-center"
+                              >
+                                <BarChart3 size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => toast.info(`Removing ${g.title}`)}
+                                className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4">
+                <Pagination
+                  page={goalPage}
+                  totalPages={goalTotalPages}
+                  totalItems={filteredGoals.length}
+                  pageSize={goalPageSize}
+                  itemLabel="employee goals"
+                  onChange={setGoalPage}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* DOCUMENTS TAB */}
+        {activeTab === "Documents" && (
+          <div className="flex flex-col gap-6">
+            <TabToolbar search={searchDocument} onSearchChange={(v) => { setSearchDocument(v); setDocumentPage(1); }} />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              {pagedDocuments.map((doc, idx) => (
+                <div
+                  key={doc.id}
+                  className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm border-l-4"
+                  style={{ borderLeftColor: DOC_BORDER_COLORS[idx % DOC_BORDER_COLORS.length] }}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <h3 className="text-sm font-extrabold text-[#111827] leading-snug">{doc.title}</h3>
+                    <button
+                      type="button"
+                      onClick={() => toast.info(`Viewing ${doc.title}`)}
+                      className="text-[#9CA3AF] hover:text-[#111] shrink-0"
+                    >
+                      <Eye size={15} />
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-[#9CA3AF] mb-2.5">Last Update: {doc.updated}</p>
+
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FEF3C7] text-[#D97706] border border-[#D97706]/20">
+                        {doc.category}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold text-[#9CA3AF]">{doc.version}</span>
+                  </div>
+                  <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#E0F2FE] text-[#0284C7] border border-[#0284C7]/20 mb-3">
+                    Published
+                  </span>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-black/6">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="size-6 rounded-full bg-[#EEF0FE] text-[#6366F1] font-bold text-[10px] grid place-items-center shrink-0">C</span>
+                      <span className="text-[11px] font-bold text-[#374151] truncate">Company</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[11px] font-bold text-[#6B7280]">{doc.downloads}</span>
+                      <button
+                        type="button"
+                        onClick={() => toast.success(`Downloading ${doc.title}`)}
+                        className="text-[#16A34A] hover:opacity-70"
+                      >
+                        <Download size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toast.info(`More options for ${doc.title}`)}
+                        className="text-[#9CA3AF] hover:text-[#111]"
+                      >
+                        <MoreVertical size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Pagination
+              page={documentPage}
+              totalPages={documentTotalPages}
+              totalItems={filteredDocuments.length}
+              pageSize={documentPageSize}
+              itemLabel="documents"
+              onChange={setDocumentPage}
+            />
+          </div>
+        )}
+
+        {/* ASSET TAB */}
+        {activeTab === "Asset" && (
+          <div className="flex flex-col gap-6">
+            <TabToolbar search={searchAsset} onSearchChange={(v) => { setSearchAsset(v); setAssetPage(1); }} />
+
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <div className="overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
+                      <th className="px-4 py-3">#</th>
+                      <th className="px-4 py-3">Name</th>
+                      <th className="px-4 py-3">Asset Code</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Assigned Date</th>
+                      <th className="px-4 py-3">Return Date</th>
+                      <th className="px-4 py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+                    {pagedAssets.map((a, idx) => (
+                      <tr key={a.id} className="hover:bg-[#FAFAFB] transition-colors">
+                        <td className="px-4 py-3 font-bold text-[#6B7280]">{(assetPage - 1) * assetPageSize + idx + 1}</td>
+                        <td className="px-4 py-3">
+                          <p className="font-bold">{a.name}</p>
+                          <p className="text-[#9CA3AF] font-medium">{a.category}</p>
+                        </td>
+                        <td className="px-4 py-3 text-[#6B7280]">
+                          <p className="font-bold text-[#111827]">{a.code}</p>
+                          <p>{a.subCode}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                              a.status === "Available"
+                                ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                                : "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
+                            }`}
+                          >
+                            {a.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{a.assignedDate}</td>
+                        <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{a.returnDate || "-"}</td>
+                        <td className="px-4 py-3">
+                          {a.status === "Available" ? (
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => toast.info(`Reassigning ${a.name}`)}
+                                className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center"
+                                aria-label="Reassign"
+                              >
+                                <RefreshCw size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => toast.success(`${a.name} marked as returned`)}
+                                className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center"
+                                aria-label="Mark returned"
+                              >
+                                <RotateCcw size={13} />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[#9CA3AF]">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4">
+                <Pagination
+                  page={assetPage}
+                  totalPages={assetTotalPages}
+                  totalItems={filteredAssets.length}
+                  pageSize={assetPageSize}
+                  itemLabel="assets"
+                  onChange={setAssetPage}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Placeholder View for remaining tabs */}
-        {!["Summary", "Attendance", "Timesheet", "Salary & Payslip", "Incentives"].includes(activeTab) && (
+        {!["Summary", "Attendance", "Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset"].includes(activeTab) && (
           <div className="bg-white border border-black/8 rounded-2xl p-12 text-center my-6 shadow-sm">
             <div className="size-16 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
               <FileText size={28} />
