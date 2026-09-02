@@ -24,13 +24,13 @@ import TopBar from "../components/layout/TopBar";
 /* ───────────────────────── Data ───────────────────────── */
 
 const PIPELINE_STAGES = [
-  { id: "P0", label: "New",                    color: "#3B82F6" },
-  { id: "P1", label: "Qualified",               color: "#6366F1" },
-  { id: "P2", label: "Profile Creation",        color: "#D97706" },
-  { id: "P3", label: "Video Call/Visit",        color: "#F59E0B" },
-  { id: "P4", label: "Negotiation",             color: "#6B7280" },
+  { id: "P0", label: "New",                    color: "#E8395B" },
+  { id: "P1", label: "Qualified",               color: "#F59E0B" },
+  { id: "P2", label: "Profile Creation",        color: "#8B5CF6" },
+  { id: "P3", label: "Video Call/Visit",        color: "#7C3AED" },
+  { id: "P4", label: "Negotiation",             color: "#6366F1" },
   { id: "P5", label: "Closed",                  color: "#16A34A" },
-  { id: "P6", label: "Closed Sale Onboarding",  color: "#0D9488" },
+  { id: "P6", label: "Closed Sale Onboarding",  color: "#EAB308" },
 ];
 
 const QUICK_GROUPS = [
@@ -254,7 +254,7 @@ function BoardToolbar({ search, onSearchChange, perPage, onPerPageChange }) {
 
 /* ───────────────────────── Lead card ───────────────────────── */
 
-function LeadCard({ lead, nextStageLabel }) {
+function LeadCard({ lead, stageColor, nextStageLabel }) {
   const temperature = TEMPERATURE_STYLES[lead.temperature];
   const priority = PRIORITY_STYLES[lead.priority];
 
@@ -263,7 +263,7 @@ function LeadCard({ lead, nextStageLabel }) {
   return (
     <div
       className="bg-white border border-black/8 rounded-xl p-3.5 flex flex-col gap-3 border-l-4"
-      style={{ borderLeftColor: temperature.color }}
+      style={{ borderLeftColor: stageColor }}
     >
       {/* Name row */}
       <div className="flex items-start justify-between gap-2">
@@ -280,9 +280,9 @@ function LeadCard({ lead, nextStageLabel }) {
       </div>
 
       {/* Badges */}
-      <div className="flex items-center gap-1.5 flex-wrap">
+      <div className="flex items-center justify-between gap-1.5">
         <Pill tone={temperature}>{lead.temperature}</Pill>
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#111]">
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#111] shrink-0">
           {lead.score.toFixed(1)}
           <Flag size={10} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} />
         </span>
@@ -308,16 +308,16 @@ function LeadCard({ lead, nextStageLabel }) {
           <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Details</p>
           <Info size={12} className="text-[#9CA3AF]" />
         </div>
-        <div className="flex items-center gap-3 text-[11px] text-[#4B5563] flex-wrap">
-          <span className="inline-flex items-center gap-1">
+        <div className="flex items-center justify-between gap-2 text-[11px] text-[#4B5563]">
+          <span className="inline-flex items-center gap-1 shrink-0">
             <Clock size={12} className="text-[#9CA3AF]" /> {lead.days} Days
           </span>
-          <span className={`inline-flex items-center gap-1 ${urgentHrs ? "text-[#E8395B] font-semibold" : ""}`}>
+          <span className={`inline-flex items-center gap-1 shrink-0 ${urgentHrs ? "text-[#E8395B] font-semibold" : ""}`}>
             <Hourglass size={12} className={urgentHrs ? "text-[#E8395B]" : "text-[#9CA3AF]"} /> {lead.hrs} Hrs
           </span>
           <button
             type="button"
-            className="inline-flex items-center gap-1 text-[#3B82F6] font-semibold bg-[#E8F2FE] border border-[#BFDBFE] rounded-md px-2 py-0.5 hover:bg-[#DBE9FD] transition-colors"
+            className="inline-flex items-center gap-1 text-[#3B82F6] font-semibold bg-[#E8F2FE] border border-[#BFDBFE] rounded-md px-2 py-0.5 hover:bg-[#DBE9FD] transition-colors shrink-0"
           >
             <Link2 size={11} /> Join
           </button>
@@ -395,7 +395,9 @@ function PipelineColumn({ stage, leads, nextStageId }) {
         {leads.length === 0 ? (
           <p className="text-[12px] text-[#9CA3AF] text-center py-6">No leads in this stage</p>
         ) : (
-          leads.map((lead, i) => <LeadCard key={`${stage.id}-${i}`} lead={lead} nextStageLabel={nextStageId} />)
+          leads.map((lead, i) => (
+            <LeadCard key={`${stage.id}-${i}`} lead={lead} stageColor={stage.color} nextStageLabel={nextStageId} />
+          ))
         )}
       </div>
     </div>
