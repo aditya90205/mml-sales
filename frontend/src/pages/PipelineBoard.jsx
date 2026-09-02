@@ -30,6 +30,9 @@ import TopBar from "../components/layout/TopBar";
 import eyeIcon from "../assets/eye.png";
 import peopleIcon from "../assets/people.png";
 import fileIcon from "../assets/file.png";
+import AddP0ProspectPage from "./pipeline/AddP0ProspectPage";
+import MoveToP1Page from "./pipeline/MoveToP1Page";
+import MoveToP2Page from "./pipeline/MoveToP2Page";
 
 /* ───────────────────────── Data ───────────────────────── */
 
@@ -320,7 +323,7 @@ function BoardToolbar({ search, onSearchChange, perPage, onPerPageChange, view, 
 
 /* ───────────────────────── Lead card ───────────────────────── */
 
-function LeadCard({ lead, stageColor, nextStageLabel, onOpenScoreModal }) {
+function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal, onMoveStage }) {
   const temperature = TEMPERATURE_STYLES[lead.temperature];
   const priority = PRIORITY_STYLES[lead.priority];
 
@@ -423,15 +426,13 @@ function LeadCard({ lead, stageColor, nextStageLabel, onOpenScoreModal }) {
             </p>
           </div>
         </div>
-        {/* <button type="button" className="self-end text-[10.5px] font-semibold text-[#E8395B] hover:underline">
-          Report Concern
-        </button> */}
       </div>
 
       {/* Move to next stage */}
       {nextStageLabel ? (
         <button
           type="button"
+          onClick={() => onMoveStage?.(lead, stageKey)}
           className="w-full inline-flex items-center justify-center gap-1.5 h-9 rounded-lg border border-[#7A0A17]/25 text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#FCF5F6] transition-colors"
         >
           Move to {nextStageLabel} <ArrowRight size={13} />
@@ -447,7 +448,7 @@ function LeadCard({ lead, stageColor, nextStageLabel, onOpenScoreModal }) {
 
 /* ───────────────────────── Column ───────────────────────── */
 
-function PipelineColumn({ stage, leads, nextStageId, onOpenScoreModal }) {
+function PipelineColumn({ stage, leads, nextStageId, onOpenScoreModal, onMoveStage }) {
   return (
     <div className="flex flex-col w-[280px] shrink-0 bg-[#F7F8FA] border border-black/6 rounded-2xl overflow-hidden">
       <div className="flex items-center justify-between gap-2 px-3.5 py-3 bg-white border-b border-black/8">
@@ -470,9 +471,11 @@ function PipelineColumn({ stage, leads, nextStageId, onOpenScoreModal }) {
             <LeadCard
               key={`${stage.id}-${i}`}
               lead={lead}
+              stageKey={stage.id}
               stageColor={stage.color}
               nextStageLabel={nextStageId}
               onOpenScoreModal={onOpenScoreModal}
+              onMoveStage={onMoveStage}
             />
           ))
         )}
@@ -849,31 +852,106 @@ export default function PipelineBoard() {
   const [view,   setView]               = useState("board"); // "board" | "table"
   const [selectedScoreLead, setSelectedScoreLead] = useState(null);
 
+  // Dynamic state for pipeline lead items
+  const [leadsData, setLeadsData]       = useState(LEADS_BY_STAGE);
+  const [subView, setSubView]           = useState(null); // null | "add-p0" | "move-p1" | "move-p2"
+  const [activeLead, setActiveLead]     = useState(null);
+
+  const handleAddProspect = (newLead) => {
+    setLeadsData((prev) => ({
+      ...prev,
+      P0: [newLead, ...(prev.P0 || [])],
+    }));
+  };
+
+  const handleMoveToP1 = (lead, updatedData) => {
+    setLeadsData((prev) => {
+      const p0Filtered = (prev.P0 || []).filter((l) => l.mmlId !== lead.mmlId);
+      const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 8.5, completion: 45 };
+      return {
+        ...prev,
+        P0: p0Filtered,
+        P1: [updatedLead, ...(prev.P1 || [])],
+      };
+    });
+  };
+
+  const handleMoveToP2 = (lead, updatedData) => {
+    setLeadsData((prev) => {
+      const p1Filtered = (prev.P1 || []).filter((l) => l.mmlId !== lead.mmlId);
+      const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 9.0, completion: 70 };
+      return {
+        ...prev,
+        P1: p1Filtered,
+        P2: [updatedLead, ...(prev.P2 || [])],
+      };
+    });
+  };
+
+  const handleMoveStage = (lead, stageKey) => {
+    setActiveLead(lead);
+    if (stageKey === "P0") {
+      setSubView("move-p1");
+    } else if (stageKey === "P1") {
+      setSubView("move-p2");
+    }
+  };
+
   const columns = useMemo(
     () =>
       PIPELINE_STAGES.map((stage, i) => {
-        const allLeads = LEADS_BY_STAGE[stage.id] || [];
+        const allLeads = leadsData[stage.id] || [];
         const filtered = search
           ? allLeads.filter((l) => l.name.toLowerCase().includes(search.toLowerCase()))
           : allLeads;
         const next = PIPELINE_STAGES[i + 1];
         return { stage, leads: filtered.slice(0, perPage), nextStageId: next?.id };
       }),
-    [search, perPage]
+    [search, perPage, leadsData]
   );
 
   // Flat list for table view
   const flatLeads = useMemo(
     () =>
       PIPELINE_STAGES.flatMap((stage) => {
-        const all = LEADS_BY_STAGE[stage.id] || [];
+        const all = leadsData[stage.id] || [];
         const filtered = search
           ? all.filter((l) => l.name.toLowerCase().includes(search.toLowerCase()))
           : all;
         return filtered.slice(0, perPage).map((lead) => ({ lead, stage }));
       }),
-    [search, perPage]
+    [search, perPage, leadsData]
   );
+
+  // Sub-page view rendering
+  if (subView === "add-p0") {
+    return (
+      <AddP0ProspectPage
+        onBack={() => setSubView(null)}
+        onAddProspect={handleAddProspect}
+      />
+    );
+  }
+
+  if (subView === "move-p1") {
+    return (
+      <MoveToP1Page
+        lead={activeLead}
+        onBack={() => { setSubView(null); setActiveLead(null); }}
+        onMoveToP1={handleMoveToP1}
+      />
+    );
+  }
+
+  if (subView === "move-p2") {
+    return (
+      <MoveToP2Page
+        lead={activeLead}
+        onBack={() => { setSubView(null); setActiveLead(null); }}
+        onMoveToP2={handleMoveToP2}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -898,6 +976,7 @@ export default function PipelineBoard() {
           </button>
           <button
             type="button"
+            onClick={() => setSubView("add-p0")}
             className="inline-flex items-center gap-2 h-[38px] px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors"
           >
             <Plus size={15} /> Add Deal
@@ -925,6 +1004,7 @@ export default function PipelineBoard() {
                 leads={leads}
                 nextStageId={nextStageId}
                 onOpenScoreModal={(lead) => setSelectedScoreLead(lead)}
+                onMoveStage={handleMoveStage}
               />
             ))}
           </div>
