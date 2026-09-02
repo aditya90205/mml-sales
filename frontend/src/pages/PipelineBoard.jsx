@@ -167,9 +167,11 @@ function QuickLinksRow() {
       {QUICK_GROUPS.map((group, i) => (
         <div
           key={group.title}
-          className={`px-4 py-3.5 lg:flex-1 lg:min-w-0 ${i > 0 ? "lg:border-l lg:border-black/8" : ""}`}
+          className={`px-4 py-3.5 ${i === QUICK_GROUPS.length - 1 ? "lg:flex-1 lg:min-w-0" : "lg:shrink-0"} ${
+            i > 0 ? "lg:border-l lg:border-black/8" : ""
+          }`}
         >
-          <div className="flex items-center gap-2 mb-2.5">
+          <div className="flex items-center gap-2 mb-2.5 whitespace-nowrap">
             <group.icon size={15} style={{ color: group.color }} strokeWidth={1.8} />
             <p className="text-[13px] font-bold text-[#111]">{group.title}</p>
           </div>
@@ -178,7 +180,7 @@ function QuickLinksRow() {
               <button
                 key={chip}
                 type="button"
-                className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[#4B5563] bg-[#F7F8FA] border border-black/6 rounded-lg px-2.5 py-1.5 hover:bg-[#F1F2F4] transition-colors"
+                className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[#4B5563] bg-[#F7F8FA] border border-black/6 rounded-lg px-2.5 py-1.5 hover:bg-[#F1F2F4] transition-colors whitespace-nowrap"
               >
                 {chip}
                 <span className="text-[10px] font-semibold text-[#9CA3AF] bg-white rounded px-1.5 py-0.5">3</span>
@@ -198,13 +200,13 @@ function BoardToolbar({ search, onSearchChange, perPage, onPerPageChange }) {
 
   return (
     <div className="flex items-center gap-2.5 flex-wrap">
-      <div className="flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 flex-1 min-w-[180px] focus-within:border-[#7A0A17]/40 transition-colors">
+      <div className="flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 flex-1 basis-[240px] max-w-[520px] focus-within:border-[#7A0A17]/40 transition-colors">
         <Search size={15} className="text-[#9CA3AF] shrink-0" />
         <input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search..."
-          className="bg-transparent text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none w-full"
+          className="bg-transparent text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none w-full min-w-0"
         />
       </div>
 
@@ -222,7 +224,7 @@ function BoardToolbar({ search, onSearchChange, perPage, onPerPageChange }) {
         <SlidersHorizontal size={14} /> Filter
       </button>
 
-      <div className="relative shrink-0">
+      <div className="relative shrink-0 ml-auto">
         <button
           type="button"
           onClick={() => setPerPageOpen((v) => !v)}
