@@ -2,20 +2,22 @@ import { useMemo, useState } from "react";
 import {
   AlarmClock,
   ArrowRight,
-  Calendar,
   ChevronDown,
   Clock,
   Download,
   Eye,
   FileText,
   Flag,
+  Hourglass,
+  Info,
+  Link2,
+  MapPin,
   MoreVertical,
   Plus,
   Search,
   ShieldCheck,
   SlidersHorizontal,
   Star,
-  Video,
 } from "lucide-react";
 import TopBar from "../components/layout/TopBar";
 
@@ -67,7 +69,7 @@ const PRIORITY_STYLES = {
   Low:    { color: "#16A34A", bg: "#E7F8EF" },
 };
 
-const OWNER = { name: "Aditya Sharma", level: "Junior", role: "Sales Manager" };
+const OWNER = { name: "Aditya Sharma", label: "Owner", role: "Sales Manager", branch: "Rajouri Garden" };
 
 /** Two sample cards per stage, mirroring the lead roster used on the dashboard. */
 const LEADS_BY_STAGE = {
@@ -256,8 +258,13 @@ function LeadCard({ lead, nextStageLabel }) {
   const temperature = TEMPERATURE_STYLES[lead.temperature];
   const priority = PRIORITY_STYLES[lead.priority];
 
+  const urgentHrs = lead.hrs <= 8;
+
   return (
-    <div className="bg-white border border-black/8 rounded-xl p-3.5 flex flex-col gap-3">
+    <div
+      className="bg-white border border-black/8 rounded-xl p-3.5 flex flex-col gap-3 border-l-4"
+      style={{ borderLeftColor: temperature.color }}
+    >
       {/* Name row */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -283,27 +290,36 @@ function LeadCard({ lead, nextStageLabel }) {
       </div>
 
       {/* Profile completion */}
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] text-[#9CA3AF]">Profile Completion</span>
-        <span className="text-[12px] font-bold text-[#111]">{lead.completion}%</span>
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[11px] text-[#9CA3AF]">Profile Completion</span>
+          <span className="text-[12px] font-bold text-[#111]">{lead.completion}%</span>
+        </div>
+        <div className="h-1.5 w-full rounded-full bg-[#EDEEF1] overflow-hidden">
+          <div className="h-full rounded-full bg-[#16A34A]" style={{ width: `${lead.completion}%` }} />
+        </div>
       </div>
 
       <div className="h-px bg-black/6" />
 
       {/* Details */}
       <div>
-        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5">Details</p>
-        <div className="flex items-center gap-2.5 text-[11px] text-[#4B5563]">
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Details</p>
+          <Info size={12} className="text-[#9CA3AF]" />
+        </div>
+        <div className="flex items-center gap-3 text-[11px] text-[#4B5563] flex-wrap">
           <span className="inline-flex items-center gap-1">
-            <Calendar size={12} className="text-[#9CA3AF]" /> {lead.days} Days
+            <Clock size={12} className="text-[#9CA3AF]" /> {lead.days} Days
           </span>
-          <span className="w-px h-3 bg-black/10" />
-          <span className="inline-flex items-center gap-1">
-            <Clock size={12} className="text-[#9CA3AF]" /> {lead.hrs} Hrs
+          <span className={`inline-flex items-center gap-1 ${urgentHrs ? "text-[#E8395B] font-semibold" : ""}`}>
+            <Hourglass size={12} className={urgentHrs ? "text-[#E8395B]" : "text-[#9CA3AF]"} /> {lead.hrs} Hrs
           </span>
-          <span className="w-px h-3 bg-black/10" />
-          <button type="button" className="inline-flex items-center gap-1 text-[#3B82F6] font-semibold hover:underline">
-            <Video size={12} /> Join
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 text-[#3B82F6] font-semibold bg-[#E8F2FE] border border-[#BFDBFE] rounded-md px-2 py-0.5 hover:bg-[#DBE9FD] transition-colors"
+          >
+            <Link2 size={11} /> Join
           </button>
         </div>
       </div>
@@ -323,17 +339,20 @@ function LeadCard({ lead, nextStageLabel }) {
       <div className="h-px bg-black/6" />
 
       {/* Owner */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-2 min-w-0">
           <InitialsAvatar name={OWNER.name} />
           <div className="min-w-0">
-            <p className="text-[11.5px] font-semibold text-[#374151] truncate">
-              {OWNER.name} <span className="text-[#9CA3AF] font-normal">({OWNER.level})</span>
+            <p className="text-[11.5px] font-semibold text-[#374151] leading-tight">
+              {OWNER.name} <span className="text-[#9CA3AF] font-normal">({OWNER.label})</span>
             </p>
-            <p className="text-[10px] text-[#9CA3AF]">{OWNER.role}</p>
+            <p className="text-[10px] text-[#9CA3AF] leading-tight">{OWNER.role}</p>
+            <p className="text-[10px] text-[#9CA3AF] inline-flex items-center gap-1 mt-0.5">
+              <MapPin size={10} /> {OWNER.branch}
+            </p>
           </div>
         </div>
-        <button type="button" className="text-[10.5px] font-semibold text-[#E8395B] hover:underline shrink-0">
+        <button type="button" className="self-end text-[10.5px] font-semibold text-[#E8395B] hover:underline">
           Report Concern
         </button>
       </div>
