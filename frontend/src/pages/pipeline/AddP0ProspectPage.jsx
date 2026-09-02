@@ -65,19 +65,19 @@ export default function AddP0ProspectPage({ onBack, onAddProspect }) {
           >
             Cancel
           </button>
-          <button
+          {/* <button
             type="button"
             onClick={handleSubmit}
             className="px-4 py-2 text-[13px] font-semibold text-[#374151] bg-white border border-black/10 rounded-xl hover:bg-[#F3F4F6] transition-colors"
           >
             Save
-          </button>
+          </button> */}
           <button
             type="button"
             onClick={handleSubmit}
             className="px-5 py-2 text-[13px] font-semibold text-white bg-[#7A0A17] hover:bg-[#640712] rounded-xl transition-colors shadow-sm"
           >
-            Add Prospect
+            Save
           </button>
         </div>
       </div>
