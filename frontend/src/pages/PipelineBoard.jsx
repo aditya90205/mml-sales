@@ -175,15 +175,21 @@ function QuickLinksRow() {
             <group.icon size={15} style={{ color: group.color }} strokeWidth={1.8} />
             <p className="text-[13px] font-bold text-[#111]">{group.title}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-stretch">
             {group.chips.map((chip) => (
               <button
                 key={chip}
                 type="button"
-                className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[#4B5563] bg-[#F7F8FA] border border-black/6 rounded-lg px-2.5 py-1.5 hover:bg-[#F1F2F4] transition-colors whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 text-[11.5px] font-medium rounded-lg px-2.5 py-1.5 min-h-[38px] transition-colors"
+                style={{ color: group.color, backgroundColor: group.bg }}
               >
-                {chip}
-                <span className="text-[10px] font-semibold text-[#9CA3AF] bg-white rounded px-1.5 py-0.5">3</span>
+                <span className="leading-snug">{chip}</span>
+                <span
+                  className="shrink-0 text-[10px] font-semibold bg-white/70 rounded px-1.5 py-0.5"
+                  style={{ color: group.color }}
+                >
+                  3
+                </span>
               </button>
             ))}
           </div>
