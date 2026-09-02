@@ -352,9 +352,9 @@ function LeadCard({ lead, stageColor, nextStageLabel }) {
             </p>
           </div>
         </div>
-        <button type="button" className="self-end text-[10.5px] font-semibold text-[#E8395B] hover:underline">
+        {/* <button type="button" className="self-end text-[10.5px] font-semibold text-[#E8395B] hover:underline">
           Report Concern
-        </button>
+        </button> */}
       </div>
 
       {/* Move to next stage */}
