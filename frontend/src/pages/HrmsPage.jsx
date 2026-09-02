@@ -1,0 +1,2311 @@
+import { useState } from "react";
+import { toast } from "react-toastify";
+import {
+  ChevronRight,
+  ChevronDown,
+  Wallet,
+  AlertTriangle,
+  Clock,
+  Trophy,
+  Target,
+  Receipt,
+  Activity,
+  Send,
+  Calendar,
+  Eye,
+  Edit,
+  Trash2,
+  CheckCircle2,
+  FileCheck,
+  ShieldCheck,
+  MessageSquare,
+  X,
+  Plus,
+  AlertCircle,
+  FileText,
+  Check,
+  Download,
+  Search,
+  Filter,
+  TrendingUp,
+  CreditCard,
+  Building,
+  DollarSign,
+  UserCheck,
+  CalendarDays,
+  Plane,
+} from "lucide-react";
+import TopBar from "../components/layout/TopBar";
+
+// ── Dummy / State Data ────────────────────────────────────────────────────────
+const MONTH_OPTIONS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
+const YEAR_OPTIONS = ["2024", "2025", "2026"];
+
+const HRMS_TABS = [
+  "Summary",
+  "Attendance",
+  "Timesheet",
+  "Salary & Payslip",
+  "Trips",
+  "Trainings",
+  "Incentives",
+  "Goals",
+  "Reviews",
+  "Documents",
+  "Asset",
+];
+
+const INITIAL_EXPENSES = [
+  { id: 1, location: "Bangalore, India", date: "11-02-2026", amount: "₹4,500", category: "Travel & Stay", status: "Approved" },
+  { id: 2, location: "Delhi, India", date: "11-02-2026", amount: "₹1,200", category: "Client Meal", status: "Pending" },
+];
+
+const INITIAL_LEAVES = [
+  { id: 1, type: "Casual Leave", date: "August 8", status: "Pending", comment: "Family function in hometown." },
+  { id: 2, type: "Casual Leave", date: "August 8", status: "Pending", comment: "Personal work." },
+  { id: 3, type: "Sick Leave", date: "July 25 - 26", status: "Approved", comment: "Viral fever and doctor advice." },
+  { id: 4, type: "Casual Leave", date: "August 8", status: "Pending", comment: "Bank paperwork." },
+  { id: 5, type: "Earned Leave", date: "July 10 - 14", status: "Approved", comment: "Annual vacation." },
+  { id: 6, type: "Sick Leave", date: "July 25 - 26", status: "Approved", comment: "Dental procedure." },
+  { id: 7, type: "Earned Leave", date: "July 10 - 14", status: "Approved", comment: "Outstation travel." },
+];
+
+const LEADERBOARD_MEMBERS = [
+  { rank: 1, name: "Kuhu Sharma", location: "Rajouri Garden", xp: "140 XP", avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face" },
+  { rank: 2, name: "Ankur Sharma", isYou: true, location: "South Extension", xp: "140 XP", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" },
+  { rank: 3, name: "Arjun Mehta", location: "Rajouri Garden", xp: "140 XP", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face" },
+  { rank: 4, name: "Priya Singh", location: "Gurugram", xp: "135 XP", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&crop=face" },
+  { rank: 5, name: "Rohan Verma", location: "Noida", xp: "120 XP", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face" },
+];
+
+// Attendance Days Data
+const ATTENDANCE_DAYS = [
+  { day: "01", week: "Fri", status: "WO" },
+  { day: "01", week: "Fri", status: "WO" },
+  { day: "01", week: "Fri", status: "WO" },
+  { day: "01", week: "Fri", status: "X" },
+  { day: "01", week: "Fri", status: "P" },
+  { day: "01", week: "Fri", status: "H" },
+  { day: "01", week: "Fri", status: "P" },
+  { day: "01", week: "Fri", status: "WO" },
+  { day: "01", week: "Fri", status: "WO" },
+  { day: "01", week: "Fri", status: "1/2" },
+  { day: "01", week: "Fri", status: "P" },
+  { day: "01", week: "Fri", status: "P" },
+  { day: "01", week: "Fri", status: "P" },
+  { day: "01", week: "Fri", status: "X" },
+  { day: "01", week: "Fri", status: "WO" },
+  { day: "01", week: "Fri", status: "WO" },
+  { day: "01", week: "Fri", status: "P" },
+  { day: "01", week: "Fri", status: "H" },
+  { day: "01", week: "Fri", status: "P" },
+  { day: "01", week: "Fri", status: "1/2" },
+  { day: "01", week: "Fri", status: "X" },
+  { day: "01", week: "Fri", status: "WO" },
+  { day: "01", week: "Fri", status: "WO" },
+  { day: "01", week: "Fri", status: "P" },
+  { day: "01", week: "Fri", status: "P" },
+  { day: "01", week: "Fri", status: "1/2" },
+  { day: "01", week: "Fri", status: "X" },
+  { day: "01", week: "Fri", status: "P" },
+  { day: "01", week: "Fri", status: "P" },
+];
+
+const INITIAL_TRIPS = [
+  { id: 1, destination: "Bangalore, India", date: "11-02-2026 - 11-02-2026", status: "Rejected", advance: "₹21,800 Approved", expenses: "Expenses" },
+  { id: 2, destination: "Bangalore, India", date: "11-02-2026 - 11-02-2026", status: "Approved", advance: "₹21,800 Approved", expenses: "Expenses" },
+  { id: 3, destination: "Bangalore, India", date: "11-02-2026 - 11-02-2026", status: "Rejected", advance: "₹21,800 Approved", expenses: "Expenses" },
+  { id: 4, destination: "Bangalore, India", date: "11-02-2026 - 11-02-2026", status: "Approved", advance: "₹21,800 Approved", expenses: "Expenses" },
+];
+
+export default function HrmsPage() {
+  const [selectedMonth, setSelectedMonth] = useState("April");
+  const [selectedYear, setSelectedYear] = useState("2025");
+  const [activeTab, setActiveTab] = useState("Summary");
+
+  // Expenses & Leaves State
+  const [expenses, setExpenses] = useState(INITIAL_EXPENSES);
+  const [leaves, setLeaves] = useState(INITIAL_LEAVES);
+  const [trips, setTrips] = useState(INITIAL_TRIPS);
+  const [searchTrip, setSearchTrip] = useState("");
+
+  // Modals state
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [noticeModalOpen, setNoticeModalOpen] = useState(false);
+  const [shiftModalOpen, setShiftModalOpen] = useState(false);
+  const [leaderboardModalOpen, setLeaderboardModalOpen] = useState(false);
+  const [regularizeModalOpen, setRegularizeModalOpen] = useState(false);
+  const [timesheetDetailsOpen, setTimesheetDetailsOpen] = useState(false);
+  const [addExpenseOpen, setAddExpenseOpen] = useState(false);
+  const [viewExpense, setViewExpense] = useState(null);
+  const [applyLeaveOpen, setApplyLeaveOpen] = useState(false);
+  const [leaveCommentView, setLeaveCommentView] = useState(null);
+  const [addTripOpen, setAddTripOpen] = useState(false);
+  const [addManualRowOpen, setAddManualRowOpen] = useState(false);
+
+  // Form Fields
+  const [issueText, setIssueText] = useState("");
+  const [newShift, setNewShift] = useState("Morning Shift (8:00 AM - 5:00 PM)");
+  const [regularizeReason, setRegularizeReason] = useState("");
+  const [expenseForm, setExpenseForm] = useState({ location: "", amount: "", category: "Travel" });
+  const [leaveForm, setLeaveForm] = useState({ type: "Casual Leave", startDate: "", endDate: "", comment: "" });
+  const [tripForm, setTripForm] = useState({ destination: "", startDate: "", endDate: "", advance: "21800" });
+
+  // Handle Submissions
+  const handleReportIssue = (e) => {
+    e.preventDefault();
+    if (!issueText.trim()) return;
+    toast.success("Issue reported successfully. HR team will review shortly.");
+    setIssueText("");
+    setReportModalOpen(false);
+  };
+
+  const handleChangeShift = (e) => {
+    e.preventDefault();
+    toast.success(`Shift change request submitted for ${newShift}`);
+    setShiftModalOpen(false);
+  };
+
+  const handleRegularizeSubmit = (e) => {
+    e.preventDefault();
+    if (!regularizeReason.trim()) return;
+    toast.success("Timesheet regularization request submitted.");
+    setRegularizeReason("");
+    setRegularizeModalOpen(false);
+  };
+
+  const handleAddExpense = (e) => {
+    e.preventDefault();
+    if (!expenseForm.location || !expenseForm.amount) return;
+    const newEntry = {
+      id: Date.now(),
+      location: expenseForm.location,
+      date: new Date().toLocaleDateString("en-GB").replace(/\//g, "-"),
+      amount: `₹${expenseForm.amount}`,
+      category: expenseForm.category,
+      status: "Pending",
+    };
+    setExpenses([newEntry, ...expenses]);
+    toast.success("Expense added successfully!");
+    setExpenseForm({ location: "", amount: "", category: "Travel" });
+    setAddExpenseOpen(false);
+  };
+
+  const handleDeleteExpense = (id) => {
+    setExpenses(expenses.filter((exp) => exp.id !== id));
+    toast.info("Expense removed.");
+  };
+
+  const handleApplyLeave = (e) => {
+    e.preventDefault();
+    if (!leaveForm.startDate) return;
+    const dateStr = leaveForm.endDate && leaveForm.endDate !== leaveForm.startDate
+      ? `${leaveForm.startDate} - ${leaveForm.endDate}`
+      : leaveForm.startDate;
+    const newLeave = {
+      id: Date.now(),
+      type: leaveForm.type,
+      date: dateStr,
+      status: "Pending",
+      comment: leaveForm.comment || "Requested leave.",
+    };
+    setLeaves([newLeave, ...leaves]);
+    toast.success("Leave application submitted successfully!");
+    setLeaveForm({ type: "Casual Leave", startDate: "", endDate: "", comment: "" });
+    setApplyLeaveOpen(false);
+  };
+
+  const handleAddTrip = (e) => {
+    e.preventDefault();
+    if (!tripForm.destination || !tripForm.startDate) return;
+    const newTripItem = {
+      id: Date.now(),
+      destination: tripForm.destination,
+      date: `${tripForm.startDate} - ${tripForm.endDate || tripForm.startDate}`,
+      status: "Approved",
+      advance: `₹${tripForm.advance} Approved`,
+      expenses: "Expenses",
+    };
+    setTrips([newTripItem, ...trips]);
+    toast.success("Trip added successfully!");
+    setTripForm({ destination: "", startDate: "", endDate: "", advance: "21800" });
+    setAddTripOpen(false);
+  };
+
+  const handleDeleteTrip = (id) => {
+    setTrips(trips.filter((t) => t.id !== id));
+    toast.info("Trip record removed.");
+  };
+
+  return (
+    <div className="flex flex-col flex-1 min-h-screen bg-[#F7F8FA] text-[#111827] font-sans">
+      {/* ── Top Bar Header ─────────────────────────────────────────────────── */}
+      <TopBar page="HRMS" />
+
+      {/* ── Page Content Container ───────────────────────────────────────── */}
+      <div className="p-4 sm:p-6 flex flex-col gap-5 max-w-[1550px] w-full mx-auto">
+        
+        {/* ── Section Header: Breadcrumb & Title & Selectors ───────────── */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-2 text-xs font-semibold text-[#6B7280]">
+              <span className="hover:text-[#7A0A17] cursor-pointer transition-colors">Dashboard</span>
+              <ChevronRight size={13} className="text-[#9CA3AF]" />
+              <span className="hover:text-[#7A0A17] cursor-pointer transition-colors">My Workspace</span>
+              <ChevronRight size={13} className="text-[#9CA3AF]" />
+              <span className="text-[#111827] font-bold">HRMS</span>
+            </div>
+
+            {/* Title */}
+            <div className="mt-1">
+              <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#E8395B]">
+                YOU ARE VIEWING
+              </p>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
+                {selectedMonth} {selectedYear}
+              </h1>
+            </div>
+          </div>
+
+          {/* Controls Right */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Month Dropdown */}
+            <div className="relative">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="appearance-none bg-white border border-black/12 hover:border-[#7A0A17]/40 rounded-xl px-4 py-2 pr-9 text-sm font-semibold text-[#374151] shadow-sm cursor-pointer outline-none transition-all"
+              >
+                {MONTH_OPTIONS.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+              <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" />
+            </div>
+
+            {/* Year Dropdown */}
+            <div className="relative">
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="appearance-none bg-white border border-black/12 hover:border-[#7A0A17]/40 rounded-xl px-4 py-2 pr-9 text-sm font-semibold text-[#374151] shadow-sm cursor-pointer outline-none transition-all"
+              >
+                {YEAR_OPTIONS.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+              <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" />
+            </div>
+
+            {/* Report an Issue Button */}
+            <button
+              type="button"
+              onClick={() => setReportModalOpen(true)}
+              className="bg-[#7A0A17] hover:bg-[#600712] text-white text-sm font-bold px-4 py-2 rounded-xl shadow-sm hover:shadow transition-all duration-150 active:scale-[0.98]"
+            >
+              Report an issue
+            </button>
+          </div>
+        </div>
+
+        {/* ── Tabs Navigation Bar ────────────────────────────────────────── */}
+        <div className="border-b border-black/10 overflow-x-auto scrollbar-none">
+          <nav className="flex items-center gap-6 sm:gap-8 min-w-max">
+            {HRMS_TABS.map((tab) => {
+              const isActive = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`pb-3 text-sm font-bold transition-all relative whitespace-nowrap ${
+                    isActive
+                      ? "text-[#7A0A17]"
+                      : "text-[#6B7280] hover:text-[#111827]"
+                  }`}
+                >
+                  {tab}
+                  {isActive && (
+                    <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#7A0A17] rounded-t-full" />
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* ── Tab View Content ──────────────────────────────────────────── */}
+        
+        {/* 1. SUMMARY TAB */}
+        {activeTab === "Summary" && (
+          <>
+            {/* Top Row Quick Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-2xl p-4 flex flex-col justify-between shadow-sm relative group hover:border-[#7A0A17]/30 transition-all">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <span className="size-10 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0 shadow-sm">
+                      <Wallet size={19} />
+                    </span>
+                    <div>
+                      <p className="text-xs font-bold text-[#374151]">This Month's Incentive</p>
+                      <p className="text-2xl font-black text-[#111827] leading-tight mt-0.5">₹38,000</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-[#6B7280] mt-2 font-medium">
+                    earned at <span className="text-[#16A34A] font-bold">118%</span> of target
+                  </p>
+                </div>
+                <div className="flex items-center justify-between mt-4 pt-2">
+                  <div className="inline-flex items-center gap-1.5 bg-white border border-black/8 rounded-lg px-2.5 py-1 text-xs font-bold text-[#111827] shadow-2xs">
+                    <span>Rank</span>
+                    <span className="text-[#7A0A17] text-sm">2</span>
+                    <span>🏆</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("Incentives")}
+                    className="size-8 rounded-xl bg-white border border-black/10 hover:bg-[#7A0A17] hover:text-white text-[#4B5563] grid place-items-center transition-all shadow-2xs"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-2xl p-4 flex flex-col justify-between shadow-sm relative group hover:border-[#7A0A17]/30 transition-all">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <span className="size-10 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0 shadow-sm">
+                      <AlertTriangle size={19} />
+                    </span>
+                    <div>
+                      <p className="text-xs font-bold text-[#374151]">Warning Issued</p>
+                      <p className="text-xs text-[#6B7280] leading-snug mt-1 font-medium max-w-[180px]">
+                        Late arrivals flagged twice this month.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setNoticeModalOpen(true)}
+                    className="border border-[#7A0A17] text-[#7A0A17] hover:bg-[#7A0A17] hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs"
+                  >
+                    View Notice
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNoticeModalOpen(true)}
+                    className="size-8 rounded-xl bg-white border border-black/10 hover:bg-[#7A0A17] hover:text-white text-[#4B5563] grid place-items-center transition-all shadow-2xs"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-[#F4FBF7] border border-[#16A34A]/20 rounded-2xl p-4 flex flex-col justify-between shadow-sm relative group hover:border-[#16A34A]/40 transition-all">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <span className="size-10 rounded-full bg-[#15803D] text-white grid place-items-center shrink-0 shadow-sm">
+                      <Clock size={19} />
+                    </span>
+                    <div>
+                      <p className="text-xs font-bold text-[#374151]">My Shift</p>
+                      <p className="text-xs text-[#6B7280] font-medium">General Shift</p>
+                      <p className="text-sm font-black text-[#111827] mt-0.5">9:00 AM - 6:00 PM</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShiftModalOpen(true)}
+                    className="border border-[#15803D] text-[#15803D] hover:bg-[#15803D] hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs bg-white"
+                  >
+                    Change Shift
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShiftModalOpen(true)}
+                    className="size-8 rounded-xl bg-white border border-black/10 hover:bg-[#15803D] hover:text-white text-[#4B5563] grid place-items-center transition-all shadow-2xs"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-white border border-black/10 rounded-2xl p-4 flex flex-col justify-between shadow-sm hover:border-black/20 transition-all">
+                <div>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="size-8 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
+                        <Trophy size={15} />
+                      </span>
+                      <p className="text-xs font-bold text-[#111827]">This Month Leaderboard</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setLeaderboardModalOpen(true)}
+                      className="border border-black/15 hover:border-[#7A0A17] text-[#4B5563] hover:text-[#7A0A17] px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all"
+                    >
+                      View All
+                    </button>
+                  </div>
+                  <div className="space-y-1.5">
+                    {LEADERBOARD_MEMBERS.slice(0, 3).map((item) => (
+                      <div
+                        key={item.rank}
+                        className={`flex items-center justify-between px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                          item.isYou ? "bg-[#FCF5F6] border border-[#7A0A17]/20" : "bg-[#FAFAFB]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-bold text-[#6B7280] text-[11px] w-3">{item.rank}.</span>
+                          <span className="text-[#111827] truncate font-bold">
+                            {item.name} {item.isYou && <span className="text-[#7A0A17] font-extrabold">(You)</span>}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-[10px] text-[#6B7280] hidden xl:inline">{item.location}</span>
+                          <span className="font-extrabold text-[#111827] text-[11px]">{item.xp}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 2: Today's Timesheet */}
+            <div className="bg-white border border-black/10 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
+              <div className="flex items-center gap-3.5">
+                <span className="size-11 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0 shadow-sm">
+                  <Clock size={20} />
+                </span>
+                <div>
+                  <h2 className="text-base font-extrabold text-[#111827]">Today's Timesheet</h2>
+                  <p className="text-xs font-semibold text-[#6B7280]">Aug 7, 2026</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-6 sm:gap-10 overflow-x-auto py-1">
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">LOGIN</p>
+                  <p className="text-sm font-extrabold text-[#16A34A] mt-0.5">09:02 AM</p>
+                </div>
+                <div className="h-7 w-px bg-black/10 shrink-0" />
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">LOGOUT</p>
+                  <p className="text-sm font-extrabold text-[#DC2626] mt-0.5">06:10 PM</p>
+                </div>
+                <div className="h-7 w-px bg-black/10 shrink-0" />
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">SYSTEM</p>
+                  <p className="text-sm font-extrabold text-[#111827] mt-0.5">8.50h</p>
+                </div>
+                <div className="h-7 w-px bg-black/10 shrink-0" />
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">MANUAL</p>
+                  <p className="text-sm font-extrabold text-[#111827] mt-0.5">1.00h</p>
+                </div>
+                <div className="h-7 w-px bg-black/10 shrink-0" />
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">TOTAL</p>
+                  <p className="text-sm font-extrabold text-[#3B82F6] mt-0.5">9.50h</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setRegularizeModalOpen(true)}
+                  className="border border-[#7A0A17] text-[#7A0A17] hover:bg-[#FCF5F6] px-4 py-2 rounded-xl text-xs font-extrabold transition-all shadow-2xs"
+                >
+                  Regularize
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTimesheetDetailsOpen(true)}
+                  className="bg-[#7A0A17] hover:bg-[#600712] text-white px-4 py-2 rounded-xl text-xs font-extrabold transition-all shadow-2xs"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+
+            {/* Row 3: Main Dashboard Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+              <div className="flex flex-col gap-5">
+                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
+                      <Target size={17} />
+                    </span>
+                    <h3 className="text-base font-extrabold text-[#111827]">KPI Scorecard</h3>
+                  </div>
+                  <div className="divide-y divide-black/6 text-xs">
+                    <div className="py-2.5 flex items-center justify-between">
+                      <span className="text-[#4B5563] font-semibold">Registration Value</span>
+                      <span className="font-extrabold text-[#111827] text-sm">19.5 lakh</span>
+                    </div>
+                    <div className="py-2.5 flex items-center justify-between">
+                      <span className="text-[#4B5563] font-semibold">Qualifying meetings</span>
+                      <span className="font-extrabold text-[#111827] text-sm">46/30</span>
+                    </div>
+                    <div className="py-2.5 flex items-center justify-between">
+                      <span className="text-[#4B5563] font-semibold">Google reviews</span>
+                      <span className="font-extrabold text-[#111827] text-sm">7</span>
+                    </div>
+                    <div className="py-2.5 flex items-center justify-between">
+                      <span className="text-[#4B5563] font-semibold">Testimonial videos</span>
+                      <span className="font-extrabold text-[#111827] text-sm">3/5</span>
+                    </div>
+                    <div className="py-2.5 flex items-center justify-between">
+                      <span className="text-[#4B5563] font-semibold">Wedding photo uploads</span>
+                      <span className="font-extrabold text-[#111827] text-sm">5</span>
+                    </div>
+                    <div className="py-2.5 flex items-center justify-between">
+                      <span className="text-[#4B5563] font-semibold">Negative reviews</span>
+                      <span className="font-extrabold text-[#111827] text-sm">1</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
+                        <Receipt size={17} />
+                      </span>
+                      <h3 className="text-base font-extrabold text-[#111827]">My Expenses</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAddExpenseOpen(true)}
+                      className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-all shadow-2xs flex items-center gap-1"
+                    >
+                      <Plus size={13} /> Add Expense
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {expenses.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6 hover:border-black/15 transition-all"
+                      >
+                        <div>
+                          <p className="text-xs font-extrabold text-[#111827]">{item.location}</p>
+                          <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">{item.date}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setViewExpense(item)}
+                            className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center transition-colors"
+                          >
+                            <Eye size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setViewExpense(item); toast.info("Edit mode enabled"); }}
+                            className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center transition-colors"
+                          >
+                            <Edit size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteExpense(item.id)}
+                            className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center transition-colors"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-5">
+                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
+                      <Activity size={17} />
+                    </span>
+                    <h3 className="text-base font-extrabold text-[#111827]">Recent Activity</h3>
+                  </div>
+                  <div className="space-y-4 relative before:absolute before:left-4 before:top-3 before:bottom-3 before:w-px before:bg-black/8">
+                    <div className="flex items-start justify-between gap-3 relative pl-8">
+                      <span className="absolute left-1 top-0.5 size-6 rounded-full bg-[#DCFCE7] text-[#16A34A] grid place-items-center ring-4 ring-white">
+                        <CheckCircle2 size={14} />
+                      </span>
+                      <div>
+                        <p className="text-xs font-extrabold text-[#111827]">Check-in</p>
+                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">Today at 9:00 AM</p>
+                      </div>
+                      <span className="bg-[#DCFCE7] text-[#15803D] text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-[#16A34A]/20">
+                        On Time
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3 relative pl-8">
+                      <span className="absolute left-1 top-0.5 size-6 rounded-full bg-[#DCFCE7] text-[#16A34A] grid place-items-center ring-4 ring-white">
+                        <FileCheck size={14} />
+                      </span>
+                      <div>
+                        <p className="text-xs font-extrabold text-[#111827]">Leave Approved</p>
+                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">August 3</p>
+                      </div>
+                      <span className="bg-[#DCFCE7] text-[#15803D] text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-[#16A34A]/20">
+                        Approved
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3 relative pl-8">
+                      <span className="absolute left-1 top-0.5 size-6 rounded-full bg-[#E0F2FE] text-[#0284C7] grid place-items-center ring-4 ring-white">
+                        <ShieldCheck size={14} />
+                      </span>
+                      <div>
+                        <p className="text-xs font-extrabold text-[#111827]">Attendance Regularized</p>
+                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">July 30</p>
+                      </div>
+                      <span className="bg-[#E0F2FE] text-[#0284C7] text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-[#0284C7]/20">
+                        Date
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3 relative pl-8">
+                      <span className="absolute left-1 top-0.5 size-6 rounded-full bg-[#FFEDD5] text-[#EA580C] grid place-items-center ring-4 ring-white">
+                        <Clock size={14} />
+                      </span>
+                      <div>
+                        <p className="text-xs font-extrabold text-[#111827]">Check-in</p>
+                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">July 29 at 9:10 AM</p>
+                      </div>
+                      <span className="bg-[#FFEDD5] text-[#C2410C] text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-[#EA580C]/20">
+                        Late
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
+                      <Send size={17} />
+                    </span>
+                    <h3 className="text-base font-extrabold text-[#111827]">Your Request</h3>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6">
+                      <div>
+                        <p className="text-xs font-extrabold text-[#111827]">Late Arrival on July 30</p>
+                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">Submitted on July 30 at 6:30 PM</p>
+                      </div>
+                      <span className="bg-[#FFEDD5] text-[#C2410C] text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#EA580C]/20">
+                        Pending
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6">
+                      <div>
+                        <p className="text-xs font-extrabold text-[#111827]">Early Departure on July 25</p>
+                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">Submitted on July 25 at 5:45 PM</p>
+                      </div>
+                      <span className="bg-[#DCFCE7] text-[#15803D] text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#16A34A]/20">
+                        Approved
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
+                      <Calendar size={17} />
+                    </span>
+                    <h3 className="text-base font-extrabold text-[#111827]">My Leave Application</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setApplyLeaveOpen(true)}
+                    className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-all shadow-2xs"
+                  >
+                    Apply Leave
+                  </button>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-black/8 mb-3 text-xs font-bold">
+                  <span className="text-[#374151]">Leave Balance</span>
+                  <span className="text-[#3B82F6]">1 day available</span>
+                </div>
+                <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+                  {leaves.map((leave) => (
+                    <div
+                      key={leave.id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6 hover:border-black/15 transition-all"
+                    >
+                      <div>
+                        <p className="text-xs font-extrabold text-[#111827]">{leave.type}</p>
+                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">{leave.date}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {leave.comment && (
+                          <button
+                            type="button"
+                            onClick={() => setLeaveCommentView(leave)}
+                            className="text-[#F59E0B] hover:text-[#D97706] p-1 rounded transition-colors"
+                          >
+                            <MessageSquare size={16} />
+                          </button>
+                        )}
+                        <span
+                          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                            leave.status === "Approved"
+                              ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                              : "bg-[#FFEDD5] text-[#C2410C] border-[#EA580C]/20"
+                          }`}
+                        >
+                          {leave.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* 2. ATTENDANCE TAB */}
+        {activeTab === "Attendance" && (
+          <div className="flex flex-col gap-6">
+            {/* Top Attendance Records Card */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-extrabold text-[#111827]">Attendance Records</h2>
+                <button
+                  type="button"
+                  onClick={() => setRegularizeModalOpen(true)}
+                  className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-4 py-2 rounded-xl transition-all shadow-2xs"
+                >
+                  Regularize
+                </button>
+              </div>
+
+              {/* User Meta Row */}
+              <div className="flex items-center gap-3 mb-5">
+                <img
+                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face"
+                  alt=""
+                  className="size-10 rounded-full object-cover border border-black/10"
+                />
+                <div>
+                  <h4 className="text-sm font-extrabold text-[#111827]">Ankur Sharma</h4>
+                  <p className="text-xs text-[#6B7280] font-medium">Relationship Manager</p>
+                </div>
+              </div>
+
+              {/* Calendar Grid Matrix */}
+              <div className="overflow-x-auto pb-2 scrollbar-none">
+                <div className="flex items-center gap-2 min-w-max">
+                  {ATTENDANCE_DAYS.map((d, index) => {
+                    return (
+                      <div key={index} className="flex flex-col items-center gap-1.5 w-7 text-center">
+                        <span className="text-[10px] font-bold text-[#9CA3AF]">{d.day}</span>
+                        <span className="text-[10px] font-extrabold text-[#111827]">{d.week}</span>
+
+                        {/* Status Icon */}
+                        {d.status === "P" && (
+                          <span className="size-6 rounded-full bg-[#DCFCE7] text-[#15803D] grid place-items-center text-xs font-bold">
+                            ✓
+                          </span>
+                        )}
+                        {d.status === "X" && (
+                          <span className="size-6 rounded-full bg-[#FEE2E2] text-[#DC2626] grid place-items-center text-xs font-bold">
+                            ✕
+                          </span>
+                        )}
+                        {d.status === "1/2" && (
+                          <span className="size-6 rounded-full bg-[#FEF3C7] text-[#D97706] grid place-items-center text-[10px] font-black">
+                            ½
+                          </span>
+                        )}
+                        {d.status === "H" && (
+                          <span className="size-6 rounded-full bg-[#F3E8FF] text-[#9333EA] grid place-items-center text-[10px] font-black">
+                            H
+                          </span>
+                        )}
+                        {d.status === "WO" && (
+                          <span className="size-6 rounded-full bg-[#475569] text-white grid place-items-center text-[9px] font-bold">
+                            WO
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Total Summary */}
+                  <div className="flex flex-col items-center justify-center pl-4 border-l border-black/10">
+                    <span className="text-[10px] font-extrabold text-[#6B7280] uppercase">Total</span>
+                    <span className="text-sm font-black text-[#111827] mt-2">18.5<span className="text-xs text-[#9CA3AF]">/23</span></span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Legend Footer */}
+              <div className="flex items-center gap-6 mt-6 pt-4 border-t border-black/8 text-xs font-bold flex-wrap">
+                <span className="flex items-center gap-1.5 text-[#15803D]">
+                  <span className="size-4 rounded-full bg-[#DCFCE7] grid place-items-center text-[10px]">✓</span> Present
+                </span>
+                <span className="flex items-center gap-1.5 text-[#DC2626]">
+                  <span className="size-4 rounded-full bg-[#FEE2E2] grid place-items-center text-[10px]">✕</span> Absent
+                </span>
+                <span className="flex items-center gap-1.5 text-[#D97706]">
+                  <span className="size-4 rounded-full bg-[#FEF3C7] grid place-items-center text-[9px]">½</span> Half Day
+                </span>
+                <span className="flex items-center gap-1.5 text-[#9333EA]">
+                  <span className="size-4 rounded-full bg-[#F3E8FF] grid place-items-center text-[9px]">H</span> Holiday
+                </span>
+                <span className="flex items-center gap-1.5 text-[#475569]">
+                  <span className="size-4 rounded-full bg-[#475569] text-white grid place-items-center text-[8px]">WO</span> Weekly Off
+                </span>
+              </div>
+            </div>
+
+            {/* Bottom Attendance Policies Card */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-lg font-extrabold text-[#111827] mb-4">Attendance Policies</h3>
+
+              <div className="space-y-4">
+                {/* Policy 1: Working Hours */}
+                <div className="bg-[#FFF8F7] border border-[#7A0A17]/15 rounded-xl p-4 border-l-4 border-l-[#7A0A17]">
+                  <div className="flex items-center gap-2 mb-2 text-[#7A0A17] font-extrabold text-sm">
+                    <Clock size={16} /> Working Hours
+                  </div>
+                  <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
+                    <li>General Shift: 9:00 AM - 6:00 PM (9 hours)</li>
+                    <li>Lunch Break: 1:00 PM - 2:00 PM (1 hour)</li>
+                    <li>Working Days: Monday - Friday</li>
+                  </ul>
+                </div>
+
+                {/* Policy 2: Leave Policy */}
+                <div className="bg-[#F4FBF7] border border-[#16A34A]/20 rounded-xl p-4 border-l-4 border-l-[#16A34A]">
+                  <div className="flex items-center gap-2 mb-2 text-[#15803D] font-extrabold text-sm">
+                    <Calendar size={16} /> Leave Policy
+                  </div>
+                  <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
+                    <li>Casual Leave: 12 days per annum (non-cumulative)</li>
+                    <li>Sick Leave: 8 days per annum (cumulative up to 30 days)</li>
+                    <li>Earned Leave: 18 days per annum (can carry forward 10 days)</li>
+                    <li>Minimum 2 days notice required for leave applications</li>
+                  </ul>
+                </div>
+
+                {/* Policy 3: Attendance Rules */}
+                <div className="bg-[#F8FAFC] border border-black/10 rounded-xl p-4 border-l-4 border-l-[#6366F1]">
+                  <div className="flex items-center gap-2 mb-2 text-[#4F46E5] font-extrabold text-sm">
+                    <AlertTriangle size={16} /> Attendance Policy
+                  </div>
+                  <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
+                    <li>Minimum 80% attendance required per month</li>
+                    <li>Late arrival after 9:15 AM requires regularization</li>
+                    <li>3 consecutive absences without intimation may result in show-cause notice</li>
+                    <li>Proxy attendance is strictly prohibited</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3. TIMESHEET TAB */}
+        {activeTab === "Timesheet" && (
+          <div className="flex flex-col gap-6">
+            {/* Header User Session Bar */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <img
+                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face"
+                  alt=""
+                  className="size-11 rounded-full object-cover border border-black/10"
+                />
+                <div>
+                  <h3 className="text-base font-extrabold text-[#111827]">Ankur Sharma</h3>
+                  <div className="flex items-center gap-2 text-xs text-[#6B7280] font-medium mt-0.5">
+                    <span>Relationship Manager</span>
+                    <span className="bg-[#FCF5F6] text-[#7A0A17] font-bold text-[10px] px-2 py-0.5 rounded-md border border-[#7A0A17]/20">EMP00116</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-6 sm:gap-8 text-xs font-bold">
+                <div>
+                  <p className="text-[10px] text-[#9CA3AF] uppercase font-bold">Date</p>
+                  <p className="text-sm font-extrabold text-[#111827] mt-0.5">26-08-2026</p>
+                </div>
+                <div className="h-7 w-px bg-black/10" />
+                <div>
+                  <p className="text-[10px] text-[#9CA3AF] uppercase font-bold">Login Time</p>
+                  <p className="text-sm font-extrabold text-[#16A34A] mt-0.5">09:00 AM</p>
+                </div>
+                <div className="h-7 w-px bg-black/10" />
+                <div>
+                  <p className="text-[10px] text-[#9CA3AF] uppercase font-bold">Logout Time</p>
+                  <p className="text-sm font-extrabold text-[#DC2626] mt-0.5">02:00 PM</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRegularizeModalOpen(true)}
+                  className="bg-[#7A0A17] text-white hover:bg-[#600712] px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-2xs ml-2"
+                >
+                  <Edit size={14} /> Edit
+                </button>
+              </div>
+            </div>
+
+            {/* Hourly Work Details Table */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-base font-extrabold text-[#111827] mb-4">Hourly Work Details</h3>
+
+              <div className="overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
+                      <th className="px-4 py-3">Start Time</th>
+                      <th className="px-4 py-3">End Time</th>
+                      <th className="px-4 py-3">Project/Module</th>
+                      <th className="px-4 py-3">Description</th>
+                      <th className="px-4 py-3">By</th>
+                      <th className="px-4 py-3">Hours</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+                    <tr>
+                      <td className="px-4 py-3 font-bold">09:00:00 AM</td>
+                      <td className="px-4 py-3 font-bold">10:00:35 AM</td>
+                      <td className="px-4 py-3">Calendar</td>
+                      <td className="px-4 py-3 text-[#4B5563]">Meetings with clients</td>
+                      <td className="px-4 py-3 text-[#6B7280]">System</td>
+                      <td className="px-4 py-3 font-extrabold text-[#3B82F6]">1.00h</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3 font-bold">10:00:00 AM</td>
+                      <td className="px-4 py-3 font-bold">10:30:00 AM</td>
+                      <td className="px-4 py-3">Dashboard</td>
+                      <td className="px-4 py-3 text-[#4B5563]">Requirement gathering and analysis</td>
+                      <td className="px-4 py-3 text-[#6B7280]">System</td>
+                      <td className="px-4 py-3 font-extrabold text-[#3B82F6]">1.50h</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3 font-bold">10:30:00 AM</td>
+                      <td className="px-4 py-3 font-bold">02:00:00 PM</td>
+                      <td className="px-4 py-3">Communication</td>
+                      <td className="px-4 py-3 text-[#4B5563]">Sending mails and assigning tasks</td>
+                      <td className="px-4 py-3 text-[#6B7280]">System</td>
+                      <td className="px-4 py-3 font-extrabold text-[#3B82F6]">3.50h</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* Subtotal System Hours Bar */}
+                <div className="flex items-center justify-between px-4 py-2.5 bg-[#EFF6FF] text-[#1E40AF] font-extrabold text-xs border-t border-black/6">
+                  <span>Total Hours Calculated by System</span>
+                  <span className="text-sm">6.00h</span>
+                </div>
+              </div>
+
+              {/* Manual Entry Add Controls */}
+              <div className="mt-5 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAddManualRowOpen(true)}
+                  className="border border-[#3B82F6] text-[#3B82F6] hover:bg-[#EFF6FF] px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 self-start transition-all"
+                >
+                  <Plus size={14} /> Add Row (Manual Entry)
+                </button>
+                <p className="text-xs text-[#DC2626] font-semibold">
+                  Note: All manual entries will require regularization or approval.
+                </p>
+              </div>
+
+              {/* Manual Entries Table */}
+              <div className="mt-4 overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
+                      <th className="px-4 py-3">Start Time</th>
+                      <th className="px-4 py-3">End Time</th>
+                      <th className="px-4 py-3">Project/Module</th>
+                      <th className="px-4 py-3">Description</th>
+                      <th className="px-4 py-3">By</th>
+                      <th className="px-4 py-3">Hours</th>
+                      <th className="px-4 py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+                    <tr>
+                      <td className="px-4 py-3 font-bold">03:00 PM</td>
+                      <td className="px-4 py-3 font-bold">06:00 PM</td>
+                      <td className="px-4 py-3">Field Work</td>
+                      <td className="px-4 py-3 text-[#4B5563]">House visit with customer for collection</td>
+                      <td className="px-4 py-3 text-[#6B7280]">Manual</td>
+                      <td className="px-4 py-3 font-extrabold text-[#3B82F6]">3.00h</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <button className="text-[#16A34A] hover:opacity-80"><CheckCircle2 size={16} /></button>
+                          <button className="text-[#DC2626] hover:opacity-80"><X size={16} /></button>
+                          <button className="text-[#0284C7] hover:opacity-80"><Edit size={15} /></button>
+                          <button className="text-[#DC2626] hover:opacity-80"><Trash2 size={15} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* Comment Rejection Bar */}
+                <div className="flex items-center justify-between px-4 py-2 bg-[#FFF1F2] border-t border-black/6 text-xs font-bold">
+                  <span className="text-[#4B5563]">
+                    <span className="text-[#3B82F6]">Comment:</span> We can't give you leave on that particular date.
+                  </span>
+                  <span className="text-[#DC2626] font-extrabold">Regularization Rejected</span>
+                </div>
+
+                {/* Subtotal Manual Hours Bar */}
+                <div className="flex items-center justify-between px-4 py-2.5 bg-[#EFF6FF] text-[#1E40AF] font-extrabold text-xs border-t border-black/6">
+                  <span>Total Hours Calculated by Manual</span>
+                  <span className="text-sm">3.00h</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Work Summary Footer */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <h4 className="text-sm font-extrabold text-[#111827] mb-3">Hourly Work Details</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="border border-black/8 rounded-xl p-3.5 text-center">
+                  <p className="text-[11px] font-bold text-[#6B7280]">Total Working Hours</p>
+                  <p className="text-lg font-black text-[#3B82F6] mt-1">9.00h</p>
+                </div>
+                <div className="border border-black/8 rounded-xl p-3.5 text-center">
+                  <p className="text-[11px] font-bold text-[#6B7280]">Break Hours</p>
+                  <p className="text-lg font-black text-[#F59E0B] mt-1">1.00h</p>
+                </div>
+                <div className="border border-black/8 rounded-xl p-3.5 text-center">
+                  <p className="text-[11px] font-bold text-[#6B7280]">System Calculated</p>
+                  <p className="text-lg font-black text-[#3B82F6] mt-1">6.00h</p>
+                </div>
+                <div className="border border-black/8 rounded-xl p-3.5 text-center">
+                  <p className="text-[11px] font-bold text-[#6B7280]">Manual Calculated</p>
+                  <p className="text-lg font-black text-[#3B82F6] mt-1">3.00h</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 4. SALARY & PAYSLIP TAB */}
+        {activeTab === "Salary & Payslip" && (
+          <div className="flex flex-col gap-6">
+            {/* Header Payroll Selector Bar */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="size-10 rounded-full bg-[#FCF5F6] text-[#7A0A17] grid place-items-center border border-[#7A0A17]/20">
+                  <Receipt size={20} />
+                </span>
+                <div>
+                  <h3 className="text-base font-extrabold text-[#111827]">Ankur Sharma</h3>
+                  <p className="text-xs text-[#6B7280] font-medium">December 2026</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <select className="appearance-none bg-white border border-black/12 rounded-xl px-4 py-2 pr-9 text-xs font-bold text-[#374151] cursor-pointer outline-none">
+                    <option>December 2026 Payroll (12/1/2026 - 12/31/2026)</option>
+                  </select>
+                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280]" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Downloading Payslip PDF...")}
+                  className="size-9 rounded-xl bg-white border border-black/12 hover:bg-[#FAFAFB] text-[#4B5563] grid place-items-center shadow-2xs"
+                  title="Download Payslip"
+                >
+                  <Download size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Top 3 Stat Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-[#6B7280]">Basic Salary</p>
+                  <p className="text-2xl font-black text-[#111827] mt-1">₹75,000.00</p>
+                </div>
+                <span className="size-10 rounded-full bg-[#FEE2E2] text-[#DC2626] grid place-items-center font-bold">
+                  ₹
+                </span>
+              </div>
+
+              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-[#6B7280]">Gross Pay</p>
+                  <p className="text-2xl font-black text-[#111827] mt-1">₹91,295.65</p>
+                </div>
+                <span className="size-10 rounded-full bg-[#DCFCE7] text-[#15803D] grid place-items-center">
+                  <TrendingUp size={20} />
+                </span>
+              </div>
+
+              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-[#6B7280]">Net Salary</p>
+                  <p className="text-2xl font-black text-[#111827] mt-1">₹74,033.15</p>
+                </div>
+                <span className="size-10 rounded-full bg-[#DCFCE7] text-[#15803D] grid place-items-center font-bold">
+                  ₹
+                </span>
+              </div>
+            </div>
+
+            {/* Attendance Summary Bar */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <h4 className="text-xs font-extrabold text-[#111827] mb-3 uppercase tracking-wider">Attendance Summary</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                <div className="border border-black/8 rounded-xl p-2.5 text-center">
+                  <p className="text-lg font-black text-[#111827]">23</p>
+                  <p className="text-[10px] text-[#6B7280] font-bold">Working Days</p>
+                </div>
+                <div className="border border-black/8 rounded-xl p-2.5 text-center">
+                  <p className="text-lg font-black text-[#16A34A]">15</p>
+                  <p className="text-[10px] text-[#6B7280] font-bold">Full Present</p>
+                </div>
+                <div className="border border-black/8 rounded-xl p-2.5 text-center">
+                  <p className="text-lg font-black text-[#D97706]">6.00</p>
+                  <p className="text-[10px] text-[#6B7280] font-bold">Half Days</p>
+                </div>
+                <div className="border border-black/8 rounded-xl p-2.5 text-center">
+                  <p className="text-lg font-black text-[#9333EA]">0</p>
+                  <p className="text-[10px] text-[#6B7280] font-bold">Holidays</p>
+                </div>
+                <div className="border border-black/8 rounded-xl p-2.5 text-center">
+                  <p className="text-lg font-black text-[#3B82F6]">0.00</p>
+                  <p className="text-[10px] text-[#6B7280] font-bold">Paid Leave</p>
+                </div>
+                <div className="border border-black/8 rounded-xl p-2.5 text-center">
+                  <p className="text-lg font-black text-[#6B7280]">0.00</p>
+                  <p className="text-[10px] text-[#6B7280] font-bold">Unpaid Leave</p>
+                </div>
+                <div className="border border-black/8 rounded-xl p-2.5 text-center">
+                  <p className="text-lg font-black text-[#DC2626]">2</p>
+                  <p className="text-[10px] text-[#6B7280] font-bold">Absent</p>
+                </div>
+                <div className="border border-black/8 rounded-xl p-2.5 text-center">
+                  <p className="text-lg font-black text-[#111827]">4.0h</p>
+                  <p className="text-[10px] text-[#6B7280] font-bold">Overtime</p>
+                </div>
+              </div>
+              <p className="text-[10px] text-[#9CA3AF] font-bold mt-3">
+                Present Days: Full Present + Holidays + Paid Leave + (Half Days × 0.5) = 18.00 | LOP Days: 5.00 | Unpaid Leave: 0.00 days
+              </p>
+            </div>
+
+            {/* Earnings & Deductions Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Earnings */}
+              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4 text-[#16A34A] font-extrabold text-sm">
+                  <TrendingUp size={16} /> Earnings
+                </div>
+                <div className="divide-y divide-black/6 text-xs font-semibold">
+                  <div className="py-2.5 flex justify-between">
+                    <span className="text-[#374151]">Basic Salary</span>
+                    <span className="font-bold text-[#16A34A]">₹75,000.00</span>
+                  </div>
+                  <div className="py-2.5 flex justify-between">
+                    <span className="text-[#374151]">Transport Allowance</span>
+                    <span className="font-bold text-[#16A34A]">₹2,000.00</span>
+                  </div>
+                  <div className="py-2.5 flex justify-between">
+                    <span className="text-[#374151]">House Rent Allowance (HRA)</span>
+                    <span className="font-bold text-[#16A34A]">₹30,000.00</span>
+                  </div>
+                  <div className="py-3 flex justify-between text-sm font-black border-t-2 border-black/10">
+                    <span className="text-[#111827]">Total Earnings</span>
+                    <span className="text-[#16A34A]">₹107,000.00</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Deductions */}
+              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4 text-[#DC2626] font-extrabold text-sm">
+                  <AlertTriangle size={16} /> Component Deductions
+                </div>
+                <div className="divide-y divide-black/6 text-xs font-semibold">
+                  <div className="py-2.5 flex justify-between">
+                    <span className="text-[#374151]">Income Tax (TDS)</span>
+                    <span className="font-bold text-[#DC2626]">₹7,500.00</span>
+                  </div>
+                  <div className="py-2.5 flex justify-between">
+                    <span className="text-[#374151]">Professional Tax</span>
+                    <span className="font-bold text-[#DC2626]">₹200.00</span>
+                  </div>
+                  <div className="py-2.5 flex justify-between">
+                    <span className="text-[#374151]">Provident Fund (PF)</span>
+                    <span className="font-bold text-[#DC2626]">₹9,000.00</span>
+                  </div>
+                  <div className="py-2.5 flex justify-between">
+                    <span className="text-[#374151]">Employee State Insurance (ESI)</span>
+                    <span className="font-bold text-[#DC2626]">₹562.50</span>
+                  </div>
+                  <div className="py-3 flex justify-between text-sm font-black border-t-2 border-black/10">
+                    <span className="text-[#111827]">Total Deductions</span>
+                    <span className="text-[#DC2626]">₹17,262.50</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Final Calculation Card */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <h4 className="text-sm font-extrabold text-[#111827] mb-3">Final Calculation</h4>
+              
+              <div className="bg-[#FFF5F5] border border-[#7A0A17]/15 rounded-xl p-3.5 text-[11px] text-[#7A0A17] font-semibold space-y-1 mb-4">
+                <p><strong>Gross Pay Formula:</strong> Total Earnings (Basic Salary + Component Earnings) - LOP Deduction - Unpaid Leave Deduction + Overtime Earnings</p>
+                <p><strong>Net Salary Formula:</strong> Gross Pay - Total Component Deductions</p>
+                <p><strong>LOP Deduction Formula:</strong> (Basic Salary / Total Working Days) × LOP Days</p>
+              </div>
+
+              <div className="divide-y divide-black/6 text-xs font-semibold">
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-[#374151]">Basic Salary</span>
+                  <span>₹75,000.00</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-[#374151]">Component Earnings</span>
+                  <span className="text-[#16A34A]">+ ₹32,000.00</span>
+                </div>
+                <div className="py-2.5 flex justify-between font-bold text-[#111827]">
+                  <span>Total Earnings</span>
+                  <span>₹107,000.00</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-[#374151]">LOP Deduction (5.00 days × ₹3,260.87/day)</span>
+                  <span className="text-[#DC2626]">- ₹16,304.35</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-[#374151]">Unpaid Leave Deduction (0.00 days)</span>
+                  <span className="text-[#DC2626]">- ₹0.00</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-[#374151]">Overtime Amount</span>
+                  <span className="text-[#16A34A]">+ ₹600.00</span>
+                </div>
+                <div className="py-3 flex justify-between text-sm font-black">
+                  <span>Gross Pay</span>
+                  <span className="text-[#111827]">₹91,295.65</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-[#374151]">Component Deductions (Tax, PF etc.)</span>
+                  <span className="text-[#DC2626]">- ₹17,262.50</span>
+                </div>
+                <div className="py-3 flex justify-between text-base font-black bg-[#FCF5F6] p-3 rounded-xl border border-[#7A0A17]/20 text-[#7A0A17]">
+                  <span>Net Salary (Take Home)</span>
+                  <span>₹74,033.15</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Daily Attendance Records */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <h4 className="text-sm font-extrabold text-[#111827] mb-3">Daily Attendance Records</h4>
+              <div className="overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">Clock In</th>
+                      <th className="px-4 py-3">Clock Out</th>
+                      <th className="px-4 py-3">Total Hours</th>
+                      <th className="px-4 py-3">Overtime</th>
+                      <th className="px-4 py-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+                    <tr>
+                      <td className="px-4 py-3">2026-12-01</td>
+                      <td className="px-4 py-3 text-[#16A34A]">09:25</td>
+                      <td className="px-4 py-3 text-[#DC2626]">18:00</td>
+                      <td className="px-4 py-3 font-bold">7.58h</td>
+                      <td className="px-4 py-3 text-[#9CA3AF]">-</td>
+                      <td className="px-4 py-3">
+                        <span className="bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold px-2 py-0.5 rounded-md mr-1">Half Day</span>
+                        <span className="bg-[#FEE2E2] text-[#DC2626] text-[10px] font-bold px-2 py-0.5 rounded-md">Late</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3">2026-12-02</td>
+                      <td className="px-4 py-3 text-[#16A34A]">09:00</td>
+                      <td className="px-4 py-3 text-[#DC2626]">17:20</td>
+                      <td className="px-4 py-3 font-bold">7.33h</td>
+                      <td className="px-4 py-3 text-[#9CA3AF]">-</td>
+                      <td className="px-4 py-3">
+                        <span className="bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold px-2 py-0.5 rounded-md mr-1">Half Day</span>
+                        <span className="bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold px-2 py-0.5 rounded-md">Early</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3">2026-12-03</td>
+                      <td className="px-4 py-3 text-[#16A34A]">09:00</td>
+                      <td className="px-4 py-3 text-[#DC2626]">10:00</td>
+                      <td className="px-4 py-3 font-bold">1.00h</td>
+                      <td className="px-4 py-3 text-[#9CA3AF]">-</td>
+                      <td className="px-4 py-3">
+                        <span className="bg-[#FEE2E2] text-[#DC2626] text-[10px] font-bold px-2 py-0.5 rounded-md mr-1">Absent</span>
+                        <span className="bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold px-2 py-0.5 rounded-md">Early</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3">2026-12-04</td>
+                      <td className="px-4 py-3 text-[#16A34A]">09:00</td>
+                      <td className="px-4 py-3 text-[#DC2626]">18:00</td>
+                      <td className="px-4 py-3 font-bold">8.00h</td>
+                      <td className="px-4 py-3 text-[#9CA3AF]">-</td>
+                      <td className="px-4 py-3">
+                        <span className="bg-[#DCFCE7] text-[#15803D] text-[10px] font-bold px-2 py-0.5 rounded-md">Present</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 5. INCENTIVES TAB */}
+        {activeTab === "Incentives" && (
+          <div className="flex flex-col gap-6">
+            {/* Header Statement Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h2 className="text-xl font-extrabold text-[#111827]">My Incentive Statement</h2>
+              <button
+                type="button"
+                onClick={() => toast.success("Incentive statement report generated!")}
+                className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-4 py-2 rounded-xl shadow-2xs self-start"
+              >
+                + Download statement
+              </button>
+            </div>
+
+            {/* 4 Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+                <p className="text-xs font-bold text-[#6B7280]">1. Registration incentive</p>
+                <p className="text-2xl font-black text-[#111827] mt-1">₹67,924</p>
+                <p className="text-[10px] text-[#9CA3AF] mt-1 font-semibold">5 deals • slab 3-6% • net of GST</p>
+              </div>
+
+              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+                <p className="text-xs font-bold text-[#6B7280]">2. Meetings incentive</p>
+                <p className="text-2xl font-black text-[#111827] mt-1">₹2,100</p>
+                <p className="text-[10px] text-[#9CA3AF] mt-1 font-semibold">42 meetings • ₹50 tier</p>
+              </div>
+
+              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+                <p className="text-xs font-bold text-[#6B7280]">3. Performance bonuses</p>
+                <p className="text-2xl font-black text-[#111827] mt-1">₹1,420</p>
+                <p className="text-[10px] text-[#9CA3AF] mt-1 font-semibold">reviews, videos, photos • net of 1 penalty</p>
+              </div>
+
+              <div className="bg-[#FCF5F6] border border-[#7A0A17]/20 rounded-2xl p-4 shadow-sm">
+                <p className="text-xs font-bold text-[#7A0A17]">Net payable</p>
+                <p className="text-2xl font-black text-[#7A0A17] mt-1">₹71,444</p>
+                <p className="text-[10px] text-[#7A0A17]/80 mt-1 font-bold">paid with July salary</p>
+              </div>
+            </div>
+
+            {/* Section 1: Registration Incentive Amount */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-base font-extrabold text-[#111827] mb-3">1. Incentive on registration amount</h3>
+              
+              {/* 4 Rule Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-xl p-3 text-center">
+                  <p className="text-[10px] text-[#6B7280] font-bold">Above ₹5,00,000</p>
+                  <p className="text-base font-black text-[#7A0A17] mt-0.5">6%</p>
+                </div>
+                <div className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-xl p-3 text-center">
+                  <p className="text-[10px] text-[#6B7280] font-bold">Above ₹5,00,000</p>
+                  <p className="text-base font-black text-[#7A0A17] mt-0.5">6%</p>
+                </div>
+                <div className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-xl p-3 text-center">
+                  <p className="text-[10px] text-[#6B7280] font-bold">Above ₹5,00,000</p>
+                  <p className="text-base font-black text-[#7A0A17] mt-0.5">6%</p>
+                </div>
+                <div className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-xl p-3 text-center">
+                  <p className="text-[10px] text-[#6B7280] font-bold">Above ₹5,00,000</p>
+                  <p className="text-base font-black text-[#7A0A17] mt-0.5">6%</p>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
+                      <th className="px-4 py-3">Client Name</th>
+                      <th className="px-4 py-3">Registration</th>
+                      <th className="px-4 py-3">Net of GST</th>
+                      <th className="px-4 py-3">Slab</th>
+                      <th className="px-4 py-3">Incentive</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+                    <tr>
+                      <td className="px-4 py-2.5 font-bold">Aditi & Rohan</td>
+                      <td className="px-4 py-2.5">₹85,000</td>
+                      <td className="px-4 py-2.5 text-[#6B7280]">₹72,034</td>
+                      <td className="px-4 py-2.5 text-[#7A0A17] font-bold">3%</td>
+                      <td className="px-4 py-2.5 font-bold">₹2,161</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-bold">Priya & karan</td>
+                      <td className="px-4 py-2.5">₹85,000</td>
+                      <td className="px-4 py-2.5 text-[#6B7280]">₹72,034</td>
+                      <td className="px-4 py-2.5 text-[#7A0A17] font-bold">3%</td>
+                      <td className="px-4 py-2.5 font-bold">₹2,161</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-bold">Sneha & Arjun</td>
+                      <td className="px-4 py-2.5">₹85,000</td>
+                      <td className="px-4 py-2.5 text-[#6B7280]">₹72,034</td>
+                      <td className="px-4 py-2.5 text-[#7A0A17] font-bold">3%</td>
+                      <td className="px-4 py-2.5 font-bold">₹2,161</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-bold">Meera & Arjun</td>
+                      <td className="px-4 py-2.5">₹85,000</td>
+                      <td className="px-4 py-2.5 text-[#6B7280]">₹72,034</td>
+                      <td className="px-4 py-2.5 text-[#7A0A17] font-bold">3%</td>
+                      <td className="px-4 py-2.5 font-bold">₹2,161</td>
+                    </tr>
+                    <tr className="bg-[#FAFAFB] font-extrabold">
+                      <td className="px-4 py-3" colSpan={4}>Subtotal</td>
+                      <td className="px-4 py-3 text-[#7A0A17]">₹67,924</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Section 2: Meetings Incentive */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-base font-extrabold text-[#111827]">2. Meetings incentive (monthly)</h3>
+              <p className="text-2xl font-black text-[#111827] mt-1">42 <span className="text-xs text-[#6B7280] font-normal">qualifying meetings</span></p>
+
+              {/* Progress Bar & Note */}
+              <div className="mt-3 max-w-xl">
+                <div className="h-3 w-full bg-black/8 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#7A0A17] w-[80%]" />
+                </div>
+                <div className="flex justify-between text-[10px] font-bold text-[#6B7280] mt-1">
+                  <span>30 - ₹50 tier</span>
+                  <span>50 - ₹100 tier</span>
+                </div>
+                <div className="bg-[#FFF3E4] border border-[#F59E0B]/30 rounded-xl p-2.5 mt-3 text-xs text-[#B45309] font-bold">
+                  8 more meetings unlocks the ₹100 tier - ₹4,200 for the month.
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="mt-4 overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
+                      <th className="px-4 py-3">Item</th>
+                      <th className="px-4 py-3">Count</th>
+                      <th className="px-4 py-3">Rate</th>
+                      <th className="px-4 py-3">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+                    <tr>
+                      <td className="px-4 py-2.5 font-bold">&gt;30 meetings</td>
+                      <td className="px-4 py-2.5">6</td>
+                      <td className="px-4 py-2.5">₹70</td>
+                      <td className="px-4 py-2.5 font-bold">₹2,100</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-bold">&gt;50 meetings</td>
+                      <td className="px-4 py-2.5">-</td>
+                      <td className="px-4 py-2.5">₹100</td>
+                      <td className="px-4 py-2.5 text-[#9CA3AF]">-</td>
+                    </tr>
+                    <tr className="bg-[#FAFAFB] font-extrabold">
+                      <td className="px-4 py-3" colSpan={3}>Subtotal</td>
+                      <td className="px-4 py-3 text-[#7A0A17]">₹2,100</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Section 3: Performance Incentives */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-base font-extrabold text-[#111827] mb-3">3. Additional performance incentives</h3>
+              <div className="overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
+                      <th className="px-4 py-3">Item</th>
+                      <th className="px-4 py-3">Rule</th>
+                      <th className="px-4 py-3">Count</th>
+                      <th className="px-4 py-3">Rate</th>
+                      <th className="px-4 py-3">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+                    <tr>
+                      <td className="px-4 py-2.5 font-bold">Google Reviews</td>
+                      <td className="px-4 py-2.5 text-[#6B7280]">&gt;5 - ₹70 each</td>
+                      <td className="px-4 py-2.5">6</td>
+                      <td className="px-4 py-2.5">₹70</td>
+                      <td className="px-4 py-2.5 font-bold">₹420</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-bold">Testimonial videos</td>
+                      <td className="px-4 py-2.5 text-[#6B7280]">&gt;5 - ₹70 each</td>
+                      <td className="px-4 py-2.5">6</td>
+                      <td className="px-4 py-2.5">₹150</td>
+                      <td className="px-4 py-2.5 font-bold">₹900</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-bold">Wedding photos published</td>
+                      <td className="px-4 py-2.5 text-[#6B7280]">₹50 per case</td>
+                      <td className="px-4 py-2.5">4</td>
+                      <td className="px-4 py-2.5">₹50</td>
+                      <td className="px-4 py-2.5 font-bold">₹200</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2.5 font-bold">Negative review</td>
+                      <td className="px-4 py-2.5 text-[#6B7280]">-₹100 penalty</td>
+                      <td className="px-4 py-2.5">1</td>
+                      <td className="px-4 py-2.5 text-[#DC2626]">-₹100</td>
+                      <td className="px-4 py-2.5 font-bold text-[#DC2626]">-₹100</td>
+                    </tr>
+                    <tr className="bg-[#FAFAFB] font-extrabold">
+                      <td className="px-4 py-3" colSpan={4}>Subtotal</td>
+                      <td className="px-4 py-3 text-[#7A0A17]">₹1,420</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Footer Summary Banner */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-bold">
+              <p className="text-[#6B7280] max-w-2xl">
+                Registration slabs are applied to values net of applicable meeting and bonus rewards are flat. All figures are indicative and settle with the July payroll cycle.
+              </p>
+              <div className="flex items-center gap-4 shrink-0 text-sm">
+                <span>Gross incentive: <strong className="text-[#111827]">₹71,444</strong></span>
+                <span className="text-[#7A0A17] font-black">Net payable (post-GST): ₹71,444</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 6. TRIPS TAB */}
+        {activeTab === "Trips" && (
+          <div className="flex flex-col gap-6">
+            {/* Search & Action Toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-2 flex-1 max-w-md">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={searchTrip}
+                    onChange={(e) => setSearchTrip(e.target.value)}
+                    placeholder="Search..."
+                    className="w-full bg-white border border-black/12 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#7A0A17]"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-2xs flex items-center gap-1"
+                >
+                  <Search size={14} /> Search
+                </button>
+                <button
+                  type="button"
+                  className="bg-white border border-black/12 hover:bg-[#FAFAFB] text-[#374151] text-xs font-bold px-3.5 py-2 rounded-xl shadow-2xs flex items-center gap-1.5"
+                >
+                  <Filter size={14} /> Filter
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAddTripOpen(true)}
+                className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-4 py-2 rounded-xl shadow-2xs self-start sm:self-auto"
+              >
+                + Add Trip
+              </button>
+            </div>
+
+            {/* Trips Data Table */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <div className="overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
+                      <th className="px-4 py-3">#</th>
+                      <th className="px-4 py-3">Destination</th>
+                      <th className="px-4 py-3">Start Date - End Date</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Advance</th>
+                      <th className="px-4 py-3">Expenses</th>
+                      <th className="px-4 py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+                    {trips
+                      .filter((t) => t.destination.toLowerCase().includes(searchTrip.toLowerCase()))
+                      .map((t, idx) => (
+                        <tr key={t.id} className="hover:bg-[#FAFAFB] transition-colors">
+                          <td className="px-4 py-3 font-bold text-[#6B7280]">{idx + 1}</td>
+                          <td className="px-4 py-3 font-bold">{t.destination}</td>
+                          <td className="px-4 py-3 text-[#6B7280]">{t.date}</td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                                t.status === "Approved"
+                                  ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                                  : "bg-[#E0F2FE] text-[#0284C7] border-[#0284C7]/20"
+                              }`}
+                            >
+                              {t.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="inline-flex flex-col">
+                              <span className="font-extrabold text-[#111827]">{t.advance.split(" ")[0]}</span>
+                              <span className="bg-[#FEF3C7] text-[#D97706] text-[9px] font-bold px-1.5 py-0.2 rounded w-max mt-0.5">Approved</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <button
+                              type="button"
+                              onClick={() => toast.info(`Viewing expenses for ${t.destination}`)}
+                              className="bg-[#E0F2FE] hover:bg-[#BAE6FD] text-[#0284C7] px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 border border-[#0284C7]/20"
+                            >
+                              <FileText size={13} /> Expenses
+                            </button>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => toast.info(`Viewing Trip #${idx + 1}`)}
+                                className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center"
+                              >
+                                <Eye size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => toast.info(`Editing Trip #${idx + 1}`)}
+                                className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center"
+                              >
+                                <Edit size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTrip(t.id)}
+                                className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Placeholder View for remaining tabs */}
+        {!["Summary", "Attendance", "Timesheet", "Salary & Payslip", "Incentives", "Trips"].includes(activeTab) && (
+          <div className="bg-white border border-black/8 rounded-2xl p-12 text-center my-6 shadow-sm">
+            <div className="size-16 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
+              <FileText size={28} />
+            </div>
+            <h3 className="text-xl font-extrabold text-[#111827]">{activeTab} Details</h3>
+            <p className="text-sm text-[#6B7280] mt-1.5 max-w-md mx-auto">
+              Viewing details and records for {activeTab} in {selectedMonth} {selectedYear}. All data synced from company database.
+            </p>
+            <button
+              type="button"
+              onClick={() => setActiveTab("Summary")}
+              className="mt-5 inline-flex items-center gap-2 text-xs font-bold text-[#7A0A17] bg-[#FCF5F6] border border-[#7A0A17]/20 px-4 py-2 rounded-xl hover:bg-[#F9ECEE] transition-colors"
+            >
+              Return to Summary
+            </button>
+          </div>
+        )}
+
+      </div>
+
+      {/* ── MODALS SECTION ────────────────────────────────────────────────── */}
+
+      {/* Add Trip Modal */}
+      {addTripOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button
+              onClick={() => setAddTripOpen(false)}
+              className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]"
+            >
+              <X size={18} />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="size-10 rounded-xl bg-[#7A0A17] text-white grid place-items-center">
+                <Plane size={20} />
+              </span>
+              <div>
+                <h3 className="text-lg font-bold text-[#111]">Add New Trip</h3>
+                <p className="text-xs text-[#6B7280]">Record business trip details</p>
+              </div>
+            </div>
+            <form onSubmit={handleAddTrip} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-[#374151] mb-1">Destination</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Bangalore, India"
+                  value={tripForm.destination}
+                  onChange={(e) => setTripForm({ ...tripForm, destination: e.target.value })}
+                  className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-bold text-[#374151] mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={tripForm.startDate}
+                    onChange={(e) => setTripForm({ ...tripForm, startDate: e.target.value })}
+                    className="w-full border border-black/15 rounded-xl p-2 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#374151] mb-1">End Date</label>
+                  <input
+                    type="date"
+                    value={tripForm.endDate}
+                    onChange={(e) => setTripForm({ ...tripForm, endDate: e.target.value })}
+                    className="w-full border border-black/15 rounded-xl p-2 outline-none"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block font-bold text-[#374151] mb-1">Advance Amount (₹)</label>
+                <input
+                  type="number"
+                  value={tripForm.advance}
+                  onChange={(e) => setTripForm({ ...tripForm, advance: e.target.value })}
+                  className="w-full border border-black/15 rounded-xl p-2.5 outline-none"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setAddTripOpen(false)}
+                  className="px-4 py-2 border border-black/10 rounded-xl font-bold text-[#4B5563]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl font-bold"
+                >
+                  Add Trip
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Manual Entry Modal */}
+      {addManualRowOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button
+              onClick={() => setAddManualRowOpen(false)}
+              className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]"
+            >
+              <X size={18} />
+            </button>
+            <h3 className="text-lg font-bold text-[#111] mb-2">Add Manual Timesheet Entry</h3>
+            <p className="text-xs text-[#6B7280] mb-4">Note: Manual entries require manager approval.</p>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-[#374151] mb-1">Project / Module</label>
+                <input type="text" placeholder="e.g. Field Work" className="w-full border border-black/15 rounded-xl p-2.5 outline-none" />
+              </div>
+              <div>
+                <label className="block font-bold text-[#374151] mb-1">Work Description</label>
+                <input type="text" placeholder="e.g. Client visit..." className="w-full border border-black/15 rounded-xl p-2.5 outline-none" />
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setAddManualRowOpen(false)}
+                className="px-4 py-2 border border-black/10 rounded-xl text-xs font-bold text-[#4B5563]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  toast.success("Manual row submitted for regularization approval!");
+                  setAddManualRowOpen(false);
+                }}
+                className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl text-xs font-bold"
+              >
+                Submit Row
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 1. Report Issue Modal */}
+      {reportModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onClick={() => setReportModalOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
+              <X size={18} />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="size-10 rounded-xl bg-[#FCF5F6] text-[#7A0A17] grid place-items-center">
+                <AlertCircle size={20} />
+              </span>
+              <div>
+                <h3 className="text-lg font-bold text-[#111]">Report an Issue</h3>
+                <p className="text-xs text-[#6B7280]">Send a ticket to HR / IT support</p>
+              </div>
+            </div>
+            <form onSubmit={handleReportIssue} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#374151] mb-1">Issue Description</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={issueText}
+                  onChange={(e) => setIssueText(e.target.value)}
+                  placeholder="Describe your issue or query here..."
+                  className="w-full border border-black/15 rounded-xl p-3 text-xs outline-none focus:border-[#7A0A17]"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setReportModalOpen(false)} className="px-4 py-2 border border-black/10 rounded-xl text-xs font-bold text-[#4B5563]">
+                  Cancel
+                </button>
+                <button type="submit" className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl text-xs font-bold">
+                  Submit Issue
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Notice Modal */}
+      {noticeModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onClick={() => setNoticeModalOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
+              <X size={18} />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="size-10 rounded-xl bg-[#FCF5F6] text-[#7A0A17] grid place-items-center">
+                <AlertTriangle size={20} />
+              </span>
+              <div>
+                <h3 className="text-lg font-bold text-[#111]">Official Warning Notice</h3>
+                <p className="text-xs text-[#6B7280]">Issued on April 12, 2025</p>
+              </div>
+            </div>
+            <div className="bg-[#FCF5F6] border border-[#7A0A17]/20 rounded-xl p-4 text-xs text-[#374151] space-y-2">
+              <p className="font-bold text-[#7A0A17]">Subject: Attendance & Punctuality Advisory</p>
+              <p>Our records show late check-ins logged twice in the current billing month (July 29 & July 30). Please ensure compliance with standard shift hours (9:00 AM - 6:00 PM).</p>
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button type="button" onClick={() => setNoticeModalOpen(false)} className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl text-xs font-bold">
+                Acknowledge & Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Change Shift Modal */}
+      {shiftModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onClick={() => setShiftModalOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
+              <X size={18} />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="size-10 rounded-xl bg-[#DCFCE7] text-[#15803D] grid place-items-center">
+                <Clock size={20} />
+              </span>
+              <div>
+                <h3 className="text-lg font-bold text-[#111]">Request Shift Change</h3>
+                <p className="text-xs text-[#6B7280]">Current Shift: General Shift (9:00 AM - 6:00 PM)</p>
+              </div>
+            </div>
+            <form onSubmit={handleChangeShift} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#374151] mb-1">Select Preferred Shift</label>
+                <select
+                  value={newShift}
+                  onChange={(e) => setNewShift(e.target.value)}
+                  className="w-full border border-black/15 rounded-xl p-2.5 text-xs font-semibold outline-none"
+                >
+                  <option value="Morning Shift (8:00 AM - 5:00 PM)">Morning Shift (8:00 AM - 5:00 PM)</option>
+                  <option value="General Shift (9:00 AM - 6:00 PM)">General Shift (9:00 AM - 6:00 PM)</option>
+                  <option value="Late Shift (11:00 AM - 8:00 PM)">Late Shift (11:00 AM - 8:00 PM)</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShiftModalOpen(false)} className="px-4 py-2 border border-black/10 rounded-xl text-xs font-bold text-[#4B5563]">
+                  Cancel
+                </button>
+                <button type="submit" className="px-4 py-2 bg-[#15803D] text-white rounded-xl text-xs font-bold">
+                  Submit Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Leaderboard Modal */}
+      {leaderboardModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button onClick={() => setLeaderboardModalOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
+              <X size={18} />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="size-10 rounded-xl bg-[#7A0A17] text-white grid place-items-center">
+                <Trophy size={20} />
+              </span>
+              <div>
+                <h3 className="text-lg font-bold text-[#111]">This Month Leaderboard</h3>
+                <p className="text-xs text-[#6B7280]">Top Performing Team Members</p>
+              </div>
+            </div>
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              {LEADERBOARD_MEMBERS.map((member) => (
+                <div
+                  key={member.rank}
+                  className={`flex items-center justify-between p-3 rounded-xl border ${
+                    member.isYou ? "bg-[#FCF5F6] border-[#7A0A17]/30" : "bg-[#FAFAFB] border-black/6"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-extrabold text-sm text-[#7A0A17] w-4">#{member.rank}</span>
+                    <img src={member.avatar} alt="" className="size-8 rounded-full object-cover" />
+                    <div>
+                      <p className="text-xs font-bold text-[#111]">
+                        {member.name} {member.isYou && <span className="text-[#7A0A17] font-extrabold">(You)</span>}
+                      </p>
+                      <p className="text-[10px] text-[#6B7280]">{member.location}</p>
+                    </div>
+                  </div>
+                  <span className="font-black text-xs text-[#111]">{member.xp}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button type="button" onClick={() => setLeaderboardModalOpen(false)} className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl text-xs font-bold">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Regularize Modal */}
+      {regularizeModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onClick={() => setRegularizeModalOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
+              <X size={18} />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="size-10 rounded-xl bg-[#FCF5F6] text-[#7A0A17] grid place-items-center">
+                <Clock size={20} />
+              </span>
+              <div>
+                <h3 className="text-lg font-bold text-[#111]">Regularize Attendance</h3>
+                <p className="text-xs text-[#6B7280]">Aug 7, 2026 (Login: 09:02 AM | Logout: 06:10 PM)</p>
+              </div>
+            </div>
+            <form onSubmit={handleRegularizeSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#374151] mb-1">Reason for Regularization</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={regularizeReason}
+                  onChange={(e) => setRegularizeReason(e.target.value)}
+                  placeholder="e.g. System delay, Client meeting outstation..."
+                  className="w-full border border-black/15 rounded-xl p-3 text-xs outline-none focus:border-[#7A0A17]"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setRegularizeModalOpen(false)} className="px-4 py-2 border border-black/10 rounded-xl text-xs font-bold text-[#4B5563]">
+                  Cancel
+                </button>
+                <button type="submit" className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl text-xs font-bold">
+                  Submit Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Timesheet Details Modal */}
+      {timesheetDetailsOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onClick={() => setTimesheetDetailsOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
+              <X size={18} />
+            </button>
+            <h3 className="text-lg font-bold text-[#111] mb-1">Today's Timesheet Breakdown</h3>
+            <p className="text-xs text-[#6B7280] mb-4">Aug 7, 2026 Summary</p>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between p-2.5 bg-[#FAFAFB] rounded-xl">
+                <span>First Punch In</span>
+                <span className="font-bold text-[#16A34A]">09:02 AM</span>
+              </div>
+              <div className="flex justify-between p-2.5 bg-[#FAFAFB] rounded-xl">
+                <span>Last Punch Out</span>
+                <span className="font-bold text-[#DC2626]">06:10 PM</span>
+              </div>
+              <div className="flex justify-between p-2.5 bg-[#FAFAFB] rounded-xl">
+                <span>Total Active System Hours</span>
+                <span className="font-bold text-[#111]">8.50 hrs</span>
+              </div>
+              <div className="flex justify-between p-2.5 bg-[#FAFAFB] rounded-xl">
+                <span>Manual Added Work</span>
+                <span className="font-bold text-[#111]">1.00 hrs</span>
+              </div>
+              <div className="flex justify-between p-2.5 bg-[#FCF5F6] border border-[#7A0A17]/20 rounded-xl font-bold">
+                <span className="text-[#7A0A17]">Effective Total Work</span>
+                <span className="text-[#7A0A17]">9.50 hrs</span>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button type="button" onClick={() => setTimesheetDetailsOpen(false)} className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl text-xs font-bold">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Add Expense Modal */}
+      {addExpenseOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onClick={() => setAddExpenseOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
+              <X size={18} />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="size-10 rounded-xl bg-[#7A0A17] text-white grid place-items-center">
+                <Receipt size={20} />
+              </span>
+              <div>
+                <h3 className="text-lg font-bold text-[#111]">Add Expense Claim</h3>
+                <p className="text-xs text-[#6B7280]">Submit receipt for approval</p>
+              </div>
+            </div>
+            <form onSubmit={handleAddExpense} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-[#374151] mb-1">Location / Event</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Bangalore, India"
+                  value={expenseForm.location}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, location: e.target.value })}
+                  className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-[#374151] mb-1">Amount (₹)</label>
+                <input
+                  type="number"
+                  required
+                  placeholder="e.g. 2500"
+                  value={expenseForm.amount}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
+                  className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-3">
+                <button type="button" onClick={() => setAddExpenseOpen(false)} className="px-4 py-2 border border-black/10 rounded-xl font-bold text-[#4B5563]">
+                  Cancel
+                </button>
+                <button type="submit" className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl font-bold">
+                  Add Claim
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 8. View Expense Detail Modal */}
+      {viewExpense && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
+            <button onClick={() => setViewExpense(null)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
+              <X size={18} />
+            </button>
+            <h3 className="text-base font-bold text-[#111] mb-3">Expense Details</h3>
+            <div className="space-y-2 text-xs">
+              <p><span className="text-[#6B7280]">Location:</span> <strong className="text-[#111]">{viewExpense.location}</strong></p>
+              <p><span className="text-[#6B7280]">Date Submitted:</span> <strong className="text-[#111]">{viewExpense.date}</strong></p>
+              <p><span className="text-[#6B7280]">Amount:</span> <strong className="text-[#7A0A17]">{viewExpense.amount}</strong></p>
+              <p><span className="text-[#6B7280]">Status:</span> <span className="px-2 py-0.5 rounded bg-[#DCFCE7] text-[#15803D] font-bold">{viewExpense.status}</span></p>
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button type="button" onClick={() => setViewExpense(null)} className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl text-xs font-bold">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 9. Apply Leave Modal */}
+      {applyLeaveOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onClick={() => setApplyLeaveOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
+              <X size={18} />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="size-10 rounded-xl bg-[#7A0A17] text-white grid place-items-center">
+                <Calendar size={20} />
+              </span>
+              <div>
+                <h3 className="text-lg font-bold text-[#111]">Apply for Leave</h3>
+                <p className="text-xs text-[#6B7280]">Available Balance: 1 day</p>
+              </div>
+            </div>
+            <form onSubmit={handleApplyLeave} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-[#374151] mb-1">Leave Type</label>
+                <select
+                  value={leaveForm.type}
+                  onChange={(e) => setLeaveForm({ ...leaveForm, type: e.target.value })}
+                  className="w-full border border-black/15 rounded-xl p-2.5 font-semibold outline-none focus:border-[#7A0A17]"
+                >
+                  <option value="Casual Leave">Casual Leave</option>
+                  <option value="Sick Leave">Sick Leave</option>
+                  <option value="Earned Leave">Earned Leave</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-bold text-[#374151] mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={leaveForm.startDate}
+                    onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
+                    className="w-full border border-black/15 rounded-xl p-2 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#374151] mb-1">End Date</label>
+                  <input
+                    type="date"
+                    value={leaveForm.endDate}
+                    onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
+                    className="w-full border border-black/15 rounded-xl p-2 outline-none"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block font-bold text-[#374151] mb-1">Reason / Comment</label>
+                <textarea
+                  rows={2}
+                  value={leaveForm.comment}
+                  onChange={(e) => setLeaveForm({ ...leaveForm, comment: e.target.value })}
+                  placeholder="State reason..."
+                  className="w-full border border-black/15 rounded-xl p-2.5 outline-none"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setApplyLeaveOpen(false)} className="px-4 py-2 border border-black/10 rounded-xl font-bold text-[#4B5563]">
+                  Cancel
+                </button>
+                <button type="submit" className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl font-bold">
+                  Submit Application
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 10. Leave Comment View Modal */}
+      {leaveCommentView && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
+            <button onClick={() => setLeaveCommentView(null)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
+              <X size={18} />
+            </button>
+            <div className="flex items-center gap-2 mb-3">
+              <MessageSquare size={18} className="text-[#F59E0B]" />
+              <h3 className="text-base font-bold text-[#111]">{leaveCommentView.type} Note</h3>
+            </div>
+            <p className="text-xs text-[#6B7280] mb-2">{leaveCommentView.date}</p>
+            <div className="bg-[#FAFAFB] border border-black/8 rounded-xl p-3 text-xs text-[#374151]">
+              {leaveCommentView.comment}
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button type="button" onClick={() => setLeaveCommentView(null)} className="px-4 py-1.5 bg-[#7A0A17] text-white rounded-xl text-xs font-bold">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
