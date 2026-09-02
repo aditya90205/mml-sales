@@ -28,12 +28,12 @@ import {
   Search,
   Filter,
   MoreVertical,
-  RefreshCw,
-  RotateCcw,
   ChevronUp,
   BarChart3,
 } from "lucide-react";
 import TopBar from "../components/layout/TopBar";
+import yellowLoopIcon from "../assets/yellow-loop.png";
+import redBackIcon from "../assets/red-back.png";
 
 // ── Dummy / State Data ────────────────────────────────────────────────────────
 const MONTH_OPTIONS = [
@@ -2150,18 +2150,18 @@ export default function HrmsPage() {
                               <button
                                 type="button"
                                 onClick={() => toast.info(`Reassigning ${a.name}`)}
-                                className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center"
+                                className="size-7 rounded-lg bg-[#FEF3C7] hover:bg-[#FDE68A] grid place-items-center"
                                 aria-label="Reassign"
                               >
-                                <RefreshCw size={13} />
+                                <img src={yellowLoopIcon} alt="" className="size-3.5" />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => toast.success(`${a.name} marked as returned`)}
-                                className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center"
+                                className="size-7 rounded-lg bg-[#FEE2E2] hover:bg-[#FCA5A5] grid place-items-center"
                                 aria-label="Mark returned"
                               >
-                                <RotateCcw size={13} />
+                                <img src={redBackIcon} alt="" className="size-3.5" />
                               </button>
                             </div>
                           ) : (
