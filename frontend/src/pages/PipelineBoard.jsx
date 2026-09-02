@@ -2,19 +2,29 @@ import { useMemo, useState } from "react";
 import {
   AlarmClock,
   ArrowRight,
+  Calendar,
   ChevronDown,
+  ChevronUp,
   Clock,
   Download,
   Flag,
   Hourglass,
   Info,
+  LayoutGrid,
+  LayoutList,
   Link2,
+  Mail,
   MapPin,
+  MessageSquare,
   MoreVertical,
+  Phone,
+  PhoneOff,
   Plus,
   Search,
   SlidersHorizontal,
   Star,
+  Video,
+  X,
 } from "lucide-react";
 import TopBar from "../components/layout/TopBar";
 import eyeIcon from "../assets/eye.png";
@@ -74,32 +84,32 @@ const OWNER = { name: "Aditya Sharma", label: "Owner", role: "Sales Manager", br
 /** Two sample cards per stage, mirroring the lead roster used on the dashboard. */
 const LEADS_BY_STAGE = {
   P0: [
-    { name: "Kuhu Sharma",  starred: true,  mmlId: "MML - D - 10437", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2, hrs: 6,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { name: "Ankit Sharma", starred: true,  mmlId: "MML - D - 10437", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2, hrs: 6,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { name: "Kuhu Sharma",    starred: true,  mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { name: "Ankit Sharma",   starred: true,  mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
   ],
   P1: [
-    { name: "Harshit Sharma", starred: false, mmlId: "MML - D - 10437", temperature: "Hot",  score: 8.5, priority: "High", completion: 40,  days: 4, hrs: 24, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { name: "Arjun Rampal",  starred: false, mmlId: "MML - D - 10437", temperature: "Hot",  score: 8.5, priority: "High", completion: 100, days: 2, hrs: 24, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { name: "Harshit Sharma", starred: false, mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 40,  days: 4,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { name: "Arjun Rampal",   starred: false, mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
   ],
   P2: [
-    { name: "Ankur Sharma", starred: false, mmlId: "MML - D - 10437", temperature: "Cold", score: 8.5, priority: "High", completion: 100, days: 6, hrs: 24, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { name: "Priya Raheja", starred: true,  mmlId: "MML - D - 10437", temperature: "Cold", score: 8.5, priority: "High", completion: 100, days: 2, hrs: 6,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { name: "Ankur Sharma",   starred: false, mmlId: "MML - D - 10428", temperature: "Cold", score: 7.5, priority: "Medium", completion: 75,  days: 6,  hrs: 24, source: "Community Events",  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10428", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 6,  source: "Community Events",  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
   ],
   P3: [
-    { name: "Aditya Sharma", starred: true,  mmlId: "MML - D - 10437", temperature: "Cold", score: 8.5, priority: "High", completion: 100, days: 8, hrs: 24, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { name: "Priya Raheja",  starred: true,  mmlId: "MML - D - 10437", temperature: "Cold", score: 8.5, priority: "High", completion: 100, days: 2, hrs: 8,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { name: "Aditya Sharma",  starred: true,  mmlId: "MML - D - 10428", temperature: "Cold", score: 8.5, priority: "Medium", completion: 85,  days: 8,  hrs: 24, source: "Channel Partner",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10428", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Channel Partner",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
   ],
   P4: [
-    { name: "Vivek Sharma", starred: true,  mmlId: "MML - D - 10437", temperature: "Cold", score: 8.5, priority: "High", completion: 100, days: 12, hrs: 6, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { name: "Priya Raheja", starred: true,  mmlId: "MML - D - 10437", temperature: "Cold", score: 8.5, priority: "High", completion: 100, days: 2,  hrs: 8, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { name: "Vivek Sharma",   starred: true,  mmlId: "MML - D - 10428", temperature: "Cold", score: 9.0, priority: "Low",    completion: 90,  days: 10, hrs: 6,  source: "Reference - Satish", lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10428", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Reference - Satish", lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
   ],
   P5: [
-    { name: "Rohit Sharma", starred: true,  mmlId: "MML - D - 10437", temperature: "Warm", score: 8.5, priority: "High", completion: 100, days: 14, hrs: 24, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { name: "Priya Raheja", starred: true,  mmlId: "MML - D - 10437", temperature: "Cold", score: 8.5, priority: "High", completion: 100, days: 2,  hrs: 8,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { name: "Rohit Sharma",   starred: true,  mmlId: "MML - D - 10428", temperature: "Warm", score: 7.5, priority: "Medium", completion: 60,  days: 12, hrs: 24, source: "Manual Sourcing",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10428", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Manual Sourcing",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
   ],
   P6: [
-    { name: "Virat Sharma", starred: true,  mmlId: "MML - D - 10437", temperature: "Warm", score: 8.5, priority: "High", completion: 100, days: 16, hrs: 24, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { name: "Priya Raheja", starred: true,  mmlId: "MML - D - 10437", temperature: "Cold", score: 8.5, priority: "High", completion: 100, days: 2,  hrs: 8,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { name: "Virat Sharma",   starred: true,  mmlId: "MML - D - 10428", temperature: "Warm", score: 8.5, priority: "Low",    completion: 55,  days: 14, hrs: 24, source: "Online - Insta",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10428", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Online - Insta",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
   ],
 };
 
@@ -221,7 +231,7 @@ function QuickLinksRow() {
 
 /* ───────────────────────── Toolbar ───────────────────────── */
 
-function BoardToolbar({ search, onSearchChange, perPage, onPerPageChange }) {
+function BoardToolbar({ search, onSearchChange, perPage, onPerPageChange, view, onViewChange }) {
   const [perPageOpen, setPerPageOpen] = useState(false);
 
   return (
@@ -250,31 +260,59 @@ function BoardToolbar({ search, onSearchChange, perPage, onPerPageChange }) {
         <SlidersHorizontal size={14} /> Filter
       </button>
 
-      <div className="relative shrink-0 ml-auto">
-        <button
-          type="button"
-          onClick={() => setPerPageOpen((v) => !v)}
-          className="inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-        >
-          Per Page: {perPage}
-          <ChevronDown size={14} className={`text-[#9CA3AF] transition-transform ${perPageOpen ? "rotate-180" : ""}`} />
-        </button>
-        {perPageOpen && (
-          <div className="absolute right-0 top-[calc(100%+6px)] min-w-[100px] bg-white border border-black/8 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-30 py-1 overflow-hidden">
-            {PER_PAGE_OPTIONS.map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => { onPerPageChange(n); setPerPageOpen(false); }}
-                className={`w-full text-left px-3.5 py-2 text-[13px] transition-colors ${
-                  n === perPage ? "bg-[#FCF5F6] text-[#7A0A17] font-semibold" : "text-[#4B5563] hover:bg-[#FAFAFB]"
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        )}
+      {/* Right side controls: View toggle & Per Page */}
+      <div className="flex items-center gap-2.5 ml-auto shrink-0">
+        {/* View toggle */}
+        <div className="flex items-center h-10 rounded-xl border border-black/10 bg-white overflow-hidden shrink-0">
+          <button
+            type="button"
+            onClick={() => onViewChange("board")}
+            title="Board view"
+            className={`h-full px-3 flex items-center transition-colors ${
+              view === "board" ? "bg-[#7A0A17] text-white" : "text-[#9CA3AF] hover:text-[#4B5563] hover:bg-[#FAFAFB]"
+            }`}
+          >
+            <LayoutGrid size={15} />
+          </button>
+          <span className="w-px h-5 bg-black/10" />
+          <button
+            type="button"
+            onClick={() => onViewChange("table")}
+            title="Table view"
+            className={`h-full px-3 flex items-center transition-colors ${
+              view === "table" ? "bg-[#7A0A17] text-white" : "text-[#9CA3AF] hover:text-[#4B5563] hover:bg-[#FAFAFB]"
+            }`}
+          >
+            <LayoutList size={15} />
+          </button>
+        </div>
+
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => setPerPageOpen((v) => !v)}
+            className="inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+          >
+            Per Page: {perPage}
+            <ChevronDown size={14} className={`text-[#9CA3AF] transition-transform ${perPageOpen ? "rotate-180" : ""}`} />
+          </button>
+          {perPageOpen && (
+            <div className="absolute right-0 top-[calc(100%+6px)] min-w-[100px] bg-white border border-black/8 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-30 py-1 overflow-hidden">
+              {PER_PAGE_OPTIONS.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => { onPerPageChange(n); setPerPageOpen(false); }}
+                  className={`w-full text-left px-3.5 py-2 text-[13px] transition-colors ${
+                    n === perPage ? "bg-[#FCF5F6] text-[#7A0A17] font-semibold" : "text-[#4B5563] hover:bg-[#FAFAFB]"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -282,7 +320,7 @@ function BoardToolbar({ search, onSearchChange, perPage, onPerPageChange }) {
 
 /* ───────────────────────── Lead card ───────────────────────── */
 
-function LeadCard({ lead, stageColor, nextStageLabel }) {
+function LeadCard({ lead, stageColor, nextStageLabel, onOpenScoreModal }) {
   const temperature = TEMPERATURE_STYLES[lead.temperature];
   const priority = PRIORITY_STYLES[lead.priority];
 
@@ -310,10 +348,15 @@ function LeadCard({ lead, stageColor, nextStageLabel }) {
       {/* Badges */}
       <div className="flex items-center justify-between gap-1.5">
         <Pill tone={temperature}>{lead.temperature}</Pill>
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#111] shrink-0">
+        <button
+          type="button"
+          onClick={() => onOpenScoreModal?.(lead)}
+          className="inline-flex items-center gap-1 text-[11px] font-bold text-[#111] shrink-0 hover:bg-[#F3F4F6] px-1.5 py-0.5 rounded transition-colors"
+          title="Click to view Lead Score Details"
+        >
           {lead.score.toFixed(1)}
           <Flag size={10} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} />
-        </span>
+        </button>
         <Pill tone={priority}>{lead.priority}</Pill>
       </div>
 
@@ -404,7 +447,7 @@ function LeadCard({ lead, stageColor, nextStageLabel }) {
 
 /* ───────────────────────── Column ───────────────────────── */
 
-function PipelineColumn({ stage, leads, nextStageId }) {
+function PipelineColumn({ stage, leads, nextStageId, onOpenScoreModal }) {
   return (
     <div className="flex flex-col w-[280px] shrink-0 bg-[#F7F8FA] border border-black/6 rounded-2xl overflow-hidden">
       <div className="flex items-center justify-between gap-2 px-3.5 py-3 bg-white border-b border-black/8">
@@ -424,7 +467,13 @@ function PipelineColumn({ stage, leads, nextStageId }) {
           <p className="text-[12px] text-[#9CA3AF] text-center py-6">No leads in this stage</p>
         ) : (
           leads.map((lead, i) => (
-            <LeadCard key={`${stage.id}-${i}`} lead={lead} stageColor={stage.color} nextStageLabel={nextStageId} />
+            <LeadCard
+              key={`${stage.id}-${i}`}
+              lead={lead}
+              stageColor={stage.color}
+              nextStageLabel={nextStageId}
+              onOpenScoreModal={onOpenScoreModal}
+            />
           ))
         )}
       </div>
@@ -432,11 +481,373 @@ function PipelineColumn({ stage, leads, nextStageId }) {
   );
 }
 
-/* ───────────────────────── Page ───────────────────────── */
+/* ─────────────────────── Table view ─────────────────────── */
+
+const TABLE_COLS = [
+  { key: "name",       label: "Client Name" },
+  { key: "owner",      label: "Owner" },
+  { key: "stage",      label: "Stage" },
+  { key: "priority",   label: "Priority" },
+  { key: "score",      label: "Lead\nScore" },
+  { key: "completion", label: "Profile\nCompletion" },
+  { key: "days",       label: "Time at This\nStage" },
+  { key: "source",     label: "Source" },
+  { key: "followup",   label: "Follow Up\nTime Left" },
+  { key: "actions",    label: "Actions" },
+];
+
+function SortIcon({ col, sort }) {
+  if (sort.key !== col) return <ChevronUp size={12} className="text-[#D1D5DB] opacity-0 group-hover:opacity-100 shrink-0 mb-0.5" />;
+  return sort.dir === "asc"
+    ? <ChevronUp size={12} className="text-[#7A0A17] shrink-0 mb-0.5" />
+    : <ChevronDown size={12} className="text-[#7A0A17] shrink-0 mb-0.5" />;
+}
+
+function PipelineTableView({ flatLeads, onOpenScoreModal }) {
+  const [sort, setSort] = useState({ key: "name", dir: "asc" });
+
+  const toggle = (key) =>
+    setSort((s) => s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" });
+
+  const sorted = useMemo(() => {
+    const arr = [...flatLeads];
+    arr.sort((a, b) => {
+      let av = a.lead[sort.key] ?? a.stage.label;
+      let bv = b.lead[sort.key] ?? b.stage.label;
+      if (sort.key === "stage") { av = a.stage.label; bv = b.stage.label; }
+      if (typeof av === "string") return sort.dir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+      return sort.dir === "asc" ? av - bv : bv - av;
+    });
+    return arr;
+  }, [flatLeads, sort]);
+
+  const PRIORITY_FLAG = { High: "#E8395B", Medium: "#F59E0B", Low: "#16A34A" };
+
+  return (
+    <div>
+      {/* Priority legend */}
+      <div className="flex items-center gap-4 mb-3">
+        {Object.entries(PRIORITY_FLAG).map(([label, color]) => (
+          <span key={label} className="inline-flex items-center gap-1.5 text-[12px] text-[#4B5563]">
+            <Flag size={11} fill={color} style={{ color }} strokeWidth={0} />
+            {label === "High" ? "Low Probability" : label === "Medium" ? "Medium" : "High"}
+          </span>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div className="bg-white border border-black/8 rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-black/8">
+                {TABLE_COLS.map((col) => (
+                  <th
+                    key={col.key}
+                    onClick={() => col.key !== "actions" && toggle(col.key)}
+                    className={`group px-3 py-2 text-left text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide select-none align-bottom ${
+                      col.key !== "actions" ? "cursor-pointer hover:text-[#4B5563]" : ""
+                    }`}
+                  >
+                    <span className="inline-flex items-end gap-1 leading-tight">
+                      <span className="whitespace-pre-line">{col.label}</span>
+                      {col.key !== "actions" && <SortIcon col={col.key} sort={sort} />}
+                    </span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map(({ lead, stage }, idx) => {
+                const temp   = TEMPERATURE_STYLES[lead.temperature];
+                const pri    = PRIORITY_STYLES[lead.priority];
+                const urgent = lead.hrs <= 8;
+                return (
+                  <tr
+                    key={idx}
+                    className="border-b border-black/5 last:border-0 hover:bg-[#FAFAFB] transition-colors"
+                  >
+                    {/* Client Name */}
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: stage.color }} />
+                        <div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[12.5px] font-semibold text-[#111]">{lead.name}</span>
+                            {lead.starred && <Star size={11} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />}
+                          </div>
+                          <p className="text-[10px] text-[#9CA3AF]">{lead.mmlId}</p>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Owner */}
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <p className="text-[12px] font-medium text-[#374151]">{OWNER.name}</p>
+                      <p className="text-[10px] text-[#9CA3AF]">{OWNER.role} | {OWNER.branch}</p>
+                    </td>
+
+                    {/* Stage */}
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <p className="text-[12px] text-[#374151]">
+                        {stage.id} - {stage.label}{" "}
+                        <span style={{ color: temp.color }} className="font-semibold">({lead.temperature})</span>
+                      </p>
+                    </td>
+
+                    {/* Priority */}
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <span
+                        className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md"
+                        style={{ color: pri.color, backgroundColor: pri.bg }}
+                      >
+                        {lead.priority}
+                      </span>
+                    </td>
+
+                    {/* Lead Score */}
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => onOpenScoreModal?.(lead)}
+                        className="inline-flex items-center gap-1 text-[12px] font-bold text-[#111] hover:bg-[#F3F4F6] px-1.5 py-0.5 rounded transition-colors"
+                        title="Click to view Lead Score Details"
+                      >
+                        {lead.score.toFixed(1)}
+                        <Flag size={10} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} />
+                      </button>
+                    </td>
+
+                    {/* Profile Completion */}
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <span className="text-[12px] font-semibold text-[#374151]">{lead.completion}%</span>
+                    </td>
+
+                    {/* Time at Stage */}
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <span className="text-[12px] text-[#374151]">{lead.days} Days</span>
+                    </td>
+
+                    {/* Source */}
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <span className="text-[12px] text-[#374151]">{lead.source}</span>
+                    </td>
+
+                    {/* Follow Up */}
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        {(urgent || idx % 3 === 0) && (
+                          <Video size={15} className="text-[#3B82F6] shrink-0" />
+                        )}
+                        <div>
+                          <p className={`text-[12px] font-semibold ${urgent ? "text-[#E8395B]" : "text-[#374151]"}`}>
+                            {lead.hrs} HRS Left
+                          </p>
+                          <p className="text-[10px] text-[#9CA3AF]">Start Time: 12:00</p>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <div className="flex items-center gap-1">
+                        {idx % 3 === 0 ? (
+                          <button className="p-1 rounded-lg text-[#DC2626] hover:bg-[#FEE2E2] transition-colors" title="Dropped Call">
+                            <PhoneOff size={14} />
+                          </button>
+                        ) : (
+                          <button className="p-1 rounded-lg text-[#16A34A] hover:bg-[#E7F8EF] transition-colors" title="Call">
+                            <Phone size={14} />
+                          </button>
+                        )}
+                        <button className="p-1 rounded-lg text-[#F59E0B] hover:bg-[#FFF3E4] transition-colors" title="Message">
+                          <MessageSquare size={14} />
+                        </button>
+                        <button className="relative p-1 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] transition-colors" title="Email">
+                          <Mail size={14} />
+                          {idx % 2 === 0 && (
+                            <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-[#DC2626]" />
+                          )}
+                        </button>
+                        <button className="p-1 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] transition-colors" title="Schedule">
+                          <Calendar size={14} />
+                        </button>
+                        <button className="p-1 rounded-lg text-[#9CA3AF] hover:bg-black/5 transition-colors" title="More Options">
+                          <MoreVertical size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────── Lead Score Modal ─────────────────────── */
+
+function LeadScoreModal({ lead, onClose }) {
+  if (!lead) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-black/8 w-full max-w-[650px] p-6 relative">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 text-[#9CA3AF] hover:text-[#111] hover:bg-black/5 p-1.5 rounded-full transition-colors"
+        >
+          <X size={18} />
+        </button>
+
+        {/* Title */}
+        <h3 className="text-[17px] font-bold text-[#111] mb-4">Lead Score Details</h3>
+
+        {/* Top summary section */}
+        <div className="flex items-start justify-between gap-4 mb-5">
+          <div>
+            <p className="text-[13px] text-[#4B5563] font-medium">Total Lead Score</p>
+            <div className="flex items-baseline gap-1 mt-1">
+              <span className="text-[28px] font-bold text-[#16A34A] leading-none">
+                {lead.score ? lead.score.toFixed(1) : "8.5"}
+              </span>
+              <span className="text-[15px] font-semibold text-[#9CA3AF]">/ 10</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end gap-1.5">
+            <div className="flex items-center gap-1.5">
+              <Flag size={14} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} />
+              <span className="bg-[#E7F8EF] border border-[#BBF7D0] text-[#16A34A] text-[12px] font-semibold px-2.5 py-0.5 rounded-full">
+                High
+              </span>
+            </div>
+            <p className="text-[12px] text-[#4B5563] text-right font-medium">
+              Great! This lead has a high conversion potential.
+            </p>
+          </div>
+        </div>
+
+        {/* Breakdown & History Card Box */}
+        <div className="border border-black/8 rounded-2xl p-4 grid grid-cols-[210px_1fr] gap-5 bg-[#FAFAFB]/50">
+          {/* Left Column: Score Breakdown */}
+          <div className="pr-3 border-r border-black/8">
+            <h4 className="text-[13px] font-bold text-[#111] mb-3">Score Breakdown</h4>
+            <div className="flex flex-col gap-2.5 text-[12px]">
+              <div className="flex items-center justify-between">
+                <span className="text-[#4B5563] font-medium">Profile Completion</span>
+                <span>
+                  <strong className="text-[#16A34A] font-bold">2.0</strong>{" "}
+                  <span className="text-[#9CA3AF]">/ 2.0</span>
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#4B5563] font-medium">Source Quality</span>
+                <span>
+                  <strong className="text-[#16A34A] font-bold">2.0</strong>{" "}
+                  <span className="text-[#9CA3AF]">/ 2.0</span>
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#4B5563] font-medium">Client Engagement</span>
+                <span>
+                  <strong className="text-[#F59E0B] font-bold">1.5</strong>{" "}
+                  <span className="text-[#9CA3AF]">/ 2.0</span>
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#4B5563] font-medium">Time at Stage</span>
+                <span>
+                  <strong className="text-[#F59E0B] font-bold">1.5</strong>{" "}
+                  <span className="text-[#9CA3AF]">/ 2.0</span>
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#4B5563] font-medium">Follow-up Activity</span>
+                <span>
+                  <strong className="text-[#F59E0B] font-bold">1.5</strong>{" "}
+                  <span className="text-[#9CA3AF]">/ 2.0</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Score History (Last 7 Days) */}
+          <div className="flex flex-col justify-between min-w-0">
+            <h4 className="text-[13px] font-bold text-[#111] mb-2">
+              Score History <span className="text-[#9CA3AF] font-normal">(Last 7 Days)</span>
+            </h4>
+
+            {/* SVG Chart with Y-axis scale and X-axis grid lines */}
+            <div className="w-full">
+              <svg viewBox="0 0 340 135" className="w-full h-auto overflow-visible select-none">
+                <defs>
+                  <linearGradient id="scoreGreenGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22C55E" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#22C55E" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+
+                {/* Y-Axis Labels */}
+                <text x="20" y="14" textAnchor="end" fill="#9CA3AF" fontSize="9.5" fontWeight="500">10</text>
+                <text x="20" y="39" textAnchor="end" fill="#9CA3AF" fontSize="9.5" fontWeight="500">7.5</text>
+                <text x="20" y="64" textAnchor="end" fill="#9CA3AF" fontSize="9.5" fontWeight="500">5.0</text>
+                <text x="20" y="89" textAnchor="end" fill="#9CA3AF" fontSize="9.5" fontWeight="500">2.5</text>
+                <text x="20" y="114" textAnchor="end" fill="#9CA3AF" fontSize="9.5" fontWeight="500">0</text>
+
+                {/* Horizontal background grid lines */}
+                {[10, 35, 60, 85, 110].map((y) => (
+                  <line key={y} x1="28" y1={y} x2="330" y2={y} stroke="rgba(0,0,0,0.05)" strokeDasharray="3 3" />
+                ))}
+
+                {/* Vertical background grid lines (aligned with 7 day labels) */}
+                {[28, 78.3, 128.6, 179, 229.3, 279.6, 330].map((x) => (
+                  <line key={x} x1={x} y1="10" x2={x} y2="110" stroke="rgba(0,0,0,0.06)" />
+                ))}
+
+                {/* Filled Gradient Area */}
+                <path
+                  d="M 28 65 L 78.3 60 L 128.6 35 L 179 78 L 229.3 65 L 279.6 35 L 330 20 L 330 110 L 28 110 Z"
+                  fill="url(#scoreGreenGrad)"
+                />
+
+                {/* Dashed Line */}
+                <path
+                  d="M 28 65 L 78.3 60 L 128.6 35 L 179 78 L 229.3 65 L 279.6 35 L 330 20"
+                  fill="none"
+                  stroke="#22C55E"
+                  strokeWidth="2"
+                  strokeDasharray="4 3"
+                />
+
+                {/* X Axis Day Labels */}
+                <text x="28" y="127" textAnchor="middle" fill="#9CA3AF" fontSize="9.5" fontWeight="500">7d ago</text>
+                <text x="78.3" y="127" textAnchor="middle" fill="#9CA3AF" fontSize="9.5" fontWeight="500">6d ago</text>
+                <text x="128.6" y="127" textAnchor="middle" fill="#9CA3AF" fontSize="9.5" fontWeight="500">5d ago</text>
+                <text x="179" y="127" textAnchor="middle" fill="#9CA3AF" fontSize="9.5" fontWeight="500">4d ago</text>
+                <text x="229.3" y="127" textAnchor="middle" fill="#9CA3AF" fontSize="9.5" fontWeight="500">3d ago</text>
+                <text x="279.6" y="127" textAnchor="middle" fill="#9CA3AF" fontSize="9.5" fontWeight="500">2d ago</text>
+                <text x="330" y="127" textAnchor="middle" fill="#9CA3AF" fontSize="9.5" fontWeight="500">Today</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────── Page ─────────────────────── */
 
 export default function PipelineBoard() {
-  const [search, setSearch] = useState("");
-  const [perPage, setPerPage] = useState(10);
+  const [search, setSearch]             = useState("");
+  const [perPage, setPerPage]           = useState(10);
+  const [view,   setView]               = useState("board"); // "board" | "table"
+  const [selectedScoreLead, setSelectedScoreLead] = useState(null);
 
   const columns = useMemo(
     () =>
@@ -451,9 +862,28 @@ export default function PipelineBoard() {
     [search, perPage]
   );
 
+  // Flat list for table view
+  const flatLeads = useMemo(
+    () =>
+      PIPELINE_STAGES.flatMap((stage) => {
+        const all = LEADS_BY_STAGE[stage.id] || [];
+        const filtered = search
+          ? all.filter((l) => l.name.toLowerCase().includes(search.toLowerCase()))
+          : all;
+        return filtered.slice(0, perPage).map((lead) => ({ lead, stage }));
+      }),
+    [search, perPage]
+  );
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <TopBar page="Pipeline Board" />
+
+      {/* Lead Score Details Modal */}
+      <LeadScoreModal
+        lead={selectedScoreLead}
+        onClose={() => setSelectedScoreLead(null)}
+      />
 
       {/* Header row */}
       <div className="flex items-center justify-between gap-4 px-5 pt-5 pb-4 flex-wrap">
@@ -479,14 +909,31 @@ export default function PipelineBoard() {
       <div className="px-5 pb-8 flex flex-col gap-4 min-w-0">
         <ActionAlertBanner />
         <QuickLinksRow />
-        <BoardToolbar search={search} onSearchChange={setSearch} perPage={perPage} onPerPageChange={setPerPage} />
+        <BoardToolbar
+          search={search} onSearchChange={setSearch}
+          perPage={perPage} onPerPageChange={setPerPage}
+          view={view} onViewChange={setView}
+        />
 
-        {/* Board – break out of px-5 so scroll area is edge-to-edge */}
-        <div className="-mx-5 flex items-start gap-4 overflow-x-auto pb-2 scrollbar-thin px-5">
-          {columns.map(({ stage, leads, nextStageId }) => (
-            <PipelineColumn key={stage.id} stage={stage} leads={leads} nextStageId={nextStageId} />
-          ))}
-        </div>
+        {view === "board" ? (
+          /* Board – break out of px-5 so scroll area is edge-to-edge */
+          <div className="-mx-5 flex items-start gap-4 overflow-x-auto pb-2 scrollbar-thin px-5">
+            {columns.map(({ stage, leads, nextStageId }) => (
+              <PipelineColumn
+                key={stage.id}
+                stage={stage}
+                leads={leads}
+                nextStageId={nextStageId}
+                onOpenScoreModal={(lead) => setSelectedScoreLead(lead)}
+              />
+            ))}
+          </div>
+        ) : (
+          <PipelineTableView
+            flatLeads={flatLeads}
+            onOpenScoreModal={(lead) => setSelectedScoreLead(lead)}
+          />
+        )}
       </div>
     </div>
   );
