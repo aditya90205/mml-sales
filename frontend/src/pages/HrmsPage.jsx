@@ -684,7 +684,7 @@ export default function HrmsPage() {
 
             {/* Row 3: Main Dashboard Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch lg:h-[640px]">
-              <div className="flex flex-col gap-5 h-full">
+              <div className="flex flex-col gap-5 h-full min-h-0">
                 <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
                   <div className="flex items-center gap-3 mb-4">
                     <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
@@ -775,7 +775,7 @@ export default function HrmsPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-5 h-full">
+              <div className="flex flex-col gap-5 h-full min-h-0">
                 <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm shrink-0">
                   <div className="flex items-center gap-3 mb-4">
                     <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
@@ -867,7 +867,7 @@ export default function HrmsPage() {
                 </div>
               </div>
 
-              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm h-full flex flex-col">
+              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm h-full min-h-0 flex flex-col">
                 <div className="flex items-center justify-between mb-4 shrink-0">
                   <div className="flex items-center gap-3">
                     <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
