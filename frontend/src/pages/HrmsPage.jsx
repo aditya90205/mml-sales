@@ -70,6 +70,12 @@ const INITIAL_LEAVES = [
   { id: 7, type: "Earned Leave", date: "July 10 - 14", status: "Approved", comment: "Outstation travel." },
 ];
 
+const MY_REQUESTS = [
+  { id: 1, title: "Late Arrival on July 30",    submitted: "Submitted on July 30 at 6:30 PM", status: "Pending" },
+  { id: 2, title: "Early Departure on July 25", submitted: "Submitted on July 25 at 5:45 PM", status: "Approved" },
+  { id: 3, title: "Work From Home on July 22",  submitted: "Submitted on July 22 at 9:15 AM",  status: "Approved" },
+];
+
 const LEADERBOARD_MEMBERS = [
   { rank: 1, name: "Kuhu Sharma", location: "Rajouri Garden", xp: "140 XP", avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face" },
   { rank: 2, name: "Ankur Sharma", isYou: true, location: "South Extension", xp: "140 XP", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" },
@@ -677,8 +683,8 @@ export default function HrmsPage() {
             </div>
 
             {/* Row 3: Main Dashboard Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-              <div className="flex flex-col gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch lg:h-[640px]">
+              <div className="flex flex-col gap-5 h-full">
                 <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
                   <div className="flex items-center gap-3 mb-4">
                     <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
@@ -714,8 +720,8 @@ export default function HrmsPage() {
                   </div>
                 </div>
 
-                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex-1 min-h-0 flex flex-col">
+                  <div className="flex items-center justify-between mb-4 shrink-0">
                     <div className="flex items-center gap-3">
                       <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
                         <Receipt size={17} />
@@ -730,7 +736,7 @@ export default function HrmsPage() {
                       <Plus size={13} /> Add Expense
                     </button>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1">
                     {expenses.map((item) => (
                       <div
                         key={item.id}
@@ -769,8 +775,8 @@ export default function HrmsPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-5">
-                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <div className="flex flex-col gap-5 h-full">
+                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm shrink-0">
                   <div className="flex items-center gap-3 mb-4">
                     <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
                       <Activity size={17} />
@@ -832,38 +838,37 @@ export default function HrmsPage() {
                   </div>
                 </div>
 
-                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-                  <div className="flex items-center gap-3 mb-4">
+                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex-1 min-h-0 flex flex-col">
+                  <div className="flex items-center gap-3 mb-4 shrink-0">
                     <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
                       <Send size={17} />
                     </span>
                     <h3 className="text-base font-extrabold text-[#111827]">Your Request</h3>
                   </div>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6">
-                      <div>
-                        <p className="text-xs font-extrabold text-[#111827]">Late Arrival on July 30</p>
-                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">Submitted on July 30 at 6:30 PM</p>
+                  <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1">
+                    {MY_REQUESTS.map((req) => (
+                      <div key={req.id} className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6">
+                        <div>
+                          <p className="text-xs font-extrabold text-[#111827]">{req.title}</p>
+                          <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">{req.submitted}</p>
+                        </div>
+                        <span
+                          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border whitespace-nowrap ${
+                            req.status === "Approved"
+                              ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                              : "bg-[#FFEDD5] text-[#C2410C] border-[#EA580C]/20"
+                          }`}
+                        >
+                          {req.status}
+                        </span>
                       </div>
-                      <span className="bg-[#FFEDD5] text-[#C2410C] text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#EA580C]/20">
-                        Pending
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6">
-                      <div>
-                        <p className="text-xs font-extrabold text-[#111827]">Early Departure on July 25</p>
-                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">Submitted on July 25 at 5:45 PM</p>
-                      </div>
-                      <span className="bg-[#DCFCE7] text-[#15803D] text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#16A34A]/20">
-                        Approved
-                      </span>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
+              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm h-full flex flex-col">
+                <div className="flex items-center justify-between mb-4 shrink-0">
                   <div className="flex items-center gap-3">
                     <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
                       <Calendar size={17} />
@@ -878,11 +883,11 @@ export default function HrmsPage() {
                     Apply Leave
                   </button>
                 </div>
-                <div className="flex items-center justify-between py-2 border-b border-black/8 mb-3 text-xs font-bold">
+                <div className="flex items-center justify-between py-2 border-b border-black/8 mb-3 text-xs font-bold shrink-0">
                   <span className="text-[#374151]">Leave Balance</span>
                   <span className="text-[#3B82F6]">1 day available</span>
                 </div>
-                <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+                <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-1">
                   {leaves.map((leave) => (
                     <div
                       key={leave.id}
