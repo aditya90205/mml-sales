@@ -23,17 +23,8 @@ import {
   Plus,
   AlertCircle,
   FileText,
-  Check,
   Download,
-  Search,
-  Filter,
   TrendingUp,
-  CreditCard,
-  Building,
-  DollarSign,
-  UserCheck,
-  CalendarDays,
-  Plane,
 } from "lucide-react";
 import TopBar from "../components/layout/TopBar";
 
@@ -50,7 +41,6 @@ const HRMS_TABS = [
   "Attendance",
   "Timesheet",
   "Salary & Payslip",
-  "Trips",
   "Trainings",
   "Incentives",
   "Goals",
@@ -115,13 +105,6 @@ const ATTENDANCE_DAYS = [
   { day: "01", week: "Fri", status: "P" },
 ];
 
-const INITIAL_TRIPS = [
-  { id: 1, destination: "Bangalore, India", date: "11-02-2026 - 11-02-2026", status: "Rejected", advance: "₹21,800 Approved", expenses: "Expenses" },
-  { id: 2, destination: "Bangalore, India", date: "11-02-2026 - 11-02-2026", status: "Approved", advance: "₹21,800 Approved", expenses: "Expenses" },
-  { id: 3, destination: "Bangalore, India", date: "11-02-2026 - 11-02-2026", status: "Rejected", advance: "₹21,800 Approved", expenses: "Expenses" },
-  { id: 4, destination: "Bangalore, India", date: "11-02-2026 - 11-02-2026", status: "Approved", advance: "₹21,800 Approved", expenses: "Expenses" },
-];
-
 export default function HrmsPage() {
   const [selectedMonth, setSelectedMonth] = useState("April");
   const [selectedYear, setSelectedYear] = useState("2025");
@@ -130,8 +113,6 @@ export default function HrmsPage() {
   // Expenses & Leaves State
   const [expenses, setExpenses] = useState(INITIAL_EXPENSES);
   const [leaves, setLeaves] = useState(INITIAL_LEAVES);
-  const [trips, setTrips] = useState(INITIAL_TRIPS);
-  const [searchTrip, setSearchTrip] = useState("");
 
   // Modals state
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -144,7 +125,6 @@ export default function HrmsPage() {
   const [viewExpense, setViewExpense] = useState(null);
   const [applyLeaveOpen, setApplyLeaveOpen] = useState(false);
   const [leaveCommentView, setLeaveCommentView] = useState(null);
-  const [addTripOpen, setAddTripOpen] = useState(false);
   const [addManualRowOpen, setAddManualRowOpen] = useState(false);
 
   // Form Fields
@@ -153,7 +133,6 @@ export default function HrmsPage() {
   const [regularizeReason, setRegularizeReason] = useState("");
   const [expenseForm, setExpenseForm] = useState({ location: "", amount: "", category: "Travel" });
   const [leaveForm, setLeaveForm] = useState({ type: "Casual Leave", startDate: "", endDate: "", comment: "" });
-  const [tripForm, setTripForm] = useState({ destination: "", startDate: "", endDate: "", advance: "21800" });
 
   // Handle Submissions
   const handleReportIssue = (e) => {
@@ -217,28 +196,6 @@ export default function HrmsPage() {
     toast.success("Leave application submitted successfully!");
     setLeaveForm({ type: "Casual Leave", startDate: "", endDate: "", comment: "" });
     setApplyLeaveOpen(false);
-  };
-
-  const handleAddTrip = (e) => {
-    e.preventDefault();
-    if (!tripForm.destination || !tripForm.startDate) return;
-    const newTripItem = {
-      id: Date.now(),
-      destination: tripForm.destination,
-      date: `${tripForm.startDate} - ${tripForm.endDate || tripForm.startDate}`,
-      status: "Approved",
-      advance: `₹${tripForm.advance} Approved`,
-      expenses: "Expenses",
-    };
-    setTrips([newTripItem, ...trips]);
-    toast.success("Trip added successfully!");
-    setTripForm({ destination: "", startDate: "", endDate: "", advance: "21800" });
-    setAddTripOpen(false);
-  };
-
-  const handleDeleteTrip = (id) => {
-    setTrips(trips.filter((t) => t.id !== id));
-    toast.info("Trip record removed.");
   };
 
   return (
@@ -1623,129 +1580,8 @@ export default function HrmsPage() {
           </div>
         )}
 
-        {/* 6. TRIPS TAB */}
-        {activeTab === "Trips" && (
-          <div className="flex flex-col gap-6">
-            {/* Search & Action Toolbar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-2 flex-1 max-w-md">
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    value={searchTrip}
-                    onChange={(e) => setSearchTrip(e.target.value)}
-                    placeholder="Search..."
-                    className="w-full bg-white border border-black/12 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#7A0A17]"
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-2xs flex items-center gap-1"
-                >
-                  <Search size={14} /> Search
-                </button>
-                <button
-                  type="button"
-                  className="bg-white border border-black/12 hover:bg-[#FAFAFB] text-[#374151] text-xs font-bold px-3.5 py-2 rounded-xl shadow-2xs flex items-center gap-1.5"
-                >
-                  <Filter size={14} /> Filter
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setAddTripOpen(true)}
-                className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-4 py-2 rounded-xl shadow-2xs self-start sm:self-auto"
-              >
-                + Add Trip
-              </button>
-            </div>
-
-            {/* Trips Data Table */}
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <div className="overflow-x-auto border border-black/8 rounded-xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
-                      <th className="px-4 py-3">#</th>
-                      <th className="px-4 py-3">Destination</th>
-                      <th className="px-4 py-3">Start Date - End Date</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Advance</th>
-                      <th className="px-4 py-3">Expenses</th>
-                      <th className="px-4 py-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
-                    {trips
-                      .filter((t) => t.destination.toLowerCase().includes(searchTrip.toLowerCase()))
-                      .map((t, idx) => (
-                        <tr key={t.id} className="hover:bg-[#FAFAFB] transition-colors">
-                          <td className="px-4 py-3 font-bold text-[#6B7280]">{idx + 1}</td>
-                          <td className="px-4 py-3 font-bold">{t.destination}</td>
-                          <td className="px-4 py-3 text-[#6B7280]">{t.date}</td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
-                                t.status === "Approved"
-                                  ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
-                                  : "bg-[#E0F2FE] text-[#0284C7] border-[#0284C7]/20"
-                              }`}
-                            >
-                              {t.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="inline-flex flex-col">
-                              <span className="font-extrabold text-[#111827]">{t.advance.split(" ")[0]}</span>
-                              <span className="bg-[#FEF3C7] text-[#D97706] text-[9px] font-bold px-1.5 py-0.2 rounded w-max mt-0.5">Approved</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <button
-                              type="button"
-                              onClick={() => toast.info(`Viewing expenses for ${t.destination}`)}
-                              className="bg-[#E0F2FE] hover:bg-[#BAE6FD] text-[#0284C7] px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 border border-[#0284C7]/20"
-                            >
-                              <FileText size={13} /> Expenses
-                            </button>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => toast.info(`Viewing Trip #${idx + 1}`)}
-                                className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center"
-                              >
-                                <Eye size={13} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => toast.info(`Editing Trip #${idx + 1}`)}
-                                className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center"
-                              >
-                                <Edit size={13} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteTrip(t.id)}
-                                className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Placeholder View for remaining tabs */}
-        {!["Summary", "Attendance", "Timesheet", "Salary & Payslip", "Incentives", "Trips"].includes(activeTab) && (
+        {!["Summary", "Attendance", "Timesheet", "Salary & Payslip", "Incentives"].includes(activeTab) && (
           <div className="bg-white border border-black/8 rounded-2xl p-12 text-center my-6 shadow-sm">
             <div className="size-16 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
               <FileText size={28} />
@@ -1767,87 +1603,6 @@ export default function HrmsPage() {
       </div>
 
       {/* ── MODALS SECTION ────────────────────────────────────────────────── */}
-
-      {/* Add Trip Modal */}
-      {addTripOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
-            <button
-              onClick={() => setAddTripOpen(false)}
-              className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]"
-            >
-              <X size={18} />
-            </button>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="size-10 rounded-xl bg-[#7A0A17] text-white grid place-items-center">
-                <Plane size={20} />
-              </span>
-              <div>
-                <h3 className="text-lg font-bold text-[#111]">Add New Trip</h3>
-                <p className="text-xs text-[#6B7280]">Record business trip details</p>
-              </div>
-            </div>
-            <form onSubmit={handleAddTrip} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-[#374151] mb-1">Destination</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Bangalore, India"
-                  value={tripForm.destination}
-                  onChange={(e) => setTripForm({ ...tripForm, destination: e.target.value })}
-                  className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block font-bold text-[#374151] mb-1">Start Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={tripForm.startDate}
-                    onChange={(e) => setTripForm({ ...tripForm, startDate: e.target.value })}
-                    className="w-full border border-black/15 rounded-xl p-2 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-[#374151] mb-1">End Date</label>
-                  <input
-                    type="date"
-                    value={tripForm.endDate}
-                    onChange={(e) => setTripForm({ ...tripForm, endDate: e.target.value })}
-                    className="w-full border border-black/15 rounded-xl p-2 outline-none"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block font-bold text-[#374151] mb-1">Advance Amount (₹)</label>
-                <input
-                  type="number"
-                  value={tripForm.advance}
-                  onChange={(e) => setTripForm({ ...tripForm, advance: e.target.value })}
-                  className="w-full border border-black/15 rounded-xl p-2.5 outline-none"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setAddTripOpen(false)}
-                  className="px-4 py-2 border border-black/10 rounded-xl font-bold text-[#4B5563]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl font-bold"
-                >
-                  Add Trip
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Add Manual Entry Modal */}
       {addManualRowOpen && (
