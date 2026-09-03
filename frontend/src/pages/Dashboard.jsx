@@ -831,10 +831,13 @@ function GoalsPerformanceCard() {
   );
 }
 
+const FUNNEL_Y_TICKS = [0, 150, 300, 450];
+const FUNNEL_Y_MAX = 450;
+
 function FunnelBarLabel({ x, y, width, value }) {
-  if (!value) return null;
+  if (value == null) return null;
   return (
-    <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={10} fontWeight={700} fill="#374151">
+    <text x={x + width / 2} y={y - 8} textAnchor="middle" fontSize={11} fontWeight={700} fill="#374151">
       {value}
     </text>
   );
@@ -844,11 +847,13 @@ function FunnelXAxisTick({ x, y, payload }) {
   const row = WEEKLY_FUNNEL_DATA.find((d) => d.week === payload.value);
   return (
     <g transform={`translate(${x},${y})`}>
-      <text x={0} y={0} dy={14} textAnchor="middle" fontSize={11} fontWeight={600} fill="#374151">
-        {payload.value}
-      </text>
-      <text x={0} y={0} dy={27} textAnchor="middle" fontSize={9} fill="#9CA3AF">
-        {row?.range}
+      <text textAnchor="middle">
+        <tspan x={0} dy={16} fontSize={12} fontWeight={600} fill="#374151">
+          {payload.value}
+        </tspan>
+        <tspan x={0} dy={15} fontSize={10} fill="#9CA3AF">
+          {row?.range}
+        </tspan>
       </text>
     </g>
   );
@@ -921,51 +926,61 @@ function LeadsConversionCard() {
       </div>
 
       <div className="w-full overflow-x-auto">
-      <div className="min-w-[680px]">
-        <div className="flex items-center pt-1" style={{ paddingRight: 8 }}>
-          <span className="text-[11px] text-[#9CA3AF] text-right" style={{ width: 36 }}>Count</span>
-          <span className="flex-1" />
-          <span className="text-[11px] text-[#9CA3AF] text-left" style={{ width: 36 }}>Client</span>
-        </div>
-        <div className="h-[280px] w-full">
+      <div className="min-w-[720px]">
+        <div className="h-[420px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={WEEKLY_FUNNEL_DATA} margin={{ top: 8, right: 8, left: 0, bottom: 8 }} barCategoryGap="24%" barGap={3}>
+          <ComposedChart
+            data={WEEKLY_FUNNEL_DATA}
+            margin={{ top: 36, right: 12, left: 4, bottom: 8 }}
+            barCategoryGap="36%"
+            barGap={6}
+          >
             <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" />
-            <XAxis dataKey="week" axisLine={{ stroke: "rgba(0,0,0,0.08)" }} tickLine={false} tick={<FunnelXAxisTick />} interval={0} />
+            <XAxis
+              dataKey="week"
+              axisLine={{ stroke: "rgba(0,0,0,0.12)" }}
+              tickLine={false}
+              tick={<FunnelXAxisTick />}
+              interval={0}
+              height={52}
+              tickMargin={6}
+              padding={{ left: 18, right: 18 }}
+            />
             <YAxis
               yAxisId="left"
-              domain={[0, 900]}
-              ticks={[0, 150, 300, 450, 600, 750, 900]}
+              domain={[0, FUNNEL_Y_MAX]}
+              ticks={FUNNEL_Y_TICKS}
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 10, fill: "#9CA3AF" }}
-              width={36}
+              tick={{ fontSize: 11, fill: "#9CA3AF" }}
+              width={44}
+              label={{ value: "Count", position: "top", offset: 18, fontSize: 11, fill: "#9CA3AF" }}
             />
             <YAxis
               yAxisId="right"
               orientation="right"
-              domain={[0, 900]}
-              ticks={[0, 150, 300, 450, 600, 750, 900]}
+              domain={[0, FUNNEL_Y_MAX]}
+              ticks={FUNNEL_Y_TICKS}
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 10, fill: "#9CA3AF" }}
-              width={36}
+              tick={{ fontSize: 11, fill: "#9CA3AF" }}
+              width={44}
+              label={{ value: "Client", position: "top", offset: 18, fontSize: 11, fill: "#9CA3AF" }}
             />
             <Tooltip content={<FunnelTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
 
-            <Bar yAxisId="left" dataKey="leads" fill={FUNNEL_LEGEND[0].color} barSize={16} radius={[3, 3, 0, 0]}>
+            <Bar yAxisId="left" dataKey="leads" fill={FUNNEL_LEGEND[0].color} barSize={22} radius={[4, 4, 0, 0]}>
               <LabelList dataKey="leads" content={FunnelBarLabel} />
             </Bar>
-            <Bar yAxisId="left" dataKey="contacts" fill={FUNNEL_LEGEND[1].color} barSize={16} radius={[3, 3, 0, 0]}>
+            <Bar yAxisId="left" dataKey="contacts" fill={FUNNEL_LEGEND[1].color} barSize={22} radius={[4, 4, 0, 0]}>
               <LabelList dataKey="contacts" content={FunnelBarLabel} />
             </Bar>
-            <Bar yAxisId="left" dataKey="converted" fill={FUNNEL_LEGEND[2].color} barSize={16} radius={[3, 3, 0, 0]}>
+            <Bar yAxisId="left" dataKey="converted" fill={FUNNEL_LEGEND[2].color} barSize={22} radius={[4, 4, 0, 0]}>
               <LabelList dataKey="converted" content={FunnelBarLabel} />
             </Bar>
-            <Bar yAxisId="left" dataKey="conversion" fill={FUNNEL_LEGEND[3].color} barSize={16} radius={[3, 3, 0, 0]}>
+            <Bar yAxisId="right" dataKey="conversion" fill={FUNNEL_LEGEND[3].color} barSize={22} radius={[4, 4, 0, 0]}>
               <LabelList dataKey="conversion" content={FunnelBarLabel} />
             </Bar>
-            <Line yAxisId="right" dataKey="leads" stroke="transparent" dot={false} activeDot={false} legendType="none" isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
         </div>
