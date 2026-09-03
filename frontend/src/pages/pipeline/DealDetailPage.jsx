@@ -5,6 +5,9 @@ import TopBar from "../../components/layout/TopBar";
 import StageStepper from "../../components/pipeline/StageStepper";
 import DealTabs from "../../components/pipeline/DealTabs";
 import OverviewTab from "./deal-tabs/OverviewTab";
+import IntakeFormTab from "./deal-tabs/IntakeFormTab";
+import VisitsMeetingsTab from "./deal-tabs/VisitsMeetingsTab";
+import PackageQuoteTab from "./deal-tabs/PackageQuoteTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
 
 const TABS = [
@@ -187,9 +190,11 @@ export default function DealDetailPage({ lead, onBack, onMoveToP5 }) {
         </div>
 
         {/* Tab content */}
-        {activeTab === "overview" ? (
-          <OverviewTab deal={deal} />
-        ) : (
+        {activeTab === "overview" && <OverviewTab deal={deal} />}
+        {activeTab === "intake" && <IntakeFormTab />}
+        {activeTab === "visits" && <VisitsMeetingsTab />}
+        {activeTab === "package" && <PackageQuoteTab />}
+        {!["overview", "intake", "visits", "package"].includes(activeTab) && (
           <ComingSoonTab label={TABS.find((t) => t.key === activeTab)?.label || "This tab"} />
         )}
       </div>
