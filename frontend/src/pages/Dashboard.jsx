@@ -1409,16 +1409,63 @@ function LeaderboardCard() {
   );
 }
 
+const MY_LEADS_VIEWS = [
+  { id: "team", label: "My Team" },
+  { id: "branch", label: "My Branch" },
+];
+
 function MyLeadsCard() {
   const [period, setPeriod] = useState("today");
+  const [leadsView, setLeadsView] = useState("team");
+  const [leadsViewOpen, setLeadsViewOpen] = useState(false);
+  const leadsViewRef = useRef(null);
   const { sorted, sort, toggle } = useTableSort(MY_LEADS, { defaultKey: "name" });
+
+  useEffect(() => {
+    const h = (e) => {
+      if (leadsViewRef.current && !leadsViewRef.current.contains(e.target)) setLeadsViewOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
 
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
       <div className="flex items-center justify-between gap-3 mb-3 px-1 flex-wrap">
-        <button type="button" className="inline-flex items-center gap-1.5 text-[17px] font-bold text-[#111]">
-          My Leads <ChevronDown size={16} className="text-[#9CA3AF]" />
-        </button>
+        <div className="relative" ref={leadsViewRef}>
+          <button
+            type="button"
+            onClick={() => setLeadsViewOpen((v) => !v)}
+            className="inline-flex items-center gap-1.5 text-[17px] font-bold text-[#111]"
+          >
+            My Leads
+            <ChevronDown
+              size={16}
+              className={`text-[#9CA3AF] transition-transform ${leadsViewOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+          {leadsViewOpen && (
+            <div className="absolute left-0 top-[calc(100%+6px)] min-w-[160px] bg-white border border-black/8 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-40 py-1 overflow-hidden">
+              {MY_LEADS_VIEWS.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => {
+                    setLeadsView(opt.id);
+                    setLeadsViewOpen(false);
+                  }}
+                  className={`w-full text-left px-3.5 py-2 text-[13px] transition-colors ${
+                    opt.id === leadsView
+                      ? "bg-[#FCF5F6] text-[#7A0A17] font-semibold"
+                      : "text-[#4B5563] hover:bg-[#FAFAFB]"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-3.5">
