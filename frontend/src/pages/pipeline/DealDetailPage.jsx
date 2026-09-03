@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Flag, MessageCircle, Minus, Phone, Plus } from "lucide-react";
 import { toast } from "react-toastify";
 import TopBar from "../../components/layout/TopBar";
-import DealStageBar from "../../components/pipeline/DealStageBar";
+import StageStepper from "../../components/pipeline/StageStepper";
 import DealTabs from "../../components/pipeline/DealTabs";
 import OverviewTab from "./deal-tabs/OverviewTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
@@ -134,7 +134,7 @@ export default function DealDetailPage({ lead, onBack, onMoveToP5 }) {
         </div>
 
         {/* Stage progress */}
-        <DealStageBar activeStageId="P4" />
+        <StageStepper activeStageId="P4" />
 
         {/* Deal header + tabs */}
         <div className="bg-white border border-black/8 rounded-2xl overflow-hidden">
