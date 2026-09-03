@@ -508,7 +508,7 @@ function SortIcon({ col, sort }) {
     : <ChevronDown size={12} className="text-[#7A0A17] shrink-0 mb-0.5" />;
 }
 
-function PipelineTableView({ flatLeads, onOpenScoreModal }) {
+function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage }) {
   const [sort, setSort] = useState({ key: "name", dir: "asc" });
 
   const toggle = (key) =>
@@ -594,10 +594,22 @@ function PipelineTableView({ flatLeads, onOpenScoreModal }) {
 
                     {/* Stage */}
                     <td className="px-3 py-2.5 whitespace-nowrap">
-                      <p className="text-[12px] text-[#374151]">
-                        {stage.id} - {stage.label}{" "}
-                        <span style={{ color: temp.color }} className="font-semibold">({lead.temperature})</span>
-                      </p>
+                      {["P0", "P1", "P4"].includes(stage.id) ? (
+                        <button
+                          type="button"
+                          onClick={() => onMoveStage?.(lead, stage.id)}
+                          className="text-left text-[12px] text-[#374151] hover:text-[#7A0A17] hover:underline decoration-[#7A0A17]/40 underline-offset-2 transition-colors"
+                          title={`Move this lead from ${stage.id}`}
+                        >
+                          {stage.id} - {stage.label}{" "}
+                          <span style={{ color: temp.color }} className="font-semibold no-underline">({lead.temperature})</span>
+                        </button>
+                      ) : (
+                        <p className="text-[12px] text-[#374151]">
+                          {stage.id} - {stage.label}{" "}
+                          <span style={{ color: temp.color }} className="font-semibold">({lead.temperature})</span>
+                        </p>
+                      )}
                     </td>
 
                     {/* Priority */}
@@ -1042,6 +1054,7 @@ export default function PipelineBoard() {
           <PipelineTableView
             flatLeads={flatLeads}
             onOpenScoreModal={(lead) => setSelectedScoreLead(lead)}
+            onMoveStage={handleMoveStage}
           />
         )}
       </div>
