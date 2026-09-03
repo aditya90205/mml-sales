@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { Clock, Bell, ArrowUpRight, CheckCheck, User, Settings, LogOut, Search, CircleDot, ChevronRight } from "lucide-react";
+import { Clock, Bell, ArrowUpRight, CheckCheck, User, LogOut, Search, CircleDot, ChevronRight } from "lucide-react";
 import Avatar from "../ui/Avatar";
 
 
@@ -284,13 +284,6 @@ function ProfileMenu() {
             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#111] hover:bg-[#FAFAFB] transition-colors"
           >
             <User size={15} /> Profile
-          </button>
-          <button
-            type="button"
-            onClick={() => { closeMenu(); navigate("/settings"); }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#111] hover:bg-[#FAFAFB] transition-colors"
-          >
-            <Settings size={15} /> Settings
           </button>
           <button
             type="button"

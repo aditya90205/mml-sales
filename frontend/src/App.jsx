@@ -7,6 +7,7 @@ import PipelineBoard from "./pages/PipelineBoard";
 import HrmsPage from "./pages/HrmsPage";
 import BulkImportPage from "./pages/BulkImportPage";
 import TasksPage from "./pages/TasksPage";
+import ProfileSettings from "./pages/ProfileSettings";
 
 // ── Placeholder for pages not yet built ──────────────────────────────────────
 function Placeholder({ title }) {
@@ -150,7 +151,7 @@ export default function App() {
         />
         <Route
           path="/profile"
-          element={<LayoutRoute><Placeholder title="Profile Settings" /></LayoutRoute>}
+          element={<LayoutRoute><ProfileSettings /></LayoutRoute>}
         />
         <Route
           path="/notifications"
