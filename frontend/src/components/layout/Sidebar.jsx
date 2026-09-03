@@ -12,15 +12,14 @@ import {
 } from "lucide-react";
 import logo from "../../assets/logo.png";
 
-// 9 nav items — labels appear in the hover tooltip.
 const NAV_ITEMS = [
   { label: "Dashboard",       icon: LayoutDashboard, to: "/dashboard" },
-  { label: "HRMS",            icon: Users,           to: "/hrms" },
   { label: "Calendar",        icon: CalendarDays,    to: "/calendar" },
-  { label: "Tasks",           icon: CheckSquare,     to: "/tasks" },
   { label: "Bulk Upload",     icon: Upload,          to: "/bulk-upload" },
   { label: "Pipeline Board",  icon: KanbanSquare,    to: "/pipeline" },
   { label: "Client Database", icon: Database,        to: "/clients" },
+  { label: "Tasks",           icon: CheckSquare,     to: "/tasks" },
+  { label: "HRMS",            icon: Users,           to: "/hrms" },
   { label: "Leaderboard",     icon: Trophy,          to: "/leaderboard" },
   { label: "Contest",         icon: Gift,            to: "/contest" },
 ];
@@ -30,8 +29,6 @@ export default function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-[58px] z-30 bg-[#7A0A17] flex flex-col">
-      {/* Brand mark — artwork is white with transparent counters, so it sits
-          directly on the maroon rail with no filter. */}
       <div className="h-[56px] flex items-center justify-center shrink-0 border-b border-white/12">
         <img
           src={logo}
@@ -40,7 +37,6 @@ export default function Sidebar() {
         />
       </div>
 
-      {/* Nav icons */}
       <nav className="flex flex-col items-center gap-1.5 pt-4 pb-4 flex-1 overflow-y-auto scrollbar-none">
         {NAV_ITEMS.map((item) => {
           const isActive =
@@ -61,12 +57,10 @@ export default function Sidebar() {
             >
               <item.icon size={17} strokeWidth={isActive ? 1.9 : 1.6} />
 
-              {/* Active indicator on the rail edge */}
               {isActive && (
                 <span className="absolute -right-[7px] top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-l-full bg-white" />
               )}
 
-              {/* Hover tooltip */}
               <span
                 className="pointer-events-none absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2
                            bg-[#1a1a1a] text-white text-xs font-medium px-2.5 py-1.5 rounded-lg
