@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Phone, CheckCircle2, Clock, User } from "lucide-react";
 import StageStepper from "../../components/pipeline/StageStepper";
-import TopBar from "../../components/layout/TopBar";
+// TopBar is provided by Layout
 
 export default function AddP0ProspectPage({ onBack, onAddProspect }) {
   const [formData, setFormData] = useState({
@@ -52,7 +52,7 @@ export default function AddP0ProspectPage({ onBack, onAddProspect }) {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-[#F8F9FA]">
-      <TopBar page="Pipeline Board / Add P0 Prospect" />
+      {/* TopBar is provided by Layout */}
 
       {/* Page Header Bar */}
       <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-black/8 shrink-0 flex-wrap gap-4">

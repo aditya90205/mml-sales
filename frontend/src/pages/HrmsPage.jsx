@@ -37,7 +37,7 @@ import {
   Coffee,
   ArrowLeftRight,
 } from "lucide-react";
-import TopBar, { USER } from "../components/layout/TopBar";
+import { USER } from "../components/layout/TopBar";
 import Modal from "../components/ui/Modal";
 import yellowLoopIcon from "../assets/yellow-loop.png";
 import redBackIcon from "../assets/red-back.png";
@@ -520,8 +520,7 @@ export default function HrmsPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-screen bg-[#F7F8FA] text-[#111827] font-sans">
-      {/* ── Top Bar Header ─────────────────────────────────────────────────── */}
-      <TopBar page="HRMS" />
+      {/* TopBar is rendered by Layout; removed per global header update */}
 
       {/* ── Page Content Container ───────────────────────────────────────── */}
       <div className="p-4 sm:p-6 flex flex-col gap-5 max-w-[1550px] w-full mx-auto">
@@ -530,13 +529,13 @@ export default function HrmsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#6B7280]">
+            {/* <div className="flex items-center gap-2 text-xs font-semibold text-[#6B7280]">
               <span className="hover:text-[#7A0A17] cursor-pointer transition-colors">Dashboard</span>
               <ChevronRight size={13} className="text-[#9CA3AF]" />
               <span className="hover:text-[#7A0A17] cursor-pointer transition-colors">My Workspace</span>
               <ChevronRight size={13} className="text-[#9CA3AF]" />
               <span className="text-[#111827] font-bold">HRMS</span>
-            </div>
+            </div> */}
 
             {/* Title */}
             <div className="mt-1">

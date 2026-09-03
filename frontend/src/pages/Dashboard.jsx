@@ -60,7 +60,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import TopBar, { USER } from "../components/layout/TopBar";
+import { USER } from "../components/layout/TopBar";
 import funnelImg from "../assets/pipeline.png";
 import contestIcon from "../assets/contest.png";
 import leaderboardIcon from "../assets/leaderboard.png";
@@ -1477,7 +1477,6 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <TopBar page="Dashboard" />
 
       {/* Greeting row */}
       <div className="flex items-center justify-between gap-4 px-5 pt-5 pb-4 flex-wrap">

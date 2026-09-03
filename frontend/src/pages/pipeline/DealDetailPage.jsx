@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Flag, MessageCircle, Minus, Phone, Plus } from "lucide-react";
 import { toast } from "react-toastify";
-import TopBar from "../../components/layout/TopBar";
+// TopBar is provided by Layout
 import StageStepper from "../../components/pipeline/StageStepper";
 import DealTabs from "../../components/pipeline/DealTabs";
 import OverviewTab from "./deal-tabs/OverviewTab";
@@ -113,7 +113,7 @@ export default function DealDetailPage({ lead, onBack, onMoveToP5 }) {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-[#F8F9FA]">
-      <TopBar page={`Pipeline Board / ${deal.name}`} />
+      {/* TopBar is provided by Layout */}
 
       <div className="p-5 flex flex-col gap-4 overflow-y-auto scrollbar-thin">
         {/* Locked-stage banner */}
