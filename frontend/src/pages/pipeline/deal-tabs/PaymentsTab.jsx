@@ -1,6 +1,6 @@
 import LockedTabOverlay from "../../../components/pipeline/LockedTabOverlay";
-import TableCard from "../../../components/pipeline/TableCard";
-import StatusPill from "../../../components/pipeline/StatusPill";
+import TableCard from "../../../components/common/TableCard";
+import StatusPill from "../../../components/common/StatusPill";
 
 const PAYMENTS = [
   { date: "29 Jun 2026", method: "UPI",          reference: "MML-R-88213", amount: "₹15,000", status: "Received", tone: "green" },

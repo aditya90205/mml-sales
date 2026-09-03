@@ -1,5 +1,5 @@
-import TableCard from "../../../components/pipeline/TableCard";
-import StatusPill from "../../../components/pipeline/StatusPill";
+import TableCard from "../../../components/common/TableCard";
+import StatusPill from "../../../components/common/StatusPill";
 
 const VISITS = [
   {

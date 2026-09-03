@@ -1,6 +1,6 @@
 import { AlertTriangle, Check } from "lucide-react";
 import LockedTabOverlay from "../../../components/pipeline/LockedTabOverlay";
-import StatusPill from "../../../components/pipeline/StatusPill";
+import StatusPill from "../../../components/common/StatusPill";
 
 const CHECKLIST = [
   { label: "Identity & verification documents", note: "Identity & verification documents 6 of 7 items verified", status: "1 Pending", tone: "amber", state: "pending" },

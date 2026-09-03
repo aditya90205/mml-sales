@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import StatusPill from "../../../components/pipeline/StatusPill";
+import StatusPill from "../../../components/common/StatusPill";
 
 const DOCUMENTS = [
   { label: "Aadhaar card — client",    note: "Uploaded 29 Jun · auto-verified via KYC API",             done: true,  status: "Verified",    tone: "green" },

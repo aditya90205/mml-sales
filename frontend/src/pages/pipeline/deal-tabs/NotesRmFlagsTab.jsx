@@ -1,5 +1,5 @@
 import { AlertTriangle } from "lucide-react";
-import StatusPill from "../../../components/pipeline/StatusPill";
+import StatusPill from "../../../components/common/StatusPill";
 
 const NOTES = [
   {

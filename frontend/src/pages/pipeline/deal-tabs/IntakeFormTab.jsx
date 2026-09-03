@@ -1,5 +1,5 @@
-import TableCard from "../../../components/pipeline/TableCard";
-import StatusPill from "../../../components/pipeline/StatusPill";
+import TableCard from "../../../components/common/TableCard";
+import StatusPill from "../../../components/common/StatusPill";
 
 const SECTIONS = [
   { section: "1 · Who is the client",           fields: 6, filled: 6, status: "Complete" },

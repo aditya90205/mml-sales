@@ -1,4 +1,4 @@
-import TableCard from "../../../components/pipeline/TableCard";
+import TableCard from "../../../components/common/TableCard";
 
 const AUDIT_LOG = [
   { timestamp: "28 Jul 09:14", actor: "Rohit Khanna", action: "Viewed masked mobile",     object: "Client contact", source: "CRM Web" },
