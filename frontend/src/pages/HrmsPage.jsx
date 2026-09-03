@@ -33,8 +33,11 @@ import {
   LayoutGrid,
   Lock,
   Image as ImageIcon,
+  Info,
+  Coffee,
+  ArrowLeftRight,
 } from "lucide-react";
-import TopBar from "../components/layout/TopBar";
+import TopBar, { USER } from "../components/layout/TopBar";
 import Modal from "../components/ui/Modal";
 import yellowLoopIcon from "../assets/yellow-loop.png";
 import redBackIcon from "../assets/red-back.png";
@@ -67,6 +70,30 @@ const TIME_OPTIONS = (() => {
   }
   return times;
 })();
+
+const LEAVE_BALANCE_TYPES = [
+  { type: "Annual Leave",      total: 23, used: 8, available: 15, info: "Paid time off for planned personal travel or downtime." },
+  { type: "Paternity Leave",   total: 23, used: 8, available: 15, info: "Leave for new fathers following the birth or adoption of a child." },
+  { type: "Maternity Leave",   total: 23, used: 8, available: 15, info: "Leave for new mothers before and after childbirth." },
+  { type: "Sick Leave",        total: 23, used: 8, available: 15, info: "Paid leave for illness or medical appointments." },
+  { type: "Emergency Leave",   total: 23, used: 8, available: 15, info: "Short-notice leave for unforeseen personal emergencies." },
+  { type: "Personal Leave",    total: 23, used: 8, available: 15, info: "Leave for personal matters not covered by other categories." },
+  { type: "Casual Leave",      total: 23, used: 8, available: 15, info: "Short leave for everyday personal reasons." },
+  { type: "Study Leave",       total: 23, used: 8, available: 15, info: "Leave to attend exams, courses, or certifications." },
+  { type: "Marriage Leave",    total: 23, used: 8, available: 15, info: "Leave granted for an employee's own wedding." },
+  { type: "Bereavement Leave", total: 23, used: 8, available: 15, info: "Leave following the loss of an immediate family member." },
+];
+
+const SHIFT_OPTIONS = [
+  "Morning Shift (8:00 AM - 5:00 PM)",
+  "General Shift (9:00 AM - 6:00 PM)",
+  "Evening Shift (2:00 PM - 11:00 PM)",
+  "Late Shift (11:00 AM - 8:00 PM)",
+];
+
+const INITIAL_SHIFT_CHANGE_REQUESTS = [
+  { id: 1, from: "General (9:00 AM - 6:00 PM)", to: "Evening (2:00 PM - 11:00 PM)", effective: "August 2026", status: "Pending" },
+];
 
 const HRMS_TABS = [
   "Summary",
@@ -321,6 +348,10 @@ export default function HrmsPage() {
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [viewExpense, setViewExpense] = useState(null);
   const [applyLeaveOpen, setApplyLeaveOpen] = useState(false);
+  const [applyLeaveFormOpen, setApplyLeaveFormOpen] = useState(false);
+  const [leaveMenuOpen, setLeaveMenuOpen] = useState(false);
+  const [shiftChangeFormOpen, setShiftChangeFormOpen] = useState(false);
+  const [shiftChangeRequests, setShiftChangeRequests] = useState(INITIAL_SHIFT_CHANGE_REQUESTS);
   const [leaveCommentView, setLeaveCommentView] = useState(null);
   const [addManualRowOpen, setAddManualRowOpen] = useState(false);
 
@@ -370,8 +401,16 @@ export default function HrmsPage() {
 
   const handleChangeShift = (e) => {
     e.preventDefault();
+    const newRequest = {
+      id: Date.now(),
+      from: "General (9:00 AM - 6:00 PM)",
+      to: newShift.replace(" Shift", ""),
+      effective: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+      status: "Pending",
+    };
+    setShiftChangeRequests([newRequest, ...shiftChangeRequests]);
     toast.success(`Shift change request submitted for ${newShift}`);
-    setShiftModalOpen(false);
+    setShiftChangeFormOpen(false);
   };
 
   const handleRegularizeSubmit = (e) => {
@@ -2421,46 +2460,132 @@ export default function HrmsPage() {
       )}
 
       {/* 3. Change Shift Modal */}
-      {shiftModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
-            <button onClick={() => setShiftModalOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
-              <X size={18} />
-            </button>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="size-10 rounded-xl bg-[#DCFCE7] text-[#15803D] grid place-items-center">
-                <Clock size={20} />
+      <Modal open={shiftModalOpen} onClose={() => setShiftModalOpen(false)} title="My Shift" width="max-w-md">
+        <div className="flex flex-col gap-4 text-xs">
+          <div className="bg-[#FFF3E4] border border-[#F59E0B]/20 rounded-xl p-4 grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-2.5">
+              <span className="size-8 rounded-lg bg-white text-[#D97706] grid place-items-center shrink-0">
+                <Clock size={16} />
               </span>
               <div>
-                <h3 className="text-lg font-bold text-[#111]">Request Shift Change</h3>
-                <p className="text-xs text-[#6B7280]">Current Shift: General Shift (9:00 AM - 6:00 PM)</p>
+                <p className="font-bold text-[#111827]">General</p>
+                <p className="text-[#6B7280]">9:00 AM - 6:00 PM</p>
               </div>
             </div>
-            <form onSubmit={handleChangeShift} className="space-y-4">
+            <div className="flex items-center gap-2.5">
+              <span className="size-8 rounded-lg bg-white text-[#D97706] grid place-items-center shrink-0">
+                <Calendar size={16} />
+              </span>
               <div>
-                <label className="block text-xs font-bold text-[#374151] mb-1">Select Preferred Shift</label>
-                <select
-                  value={newShift}
-                  onChange={(e) => setNewShift(e.target.value)}
-                  className="w-full border border-black/15 rounded-xl p-2.5 text-xs font-semibold outline-none"
-                >
-                  <option value="Morning Shift (8:00 AM - 5:00 PM)">Morning Shift (8:00 AM - 5:00 PM)</option>
-                  <option value="General Shift (9:00 AM - 6:00 PM)">General Shift (9:00 AM - 6:00 PM)</option>
-                  <option value="Late Shift (11:00 AM - 8:00 PM)">Late Shift (11:00 AM - 8:00 PM)</option>
-                </select>
+                <p className="font-bold text-[#111827]">Days</p>
+                <p className="text-[#6B7280]">Monday to Friday (5 days per week)</p>
               </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setShiftModalOpen(false)} className="px-4 py-2 border border-black/10 rounded-xl text-xs font-bold text-[#4B5563]">
-                  Cancel
-                </button>
-                <button type="submit" className="px-4 py-2 bg-[#15803D] text-white rounded-xl text-xs font-bold">
-                  Submit Request
-                </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="border border-black/8 rounded-xl p-3">
+              <span className="inline-flex items-center gap-1.5 text-[#9CA3AF] font-bold uppercase text-[10px]">
+                <Clock size={12} /> Working Time
+              </span>
+              <p className="font-extrabold text-[#111827] mt-1">8 hours</p>
+            </div>
+            <div className="border border-black/8 rounded-xl p-3">
+              <span className="inline-flex items-center gap-1.5 text-[#9CA3AF] font-bold uppercase text-[10px]">
+                <Coffee size={12} /> Break Duration
+              </span>
+              <p className="font-extrabold text-[#111827] mt-1">1 hour</p>
+            </div>
+            <div className="border border-black/8 rounded-xl p-3">
+              <span className="inline-flex items-center gap-1.5 text-[#9CA3AF] font-bold uppercase text-[10px]">
+                <AlertCircle size={12} /> Grace Period
+              </span>
+              <p className="font-extrabold text-[#111827] mt-1">15 minutes</p>
+            </div>
+            <div className="border border-black/8 rounded-xl p-3">
+              <span className="inline-flex items-center gap-1.5 text-[#9CA3AF] font-bold uppercase text-[10px]">
+                <CheckCircle2 size={12} /> Status
+              </span>
+              <p className="font-extrabold text-[#16A34A] mt-1">Active</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <h3 className="font-extrabold text-[#111827]">Shift Change Request</h3>
+            <button
+              type="button"
+              onClick={() => setShiftChangeFormOpen(true)}
+              className="inline-flex items-center gap-1.5 bg-[#7A0A17] hover:bg-[#600712] text-white font-bold px-3 py-1.5 rounded-xl transition-colors"
+            >
+              Request Shift Change <Plus size={13} />
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto">
+            {shiftChangeRequests.map((req) => (
+              <div key={req.id} className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-xl p-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <ArrowLeftRight size={14} className="text-[#7A0A17] shrink-0" />
+                  <div className="min-w-0">
+                    <p className="font-bold text-[#111827] truncate">
+                      {req.from} <span className="text-[#7A0A17]">&rarr;</span> {req.to}
+                    </p>
+                    <p className="text-[#6B7280]">Effective from {req.effective}</p>
+                  </div>
+                </div>
+                <span className="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-lg bg-[#FFEDD5] text-[#C2410C] border border-[#EA580C]/20">
+                  {req.status}
+                </span>
               </div>
-            </form>
+            ))}
           </div>
         </div>
-      )}
+      </Modal>
+
+      {/* Request Shift Change form */}
+      <Modal
+        open={shiftChangeFormOpen}
+        onClose={() => setShiftChangeFormOpen(false)}
+        title="Request Shift Change"
+        subtitle="Current Shift: General Shift (9:00 AM - 6:00 PM)"
+        icon={<Clock size={17} />}
+        iconBg="#DCFCE7"
+        iconColor="#15803D"
+        width="max-w-md"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setShiftChangeFormOpen(false)}
+              className="px-4 py-2 border border-black/10 rounded-xl text-xs font-bold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="shift-change-form"
+              className="px-5 py-2 bg-[#15803D] hover:bg-[#116C31] text-white rounded-xl text-xs font-bold transition-colors"
+            >
+              Submit Request
+            </button>
+          </>
+        }
+      >
+        <form id="shift-change-form" onSubmit={handleChangeShift} className="space-y-4 text-xs">
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">Select Preferred Shift</label>
+            <select
+              value={newShift}
+              onChange={(e) => setNewShift(e.target.value)}
+              className="w-full border border-black/15 rounded-xl p-2.5 font-semibold outline-none focus:border-[#7A0A17] bg-white text-[#111827]"
+            >
+              {SHIFT_OPTIONS.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+        </form>
+      </Modal>
 
       {/* 4. Leaderboard Modal */}
       {leaderboardModalOpen && (
@@ -2881,78 +3006,154 @@ export default function HrmsPage() {
         )}
       </Modal>
 
-      {/* 9. Apply Leave Modal */}
-      {applyLeaveOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
-            <button onClick={() => setApplyLeaveOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
-              <X size={18} />
-            </button>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="size-10 rounded-xl bg-[#7A0A17] text-white grid place-items-center">
-                <Calendar size={20} />
-              </span>
-              <div>
-                <h3 className="text-lg font-bold text-[#111]">Apply for Leave</h3>
-                <p className="text-xs text-[#6B7280]">Available Balance: 1 day</p>
-              </div>
+      {/* 9. Leave Balances Overview Modal */}
+      <Modal
+        open={applyLeaveOpen}
+        onClose={() => { setApplyLeaveOpen(false); setLeaveMenuOpen(false); }}
+        width="max-w-lg"
+        title="Leave Balances"
+      >
+        <div className="-mt-2 mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <img
+              src={USER.avatar}
+              alt={USER.name}
+              className="size-11 rounded-full object-cover shrink-0 ring-2 ring-[#7A0A17]/10"
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[#111] truncate">{USER.name}</p>
+              <p className="text-xs text-[#6B7280]">Relationship Manager</p>
             </div>
-            <form onSubmit={handleApplyLeave} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-[#374151] mb-1">Leave Type</label>
-                <select
-                  value={leaveForm.type}
-                  onChange={(e) => setLeaveForm({ ...leaveForm, type: e.target.value })}
-                  className="w-full border border-black/15 rounded-xl p-2.5 font-semibold outline-none focus:border-[#7A0A17]"
+          </div>
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setLeaveMenuOpen((v) => !v)}
+              className="p-1.5 rounded-lg text-[#6B7280] hover:bg-black/5 transition-colors"
+              aria-label="More options"
+            >
+              <MoreVertical size={18} />
+            </button>
+            {leaveMenuOpen && (
+              <div className="absolute right-0 top-[calc(100%+6px)] w-44 bg-white border border-black/10 rounded-xl shadow-lg z-10 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => { setLeaveMenuOpen(false); setApplyLeaveFormOpen(true); }}
+                  className="w-full flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors"
                 >
-                  <option value="Casual Leave">Casual Leave</option>
-                  <option value="Sick Leave">Sick Leave</option>
-                  <option value="Earned Leave">Earned Leave</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block font-bold text-[#374151] mb-1">Start Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={leaveForm.startDate}
-                    onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
-                    className="w-full border border-black/15 rounded-xl p-2 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-[#374151] mb-1">End Date</label>
-                  <input
-                    type="date"
-                    value={leaveForm.endDate}
-                    onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
-                    className="w-full border border-black/15 rounded-xl p-2 outline-none"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block font-bold text-[#374151] mb-1">Reason / Comment</label>
-                <textarea
-                  rows={2}
-                  value={leaveForm.comment}
-                  onChange={(e) => setLeaveForm({ ...leaveForm, comment: e.target.value })}
-                  placeholder="State reason..."
-                  className="w-full border border-black/15 rounded-xl p-2.5 outline-none"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setApplyLeaveOpen(false)} className="px-4 py-2 border border-black/10 rounded-xl font-bold text-[#4B5563]">
-                  Cancel
-                </button>
-                <button type="submit" className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl font-bold">
-                  Submit Application
+                  <Plus size={14} className="text-[#7A0A17]" /> Apply for Leave
                 </button>
               </div>
-            </form>
+            )}
           </div>
         </div>
-      )}
+
+        <div className="border border-black/8 rounded-xl overflow-hidden">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-[#FAFAFB] text-[#6B7280] uppercase text-[10px] tracking-wide">
+                <th className="text-left font-bold px-3 py-2">Leave Type</th>
+                <th className="text-center font-bold px-2 py-2">Total</th>
+                <th className="text-center font-bold px-2 py-2">Used</th>
+                <th className="text-center font-bold px-2 py-2">Available</th>
+                <th className="w-8 px-2 py-2" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-black/5">
+              {LEAVE_BALANCE_TYPES.map((lt) => (
+                <tr key={lt.type} className="hover:bg-[#FAFAFB]/60 transition-colors">
+                  <td className="px-3 py-2 font-semibold text-[#111]">{lt.type}</td>
+                  <td className="px-2 py-2 text-center text-[#374151]">{lt.total}</td>
+                  <td className="px-2 py-2 text-center text-[#374151]">{lt.used}</td>
+                  <td className="px-2 py-2 text-center font-bold text-[#16A34A]">{lt.available}</td>
+                  <td className="px-2 py-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() => toast.info(lt.info)}
+                      className="text-[#9CA3AF] hover:text-[#7A0A17] transition-colors"
+                      aria-label={`${lt.type} info`}
+                    >
+                      <Info size={13} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Modal>
+
+      {/* 9b. Apply Leave Form Modal */}
+      <Modal
+        open={applyLeaveFormOpen}
+        onClose={() => setApplyLeaveFormOpen(false)}
+        title="Apply for Leave"
+        subtitle="Available Balance: 15 days"
+        icon={<Calendar size={17} />}
+        iconBg="#FDE9EC"
+        iconColor="#7A0A17"
+        width="max-w-md"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setApplyLeaveFormOpen(false)}
+              className="px-4 py-2 border border-black/10 rounded-xl font-bold text-[#4B5563] text-xs"
+            >
+              Cancel
+            </button>
+            <button type="submit" form="apply-leave-form" className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl font-bold text-xs">
+              Submit Application
+            </button>
+          </>
+        }
+      >
+        <form id="apply-leave-form" onSubmit={(e) => { handleApplyLeave(e); setApplyLeaveFormOpen(false); }} className="space-y-3 text-xs">
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">Leave Type</label>
+            <select
+              value={leaveForm.type}
+              onChange={(e) => setLeaveForm({ ...leaveForm, type: e.target.value })}
+              className="w-full border border-black/15 rounded-xl p-2.5 font-semibold outline-none focus:border-[#7A0A17]"
+            >
+              {LEAVE_BALANCE_TYPES.map((lt) => (
+                <option key={lt.type} value={lt.type}>{lt.type}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block font-bold text-[#374151] mb-1">Start Date</label>
+              <input
+                type="date"
+                required
+                value={leaveForm.startDate}
+                onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
+                className="w-full border border-black/15 rounded-xl p-2 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-[#374151] mb-1">End Date</label>
+              <input
+                type="date"
+                value={leaveForm.endDate}
+                onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
+                className="w-full border border-black/15 rounded-xl p-2 outline-none"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">Reason / Comment</label>
+            <textarea
+              rows={2}
+              value={leaveForm.comment}
+              onChange={(e) => setLeaveForm({ ...leaveForm, comment: e.target.value })}
+              placeholder="State reason..."
+              className="w-full border border-black/15 rounded-xl p-2.5 outline-none"
+            />
+          </div>
+        </form>
+      </Modal>
 
       {/* 10. Leave Comment View Modal */}
       {leaveCommentView && (
