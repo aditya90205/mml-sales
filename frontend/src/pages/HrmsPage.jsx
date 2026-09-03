@@ -81,11 +81,11 @@ const INITIAL_SHIFT_CHANGE_REQUESTS = [
 
 const HRMS_TABS = [
   "Summary",
+  "Incentives",
   "Attendance",
   "Timesheet",
   "Salary & Payslip",
   "Trainings",
-  "Incentives",
   "Goals & Reviews",
   "Documents",
   "Asset",
