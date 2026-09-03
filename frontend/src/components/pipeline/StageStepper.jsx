@@ -9,9 +9,9 @@ const STAGES = [
 ];
 
 const STATUS_STYLES = {
-  done:    { box: "bg-[#E7F8EF] border-l-[#16A34A]",      name: "text-[#16A34A]" },
-  current: { box: "bg-[#FDECEE] border-l-[#E8395B]",       name: "text-[#E8395B]" },
-  locked:  { box: "bg-[#FDECEE]/50 border-l-[#E8395B]/40", name: "text-[#E8395B]/50" },
+  done:    { box: "bg-[#E7F8EF] border-l-[#16A34A]", name: "text-[#16A34A]" },
+  current: { box: "bg-[#FDECEE] border-l-[#E8395B]", name: "text-[#E8395B]" },
+  locked:  { box: "bg-[#FAF3F2] border-l-[#EADEDD]", name: "text-[#A59695]" },
 };
 
 /**
