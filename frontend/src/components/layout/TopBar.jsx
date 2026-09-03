@@ -214,7 +214,7 @@ function ProfileMenu() {
       >
         <Avatar src={USER.avatar} name={USER.name} size="sm" statusColor={statusMeta.color} />
         <div className="text-left hidden sm:block leading-none">
-          <p className="text-[13px] font-semibold text-[#111]">{USER.name}</p>
+          <p className="text-[13px] font-semibold text-[#111]">Profile</p>
           <p className="text-[10px] mt-1">
             <span className="font-medium" style={{ color: statusMeta.color }}>{statusMeta.label}</span>
             <span className="text-[#9CA3AF]"> · Idle for {SESSION.idle}in</span>
@@ -336,7 +336,7 @@ export default function TopBar({ page = "Dashboard" }) {
     documents: "Documents",
     settings: "Settings",
     support: "Help & Support",
-    profile: "Profile Settings",
+    profile: "Profile",
     notifications: "Notifications",
   };
 
