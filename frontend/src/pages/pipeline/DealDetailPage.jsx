@@ -10,6 +10,8 @@ import VisitsMeetingsTab from "./deal-tabs/VisitsMeetingsTab";
 import PackageQuoteTab from "./deal-tabs/PackageQuoteTab";
 import DiscountApprovalsTab from "./deal-tabs/DiscountApprovalsTab";
 import DocumentsKycTab from "./deal-tabs/DocumentsKycTab";
+import NotesRmFlagsTab from "./deal-tabs/NotesRmFlagsTab";
+import AuditTab from "./deal-tabs/AuditTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
 
 const TABS = [
@@ -32,6 +34,8 @@ const TAB_CONTENT = {
   package:   <PackageQuoteTab />,
   discounts: <DiscountApprovalsTab />,
   documents: <DocumentsKycTab />,
+  notes:     <NotesRmFlagsTab />,
+  audit:     <AuditTab />,
 };
 
 /** Static demo fields shown on the overview tab, layered over the lead's board data. */
