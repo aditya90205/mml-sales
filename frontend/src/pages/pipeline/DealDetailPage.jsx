@@ -148,7 +148,7 @@ export default function DealDetailPage({ lead, onBack, onMoveToP5 }) {
             <button
               type="button"
               onClick={onBack}
-              className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712]  transition-colors"
+              className="h-9 px-4 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
             >
               Cancel
             </button>
