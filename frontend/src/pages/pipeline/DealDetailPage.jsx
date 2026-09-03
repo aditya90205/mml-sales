@@ -12,6 +12,8 @@ import DiscountApprovalsTab from "./deal-tabs/DiscountApprovalsTab";
 import DocumentsKycTab from "./deal-tabs/DocumentsKycTab";
 import NotesRmFlagsTab from "./deal-tabs/NotesRmFlagsTab";
 import AuditTab from "./deal-tabs/AuditTab";
+import PaymentsTab from "./deal-tabs/PaymentsTab";
+import P6ChecklistTab from "./deal-tabs/P6ChecklistTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
 
 const TABS = [
@@ -23,8 +25,8 @@ const TABS = [
   { key: "documents", label: "Documents & KYC" },
   { key: "notes",     label: "Notes & RM Flags" },
   { key: "audit",     label: "Audit" },
-  { key: "payments",  label: "Payments",     disabled: true },
-  { key: "p6",        label: "P6 Checklist", disabled: true },
+  { key: "payments",  label: "Payments" },
+  { key: "p6",        label: "P6 Checklist" },
 ];
 
 /** Tabs with no dependency on `deal` — Overview is handled separately since it needs deal data. */
@@ -36,6 +38,8 @@ const TAB_CONTENT = {
   documents: <DocumentsKycTab />,
   notes:     <NotesRmFlagsTab />,
   audit:     <AuditTab />,
+  payments:  <PaymentsTab />,
+  p6:        <P6ChecklistTab />,
 };
 
 /** Static demo fields shown on the overview tab, layered over the lead's board data. */
