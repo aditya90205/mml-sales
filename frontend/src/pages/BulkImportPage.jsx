@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { ChevronDown, Download, FileSpreadsheet, Upload } from "lucide-react";
 import { toast } from "react-toastify";
-import TopBar from "../components/layout/TopBar";
+// TopBar is provided by Layout
 import TableCard from "../components/common/TableCard";
 import StatusPill from "../components/common/StatusPill";
 
@@ -107,7 +107,7 @@ export default function BulkImportPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-[#F8F9FA]">
-      <TopBar page="Lead Generation / Bulk Import" />
+      {/* TopBar is provided by Layout */}
 
       <input
         ref={fileInputRef}
