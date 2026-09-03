@@ -34,6 +34,7 @@ import fileIcon from "../assets/file.png";
 import AddP0ProspectPage from "./pipeline/AddP0ProspectPage";
 import MoveToP1Page from "./pipeline/MoveToP1Page";
 import MoveToP2Page from "./pipeline/MoveToP2Page";
+import DealDetailPage from "./pipeline/DealDetailPage";
 
 /* ───────────────────────── Data ───────────────────────── */
 
@@ -855,7 +856,7 @@ export default function PipelineBoard() {
 
   // Dynamic state for pipeline lead items
   const [leadsData, setLeadsData]       = useState(LEADS_BY_STAGE);
-  const [subView, setSubView]           = useState(null); // null | "add-p0" | "move-p1" | "move-p2"
+  const [subView, setSubView]           = useState(null); // null | "add-p0" | "move-p1" | "move-p2" | "deal-detail"
   const [activeLead, setActiveLead]     = useState(null);
 
   const handleAddProspect = (newLead) => {
@@ -892,12 +893,26 @@ export default function PipelineBoard() {
     toast.success(`Lead "${lead.name}" successfully moved to P2 Data Collection!`);
   };
 
+  const handleMoveToP5 = (lead) => {
+    setLeadsData((prev) => {
+      const p4Filtered = (prev.P4 || []).filter((l) => l.mmlId !== lead.mmlId);
+      const updatedLead = { ...lead, temperature: "Warm", completion: 100 };
+      return {
+        ...prev,
+        P4: p4Filtered,
+        P5: [updatedLead, ...(prev.P5 || [])],
+      };
+    });
+  };
+
   const handleMoveStage = (lead, stageKey) => {
     setActiveLead(lead);
     if (stageKey === "P0") {
       setSubView("move-p1");
     } else if (stageKey === "P1") {
       setSubView("move-p2");
+    } else if (stageKey === "P4") {
+      setSubView("deal-detail");
     }
   };
 
@@ -953,6 +968,16 @@ export default function PipelineBoard() {
         lead={activeLead}
         onBack={() => { setSubView(null); setActiveLead(null); }}
         onMoveToP2={handleMoveToP2}
+      />
+    );
+  }
+
+  if (subView === "deal-detail") {
+    return (
+      <DealDetailPage
+        lead={activeLead}
+        onBack={() => { setSubView(null); setActiveLead(null); }}
+        onMoveToP5={handleMoveToP5}
       />
     );
   }
