@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { Clock, Bell, ArrowUpRight, CheckCheck, User, Settings, LogOut, Search } from "lucide-react";
+import { Clock, Bell, ArrowUpRight, CheckCheck, User, Settings, LogOut, Search, CircleDot, ChevronRight } from "lucide-react";
+import Avatar from "../ui/Avatar";
 
 
 const USER = {
@@ -16,6 +17,48 @@ const SESSION = {
   idle: "12m",
   active: "4H 32M",
 };
+
+const PRESENCE_STATUSES = [
+  { id: "online", label: "Online", color: "#16A34A" },
+  { id: "offline", label: "Offline", color: "#9CA3AF" },
+  { id: "in_meeting", label: "In Meeting", color: "#E8395B" },
+  { id: "break", label: "Break", color: "#EAB308" },
+  { id: "leave", label: "Leave", color: "#8B5CF6" },
+];
+
+const STATUS_KEY = "mml_sales_presence_status";
+
+function getPresenceMeta(statusId) {
+  return PRESENCE_STATUSES.find((s) => s.id === statusId) ?? PRESENCE_STATUSES[0];
+}
+
+function readStoredStatus() {
+  try {
+    const raw = localStorage.getItem(STATUS_KEY);
+    if (PRESENCE_STATUSES.some((s) => s.id === raw)) return raw;
+  } catch {
+    /* ignore */
+  }
+  return "online";
+}
+
+function StatusToggle({ checked, color }) {
+  return (
+    <span
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 ${
+        checked ? "" : "bg-black/15"
+      }`}
+      style={checked ? { backgroundColor: color } : undefined}
+      aria-hidden
+    >
+      <span
+        className={`inline-block size-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${
+          checked ? "translate-x-[22px]" : "translate-x-1"
+        }`}
+      />
+    </span>
+  );
+}
 
 const MOCK_NOTIFICATIONS = [
   {
@@ -133,42 +176,127 @@ function NotificationBell() {
 function ProfileMenu() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [presenceStatus, setPresenceStatus] = useState(readStoredStatus);
   const ref = useRef(null);
-  useOutsideClose(ref, () => setOpen(false));
+  const statusMeta = getPresenceMeta(presenceStatus);
+
+  useOutsideClose(ref, () => {
+    setOpen(false);
+    setStatusOpen(false);
+  });
+
+  const closeMenu = () => {
+    setOpen(false);
+    setStatusOpen(false);
+  };
+
+  const handleStatusSelect = (statusId) => {
+    if (!PRESENCE_STATUSES.some((s) => s.id === statusId)) return;
+    try {
+      localStorage.setItem(STATUS_KEY, statusId);
+    } catch {
+      /* ignore */
+    }
+    setPresenceStatus(statusId);
+  };
 
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          setOpen((v) => !v);
+          setStatusOpen(false);
+        }}
         className="flex items-center gap-2.5 pl-1 pr-1.5 py-1 rounded-xl hover:bg-black/4 transition-colors"
       >
-        <img src={USER.avatar} alt={USER.name} className="size-8 rounded-full object-cover" />
+        <Avatar src={USER.avatar} name={USER.name} size="sm" statusColor={statusMeta.color} />
         <div className="text-left hidden sm:block leading-none">
           <p className="text-[13px] font-semibold text-[#111]">{USER.name}</p>
           <p className="text-[10px] mt-1">
-            <span className="text-[#16A34A] font-medium">Online</span>
+            <span className="font-medium" style={{ color: statusMeta.color }}>{statusMeta.label}</span>
             <span className="text-[#9CA3AF]"> · Idle for {SESSION.idle}in</span>
           </p>
         </div>
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+10px)] w-56 bg-white border border-black/8 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-50 overflow-hidden">
-          <div className="px-4 py-3 border-b border-black/8">
-            <p className="text-sm font-semibold text-[#111]">{USER.name}</p>
-            <p className="text-xs text-[#6B7280] mt-0.5 truncate">{USER.email}</p>
+        <div className="absolute right-0 top-[calc(100%+10px)] w-64 bg-white border border-black/8 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-50 overflow-visible">
+          <div className="px-4 py-3 border-b border-black/8 rounded-t-2xl overflow-hidden">
+            <div className="flex items-center gap-3">
+              <Avatar src={USER.avatar} name={USER.name} size="md" statusColor={statusMeta.color} />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[#111] truncate">{USER.name}</p>
+                <p className="text-xs text-[#6B7280] mt-0.5 truncate">{USER.email}</p>
+                <p className="text-[11px] mt-0.5 flex items-center gap-1.5 text-[#6B7280]">
+                  <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: statusMeta.color }} />
+                  {statusMeta.label}
+                </p>
+              </div>
+            </div>
           </div>
-          <button type="button" onClick={() => { setOpen(false); navigate("/profile"); }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#111] hover:bg-[#FAFAFB] transition-colors">
+
+          <div
+            className="relative"
+            onMouseEnter={() => setStatusOpen(true)}
+            onMouseLeave={() => setStatusOpen(false)}
+          >
+            <button
+              type="button"
+              className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-[#111] hover:bg-[#FAFAFB] transition-colors"
+            >
+              <span className="flex items-center gap-3">
+                <CircleDot size={15} style={{ color: statusMeta.color }} />
+                Status
+              </span>
+              <ChevronRight size={15} className="text-[#9CA3AF]" />
+            </button>
+
+            {statusOpen && (
+              <div className="absolute right-full top-0 pr-1 w-56 z-[60]">
+                <div className="bg-white border border-black/8 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] py-2">
+                  <p className="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+                    Set status
+                  </p>
+                  {PRESENCE_STATUSES.map((s) => {
+                    const checked = presenceStatus === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => handleStatusSelect(s.id)}
+                        className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-[#111] hover:bg-[#FAFAFB] transition-colors"
+                      >
+                        <span className="text-left">{s.label}</span>
+                        <StatusToggle checked={checked} color={s.color} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => { closeMenu(); navigate("/profile"); }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#111] hover:bg-[#FAFAFB] transition-colors"
+          >
             <User size={15} /> Profile
           </button>
-          <button type="button" onClick={() => { setOpen(false); navigate("/settings"); }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#111] hover:bg-[#FAFAFB] transition-colors">
+          <button
+            type="button"
+            onClick={() => { closeMenu(); navigate("/settings"); }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#111] hover:bg-[#FAFAFB] transition-colors"
+          >
             <Settings size={15} /> Settings
           </button>
-          <button type="button" onClick={() => { setOpen(false); navigate("/login"); }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#DC2626] border-t border-black/8 hover:bg-[#FEF2F2] transition-colors">
+          <button
+            type="button"
+            onClick={() => { closeMenu(); navigate("/login"); }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#DC2626] border-t border-black/8 hover:bg-[#FEF2F2] transition-colors rounded-b-2xl"
+          >
             <LogOut size={15} /> Log out
           </button>
         </div>

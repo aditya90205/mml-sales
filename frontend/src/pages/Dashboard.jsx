@@ -1380,17 +1380,23 @@ function MyLeadsCard() {
         </div>
       </div>
 
-      <div className="border border-black/8 rounded-xl overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="border border-black/8 rounded-xl overflow-hidden">
+        <table className="w-full text-left border-collapse table-fixed">
           <thead>
             <tr className="border-b border-black/8">
               {[
-                "Client Name", "Owner", "Stage", "Priority", "Lead Score",
-                "Profile Completion", "Time At This Stage", "Source",
-                "Follow Up Time Left", "Actions",
+                "Client Name",
+                "Owner",
+                "Stage",
+                "Priority",
+                "Lead\nScore",
+                "Profile\nCompletion",
+                "Source",
+                "Follow Up\nTime Left",
+                "Actions",
               ].map((h) => (
-                <th key={h} className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
-                  {h}
+                <th key={h} className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-2.5 py-2 align-bottom">
+                  <span className="whitespace-pre-line leading-tight">{h}</span>
                 </th>
               ))}
             </tr>
@@ -1400,53 +1406,55 @@ function MyLeadsCard() {
               const priority = PRIORITY_STYLES[lead.priority];
               return (
                 <tr key={i} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-2">
+                  <td className="px-2.5 py-3">
+                    <div className="flex items-center gap-2 min-w-0">
                       <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: LEAD_DOT_COLORS[i % LEAD_DOT_COLORS.length] }} />
                       <div className="min-w-0">
-                        <span className="inline-flex items-center gap-1.5">
-                          <p className="text-[13px] font-bold text-[#111] whitespace-nowrap">{lead.name}</p>
-                          {lead.starred && <Star size={12} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />}
+                        <span className="inline-flex items-center gap-1.5 min-w-0">
+                          <p className="text-[13px] font-bold text-[#111] truncate">{lead.name}</p>
+                          {lead.starred && <Star size={12} className="text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={0} />}
                         </span>
-                        <p className="text-[10px] text-[#9CA3AF] whitespace-nowrap">{lead.id}</p>
+                        <p className="text-[10px] text-[#9CA3AF] truncate">{lead.id}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4">
-                    <p className="text-[12px] font-medium text-[#374151] whitespace-nowrap">{lead.owner}</p>
-                    <p className="text-[10px] text-[#9CA3AF] whitespace-nowrap">{lead.ownerRole}</p>
+                  <td className="px-2.5 py-3">
+                    <p className="text-[12px] font-medium text-[#374151] leading-tight">{lead.owner}</p>
+                    <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.ownerRole}</p>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <span className="text-[12px] text-[#374151]">{lead.stage}</span>
-                    {lead.stageTone && (
-                      <span className={`ml-1.5 text-[11px] font-semibold ${lead.stageTone === "Won" ? "text-[#16A34A]" : lead.stageTone === "Lost" ? "text-[#E8395B]" : "text-[#3B82F6]"}`}>
-                        ({lead.stageTone})
-                      </span>
-                    )}
+                  <td className="px-2.5 py-3">
+                    <p className="text-[12px] text-[#374151] leading-tight">
+                      {lead.stage}
+                      {lead.stageTone && (
+                        <span className={`ml-1 text-[11px] font-semibold ${lead.stageTone === "Won" ? "text-[#16A34A]" : lead.stageTone === "Lost" ? "text-[#E8395B]" : "text-[#3B82F6]"}`}>
+                          ({lead.stageTone})
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.timeAtStage}</p>
                   </td>
-                  <td className="px-4 py-4">
-                    <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md ${priority.bg}`} style={{ color: priority.color }}>
+                  <td className="px-2.5 py-3">
+                    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md ${priority.bg}`} style={{ color: priority.color }}>
                       <Flag size={11} fill={priority.color} strokeWidth={0} />
                       {lead.priority}
                     </span>
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-2.5 py-3">
                     <span className="inline-flex items-center gap-1 text-[13px] font-bold text-[#111]">
                       {lead.leadScore.toFixed(1)}
                       <Flag size={11} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} />
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-[12px] text-[#6B7280] whitespace-nowrap">{lead.profileCompletion}%</td>
-                  <td className="px-4 py-4 text-[12px] text-[#6B7280] whitespace-nowrap">{lead.timeAtStage}</td>
-                  <td className="px-4 py-4 text-[12px] text-[#6B7280] whitespace-nowrap">{lead.source}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-2.5 py-3 text-[12px] text-[#6B7280]">{lead.profileCompletion}%</td>
+                  <td className="px-2.5 py-3 text-[12px] text-[#6B7280] leading-tight">{lead.source}</td>
+                  <td className="px-2.5 py-3">
                     <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${lead.followUpTone}`}>
-                      <Clock size={11} /> {lead.followUp}
+                      <Clock size={11} className="shrink-0" /> {lead.followUp}
                     </span>
-                    <p className="text-[10px] text-[#9CA3AF]">{lead.followUpNote}</p>
+                    <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.followUpNote}</p>
                   </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-1.5">
+                  <td className="pl-1 pr-2.5 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-0 flex-nowrap">
                       {lead.lost ? (
                         <button type="button" className="p-1.5 text-[#E8395B] hover:bg-black/4 rounded-lg transition-colors" aria-label="Call">
                           <PhoneOff size={14} />
