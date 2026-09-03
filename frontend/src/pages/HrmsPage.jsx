@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import { USER } from "../components/layout/TopBar";
 import Modal from "../components/ui/Modal";
+import TimesheetDetailsModal from "../components/hrms/TimesheetDetailsModal";
 import yellowLoopIcon from "../assets/yellow-loop.png";
 import redBackIcon from "../assets/red-back.png";
 
@@ -51,25 +52,6 @@ const MONTH_OPTIONS = [
 const YEAR_OPTIONS = ["2024", "2025", "2026"];
 
 const EMPLOYEE_OPTIONS = ["Ankur Sharma", "Aditya Sharma", "Kuhu Sharma", "Rohit Sharma", "Priya Raheja"];
-
-const ATTENDANCE_RECORD_OPTIONS = [
-  "Aug 7, 2026 — Login 09:02 AM / Logout 06:10 PM",
-  "Aug 6, 2026 — Login 09:10 AM / Logout 06:00 PM",
-  "Aug 5, 2026 — Login 09:05 AM / Logout 05:55 PM",
-  "Aug 4, 2026 — Login 09:20 AM / Logout 06:15 PM",
-];
-
-const TIME_OPTIONS = (() => {
-  const times = [];
-  for (let h = 7; h <= 20; h++) {
-    for (const m of [0, 30]) {
-      const period = h < 12 ? "AM" : "PM";
-      const hour12 = h % 12 === 0 ? 12 : h % 12;
-      times.push(`${String(hour12).padStart(2, "0")}:${String(m).padStart(2, "0")} ${period}`);
-    }
-  }
-  return times;
-})();
 
 const LEAVE_BALANCE_TYPES = [
   { type: "Annual Leave",      total: 23, used: 8, available: 15, info: "Paid time off for planned personal travel or downtime." },
@@ -343,8 +325,7 @@ export default function HrmsPage() {
   const [noticeModalOpen, setNoticeModalOpen] = useState(false);
   const [shiftModalOpen, setShiftModalOpen] = useState(false);
   const [leaderboardModalOpen, setLeaderboardModalOpen] = useState(false);
-  const [regularizeModalOpen, setRegularizeModalOpen] = useState(false);
-  const [timesheetDetailsOpen, setTimesheetDetailsOpen] = useState(false);
+  const [timesheetModal, setTimesheetModal] = useState(null);
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [viewExpense, setViewExpense] = useState(null);
   const [applyLeaveOpen, setApplyLeaveOpen] = useState(false);
@@ -370,13 +351,6 @@ export default function HrmsPage() {
   // Form Fields
   const [issueText, setIssueText] = useState("");
   const [newShift, setNewShift] = useState("Morning Shift (8:00 AM - 5:00 PM)");
-  const [regularizeForm, setRegularizeForm] = useState({
-    employee: "",
-    attendanceRecord: "",
-    clockIn: "",
-    clockOut: "",
-    reason: "",
-  });
   const [expenseForm, setExpenseForm] = useState({
     employee: "",
     purpose: "",
@@ -411,14 +385,6 @@ export default function HrmsPage() {
     setShiftChangeRequests([newRequest, ...shiftChangeRequests]);
     toast.success(`Shift change request submitted for ${newShift}`);
     setShiftChangeFormOpen(false);
-  };
-
-  const handleRegularizeSubmit = (e) => {
-    e.preventDefault();
-    if (!regularizeForm.employee || !regularizeForm.clockIn || !regularizeForm.clockOut || !regularizeForm.reason.trim()) return;
-    toast.success("Regularization request submitted for approval.");
-    setRegularizeForm({ employee: "", attendanceRecord: "", clockIn: "", clockOut: "", reason: "" });
-    setRegularizeModalOpen(false);
   };
 
   const handleAddExpense = (e) => {
@@ -798,14 +764,14 @@ export default function HrmsPage() {
               <div className="flex items-center gap-3 shrink-0">
                 <button
                   type="button"
-                  onClick={() => setRegularizeModalOpen(true)}
+                  onClick={() => setTimesheetModal("edit")}
                   className="border border-[#7A0A17] text-[#7A0A17] hover:bg-[#FCF5F6] px-4 py-2 rounded-xl text-xs font-extrabold transition-all shadow-2xs"
                 >
                   Regularize
                 </button>
                 <button
                   type="button"
-                  onClick={() => setTimesheetDetailsOpen(true)}
+                  onClick={() => setTimesheetModal("view")}
                   className="bg-[#7A0A17] hover:bg-[#600712] text-white px-4 py-2 rounded-xl text-xs font-extrabold transition-all shadow-2xs"
                 >
                   View Details
@@ -1065,7 +1031,7 @@ export default function HrmsPage() {
                 <h2 className="text-lg font-extrabold text-[#111827]">Attendance Records</h2>
                 <button
                   type="button"
-                  onClick={() => setRegularizeModalOpen(true)}
+                  onClick={() => setTimesheetModal("edit")}
                   className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-4 py-2 rounded-xl transition-all shadow-2xs"
                 >
                   Regularize
@@ -1236,7 +1202,7 @@ export default function HrmsPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setRegularizeModalOpen(true)}
+                  onClick={() => setTimesheetModal("edit")}
                   className="bg-[#7A0A17] text-white hover:bg-[#600712] px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-2xs ml-2"
                 >
                   <Edit size={14} /> Edit
@@ -2633,152 +2599,17 @@ export default function HrmsPage() {
         </div>
       )}
 
-      {/* 5. Regularize Modal */}
-      <Modal
-        open={regularizeModalOpen}
-        onClose={() => setRegularizeModalOpen(false)}
-        title="Add New Regularization Request"
-        width="max-w-md"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={() => setRegularizeModalOpen(false)}
-              className="px-4 py-2 border border-black/10 rounded-xl text-xs font-bold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              form="regularize-form"
-              className="px-5 py-2 bg-[#7A0A17] hover:bg-[#600712] text-white rounded-xl text-xs font-bold transition-colors"
-            >
-              Save
-            </button>
-          </>
-        }
-      >
-        <form id="regularize-form" onSubmit={handleRegularizeSubmit} className="space-y-4 text-xs">
-          <div>
-            <label className="block font-bold text-[#374151] mb-1">
-              Employee <span className="text-[#DC2626]">*</span>
-            </label>
-            <select
-              required
-              value={regularizeForm.employee}
-              onChange={(e) => setRegularizeForm({ ...regularizeForm, employee: e.target.value })}
-              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17] bg-white text-[#111827]"
-            >
-              <option value="" disabled>Select employee</option>
-              {EMPLOYEE_OPTIONS.map((name) => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-bold text-[#374151] mb-1">Attendance Record</label>
-            <select
-              value={regularizeForm.attendanceRecord}
-              onChange={(e) => setRegularizeForm({ ...regularizeForm, attendanceRecord: e.target.value })}
-              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17] bg-white text-[#111827]"
-            >
-              <option value="">Select attendance record</option>
-              {ATTENDANCE_RECORD_OPTIONS.map((rec) => (
-                <option key={rec} value={rec}>{rec}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-bold text-[#374151] mb-1">
-              Requested Clock In <span className="text-[#DC2626]">*</span>
-            </label>
-            <select
-              required
-              value={regularizeForm.clockIn}
-              onChange={(e) => setRegularizeForm({ ...regularizeForm, clockIn: e.target.value })}
-              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17] bg-white text-[#111827]"
-            >
-              <option value="" disabled>Select time</option>
-              {TIME_OPTIONS.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-bold text-[#374151] mb-1">
-              Requested Clock Out <span className="text-[#DC2626]">*</span>
-            </label>
-            <select
-              required
-              value={regularizeForm.clockOut}
-              onChange={(e) => setRegularizeForm({ ...regularizeForm, clockOut: e.target.value })}
-              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17] bg-white text-[#111827]"
-            >
-              <option value="" disabled>Select time</option>
-              {TIME_OPTIONS.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-bold text-[#374151] mb-1">
-              Reason <span className="text-[#DC2626]">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Forgot to clock in due to urgent meeting"
-              value={regularizeForm.reason}
-              onChange={(e) => setRegularizeForm({ ...regularizeForm, reason: e.target.value })}
-              className="w-full border border-black/15 rounded-xl p-2.5 outline-none focus:border-[#7A0A17]"
-            />
-          </div>
-        </form>
-      </Modal>
-
-      {/* 6. Timesheet Details Modal */}
-      {timesheetDetailsOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
-            <button onClick={() => setTimesheetDetailsOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
-              <X size={18} />
-            </button>
-            <h3 className="text-lg font-bold text-[#111] mb-1">Today's Timesheet Breakdown</h3>
-            <p className="text-xs text-[#6B7280] mb-4">Aug 7, 2026 Summary</p>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between p-2.5 bg-[#FAFAFB] rounded-xl">
-                <span>First Punch In</span>
-                <span className="font-bold text-[#16A34A]">09:02 AM</span>
-              </div>
-              <div className="flex justify-between p-2.5 bg-[#FAFAFB] rounded-xl">
-                <span>Last Punch Out</span>
-                <span className="font-bold text-[#DC2626]">06:10 PM</span>
-              </div>
-              <div className="flex justify-between p-2.5 bg-[#FAFAFB] rounded-xl">
-                <span>Total Active System Hours</span>
-                <span className="font-bold text-[#111]">8.50 hrs</span>
-              </div>
-              <div className="flex justify-between p-2.5 bg-[#FAFAFB] rounded-xl">
-                <span>Manual Added Work</span>
-                <span className="font-bold text-[#111]">1.00 hrs</span>
-              </div>
-              <div className="flex justify-between p-2.5 bg-[#FCF5F6] border border-[#7A0A17]/20 rounded-xl font-bold">
-                <span className="text-[#7A0A17]">Effective Total Work</span>
-                <span className="text-[#7A0A17]">9.50 hrs</span>
-              </div>
-            </div>
-            <div className="mt-5 flex justify-end">
-              <button type="button" onClick={() => setTimesheetDetailsOpen(false)} className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl text-xs font-bold">
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <TimesheetDetailsModal
+        open={!!timesheetModal}
+        onClose={() => setTimesheetModal(null)}
+        mode={timesheetModal === "view" ? "view" : "edit"}
+        employee={{
+          name: USER.name,
+          role: USER.role || "Relationship Manager",
+          id: "EMP00116",
+          avatar: USER.avatar,
+        }}
+      />
 
       {/* 7. Add Expense Modal */}
       <Modal
