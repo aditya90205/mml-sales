@@ -226,7 +226,7 @@ export default function TopBar({ page = "Dashboard" }) {
     : [{ to: "/dashboard", name: routeNameMap.dashboard }];
 
   return (
-    <header className="h-[56px] bg-white border-b border-black/8 flex items-center justify-between gap-4 px-5 shrink-0">
+    <header className="fixed left-[58px] right-0 top-0 z-50 h-[56px] bg-white border-b border-black/8 flex items-center justify-between gap-4 px-5 shrink-0">
       {/* Left: breadcrumb + session meta */}
       <div className="flex items-center gap-3 min-w-0">
         <nav className="flex items-center gap-2 min-w-0">
