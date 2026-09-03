@@ -35,7 +35,6 @@ import {
   TrendingUp,
   PieChart as PieChartIcon,
   Megaphone,
-  MessageCircle,
   ArrowUpRight,
   Info,
   CalendarDays,
@@ -45,6 +44,7 @@ import {
   Store,
 } from "lucide-react";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
+import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -137,9 +137,9 @@ const CONVERT_TIMES = [
 ];
 
 const PENDING_TASKS = [
-  { type: "Leave Request",    description: "Casual Leave (2 Days)",          requestedOn: "01 Jun 2026", dueDate: "01 Jun 2026", status: "pending",  statusLabel: "Pending" },
-  { type: "Discount Request", description: "Notice Period - 30 Days",        requestedOn: "01 Jun 2026", dueDate: "01 Jun 2026", status: "review",   statusLabel: "HR Review" },
-  { type: "Send Profiles",    description: "Promotion to Team Lead Letter",  requestedOn: "01 Jun 2026", dueDate: "01 Jun 2026", status: "approved", statusLabel: "Approved Required" },
+  { type: "Leave Request",    description: "Casual Leave (2 Days)",          requestedOn: "01 Jun 2026", dueDate: "01 Jun 2026", status: "pending",  statusLabel: "Pending",            comment: "We can't give you leave on that particular date. Please choose another slot and resubmit." },
+  { type: "Discount Request", description: "Notice Period - 30 Days",        requestedOn: "01 Jun 2026", dueDate: "01 Jun 2026", status: "review",   statusLabel: "HR Review",         comment: "HR is reviewing the discount request. Attach the revised quotation before 01 Jun 2026." },
+  { type: "Send Profiles",    description: "Promotion to Team Lead Letter",  requestedOn: "01 Jun 2026", dueDate: "01 Jun 2026", status: "approved", statusLabel: "Approved Required", comment: "Promotion letter is approved. Confirm the effective date with the reporting manager." },
 ];
 
 const STATUS_STYLES = {
@@ -289,10 +289,10 @@ const ACQUISITION_SOURCES = [
 const ACQUISITION_TOTAL_LEADS = "12,845";
 
 const RECENT_ANNOUNCEMENTS = [
-  { title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High" },
-  { title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High" },
-  { title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High" },
-  { title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High" },
+  { id: 1, title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High", comment: "Please read the revised leave policy before applying. Casual leave now requires 24 hours notice except in emergencies." },
+  { id: 2, title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High", comment: "Branch heads must brief their teams by Friday. Raise questions in this thread if any clause is unclear." },
+  { id: 3, title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High", comment: "The policy PDF is available under Documents. Acknowledge after you have reviewed it." },
+  { id: 4, title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High", comment: "HR will run a Q&A session next Monday at 11:00 AM. Join if you need clarification on carry-forward leave." },
 ];
 
 /* ───────────────────────── Header controls ───────────────────────── */
@@ -554,6 +554,7 @@ function SalesFunnelCard() {
 
 function PendingTasksCard() {
   const { sorted, sort, toggle } = useTableSort(PENDING_TASKS, { defaultKey: "type" });
+  const [messageOpen, setMessageOpen] = useState(false);
 
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4">
@@ -600,15 +601,27 @@ function PendingTasksCard() {
                 <td className="px-4 py-4 text-[12px] text-[#6B7280] whitespace-nowrap">{task.requestedOn}</td>
                 <td className="px-4 py-4 text-[12px] text-[#6B7280] whitespace-nowrap">{task.dueDate}</td>
                 <td className="px-4 py-4">
-                  <span className={`inline-block text-[10px] font-semibold px-2.5 py-1 rounded-md text-center ${STATUS_STYLES[task.status]}`}>
-                    {task.statusLabel}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMessageOpen(true)}
+                      className="text-[#F59E0B] hover:text-[#D97706] p-1 rounded transition-colors shrink-0"
+                      aria-label={`Send message for ${task.type}`}
+                    >
+                      <MessageSquare size={16} />
+                    </button>
+                    <span className={`inline-block text-[10px] font-semibold px-2.5 py-1 rounded-md text-center ${STATUS_STYLES[task.status]}`}>
+                      {task.statusLabel}
+                    </span>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
     </div>
   );
 }
@@ -621,7 +634,7 @@ function ReferenceLineTag({ viewBox, text, bg, color, dy = -14 }) {
     <foreignObject x={x + 8} y={y + dy - 14} width={200} height={32} style={{ overflow: "visible" }}>
       <div
         className="inline-flex items-center h-[26px] px-3 rounded-lg text-[13px] font-bold whitespace-nowrap shadow-sm"
-        style={{ backgroundColor: bg, color }}
+        style={{ backgroundColor: bg, color, border: `1.5px solid ${color}` }}
       >
         {text}
       </div>
@@ -816,7 +829,7 @@ function GoalsPerformanceCard() {
               <Label content={(p) => <ReferenceLineTag viewBox={p.viewBox} text="Target ₹2.50 Cr" bg="#E7F8EF" color="#0D9488" dy={-4} />} />
             </ReferenceLine>
             <ReferenceLine y={INCENTIVE_LINE_VALUE} stroke="#F59E0B" strokeWidth={2} strokeDasharray="6 4">
-              <Label content={(p) => <ReferenceLineTag viewBox={p.viewBox} text="Incentive ₹2.29 Cr" bg="#FFF3E4" color="#B45309" dy={-4} />} />
+              <Label content={(p) => <ReferenceLineTag viewBox={p.viewBox} text="Incentive ₹2.29 Cr" bg="#FFF3E4" color="#F59E0B" dy={-4} />} />
             </ReferenceLine>
 
             <Line
@@ -1211,6 +1224,8 @@ function ClientAcquisitionCard() {
 }
 
 function RecentAnnouncementsCard() {
+  const [messageOpen, setMessageOpen] = useState(false);
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4">
       <div className="flex items-center justify-between gap-3 mb-3 px-1">
@@ -1228,8 +1243,8 @@ function RecentAnnouncementsCard() {
 
       <div className="border border-black/8 rounded-xl overflow-hidden">
         <div className="divide-y divide-black/8 max-h-[294px] overflow-y-auto overscroll-contain">
-          {RECENT_ANNOUNCEMENTS.map((a, i) => (
-            <div key={i} className="flex items-start gap-3 px-4 py-3.5 hover:bg-[#FAFAFB] transition-colors">
+          {RECENT_ANNOUNCEMENTS.map((a) => (
+            <div key={a.id} className="flex items-start gap-3 px-4 py-3.5 hover:bg-[#FAFAFB] transition-colors">
               <span className="size-7 rounded-lg bg-[#E8F2FE] grid place-items-center shrink-0">
                 <Megaphone size={14} className="text-[#3B82F6]" strokeWidth={1.8} />
               </span>
@@ -1241,13 +1256,20 @@ function RecentAnnouncementsCard() {
                   <span className="inline-block text-[10px] font-semibold text-[#E8395B] bg-[#FDECEE] rounded-md px-2 py-1">{a.priority}</span>
                 </div>
               </div>
-              <button type="button" className="size-8 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center hover:bg-[#FFE8CC] transition-colors shrink-0" aria-label="Comment">
-                <MessageCircle size={14} />
+              <button
+                type="button"
+                onClick={() => setMessageOpen(true)}
+                className="text-[#F59E0B] hover:text-[#D97706] p-1 rounded transition-colors shrink-0"
+                aria-label="Send message"
+              >
+                <MessageSquare size={16} />
               </button>
             </div>
           ))}
         </div>
       </div>
+
+      <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
     </div>
   );
 }

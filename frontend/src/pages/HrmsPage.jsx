@@ -40,6 +40,7 @@ import {
 import { USER } from "../components/layout/TopBar";
 import Modal from "../components/ui/Modal";
 import TimesheetDetailsModal from "../components/hrms/TimesheetDetailsModal";
+import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import yellowLoopIcon from "../assets/yellow-loop.png";
 import redBackIcon from "../assets/red-back.png";
@@ -647,7 +648,7 @@ export default function HrmsPage() {
   const [leaveMenuOpen, setLeaveMenuOpen] = useState(false);
   const [shiftChangeFormOpen, setShiftChangeFormOpen] = useState(false);
   const [shiftChangeRequests, setShiftChangeRequests] = useState(INITIAL_SHIFT_CHANGE_REQUESTS);
-  const [leaveCommentView, setLeaveCommentView] = useState(null);
+  const [sendMessageOpen, setSendMessageOpen] = useState(false);
   const [addManualRowOpen, setAddManualRowOpen] = useState(false);
 
   // Trainings / Goals & Reviews / Documents / Asset tab state
@@ -1259,15 +1260,25 @@ export default function HrmsPage() {
                           <p className="text-xs font-extrabold text-[#111827]">{req.title}</p>
                           <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">{req.submitted}</p>
                         </div>
-                        <span
-                          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border whitespace-nowrap ${
-                            req.status === "Approved"
-                              ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
-                              : "bg-[#FFEDD5] text-[#C2410C] border-[#EA580C]/20"
-                          }`}
-                        >
-                          {req.status}
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setSendMessageOpen(true)}
+                            className="text-[#F59E0B] hover:text-[#D97706] p-1 rounded transition-colors"
+                            aria-label="Send message"
+                          >
+                            <MessageSquare size={16} />
+                          </button>
+                          <span
+                            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border whitespace-nowrap ${
+                              req.status === "Approved"
+                                ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                                : "bg-[#FFEDD5] text-[#C2410C] border-[#EA580C]/20"
+                            }`}
+                          >
+                            {req.status}
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1305,15 +1316,14 @@ export default function HrmsPage() {
                         <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">{leave.date}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        {leave.comment && (
-                          <button
-                            type="button"
-                            onClick={() => setLeaveCommentView(leave)}
-                            className="text-[#F59E0B] hover:text-[#D97706] p-1 rounded transition-colors"
-                          >
-                            <MessageSquare size={16} />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => setSendMessageOpen(true)}
+                          className="text-[#F59E0B] hover:text-[#D97706] p-1 rounded transition-colors"
+                          aria-label="Send message"
+                        >
+                          <MessageSquare size={16} />
+                        </button>
                         <span
                           className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
                             leave.status === "Approved"
@@ -3051,29 +3061,7 @@ export default function HrmsPage() {
         </form>
       </Modal>
 
-      {/* 10. Leave Comment View Modal */}
-      {leaveCommentView && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
-            <button onClick={() => setLeaveCommentView(null)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
-              <X size={18} />
-            </button>
-            <div className="flex items-center gap-2 mb-3">
-              <MessageSquare size={18} className="text-[#F59E0B]" />
-              <h3 className="text-base font-bold text-[#111]">{leaveCommentView.type} Note</h3>
-            </div>
-            <p className="text-xs text-[#6B7280] mb-2">{leaveCommentView.date}</p>
-            <div className="bg-[#FAFAFB] border border-black/8 rounded-xl p-3 text-xs text-[#374151]">
-              {leaveCommentView.comment}
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button type="button" onClick={() => setLeaveCommentView(null)} className="px-4 py-1.5 bg-[#7A0A17] text-white rounded-xl text-xs font-bold">
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SendMessageModal open={sendMessageOpen} onClose={() => setSendMessageOpen(false)} />
 
     </div>
   );
