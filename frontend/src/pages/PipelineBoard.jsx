@@ -27,7 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import TopBar from "../components/layout/TopBar";
+// TopBar is now provided by Layout
 import eyeIcon from "../assets/eye.png";
 import peopleIcon from "../assets/people.png";
 import fileIcon from "../assets/file.png";
@@ -985,7 +985,6 @@ export default function PipelineBoard() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <TopBar page="Pipeline Board" />
 
       {/* Lead Score Details Modal */}
       <LeadScoreModal

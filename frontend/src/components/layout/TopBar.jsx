@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Clock, Bell, ArrowUpRight, CheckCheck, User, Settings, LogOut, Search } from "lucide-react";
 
 
@@ -182,11 +182,67 @@ function ProfileMenu() {
  * notifications + profile on the right.
  */
 export default function TopBar({ page = "Dashboard" }) {
+  const location = useLocation();
+
+  const pathname = location?.pathname || "/dashboard";
+  const pathnames = pathname.split("/").filter(Boolean);
+
+  const routeNameMap = {
+    dashboard: "Dashboard",
+    hrms: "HRMS",
+    pipeline: "Pipeline Board",
+    clients: "My Clients",
+    sales: "Sales",
+    funnel: "Sales Funnel",
+    leads: "Lead Management",
+    proposals: "Proposals",
+    "follow-ups": "Follow-Ups",
+    profiles: "Profiles",
+    matches: "Matches",
+    calendar: "Calendar",
+    tasks: "Tasks",
+    "bulk-upload": "Bulk Upload",
+    leaderboard: "Leaderboard",
+    contest: "Contest",
+    meetings: "Meetings",
+    announcements: "Announcements",
+    reports: "Reports",
+    targets: "Targets",
+    reviews: "Reviews",
+    media: "Media Library",
+    documents: "Documents",
+    settings: "Settings",
+    support: "Help & Support",
+    profile: "Profile Settings",
+    notifications: "Notifications",
+  };
+
+  const breadcrumbs = pathnames.length
+    ? pathnames.map((seg, idx) => {
+        const to = `/${pathnames.slice(0, idx + 1).join("/")}`;
+        const name = routeNameMap[seg] || seg.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        return { to, name };
+      })
+    : [{ to: "/dashboard", name: routeNameMap.dashboard }];
+
   return (
     <header className="h-[56px] bg-white border-b border-black/8 flex items-center justify-between gap-4 px-5 shrink-0">
       {/* Left: breadcrumb + session meta */}
       <div className="flex items-center gap-3 min-w-0">
-        <span className="text-[13px] font-bold text-[#E8395B] whitespace-nowrap">{page}</span>
+        <nav className="flex items-center gap-2 min-w-0">
+          {breadcrumbs.map((b, i) => (
+            <span key={b.to} className="flex items-center gap-2 min-w-0">
+              {i < breadcrumbs.length - 1 ? (
+                <Link to={b.to} className="text-[13px] font-semibold text-[#7A0A17] hover:underline truncate">
+                  {b.name}
+                </Link>
+              ) : (
+                <span className="text-[13px] font-bold text-[#E8395B] truncate">{b.name}</span>
+              )}
+              {i < breadcrumbs.length - 1 && <span className="text-[#9CA3AF]">›</span>}
+            </span>
+          ))}
+        </nav>
 
         <span className="w-px h-4 bg-black/12" />
 

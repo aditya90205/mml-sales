@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import { toast } from "react-toastify";
 import StageStepper from "../../components/pipeline/StageStepper";
-import TopBar from "../../components/layout/TopBar";
+// TopBar is provided by Layout
 
 export default function MoveToP1Page({ lead, onBack, onMoveToP1 }) {
   const [formData, setFormData] = useState({
@@ -49,7 +49,7 @@ export default function MoveToP1Page({ lead, onBack, onMoveToP1 }) {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-[#F8F9FA]">
-      <TopBar page="Pipeline Board / Move to P1" />
+      {/* TopBar is provided by Layout */}
 
       {/* Page Header Bar */}
       <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-black/8 shrink-0 flex-wrap gap-4">
