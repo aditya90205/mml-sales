@@ -9,16 +9,16 @@ const STAGES = [
 ];
 
 const STATUS_STYLES = {
-  done:    "bg-white border-black/10 text-[#16A34A]",
-  current: "bg-white border-[#E8395B] border-2 text-[#E8395B]",
-  locked:  "bg-[#FAFAFB] border-black/6 text-[#C2C5CB]",
+  done:    "bg-[#E7F8EF] border-transparent text-[#16A34A]",
+  current: "bg-[#FDECEE] border-transparent text-[#E8395B]",
+  locked:  "bg-[#FDECEE]/50 border-transparent text-[#E8395B]/45",
 };
 
 /**
  * Full P0–P6 pipeline stage strip shared by the Move-to-Pn forms and the
  * deal detail screen. Stages before `activeStageId` render as "done"
- * (green), the current stage is highlighted (red), stages after it
- * render as "locked" (gray).
+ * (green fill), the current stage is highlighted (solid red fill),
+ * stages after it render as "locked" (muted red fill).
  */
 export default function StageStepper({ activeStageId = "P0" }) {
   const activeIndex = STAGES.findIndex((s) => s.id === activeStageId);
@@ -33,9 +33,7 @@ export default function StageStepper({ activeStageId = "P0" }) {
             className={`flex flex-col justify-center rounded-xl border px-4 py-2.5 min-w-[135px] shrink-0 transition-colors ${STATUS_STYLES[status]}`}
           >
             <span className="text-[10.5px] font-bold uppercase tracking-wide">{stage.id}</span>
-            <span className={`text-[13px] leading-tight ${status === "locked" ? "font-medium" : "font-bold"}`}>
-              {stage.name}
-            </span>
+            <span className="text-[13px] font-bold leading-tight">{stage.name}</span>
           </div>
         );
       })}

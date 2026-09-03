@@ -128,7 +128,7 @@ export default function DealDetailPage({ lead, onBack, onMoveToP5 }) {
               onClick={handleMoveToP5}
               className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
             >
-              Move to P5 →
+              Advance to P5 →
             </button>
           </div>
         </div>
