@@ -1,7 +1,8 @@
 /**
  * Horizontal tab bar for deal detail screens (Overview, Intake Form, ...).
- * Tabs can be individually disabled (e.g. Payments / P6 Checklist before
- * the deal reaches those stages).
+ * A tab can be `disabled` (not clickable at all) or `locked` (still
+ * clickable, but rendered muted/gray to signal its content is gated
+ * behind a later stage — e.g. Payments / P6 Checklist).
  */
 export default function DealTabs({ tabs, activeKey, onChange }) {
   return (
@@ -19,6 +20,8 @@ export default function DealTabs({ tabs, activeKey, onChange }) {
                 ? "text-[#C2C5CB] cursor-not-allowed"
                 : isActive
                 ? "text-[#E8395B]"
+                : tab.locked
+                ? "text-[#9CA3AF] hover:text-[#6B7280]"
                 : "text-[#4B5563] hover:text-[#111]"
             }`}
           >

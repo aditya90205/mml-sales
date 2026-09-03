@@ -25,8 +25,8 @@ const TABS = [
   { key: "documents", label: "Documents & KYC" },
   { key: "notes",     label: "Notes & RM Flags" },
   { key: "audit",     label: "Audit" },
-  { key: "payments",  label: "Payments" },
-  { key: "p6",        label: "P6 Checklist" },
+  { key: "payments",  label: "Payments",     locked: true },
+  { key: "p6",        label: "P6 Checklist", locked: true },
 ];
 
 /** Tabs with no dependency on `deal` — Overview is handled separately since it needs deal data. */
