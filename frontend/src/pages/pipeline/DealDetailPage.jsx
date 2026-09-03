@@ -8,6 +8,8 @@ import OverviewTab from "./deal-tabs/OverviewTab";
 import IntakeFormTab from "./deal-tabs/IntakeFormTab";
 import VisitsMeetingsTab from "./deal-tabs/VisitsMeetingsTab";
 import PackageQuoteTab from "./deal-tabs/PackageQuoteTab";
+import DiscountApprovalsTab from "./deal-tabs/DiscountApprovalsTab";
+import DocumentsKycTab from "./deal-tabs/DocumentsKycTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
 
 const TABS = [
@@ -22,6 +24,15 @@ const TABS = [
   { key: "payments",  label: "Payments",     disabled: true },
   { key: "p6",        label: "P6 Checklist", disabled: true },
 ];
+
+/** Tabs with no dependency on `deal` — Overview is handled separately since it needs deal data. */
+const TAB_CONTENT = {
+  intake:    <IntakeFormTab />,
+  visits:    <VisitsMeetingsTab />,
+  package:   <PackageQuoteTab />,
+  discounts: <DiscountApprovalsTab />,
+  documents: <DocumentsKycTab />,
+};
 
 /** Static demo fields shown on the overview tab, layered over the lead's board data. */
 const DEAL_DEFAULTS = {
@@ -190,12 +201,12 @@ export default function DealDetailPage({ lead, onBack, onMoveToP5 }) {
         </div>
 
         {/* Tab content */}
-        {activeTab === "overview" && <OverviewTab deal={deal} />}
-        {activeTab === "intake" && <IntakeFormTab />}
-        {activeTab === "visits" && <VisitsMeetingsTab />}
-        {activeTab === "package" && <PackageQuoteTab />}
-        {!["overview", "intake", "visits", "package"].includes(activeTab) && (
-          <ComingSoonTab label={TABS.find((t) => t.key === activeTab)?.label || "This tab"} />
+        {activeTab === "overview" ? (
+          <OverviewTab deal={deal} />
+        ) : (
+          TAB_CONTENT[activeTab] || (
+            <ComingSoonTab label={TABS.find((t) => t.key === activeTab)?.label || "This tab"} />
+          )
         )}
       </div>
     </div>
