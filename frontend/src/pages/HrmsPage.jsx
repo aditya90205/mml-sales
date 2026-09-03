@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import {
   ChevronRight,
@@ -36,6 +36,7 @@ import {
   Info,
   Coffee,
   ArrowLeftRight,
+  Hand,
 } from "lucide-react";
 import { USER } from "../components/layout/TopBar";
 import Modal from "../components/ui/Modal";
@@ -146,38 +147,43 @@ const LEADERBOARD_MEMBERS = [
   { rank: 5, name: "Rohan Verma", location: "Noida", xp: "120 XP", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face" },
 ];
 
-// Attendance Days Data
-const ATTENDANCE_DAYS = [
-  { day: "01", week: "Fri", status: "WO" },
-  { day: "01", week: "Fri", status: "WO" },
-  { day: "01", week: "Fri", status: "WO" },
-  { day: "01", week: "Fri", status: "X" },
-  { day: "01", week: "Fri", status: "P" },
-  { day: "01", week: "Fri", status: "H" },
-  { day: "01", week: "Fri", status: "P" },
-  { day: "01", week: "Fri", status: "WO" },
-  { day: "01", week: "Fri", status: "WO" },
-  { day: "01", week: "Fri", status: "1/2" },
-  { day: "01", week: "Fri", status: "P" },
-  { day: "01", week: "Fri", status: "P" },
-  { day: "01", week: "Fri", status: "P" },
-  { day: "01", week: "Fri", status: "X" },
-  { day: "01", week: "Fri", status: "WO" },
-  { day: "01", week: "Fri", status: "WO" },
-  { day: "01", week: "Fri", status: "P" },
-  { day: "01", week: "Fri", status: "H" },
-  { day: "01", week: "Fri", status: "P" },
-  { day: "01", week: "Fri", status: "1/2" },
-  { day: "01", week: "Fri", status: "X" },
-  { day: "01", week: "Fri", status: "WO" },
-  { day: "01", week: "Fri", status: "WO" },
-  { day: "01", week: "Fri", status: "P" },
-  { day: "01", week: "Fri", status: "P" },
-  { day: "01", week: "Fri", status: "1/2" },
-  { day: "01", week: "Fri", status: "X" },
-  { day: "01", week: "Fri", status: "P" },
-  { day: "01", week: "Fri", status: "P" },
+const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const ATTENDANCE_STATUS_PATTERN = [
+  "WO", "WO", "WO", "X", "P", "H", "P", "WO", "WO", "1/2",
+  "P", "P", "P", "X", "WO", "WO", "P", "H", "P", "1/2",
+  "X", "WO", "WO", "P", "P", "1/2", "X", "P", "P", "P", "P",
 ];
+
+function YouHandIcon() {
+  return (
+    <span className="relative inline-flex shrink-0 group/you">
+      <Hand size={13} className="text-[#7A0A17]" strokeWidth={2.2} />
+      <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 whitespace-nowrap rounded-md bg-[#111] px-2 py-1 text-[10px] font-semibold text-white opacity-0 group-hover/you:opacity-100 transition-opacity z-20 shadow-sm">
+        it's you
+      </span>
+    </span>
+  );
+}
+
+function getAttendanceDays(monthName, year) {
+  const monthIndex = MONTH_OPTIONS.indexOf(monthName);
+  const y = Number(year);
+  if (monthIndex < 0 || !y) return [];
+  const daysInMonth = new Date(y, monthIndex + 1, 0).getDate();
+
+  return Array.from({ length: daysInMonth }, (_, i) => {
+    const date = new Date(y, monthIndex, i + 1);
+    const dow = date.getDay();
+    let status = ATTENDANCE_STATUS_PATTERN[i % ATTENDANCE_STATUS_PATTERN.length];
+    if (dow === 0 || dow === 6) status = "WO";
+    return {
+      day: String(i + 1).padStart(2, "0"),
+      week: WEEKDAY_SHORT[dow],
+      status,
+    };
+  });
+}
 
 const INITIAL_TRAININGS = [
   { id: 1, program: "Evening Online Session",  track: "Executive Leadership Program",        dateTime: "01-12-2026 23:30 - 31-12-2026 01:30", location: "Zoom Meeting",     locationType: "Virtual",  status: "Completed", score: 95.5, result: "Passed", attendance: 10 },
@@ -315,6 +321,16 @@ export default function HrmsPage() {
   const [selectedMonth, setSelectedMonth] = useState("April");
   const [selectedYear, setSelectedYear] = useState("2025");
   const [activeTab, setActiveTab] = useState("Summary");
+
+  const attendanceDays = useMemo(
+    () => getAttendanceDays(selectedMonth, selectedYear),
+    [selectedMonth, selectedYear]
+  );
+  const attendancePresent = attendanceDays.reduce((sum, d) => {
+    if (d.status === "P") return sum + 1;
+    if (d.status === "1/2") return sum + 0.5;
+    return sum;
+  }, 0);
 
   // Expenses & Leaves State
   const [expenses, setExpenses] = useState(INITIAL_EXPENSES);
@@ -707,11 +723,10 @@ export default function HrmsPage() {
                           item.isYou ? "bg-[#FCF5F6] border border-[#7A0A17]/20" : "bg-[#FAFAFB]"
                         }`}
                       >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-bold text-[#6B7280] text-[11px] w-3">{item.rank}.</span>
-                          <span className="text-[#111827] truncate font-bold">
-                            {item.name} {item.isYou && <span className="text-[#7A0A17] font-extrabold">(You)</span>}
-                          </span>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="font-bold text-[#6B7280] text-[11px] w-3 shrink-0">{item.rank}.</span>
+                          {item.isYou && <YouHandIcon />}
+                          <span className="text-[#111827] truncate font-bold">{item.name}</span>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
                           <span className="text-[10px] text-[#6B7280] hidden xl:inline">{item.location}</span>
@@ -1054,7 +1069,7 @@ export default function HrmsPage() {
               {/* Calendar Grid Matrix */}
               <div className="overflow-x-auto pb-2 scrollbar-none">
                 <div className="flex items-center gap-2 min-w-max">
-                  {ATTENDANCE_DAYS.map((d, index) => {
+                  {attendanceDays.map((d, index) => {
                     return (
                       <div key={index} className="flex flex-col items-center gap-1.5 w-7 text-center">
                         <span className="text-[10px] font-bold text-[#9CA3AF]">{d.day}</span>
@@ -1093,7 +1108,7 @@ export default function HrmsPage() {
                   {/* Total Summary */}
                   <div className="flex flex-col items-center justify-center pl-4 border-l border-black/10">
                     <span className="text-[10px] font-extrabold text-[#6B7280] uppercase">Total</span>
-                    <span className="text-sm font-black text-[#111827] mt-2">18.5<span className="text-xs text-[#9CA3AF]">/23</span></span>
+                    <span className="text-sm font-black text-[#111827] mt-2">{Number.isInteger(attendancePresent) ? attendancePresent : attendancePresent.toFixed(1)}<span className="text-xs text-[#9CA3AF]">/{attendanceDays.length}</span></span>
                   </div>
                 </div>
               </div>
@@ -2580,8 +2595,9 @@ export default function HrmsPage() {
                     <span className="font-extrabold text-sm text-[#7A0A17] w-4">#{member.rank}</span>
                     <img src={member.avatar} alt="" className="size-8 rounded-full object-cover" />
                     <div>
-                      <p className="text-xs font-bold text-[#111]">
-                        {member.name} {member.isYou && <span className="text-[#7A0A17] font-extrabold">(You)</span>}
+                      <p className="text-xs font-bold text-[#111] flex items-center gap-1.5">
+                        {member.isYou && <YouHandIcon />}
+                        {member.name}
                       </p>
                       <p className="text-[10px] text-[#6B7280]">{member.location}</p>
                     </div>

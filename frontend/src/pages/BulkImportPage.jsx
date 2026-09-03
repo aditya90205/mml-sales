@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { ChevronDown, Download, FileSpreadsheet, Upload } from "lucide-react";
+import { ChevronDown, Download, FileSpreadsheet, Trash2, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 // TopBar is provided by Layout
 import TableCard from "../components/common/TableCard";
@@ -37,11 +37,11 @@ const PREVIEW_ROWS = [
 ];
 
 const RECENT_IMPORTS = [
-  { source: "Meta Lead Ads · hourly sync",  rows: 26, accepted: 24, rejected: 2, status: "Completed" },
-  { source: "Google Ads · daily sync",      rows: 31, accepted: 31, rejected: 0, status: "Completed" },
-  { source: "leads-newspaper-aug-wl.xlsx",  rows: 48, accepted: 44, rejected: 4, status: "Completed" },
-  { source: "LinkedIn export.csv",          rows: 19, accepted: 12, rejected: 7, status: "Partial" },
-  { source: "sabha-event-jul.xlsx",         rows: 64, accepted: 64, rejected: 0, status: "Completed" },
+  { source: "Meta Lead Ads · hourly sync",  rows: 26, accepted: 24, rejected: 2, duplicate: 3,  status: "Completed" },
+  { source: "Google Ads · daily sync",      rows: 31, accepted: 31, rejected: 0, duplicate: 0,  status: "Completed" },
+  { source: "leads-newspaper-aug-wl.xlsx",  rows: 48, accepted: 44, rejected: 4, duplicate: 5,  status: "Completed" },
+  { source: "LinkedIn export.csv",          rows: 19, accepted: 12, rejected: 7, duplicate: 8,  status: "Partial" },
+  { source: "sabha-event-jul.xlsx",         rows: 64, accepted: 64, rejected: 0, duplicate: 2,  status: "Completed" },
 ];
 
 const STATUS_TONES = { Completed: "green", Partial: "amber", Failed: "red" };
@@ -99,6 +99,12 @@ export default function BulkImportPage() {
     setFileName(file.name);
     toast.info(`"${file.name}" selected. Column mapping and preview will update once import parsing is wired up.`);
     e.target.value = "";
+  };
+
+  const handleDeleteFile = () => {
+    setFileName("");
+    setMapping(Object.fromEntries(COLUMNS.map((c) => [c.key, c.field])));
+    toast.success("Uploaded file removed.");
   };
 
   const handleImport = () => {
@@ -166,23 +172,56 @@ export default function BulkImportPage() {
                 <FileSpreadsheet size={18} />
               </span>
               <div className="min-w-0">
-                <p className="text-[13px] font-semibold text-[#111] truncate">{fileName}</p>
-                <p className="text-[11.5px] text-[#9CA3AF]">
-                  96 rows · 5 columns · first and last name in separate columns
-                </p>
+                {fileName ? (
+                  <>
+                    <p className="text-[13px] font-semibold text-[#111] truncate">{fileName}</p>
+                    <p className="text-[11.5px] text-[#9CA3AF]">
+                      96 rows · 5 columns · first and last name in separate columns
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[13px] font-semibold text-[#111]">No file uploaded</p>
+                    <p className="text-[11.5px] text-[#9CA3AF]">Upload a CSV or Excel file to map columns</p>
+                  </>
+                )}
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="shrink-0 h-9 px-4 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-            >
-              Replace
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {fileName ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-9 px-4 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#4B5563] hover:bg-white/80 transition-colors"
+                  >
+                    Replace
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteFile}
+                    aria-label="Delete uploaded file"
+                    className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-[#E8395B]/25 text-[12.5px] font-semibold text-[#E8395B] hover:bg-[#FDECEE] transition-colors"
+                  >
+                    <Trash2 size={14} />
+                    Delete
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
+                >
+                  <Upload size={14} />
+                  Upload
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Mapping table */}
-          <div className="overflow-x-auto -mx-1">
+          {fileName && (
+            <div className="overflow-x-auto -mx-1">
             <table className="w-full border-collapse min-w-[720px]">
               <thead>
                 <tr>
@@ -213,9 +252,12 @@ export default function BulkImportPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          )}
         </div>
 
+        {fileName && (
+          <>
         {/* How row 1 will save */}
         <div className="bg-[#FAFAFB] border border-black/8 rounded-2xl p-4">
           <p className="text-[10.5px] font-bold text-[#7A0A17] uppercase tracking-wide mb-3">How row 1 will save</p>
@@ -302,6 +344,8 @@ export default function BulkImportPage() {
             </button>
           </div>
         </div>
+          </>
+        )}
 
         {/* Import rules + Recent imports */}
         <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-5 items-start">
@@ -340,7 +384,7 @@ export default function BulkImportPage() {
                 <Download size={13} /> Download errors
               </button>
             }
-            columns={["File / Integration", "Rows", "Accepted", "Rejected", "Status"]}
+            columns={["File / Integration", "Rows", "Accepted", "Rejected", "Duplicate", "Status"]}
           >
             {RECENT_IMPORTS.map((row) => (
               <tr key={row.source} className="border-b border-black/5 last:border-0">
@@ -348,6 +392,7 @@ export default function BulkImportPage() {
                 <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.rows}</td>
                 <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.accepted}</td>
                 <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.rejected}</td>
+                <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.duplicate}</td>
                 <td className="px-3 py-2.5 whitespace-nowrap">
                   <StatusPill tone={STATUS_TONES[row.status] || "gray"}>{row.status}</StatusPill>
                 </td>
