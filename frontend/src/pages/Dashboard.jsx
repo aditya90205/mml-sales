@@ -234,6 +234,7 @@ const REVENUE_CHART_DATA = [
     standardCount: w.counts.standard,
     premiumCount: w.counts.premium,
     superPremiumCount: w.counts.superPremium,
+    packTotal: w.counts.basic + w.counts.standard + w.counts.premium + w.counts.superPremium,
   })),
   ...PROJECTED_WEEKS.map((w) => ({
     week: w.week,
@@ -598,14 +599,14 @@ function PendingTasksCard() {
   );
 }
 
-/** Small pill label anchored at a fixed fraction of the plot width, used for the Target/Incentive reference lines. */
-function ReferenceLineTag({ viewBox, xFraction, text, bg, color, dy = -12 }) {
-  const { x, width, y } = viewBox;
-  const tx = x + width * xFraction;
+/** Pill label on the left of a Target/Incentive reference line. */
+function ReferenceLineTag({ viewBox, text, bg, color, dy = -14 }) {
+  if (!viewBox) return null;
+  const { x, y } = viewBox;
   return (
-    <foreignObject x={tx - 60} y={y + dy - 20} width={120} height={24} style={{ overflow: "visible" }}>
+    <foreignObject x={x + 8} y={y + dy - 14} width={200} height={32} style={{ overflow: "visible" }}>
       <div
-        className="inline-flex items-center justify-center h-full px-2.5 rounded-lg text-[10px] font-semibold whitespace-nowrap"
+        className="inline-flex items-center h-[26px] px-3 rounded-lg text-[13px] font-bold whitespace-nowrap shadow-sm"
         style={{ backgroundColor: bg, color }}
       >
         {text}
@@ -623,12 +624,21 @@ function TierCountLabel({ x, y, width, height, value }) {
   );
 }
 
-function TotalAboveBarLabel({ x, y, width, value }) {
+function TotalAboveBarLabel({ x, y, width, value, payload, index }) {
   if (!value) return null;
+  const cx = x + width / 2;
+  const pack = payload?.packTotal ?? payload?.payload?.packTotal ?? REVENUE_CHART_DATA[index]?.packTotal;
   return (
-    <text x={x + width / 2} y={y - 8} textAnchor="middle" fontSize={11} fontWeight={700} fill="#374151">
-      {value}
-    </text>
+    <g>
+      <text x={cx} y={y - 18} textAnchor="middle" fontSize={11} fontWeight={700} fill="#374151">
+        {value}
+      </text>
+      {pack != null && (
+        <text x={cx} y={y - 5} textAnchor="middle" fontSize={9} fontWeight={500} fill="#9CA3AF">
+          {`(Total pack = ${pack})`}
+        </text>
+      )}
+    </g>
   );
 }
 
@@ -756,7 +766,7 @@ function GoalsPerformanceCard() {
       <div className="h-[380px] w-full overflow-x-auto">
       <div className="h-full min-w-[720px]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={REVENUE_CHART_DATA} margin={{ top: 36, right: 16, left: 0, bottom: 8 }} barCategoryGap="28%">
+          <ComposedChart data={REVENUE_CHART_DATA} margin={{ top: 48, right: 16, left: 0, bottom: 8 }} barCategoryGap="28%">
             <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" />
             <XAxis dataKey="week" axisLine={{ stroke: "rgba(0,0,0,0.08)" }} tickLine={false} tick={<RevenueXAxisTick />} interval={0} />
             <YAxis
@@ -789,10 +799,10 @@ function GoalsPerformanceCard() {
             </Bar>
 
             <ReferenceLine y={TARGET_LINE_VALUE} stroke="#0D9488" strokeWidth={2}>
-              <Label content={(p) => <ReferenceLineTag viewBox={p.viewBox} xFraction={0.62} text="Target ₹2.50 Cr" bg="#E7F8EF" color="#0D9488" dy={-2} />} />
+              <Label content={(p) => <ReferenceLineTag viewBox={p.viewBox} text="Target ₹2.50 Cr" bg="#E7F8EF" color="#0D9488" dy={-4} />} />
             </ReferenceLine>
             <ReferenceLine y={INCENTIVE_LINE_VALUE} stroke="#F59E0B" strokeWidth={2} strokeDasharray="6 4">
-              <Label content={(p) => <ReferenceLineTag viewBox={p.viewBox} xFraction={0.4} text="Incentive ₹2.29 Cr" bg="#FFF3E4" color="#B45309" dy={-2} />} />
+              <Label content={(p) => <ReferenceLineTag viewBox={p.viewBox} text="Incentive ₹2.29 Cr" bg="#FFF3E4" color="#B45309" dy={-4} />} />
             </ReferenceLine>
 
             <Line
