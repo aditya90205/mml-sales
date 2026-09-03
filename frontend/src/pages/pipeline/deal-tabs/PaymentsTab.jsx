@@ -1,4 +1,5 @@
 import LockedTabOverlay from "../../../components/pipeline/LockedTabOverlay";
+import { useTableSort } from "../../../components/common/useTableSort.jsx";
 import TableCard from "../../../components/common/TableCard";
 import StatusPill from "../../../components/common/StatusPill";
 
@@ -8,17 +9,28 @@ const PAYMENTS = [
   { date: "Due 02 Aug",  method: "Payment Link", reference: "MML-R-88213", amount: "₹15,000", status: "Awaiting", tone: "amber" },
 ];
 
-/** Payments tab — locked until the deal reaches P5, shown as a blurred preview. */
+const COLUMNS = [
+  { label: "Date", key: "date" },
+  { label: "Method", key: "method" },
+  { label: "Reference", key: "reference" },
+  { label: "Amount", key: "amount" },
+  { label: "Status", key: "status" },
+];
+
 export default function PaymentsTab() {
+  const { sorted, sort, toggle } = useTableSort(PAYMENTS, { defaultKey: "date" });
+
   return (
     <LockedTabOverlay title="Payment is locked." message="This screen will open at P5 stage.">
       <TableCard
         title="Payments"
         subtitle="Part payments, receipts and reconciliation"
-        columns={["Date", "Method", "Reference", "Amount", "Status"]}
+        columns={COLUMNS}
+        sort={sort}
+        onSort={toggle}
         footnote="Prices are standardised across branches. A quoted price below list requires an approved discount request."
       >
-        {PAYMENTS.map((row, i) => (
+        {sorted.map((row, i) => (
           <tr key={i} className="border-b border-black/5 last:border-0">
             <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.date}</td>
             <td className="px-3 py-2.5 text-[12.5px] font-semibold text-[#111] whitespace-nowrap">{row.method}</td>

@@ -1,3 +1,4 @@
+import { useTableSort } from "../../../components/common/useTableSort.jsx";
 import TableCard from "../../../components/common/TableCard";
 
 const AUDIT_LOG = [
@@ -8,15 +9,26 @@ const AUDIT_LOG = [
   { timestamp: "28 Jul 09:14", actor: "Pooja Sharma", action: "Read RM flag",              object: "Notes",         source: "CRM Web" },
 ];
 
-/** Audit tab — immutable log of every view, edit, export and approval on the deal. */
+const COLUMNS = [
+  { label: "Timestamp", key: "timestamp" },
+  { label: "Actor", key: "actor" },
+  { label: "Action", key: "action" },
+  { label: "Object", key: "object" },
+  { label: "Source", key: "source" },
+];
+
 export default function AuditTab() {
+  const { sorted, sort, toggle } = useTableSort(AUDIT_LOG, { defaultKey: "timestamp" });
+
   return (
     <TableCard
       title="Audit"
       subtitle="Immutable log of every view, edit, export and approval"
-      columns={["Timestamp", "Actor", "Action", "Object", "Source"]}
+      columns={COLUMNS}
+      sort={sort}
+      onSort={toggle}
     >
-      {AUDIT_LOG.map((row, i) => (
+      {sorted.map((row, i) => (
         <tr key={i} className="border-b border-black/5 last:border-0">
           <td className="px-3 py-2.5 text-[12px] text-[#9CA3AF] whitespace-nowrap">{row.timestamp}</td>
           <td className="px-3 py-2.5 text-[12.5px] font-semibold text-[#111] whitespace-nowrap">{row.actor}</td>

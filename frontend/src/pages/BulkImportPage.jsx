@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 // TopBar is provided by Layout
 import TableCard from "../components/common/TableCard";
 import StatusPill from "../components/common/StatusPill";
+import { useTableSort } from "../components/common/useTableSort.jsx";
 
 const STATS = [
   { label: "Imports this month", value: "14",    note: "8 Meta, 4 Google, 2 Excel", noteTone: "green", caption: "All sources tagged" },
@@ -83,6 +84,8 @@ function FieldSelect({ value, onChange }) {
  */
 export default function BulkImportPage() {
   const fileInputRef = useRef(null);
+  const { sorted: sortedPreview, sort: previewSort, toggle: togglePreview } = useTableSort(PREVIEW_ROWS, { defaultKey: "first_name" });
+  const { sorted: sortedImports, sort: importSort, toggle: toggleImports } = useTableSort(RECENT_IMPORTS, { defaultKey: "source" });
   const [fileName, setFileName] = useState("walkin-register-aug.xlsx");
   const [mapping, setMapping] = useState(
     Object.fromEntries(COLUMNS.map((c) => [c.key, c.field]))
@@ -228,8 +231,12 @@ export default function BulkImportPage() {
                   <th className="w-10 px-2 py-2 text-left text-[10px] font-semibold text-[#9CA3AF] uppercase">#</th>
                   {COLUMNS.map((col) => (
                     <th key={col.key} className="px-2 py-2 align-top min-w-[150px]">
-                      <p className="text-[10.5px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5">
+                      <p
+                        onClick={() => togglePreview(col.key)}
+                        className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 cursor-pointer select-none hover:text-[#4B5563]"
+                      >
                         <span className="text-[#7A0A17]">{col.letter}</span> {col.header}
+                        {previewSort.key === col.key ? (previewSort.dir === "asc" ? " ▲" : " ▼") : ""}
                       </p>
                       <FieldSelect
                         value={mapping[col.key]}
@@ -240,8 +247,8 @@ export default function BulkImportPage() {
                 </tr>
               </thead>
               <tbody>
-                {PREVIEW_ROWS.map((row, i) => (
-                  <tr key={i} className="border-t border-black/6">
+                {sortedPreview.map((row, i) => (
+                  <tr key={`${row.first_name}-${row.last_name}-${i}`} className="border-t border-black/6">
                     <td className="px-2 py-2.5 text-[11.5px] text-[#9CA3AF]">{i + 1}</td>
                     {COLUMNS.map((col) => (
                       <td key={col.key} className="px-2 py-2.5 text-[12.5px] text-[#374151] whitespace-nowrap">
@@ -384,9 +391,18 @@ export default function BulkImportPage() {
                 <Download size={13} /> Download errors
               </button>
             }
-            columns={["File / Integration", "Rows", "Accepted", "Rejected", "Duplicate", "Status"]}
+            columns={[
+              { label: "File / Integration", key: "source" },
+              { label: "Rows", key: "rows" },
+              { label: "Accepted", key: "accepted" },
+              { label: "Rejected", key: "rejected" },
+              { label: "Duplicate", key: "duplicate" },
+              { label: "Status", key: "status" },
+            ]}
+            sort={importSort}
+            onSort={toggleImports}
           >
-            {RECENT_IMPORTS.map((row) => (
+            {sortedImports.map((row) => (
               <tr key={row.source} className="border-b border-black/5 last:border-0">
                 <td className="px-3 py-2.5 text-[12.5px] font-semibold text-[#111] whitespace-nowrap">{row.source}</td>
                 <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.rows}</td>

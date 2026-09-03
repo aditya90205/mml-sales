@@ -44,6 +44,7 @@ import {
   Smartphone,
   Store,
 } from "lucide-react";
+import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -552,6 +553,8 @@ function SalesFunnelCard() {
 }
 
 function PendingTasksCard() {
+  const { sorted, sort, toggle } = useTableSort(PENDING_TASKS, { defaultKey: "type" });
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4">
       <div className="flex items-center justify-between gap-3 mb-3 px-1">
@@ -571,15 +574,26 @@ function PendingTasksCard() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-black/8">
-              {["Type", "Description", "Requested On", "Due Date", "Status"].map((h) => (
-                <th key={h} className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
-                  {h}
-                </th>
+              {[
+                { label: "Type", key: "type" },
+                { label: "Description", key: "description" },
+                { label: "Requested On", key: "requestedOn" },
+                { label: "Due Date", key: "dueDate" },
+                { label: "Status", key: "statusLabel" },
+              ].map((h) => (
+                <SortableTh
+                  key={h.key}
+                  label={h.label}
+                  sortKey={h.key}
+                  sort={sort}
+                  onSort={toggle}
+                  className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap"
+                />
               ))}
             </tr>
           </thead>
           <tbody>
-            {PENDING_TASKS.map((task) => (
+            {sorted.map((task) => (
               <tr key={task.type} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
                 <td className="px-4 py-4 text-[13px] font-bold text-[#111] whitespace-nowrap">{task.type}</td>
                 <td className="px-4 py-4 text-[11px] text-[#6B7280] max-w-[150px]">{task.description}</td>
@@ -1084,6 +1098,8 @@ function AcquisitionDonutLabel({ cx, cy, midAngle, innerRadius, outerRadius, per
 }
 
 function ClientAcquisitionCard() {
+  const { sorted, sort, toggle } = useTableSort(ACQUISITION_SOURCES, { defaultKey: "source" });
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
       <div className="flex items-center justify-between gap-3 mb-4 px-1 flex-wrap">
@@ -1144,15 +1160,24 @@ function ClientAcquisitionCard() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-black/8">
-                {["Source", "Leads", "Conv."].map((h) => (
-                  <th key={h} className="text-[10px] font-semibold text-[#9CA3AF] uppercase px-2 py-2 whitespace-nowrap">
-                    {h}
-                  </th>
+                {[
+                  { label: "Source", key: "source" },
+                  { label: "Leads", key: "totalLeads" },
+                  { label: "Conv.", key: "conversion" },
+                ].map((h) => (
+                  <SortableTh
+                    key={h.key}
+                    label={h.label}
+                    sortKey={h.key}
+                    sort={sort}
+                    onSort={toggle}
+                    className="text-[10px] font-semibold text-[#9CA3AF] uppercase px-2 py-2 whitespace-nowrap"
+                  />
                 ))}
               </tr>
             </thead>
             <tbody>
-              {ACQUISITION_SOURCES.map((s) => {
+              {sorted.map((s) => {
                 const Icon = ACQUISITION_ICONS[s.icon];
                 return (
                   <tr key={s.source} className="border-b border-black/6 last:border-0">
@@ -1228,6 +1253,8 @@ function RecentAnnouncementsCard() {
 }
 
 function ActiveContestCard() {
+  const { sorted, sort, toggle } = useTableSort(ACTIVE_CONTESTS, { defaultKey: "title" });
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
       <div className="flex items-center justify-between gap-3 mb-3 px-1">
@@ -1242,15 +1269,26 @@ function ActiveContestCard() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-black/8">
-              {["Title", "Time Left", "Prize", "Action"].map((h) => (
-                <th key={h} className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
-                  {h}
-                </th>
+              {[
+                { label: "Title", key: "title" },
+                { label: "Time Left", key: "timeLeft" },
+                { label: "Prize", key: "prize" },
+                { label: "Action", key: "action", unsortable: true },
+              ].map((h) => (
+                <SortableTh
+                  key={h.key}
+                  label={h.label}
+                  sortKey={h.key}
+                  sort={sort}
+                  onSort={toggle}
+                  unsortable={h.unsortable}
+                  className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap"
+                />
               ))}
             </tr>
           </thead>
           <tbody>
-            {ACTIVE_CONTESTS.map((c) => (
+            {sorted.map((c) => (
               <tr key={c.id} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
                 <td className="px-4 py-4">
                   <div className="flex items-start gap-2.5">
@@ -1283,6 +1321,8 @@ function ActiveContestCard() {
 }
 
 function LeaderboardCard() {
+  const { sorted, sort, toggle } = useTableSort(LEADERBOARD, { defaultKey: "rank" });
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
       <div className="flex items-center justify-between gap-3 mb-3 px-1">
@@ -1297,15 +1337,25 @@ function LeaderboardCard() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-black/8">
-              {["#", "Name", "Branch", "Total XP"].map((h) => (
-                <th key={h} className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
-                  {h}
-                </th>
+              {[
+                { label: "#", key: "rank" },
+                { label: "Name", key: "name" },
+                { label: "Branch", key: "branch" },
+                { label: "Total XP", key: "xp" },
+              ].map((h) => (
+                <SortableTh
+                  key={h.key}
+                  label={h.label}
+                  sortKey={h.key}
+                  sort={sort}
+                  onSort={toggle}
+                  className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap"
+                />
               ))}
             </tr>
           </thead>
           <tbody>
-            {LEADERBOARD.map((p) => (
+            {sorted.map((p) => (
               <tr
                 key={p.rank}
                 className={`border-b border-black/8 last:border-0 transition-colors ${p.self ? "bg-[#F6F9FF]" : "hover:bg-[#FAFAFB]"}`}
@@ -1339,6 +1389,7 @@ function LeaderboardCard() {
 
 function MyLeadsCard() {
   const [period, setPeriod] = useState("today");
+  const { sorted, sort, toggle } = useTableSort(MY_LEADS, { defaultKey: "name" });
 
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
@@ -1395,24 +1446,30 @@ function MyLeadsCard() {
           <thead>
             <tr className="border-b border-black/8">
               {[
-                "Client Name",
-                "Owner",
-                "Stage",
-                "Priority",
-                "Lead\nScore",
-                "Profile\nCompletion",
-                "Source",
-                "Follow Up\nTime Left",
-                "Actions",
+                { label: "Client Name", key: "name" },
+                { label: "Owner", key: "owner" },
+                { label: "Stage", key: "stage" },
+                { label: "Priority", key: "priority" },
+                { label: "Lead\nScore", key: "leadScore" },
+                { label: "Profile\nCompletion", key: "profileCompletion" },
+                { label: "Source", key: "source" },
+                { label: "Follow Up\nTime Left", key: "followUp" },
+                { label: "Actions", key: "actions", unsortable: true },
               ].map((h) => (
-                <th key={h} className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-2.5 py-2 align-bottom">
-                  <span className="whitespace-pre-line leading-tight">{h}</span>
-                </th>
+                <SortableTh
+                  key={h.key}
+                  label={h.label}
+                  sortKey={h.key}
+                  sort={sort}
+                  onSort={toggle}
+                  unsortable={h.unsortable}
+                  className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-2.5 py-2 align-bottom"
+                />
               ))}
             </tr>
           </thead>
           <tbody>
-            {MY_LEADS.map((lead, i) => {
+            {sorted.map((lead, i) => {
               const priority = PRIORITY_STYLES[lead.priority];
               return (
                 <tr key={i} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">

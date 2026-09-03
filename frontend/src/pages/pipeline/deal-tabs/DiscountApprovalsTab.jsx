@@ -1,3 +1,4 @@
+import { useTableSort } from "../../../components/common/useTableSort.jsx";
 import TableCard from "../../../components/common/TableCard";
 import StatusPill from "../../../components/common/StatusPill";
 
@@ -8,16 +9,28 @@ const APPROVALS = [
 
 const STATUS_TONES = { Pending: "amber", Approved: "green" };
 
-/** Discount Approvals tab — requests routed through the team-level authority matrix. */
+const COLUMNS = [
+  { label: "Raised", key: "raised" },
+  { label: "Requested", key: "requested" },
+  { label: "Discount", key: "discount" },
+  { label: "Approver", key: "approver" },
+  { label: "Level", key: "level" },
+  { label: "Status", key: "status" },
+];
+
 export default function DiscountApprovalsTab() {
+  const { sorted, sort, toggle } = useTableSort(APPROVALS, { defaultKey: "raised" });
+
   return (
     <TableCard
       title="Discount Approvals"
       subtitle="Routed by the authority matrix — team level, not individual"
-      columns={["Raised", "Requested", "Discount", "Approver", "Level", "Status"]}
+      columns={COLUMNS}
+      sort={sort}
+      onSort={toggle}
       footnote="Up to 10% — Team Lead. 10-20% — Branch Head. Above 20% — Founder."
     >
-      {APPROVALS.map((row, i) => (
+      {sorted.map((row, i) => (
         <tr key={i} className="border-b border-black/5 last:border-0">
           <td className="px-3 py-2.5 text-[12.5px] font-semibold text-[#111] whitespace-nowrap">{row.raised}</td>
           <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.requested}</td>

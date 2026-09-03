@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Check, ChevronDown, Sparkles } from "lucide-react";
+import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
 
 const SLA_STATUS_STYLES = {
   "Within SLA":         { color: "#16A34A", bg: "#E7F8EF" },
@@ -82,6 +83,8 @@ function AskAICard() {
 }
 
 function StageHistoryCard({ rows, footnote }) {
+  const { sorted, sort, toggle } = useTableSort(rows, { defaultKey: "stage" });
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-5">
       <h3 className="text-[14px] font-bold text-[#111]">Stage History &amp; SLA</h3>
@@ -91,18 +94,27 @@ function StageHistoryCard({ rows, footnote }) {
         <table className="w-full border-collapse min-w-[560px]">
           <thead>
             <tr className="border-b border-black/8">
-              {["Stage", "Entered", "Exited", "Duration", "SLA", "Status"].map((h) => (
-                <th
-                  key={h}
+              {[
+                { label: "Stage", key: "stage" },
+                { label: "Entered", key: "entered" },
+                { label: "Exited", key: "exited" },
+                { label: "Duration", key: "duration" },
+                { label: "SLA", key: "sla" },
+                { label: "Status", key: "status" },
+              ].map((h) => (
+                <SortableTh
+                  key={h.key}
+                  label={h.label}
+                  sortKey={h.key}
+                  sort={sort}
+                  onSort={toggle}
                   className="px-2.5 py-2 text-left text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide"
-                >
-                  {h}
-                </th>
+                />
               ))}
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
+            {sorted.map((row) => {
               const status = SLA_STATUS_STYLES[row.status] || SLA_STATUS_STYLES["Within SLA"];
               return (
                 <tr key={row.stage} className="border-b border-black/5 last:border-0">

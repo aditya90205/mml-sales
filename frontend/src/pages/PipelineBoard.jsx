@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   AlarmClock,
   ArrowRight,
   Calendar,
   ChevronDown,
-  ChevronUp,
   Clock,
   Download,
   Flag,
@@ -35,6 +34,7 @@ import AddP0ProspectPage from "./pipeline/AddP0ProspectPage";
 import MoveToP1Page from "./pipeline/MoveToP1Page";
 import MoveToP2Page from "./pipeline/MoveToP2Page";
 import DealDetailPage from "./pipeline/DealDetailPage";
+import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 
 /* ───────────────────────── Data ───────────────────────── */
 
@@ -501,30 +501,14 @@ const TABLE_COLS = [
   { key: "actions",    label: "Actions" },
 ];
 
-function SortIcon({ col, sort }) {
-  if (sort.key !== col) return <ChevronUp size={12} className="text-[#D1D5DB] opacity-0 group-hover:opacity-100 shrink-0 mb-0.5" />;
-  return sort.dir === "asc"
-    ? <ChevronUp size={12} className="text-[#7A0A17] shrink-0 mb-0.5" />
-    : <ChevronDown size={12} className="text-[#7A0A17] shrink-0 mb-0.5" />;
-}
-
 function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage }) {
-  const [sort, setSort] = useState({ key: "name", dir: "asc" });
-
-  const toggle = (key) =>
-    setSort((s) => s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" });
-
-  const sorted = useMemo(() => {
-    const arr = [...flatLeads];
-    arr.sort((a, b) => {
-      let av = a.lead[sort.key] ?? a.stage.label;
-      let bv = b.lead[sort.key] ?? b.stage.label;
-      if (sort.key === "stage") { av = a.stage.label; bv = b.stage.label; }
-      if (typeof av === "string") return sort.dir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
-      return sort.dir === "asc" ? av - bv : bv - av;
-    });
-    return arr;
-  }, [flatLeads, sort]);
+  const getValue = useCallback((row, key) => {
+    if (key === "stage") return `${row.stage.id} ${row.stage.label}`;
+    if (key === "owner") return OWNER.name;
+    if (key === "followup") return row.lead.hrs;
+    return row.lead[key];
+  }, []);
+  const { sorted, sort, toggle } = useTableSort(flatLeads, { defaultKey: "name", getValue });
 
   const PRIORITY_FLAG = { High: "#E8395B", Medium: "#F59E0B", Low: "#16A34A" };
 
@@ -547,18 +531,15 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage }) {
             <thead>
               <tr className="border-b border-black/8">
                 {TABLE_COLS.map((col) => (
-                  <th
+                  <SortableTh
                     key={col.key}
-                    onClick={() => col.key !== "actions" && toggle(col.key)}
-                    className={`group px-3 py-2 text-left text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide select-none align-bottom ${
-                      col.key !== "actions" ? "cursor-pointer hover:text-[#4B5563]" : ""
-                    }`}
-                  >
-                    <span className="inline-flex items-end gap-1 leading-tight">
-                      <span className="whitespace-pre-line">{col.label}</span>
-                      {col.key !== "actions" && <SortIcon col={col.key} sort={sort} />}
-                    </span>
-                  </th>
+                    label={col.label}
+                    sortKey={col.key}
+                    sort={sort}
+                    onSort={toggle}
+                    unsortable={col.key === "actions"}
+                    className="px-3 py-2 text-left text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide align-bottom"
+                  />
                 ))}
               </tr>
             </thead>

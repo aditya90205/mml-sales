@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { Pencil, Plus, CheckCircle2, XCircle, Trash2 } from "lucide-react";
 import Modal from "../ui/Modal";
+import { SortableTh, useTableSort } from "../common/useTableSort.jsx";
 
 const TIMESHEET = {
   date: "26-08-2026",
@@ -186,6 +187,17 @@ export default function TimesheetDetailsModal({ open, onClose, employee, mode = 
   const [rejecting, setRejecting] = useState(null);
   const [rejectComment, setRejectComment] = useState("");
 
+  const indexedManual = useMemo(
+    () => manualEntries.map((e, index) => ({ ...e, index })),
+    [manualEntries]
+  );
+  const { sorted: sortedSystem, sort: systemSort, toggle: toggleSystem } = useTableSort(TIMESHEET.systemEntries, {
+    defaultKey: "start",
+  });
+  const { sorted: sortedManual, sort: manualSort, toggle: toggleManual } = useTableSort(indexedManual, {
+    defaultKey: "start",
+  });
+
   useEffect(() => {
     if (open) {
       setCanEdit(mode === "edit");
@@ -297,16 +309,16 @@ export default function TimesheetDetailsModal({ open, onClose, employee, mode = 
                   <table className="w-full min-w-[640px] text-left">
                     <thead>
                       <tr className="border-b border-black/8">
-                        <th className={th}>Start Time</th>
-                        <th className={th}>End Time</th>
-                        <th className={th}>Project/Module</th>
-                        <th className={th}>Description</th>
-                        <th className={th}>By</th>
-                        <th className={`${th} text-right`}>Hours</th>
+                        <SortableTh label="Start Time" sortKey="start" sort={systemSort} onSort={toggleSystem} className={th} />
+                        <SortableTh label="End Time" sortKey="end" sort={systemSort} onSort={toggleSystem} className={th} />
+                        <SortableTh label="Project/Module" sortKey="module" sort={systemSort} onSort={toggleSystem} className={th} />
+                        <SortableTh label="Description" sortKey="description" sort={systemSort} onSort={toggleSystem} className={th} />
+                        <SortableTh label="By" sortKey="by" sort={systemSort} onSort={toggleSystem} className={th} />
+                        <SortableTh label="Hours" sortKey="hours" sort={systemSort} onSort={toggleSystem} className={`${th} text-right`} />
                       </tr>
                     </thead>
                     <tbody>
-                      {TIMESHEET.systemEntries.map((e, i) => (
+                      {sortedSystem.map((e, i) => (
                         <tr key={i} className="border-b border-black/6">
                           <td className={`${td} whitespace-nowrap`}>{e.start}</td>
                           <td className={`${td} whitespace-nowrap`}>{e.end}</td>
@@ -344,18 +356,18 @@ export default function TimesheetDetailsModal({ open, onClose, employee, mode = 
                 <table className="w-full min-w-[760px] text-left">
                   <thead>
                     <tr className="border-b border-black/8">
-                      <th className={th}>Start Time</th>
-                      <th className={th}>End Time</th>
-                      <th className={th}>Project/Module</th>
-                      <th className={th}>Description</th>
-                      <th className={th}>By</th>
-                      <th className={`${th} text-right`}>Hours</th>
-                      <th className={`${th} text-right`}>Actions</th>
+                      <SortableTh label="Start Time" sortKey="start" sort={manualSort} onSort={toggleManual} className={th} />
+                      <SortableTh label="End Time" sortKey="end" sort={manualSort} onSort={toggleManual} className={th} />
+                      <SortableTh label="Project/Module" sortKey="module" sort={manualSort} onSort={toggleManual} className={th} />
+                      <SortableTh label="Description" sortKey="description" sort={manualSort} onSort={toggleManual} className={th} />
+                      <SortableTh label="By" sortKey="by" sort={manualSort} onSort={toggleManual} className={th} />
+                      <SortableTh label="Hours" sortKey="hours" sort={manualSort} onSort={toggleManual} className={`${th} text-right`} />
+                      <SortableTh label="Actions" sortKey="actions" unsortable className={`${th} text-right`} />
                     </tr>
                   </thead>
                   <tbody>
-                    {manualEntries.map((e, i) => (
-                      <tr key={i} className="border-b border-black/6 align-top">
+                    {sortedManual.map((e) => (
+                      <tr key={e.index} className="border-b border-black/6 align-top">
                         <td className={`${td} whitespace-nowrap`}>{e.start}</td>
                         <td className={`${td} whitespace-nowrap`}>{e.end}</td>
                         <td className="px-4 py-3 text-[13px] font-semibold text-[#111]">{e.module}</td>
@@ -375,16 +387,16 @@ export default function TimesheetDetailsModal({ open, onClose, employee, mode = 
                         <td className="px-4 py-3 text-[13px] font-bold text-[#3B82F6] text-right whitespace-nowrap">{e.hours}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1.5">
-                            <IconBtn title="Approve" className="border-[#16A34A]/30 text-[#16A34A] hover:bg-[#E7F8EF]" onClick={() => canEdit && approveEntry(i)}>
+                            <IconBtn title="Approve" className="border-[#16A34A]/30 text-[#16A34A] hover:bg-[#E7F8EF]" onClick={() => canEdit && approveEntry(e.index)}>
                               <CheckCircle2 size={14} />
                             </IconBtn>
-                            <IconBtn title="Reject" className="border-[#DC2626]/30 text-[#DC2626] hover:bg-[#FEE2E2]" onClick={() => canEdit && (setRejecting(i), setRejectComment(e.comment || ""))}>
+                            <IconBtn title="Reject" className="border-[#DC2626]/30 text-[#DC2626] hover:bg-[#FEE2E2]" onClick={() => canEdit && (setRejecting(e.index), setRejectComment(e.comment || ""))}>
                               <XCircle size={14} />
                             </IconBtn>
-                            <IconBtn title="Edit" className="border-[#3B82F6]/30 text-[#3B82F6] hover:bg-[#E8F2FE]" onClick={() => canEdit && setEntryForm({ mode: "edit", index: i, initial: { ...e, by: "Manual" } })}>
+                            <IconBtn title="Edit" className="border-[#3B82F6]/30 text-[#3B82F6] hover:bg-[#E8F2FE]" onClick={() => canEdit && setEntryForm({ mode: "edit", index: e.index, initial: { ...e, by: "Manual" } })}>
                               <Pencil size={13} />
                             </IconBtn>
-                            <IconBtn title="Delete" className="border-[#DC2626]/30 text-[#DC2626] hover:bg-[#FEE2E2]" onClick={() => canEdit && deleteEntry(i)}>
+                            <IconBtn title="Delete" className="border-[#DC2626]/30 text-[#DC2626] hover:bg-[#FEE2E2]" onClick={() => canEdit && deleteEntry(e.index)}>
                               <Trash2 size={13} />
                             </IconBtn>
                           </div>

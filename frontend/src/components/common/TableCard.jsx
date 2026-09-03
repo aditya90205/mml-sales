@@ -1,10 +1,14 @@
+import { SortableTh } from "./useTableSort.jsx";
+
 /**
  * White card with a title/subtitle header, a horizontally-scrollable data
- * table and an optional footnote — the shared shell for the deal-detail
- * tab tables (Intake Form, Visits & Meetings, Stage History, ...).
- * Pass fully-built `<tr>` rows as children.
+ * table and an optional footnote.
+ * `columns` may be strings or `{ label, key, unsortable }`.
+ * Pass `sort` + `onSort` from `useTableSort` to enable header sorting.
  */
-export default function TableCard({ title, subtitle, badge, columns, children, footnote }) {
+export default function TableCard({ title, subtitle, badge, columns, children, footnote, sort, onSort }) {
+  const cols = columns.map((col) => (typeof col === "string" ? { label: col } : col));
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-5">
       <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
@@ -19,15 +23,18 @@ export default function TableCard({ title, subtitle, badge, columns, children, f
         <table className="w-full border-collapse min-w-[560px]">
           <thead>
             <tr className="bg-[#FAF3F2]">
-              {columns.map((col, i) => (
-                <th
-                  key={col}
+              {cols.map((col, i) => (
+                <SortableTh
+                  key={col.key || col.label}
+                  label={col.label}
+                  sortKey={col.key}
+                  sort={sort}
+                  onSort={onSort}
+                  unsortable={col.unsortable}
                   className={`px-3 py-2 text-left text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide whitespace-nowrap ${
                     i === 0 ? "rounded-l-lg" : ""
-                  } ${i === columns.length - 1 ? "rounded-r-lg" : ""}`}
-                >
-                  {col}
-                </th>
+                  } ${i === cols.length - 1 ? "rounded-r-lg" : ""}`}
+                />
               ))}
             </tr>
           </thead>

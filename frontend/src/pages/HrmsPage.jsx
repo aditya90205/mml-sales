@@ -28,7 +28,6 @@ import {
   Search,
   Filter,
   MoreVertical,
-  ChevronUp,
   BarChart3,
   LayoutGrid,
   Lock,
@@ -41,6 +40,7 @@ import {
 import { USER } from "../components/layout/TopBar";
 import Modal from "../components/ui/Modal";
 import TimesheetDetailsModal from "../components/hrms/TimesheetDetailsModal";
+import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import yellowLoopIcon from "../assets/yellow-loop.png";
 import redBackIcon from "../assets/red-back.png";
 
@@ -304,6 +304,65 @@ function Pagination({ page, totalPages, totalItems, pageSize, itemLabel, onChang
   );
 }
 
+const HRMS_TH = "px-4 py-3";
+
+const HOURLY_WORK_ROWS = [
+  { start: "09:00:00 AM", end: "10:00:35 AM", module: "Calendar", description: "Meetings with clients", by: "System", hours: "1.00h" },
+  { start: "10:00:00 AM", end: "10:30:00 AM", module: "Dashboard", description: "Requirement gathering and analysis", by: "System", hours: "1.50h" },
+  { start: "10:30:00 AM", end: "02:00:00 PM", module: "Communication", description: "Sending mails and assigning tasks", by: "System", hours: "3.50h" },
+];
+
+const TIMESHEET_MANUAL_ROWS = [
+  { start: "03:00 PM", end: "06:00 PM", module: "Field Work", description: "House visit with customer for collection", by: "Manual", hours: "3.00h" },
+];
+
+const DAILY_ATTENDANCE_ROWS = [
+  {
+    date: "2026-12-01", clockIn: "09:25", clockOut: "18:00", totalHours: "7.58h", overtime: "-", status: "Half Day Late",
+    badges: [
+      { text: "Half Day", className: "bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold px-2 py-0.5 rounded-md mr-1" },
+      { text: "Late", className: "bg-[#FEE2E2] text-[#DC2626] text-[10px] font-bold px-2 py-0.5 rounded-md" },
+    ],
+  },
+  {
+    date: "2026-12-02", clockIn: "09:00", clockOut: "17:20", totalHours: "7.33h", overtime: "-", status: "Half Day Early",
+    badges: [
+      { text: "Half Day", className: "bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold px-2 py-0.5 rounded-md mr-1" },
+      { text: "Early", className: "bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold px-2 py-0.5 rounded-md" },
+    ],
+  },
+  {
+    date: "2026-12-03", clockIn: "09:00", clockOut: "10:00", totalHours: "1.00h", overtime: "-", status: "Absent Early",
+    badges: [
+      { text: "Absent", className: "bg-[#FEE2E2] text-[#DC2626] text-[10px] font-bold px-2 py-0.5 rounded-md mr-1" },
+      { text: "Early", className: "bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold px-2 py-0.5 rounded-md" },
+    ],
+  },
+  {
+    date: "2026-12-04", clockIn: "09:00", clockOut: "18:00", totalHours: "8.00h", overtime: "-", status: "Present",
+    badges: [{ text: "Present", className: "bg-[#DCFCE7] text-[#15803D] text-[10px] font-bold px-2 py-0.5 rounded-md" }],
+  },
+];
+
+const REGISTRATION_INCENTIVE_ROWS = [
+  { client: "Aditi & Rohan", registration: "₹85,000", net: "₹72,034", slab: "3%", incentive: "₹2,161" },
+  { client: "Priya & karan", registration: "₹85,000", net: "₹72,034", slab: "3%", incentive: "₹2,161" },
+  { client: "Sneha & Arjun", registration: "₹85,000", net: "₹72,034", slab: "3%", incentive: "₹2,161" },
+  { client: "Meera & Arjun", registration: "₹85,000", net: "₹72,034", slab: "3%", incentive: "₹2,161" },
+];
+
+const MEETINGS_INCENTIVE_ROWS = [
+  { item: ">30 meetings", count: "6", rate: "₹70", amount: "₹2,100" },
+  { item: ">50 meetings", count: "-", rate: "₹100", amount: "-" },
+];
+
+const PERFORMANCE_INCENTIVE_ROWS = [
+  { item: "Google Reviews", rule: ">5 - ₹70 each", count: "6", rate: "₹70", amount: "₹420", amountTone: "" },
+  { item: "Testimonial videos", rule: ">5 - ₹70 each", count: "6", rate: "₹150", amount: "₹900", amountTone: "" },
+  { item: "Wedding photos published", rule: "₹50 per case", count: "4", rate: "₹50", amount: "₹200", amountTone: "" },
+  { item: "Negative review", rule: "-₹100 penalty", count: "1", rate: "-₹100", amount: "-₹100", amountTone: "text-[#DC2626]" },
+];
+
 /** Label + icon + value pair used in the Expense Details modal's two-column grid. */
 function DetailField({ icon: Icon, label, children, full = false }) {
   return (
@@ -314,6 +373,245 @@ function DetailField({ icon: Icon, label, children, full = false }) {
       </p>
       <div className="text-sm font-bold text-[#111827]">{children}</div>
     </div>
+  );
+}
+
+function HrmsSortHead({ cols, sort, onSort }) {
+  return (
+    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
+      {cols.map((c) => (
+        <SortableTh
+          key={c.key}
+          label={c.label}
+          sortKey={c.key}
+          sort={sort}
+          onSort={onSort}
+          unsortable={c.unsortable}
+          className={c.align === "center" ? `${HRMS_TH} text-center` : HRMS_TH}
+        />
+      ))}
+    </tr>
+  );
+}
+
+function HourlyWorkTable() {
+  const { sorted, sort, toggle } = useTableSort(HOURLY_WORK_ROWS, { defaultKey: "start" });
+  return (
+    <>
+      <thead>
+        <HrmsSortHead
+          sort={sort}
+          onSort={toggle}
+          cols={[
+            { label: "Start Time", key: "start" },
+            { label: "End Time", key: "end" },
+            { label: "Project/Module", key: "module" },
+            { label: "Description", key: "description" },
+            { label: "By", key: "by" },
+            { label: "Hours", key: "hours" },
+          ]}
+        />
+      </thead>
+      <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+        {sorted.map((row) => (
+          <tr key={`${row.start}-${row.module}`}>
+            <td className="px-4 py-3 font-bold">{row.start}</td>
+            <td className="px-4 py-3 font-bold">{row.end}</td>
+            <td className="px-4 py-3">{row.module}</td>
+            <td className="px-4 py-3 text-[#4B5563]">{row.description}</td>
+            <td className="px-4 py-3 text-[#6B7280]">{row.by}</td>
+            <td className="px-4 py-3 font-extrabold text-[#3B82F6]">{row.hours}</td>
+          </tr>
+        ))}
+      </tbody>
+    </>
+  );
+}
+
+function TimesheetManualTable() {
+  const { sorted, sort, toggle } = useTableSort(TIMESHEET_MANUAL_ROWS, { defaultKey: "start" });
+  return (
+    <>
+      <thead>
+        <HrmsSortHead
+          sort={sort}
+          onSort={toggle}
+          cols={[
+            { label: "Start Time", key: "start" },
+            { label: "End Time", key: "end" },
+            { label: "Project/Module", key: "module" },
+            { label: "Description", key: "description" },
+            { label: "By", key: "by" },
+            { label: "Hours", key: "hours" },
+            { label: "Actions", key: "actions", unsortable: true },
+          ]}
+        />
+      </thead>
+      <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+        {sorted.map((row) => (
+          <tr key={`${row.start}-${row.module}`}>
+            <td className="px-4 py-3 font-bold">{row.start}</td>
+            <td className="px-4 py-3 font-bold">{row.end}</td>
+            <td className="px-4 py-3">{row.module}</td>
+            <td className="px-4 py-3 text-[#4B5563]">{row.description}</td>
+            <td className="px-4 py-3 text-[#6B7280]">{row.by}</td>
+            <td className="px-4 py-3 font-extrabold text-[#3B82F6]">{row.hours}</td>
+            <td className="px-4 py-3">
+              <div className="flex items-center gap-1.5">
+                <button type="button" className="text-[#16A34A] hover:opacity-80"><CheckCircle2 size={16} /></button>
+                <button type="button" className="text-[#DC2626] hover:opacity-80"><X size={16} /></button>
+                <button type="button" className="text-[#0284C7] hover:opacity-80"><Edit size={15} /></button>
+                <button type="button" className="text-[#DC2626] hover:opacity-80"><Trash2 size={15} /></button>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </>
+  );
+}
+
+function DailyAttendanceTable() {
+  const { sorted, sort, toggle } = useTableSort(DAILY_ATTENDANCE_ROWS, { defaultKey: "date" });
+  return (
+    <>
+      <thead>
+        <HrmsSortHead
+          sort={sort}
+          onSort={toggle}
+          cols={[
+            { label: "Date", key: "date" },
+            { label: "Clock In", key: "clockIn" },
+            { label: "Clock Out", key: "clockOut" },
+            { label: "Total Hours", key: "totalHours" },
+            { label: "Overtime", key: "overtime" },
+            { label: "Status", key: "status" },
+          ]}
+        />
+      </thead>
+      <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+        {sorted.map((row) => (
+          <tr key={row.date}>
+            <td className="px-4 py-3">{row.date}</td>
+            <td className="px-4 py-3 text-[#16A34A]">{row.clockIn}</td>
+            <td className="px-4 py-3 text-[#DC2626]">{row.clockOut}</td>
+            <td className="px-4 py-3 font-bold">{row.totalHours}</td>
+            <td className="px-4 py-3 text-[#9CA3AF]">{row.overtime}</td>
+            <td className="px-4 py-3">
+              {row.badges.map((b) => (
+                <span key={b.text} className={b.className}>{b.text}</span>
+              ))}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </>
+  );
+}
+
+function RegistrationIncentiveTable() {
+  const { sorted, sort, toggle } = useTableSort(REGISTRATION_INCENTIVE_ROWS, { defaultKey: "client" });
+  return (
+    <>
+      <thead>
+        <HrmsSortHead
+          sort={sort}
+          onSort={toggle}
+          cols={[
+            { label: "Client Name", key: "client" },
+            { label: "Registration", key: "registration" },
+            { label: "Net of GST", key: "net" },
+            { label: "Slab", key: "slab" },
+            { label: "Incentive", key: "incentive" },
+          ]}
+        />
+      </thead>
+      <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+        {sorted.map((row) => (
+          <tr key={row.client}>
+            <td className="px-4 py-2.5 font-bold">{row.client}</td>
+            <td className="px-4 py-2.5">{row.registration}</td>
+            <td className="px-4 py-2.5 text-[#6B7280]">{row.net}</td>
+            <td className="px-4 py-2.5 text-[#7A0A17] font-bold">{row.slab}</td>
+            <td className="px-4 py-2.5 font-bold">{row.incentive}</td>
+          </tr>
+        ))}
+        <tr className="bg-[#FAFAFB] font-extrabold">
+          <td className="px-4 py-3" colSpan={4}>Subtotal</td>
+          <td className="px-4 py-3 text-[#7A0A17]">₹67,924</td>
+        </tr>
+      </tbody>
+    </>
+  );
+}
+
+function MeetingsIncentiveTable() {
+  const { sorted, sort, toggle } = useTableSort(MEETINGS_INCENTIVE_ROWS, { defaultKey: "item" });
+  return (
+    <>
+      <thead>
+        <HrmsSortHead
+          sort={sort}
+          onSort={toggle}
+          cols={[
+            { label: "Item", key: "item" },
+            { label: "Count", key: "count" },
+            { label: "Rate", key: "rate" },
+            { label: "Amount", key: "amount" },
+          ]}
+        />
+      </thead>
+      <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+        {sorted.map((row) => (
+          <tr key={row.item}>
+            <td className="px-4 py-2.5 font-bold">{row.item}</td>
+            <td className="px-4 py-2.5">{row.count}</td>
+            <td className="px-4 py-2.5">{row.rate}</td>
+            <td className={`px-4 py-2.5 ${row.amount === "-" ? "text-[#9CA3AF]" : "font-bold"}`}>{row.amount}</td>
+          </tr>
+        ))}
+        <tr className="bg-[#FAFAFB] font-extrabold">
+          <td className="px-4 py-3" colSpan={3}>Subtotal</td>
+          <td className="px-4 py-3 text-[#7A0A17]">₹2,100</td>
+        </tr>
+      </tbody>
+    </>
+  );
+}
+
+function PerformanceIncentiveTable() {
+  const { sorted, sort, toggle } = useTableSort(PERFORMANCE_INCENTIVE_ROWS, { defaultKey: "item" });
+  return (
+    <>
+      <thead>
+        <HrmsSortHead
+          sort={sort}
+          onSort={toggle}
+          cols={[
+            { label: "Item", key: "item" },
+            { label: "Rule", key: "rule" },
+            { label: "Count", key: "count" },
+            { label: "Rate", key: "rate" },
+            { label: "Amount", key: "amount" },
+          ]}
+        />
+      </thead>
+      <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+        {sorted.map((row) => (
+          <tr key={row.item}>
+            <td className="px-4 py-2.5 font-bold">{row.item}</td>
+            <td className="px-4 py-2.5 text-[#6B7280]">{row.rule}</td>
+            <td className="px-4 py-2.5">{row.count}</td>
+            <td className={`px-4 py-2.5 ${row.amountTone}`}>{row.rate}</td>
+            <td className={`px-4 py-2.5 font-bold ${row.amountTone}`}>{row.amount}</td>
+          </tr>
+        ))}
+        <tr className="bg-[#FAFAFB] font-extrabold">
+          <td className="px-4 py-3" colSpan={4}>Subtotal</td>
+          <td className="px-4 py-3 text-[#7A0A17]">₹1,420</td>
+        </tr>
+      </tbody>
+    </>
   );
 }
 
@@ -357,7 +655,6 @@ export default function HrmsPage() {
   const [trainingPage, setTrainingPage] = useState(1);
   const [searchGoal, setSearchGoal] = useState("");
   const [goalPage, setGoalPage] = useState(1);
-  const [goalSort, setGoalSort] = useState({ key: null, dir: "asc" });
   const [expandedRemarks, setExpandedRemarks] = useState({});
   const [searchDocument, setSearchDocument] = useState("");
   const [documentPage, setDocumentPage] = useState(1);
@@ -455,33 +752,24 @@ export default function HrmsPage() {
     setApplyLeaveOpen(false);
   };
 
-  const toggleGoalSort = (key) => {
-    setGoalSort((prev) => ({
-      key,
-      dir: prev.key === key && prev.dir === "asc" ? "desc" : "asc",
-    }));
-  };
-
   const filteredTrainings = INITIAL_TRAININGS.filter((t) =>
     t.program.toLowerCase().includes(searchTraining.toLowerCase())
   );
+  const { sorted: sortedTrainings, sort: trainingSort, toggle: toggleTrainingSort } = useTableSort(filteredTrainings, {
+    defaultKey: "program",
+  });
   const trainingPageSize = 4;
   const trainingTotalPages = Math.max(1, Math.ceil(filteredTrainings.length / trainingPageSize));
-  const pagedTrainings = filteredTrainings.slice(
+  const pagedTrainings = sortedTrainings.slice(
     (trainingPage - 1) * trainingPageSize,
     trainingPage * trainingPageSize
   );
 
-  const filteredGoals = INITIAL_GOALS
-    .filter((g) => g.title.toLowerCase().includes(searchGoal.toLowerCase()))
-    .sort((a, b) => {
-      if (!goalSort.key) return 0;
-      const dir = goalSort.dir === "asc" ? 1 : -1;
-      return a[goalSort.key] > b[goalSort.key] ? dir : a[goalSort.key] < b[goalSort.key] ? -dir : 0;
-    });
+  const filteredGoals = INITIAL_GOALS.filter((g) => g.title.toLowerCase().includes(searchGoal.toLowerCase()));
+  const { sorted: sortedGoals, sort: goalSort, toggle: toggleGoalSort } = useTableSort(filteredGoals, { defaultKey: "title" });
   const goalPageSize = 6;
   const goalTotalPages = Math.max(1, Math.ceil(filteredGoals.length / goalPageSize));
-  const pagedGoals = filteredGoals.slice((goalPage - 1) * goalPageSize, goalPage * goalPageSize);
+  const pagedGoals = sortedGoals.slice((goalPage - 1) * goalPageSize, goalPage * goalPageSize);
 
   const filteredDocuments = INITIAL_DOCUMENTS.filter((d) =>
     d.title.toLowerCase().includes(searchDocument.toLowerCase())
@@ -496,9 +784,16 @@ export default function HrmsPage() {
   const filteredAssets = INITIAL_ASSETS.filter((a) =>
     a.name.toLowerCase().includes(searchAsset.toLowerCase())
   );
+  const { sorted: sortedAssets, sort: assetSort, toggle: toggleAssetSort } = useTableSort(filteredAssets, {
+    defaultKey: "name",
+  });
   const assetPageSize = 10;
   const assetTotalPages = Math.max(1, Math.ceil(filteredAssets.length / assetPageSize));
-  const pagedAssets = filteredAssets.slice((assetPage - 1) * assetPageSize, assetPage * assetPageSize);
+  const pagedAssets = sortedAssets.slice((assetPage - 1) * assetPageSize, assetPage * assetPageSize);
+
+  const { sorted: sortedLeaveTypes, sort: leaveSort, toggle: toggleLeaveSort } = useTableSort(LEAVE_BALANCE_TYPES, {
+    defaultKey: "type",
+  });
 
   return (
     <div className="flex flex-col flex-1 min-h-screen bg-[#F7F8FA] text-[#111827] font-sans">
@@ -1231,42 +1526,7 @@ export default function HrmsPage() {
 
               <div className="overflow-x-auto border border-black/8 rounded-xl">
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
-                      <th className="px-4 py-3">Start Time</th>
-                      <th className="px-4 py-3">End Time</th>
-                      <th className="px-4 py-3">Project/Module</th>
-                      <th className="px-4 py-3">Description</th>
-                      <th className="px-4 py-3">By</th>
-                      <th className="px-4 py-3">Hours</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
-                    <tr>
-                      <td className="px-4 py-3 font-bold">09:00:00 AM</td>
-                      <td className="px-4 py-3 font-bold">10:00:35 AM</td>
-                      <td className="px-4 py-3">Calendar</td>
-                      <td className="px-4 py-3 text-[#4B5563]">Meetings with clients</td>
-                      <td className="px-4 py-3 text-[#6B7280]">System</td>
-                      <td className="px-4 py-3 font-extrabold text-[#3B82F6]">1.00h</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-bold">10:00:00 AM</td>
-                      <td className="px-4 py-3 font-bold">10:30:00 AM</td>
-                      <td className="px-4 py-3">Dashboard</td>
-                      <td className="px-4 py-3 text-[#4B5563]">Requirement gathering and analysis</td>
-                      <td className="px-4 py-3 text-[#6B7280]">System</td>
-                      <td className="px-4 py-3 font-extrabold text-[#3B82F6]">1.50h</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-bold">10:30:00 AM</td>
-                      <td className="px-4 py-3 font-bold">02:00:00 PM</td>
-                      <td className="px-4 py-3">Communication</td>
-                      <td className="px-4 py-3 text-[#4B5563]">Sending mails and assigning tasks</td>
-                      <td className="px-4 py-3 text-[#6B7280]">System</td>
-                      <td className="px-4 py-3 font-extrabold text-[#3B82F6]">3.50h</td>
-                    </tr>
-                  </tbody>
+                  <HourlyWorkTable />
                 </table>
 
                 {/* Subtotal System Hours Bar */}
@@ -1293,35 +1553,7 @@ export default function HrmsPage() {
               {/* Manual Entries Table */}
               <div className="mt-4 overflow-x-auto border border-black/8 rounded-xl">
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
-                      <th className="px-4 py-3">Start Time</th>
-                      <th className="px-4 py-3">End Time</th>
-                      <th className="px-4 py-3">Project/Module</th>
-                      <th className="px-4 py-3">Description</th>
-                      <th className="px-4 py-3">By</th>
-                      <th className="px-4 py-3">Hours</th>
-                      <th className="px-4 py-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
-                    <tr>
-                      <td className="px-4 py-3 font-bold">03:00 PM</td>
-                      <td className="px-4 py-3 font-bold">06:00 PM</td>
-                      <td className="px-4 py-3">Field Work</td>
-                      <td className="px-4 py-3 text-[#4B5563]">House visit with customer for collection</td>
-                      <td className="px-4 py-3 text-[#6B7280]">Manual</td>
-                      <td className="px-4 py-3 font-extrabold text-[#3B82F6]">3.00h</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <button className="text-[#16A34A] hover:opacity-80"><CheckCircle2 size={16} /></button>
-                          <button className="text-[#DC2626] hover:opacity-80"><X size={16} /></button>
-                          <button className="text-[#0284C7] hover:opacity-80"><Edit size={15} /></button>
-                          <button className="text-[#DC2626] hover:opacity-80"><Trash2 size={15} /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
+                  <TimesheetManualTable />
                 </table>
 
                 {/* Comment Rejection Bar */}
@@ -1585,61 +1817,7 @@ export default function HrmsPage() {
               <h4 className="text-sm font-extrabold text-[#111827] mb-3">Daily Attendance Records</h4>
               <div className="overflow-x-auto border border-black/8 rounded-xl">
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
-                      <th className="px-4 py-3">Date</th>
-                      <th className="px-4 py-3">Clock In</th>
-                      <th className="px-4 py-3">Clock Out</th>
-                      <th className="px-4 py-3">Total Hours</th>
-                      <th className="px-4 py-3">Overtime</th>
-                      <th className="px-4 py-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
-                    <tr>
-                      <td className="px-4 py-3">2026-12-01</td>
-                      <td className="px-4 py-3 text-[#16A34A]">09:25</td>
-                      <td className="px-4 py-3 text-[#DC2626]">18:00</td>
-                      <td className="px-4 py-3 font-bold">7.58h</td>
-                      <td className="px-4 py-3 text-[#9CA3AF]">-</td>
-                      <td className="px-4 py-3">
-                        <span className="bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold px-2 py-0.5 rounded-md mr-1">Half Day</span>
-                        <span className="bg-[#FEE2E2] text-[#DC2626] text-[10px] font-bold px-2 py-0.5 rounded-md">Late</span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3">2026-12-02</td>
-                      <td className="px-4 py-3 text-[#16A34A]">09:00</td>
-                      <td className="px-4 py-3 text-[#DC2626]">17:20</td>
-                      <td className="px-4 py-3 font-bold">7.33h</td>
-                      <td className="px-4 py-3 text-[#9CA3AF]">-</td>
-                      <td className="px-4 py-3">
-                        <span className="bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold px-2 py-0.5 rounded-md mr-1">Half Day</span>
-                        <span className="bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold px-2 py-0.5 rounded-md">Early</span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3">2026-12-03</td>
-                      <td className="px-4 py-3 text-[#16A34A]">09:00</td>
-                      <td className="px-4 py-3 text-[#DC2626]">10:00</td>
-                      <td className="px-4 py-3 font-bold">1.00h</td>
-                      <td className="px-4 py-3 text-[#9CA3AF]">-</td>
-                      <td className="px-4 py-3">
-                        <span className="bg-[#FEE2E2] text-[#DC2626] text-[10px] font-bold px-2 py-0.5 rounded-md mr-1">Absent</span>
-                        <span className="bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold px-2 py-0.5 rounded-md">Early</span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3">2026-12-04</td>
-                      <td className="px-4 py-3 text-[#16A34A]">09:00</td>
-                      <td className="px-4 py-3 text-[#DC2626]">18:00</td>
-                      <td className="px-4 py-3 font-bold">8.00h</td>
-                      <td className="px-4 py-3 text-[#9CA3AF]">-</td>
-                      <td className="px-4 py-3">
-                        <span className="bg-[#DCFCE7] text-[#15803D] text-[10px] font-bold px-2 py-0.5 rounded-md">Present</span>
-                      </td>
-                    </tr>
-                  </tbody>
+                  <DailyAttendanceTable />
                 </table>
               </div>
             </div>
@@ -1715,49 +1893,7 @@ export default function HrmsPage() {
               {/* Table */}
               <div className="overflow-x-auto border border-black/8 rounded-xl">
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
-                      <th className="px-4 py-3">Client Name</th>
-                      <th className="px-4 py-3">Registration</th>
-                      <th className="px-4 py-3">Net of GST</th>
-                      <th className="px-4 py-3">Slab</th>
-                      <th className="px-4 py-3">Incentive</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold">Aditi & Rohan</td>
-                      <td className="px-4 py-2.5">₹85,000</td>
-                      <td className="px-4 py-2.5 text-[#6B7280]">₹72,034</td>
-                      <td className="px-4 py-2.5 text-[#7A0A17] font-bold">3%</td>
-                      <td className="px-4 py-2.5 font-bold">₹2,161</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold">Priya & karan</td>
-                      <td className="px-4 py-2.5">₹85,000</td>
-                      <td className="px-4 py-2.5 text-[#6B7280]">₹72,034</td>
-                      <td className="px-4 py-2.5 text-[#7A0A17] font-bold">3%</td>
-                      <td className="px-4 py-2.5 font-bold">₹2,161</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold">Sneha & Arjun</td>
-                      <td className="px-4 py-2.5">₹85,000</td>
-                      <td className="px-4 py-2.5 text-[#6B7280]">₹72,034</td>
-                      <td className="px-4 py-2.5 text-[#7A0A17] font-bold">3%</td>
-                      <td className="px-4 py-2.5 font-bold">₹2,161</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold">Meera & Arjun</td>
-                      <td className="px-4 py-2.5">₹85,000</td>
-                      <td className="px-4 py-2.5 text-[#6B7280]">₹72,034</td>
-                      <td className="px-4 py-2.5 text-[#7A0A17] font-bold">3%</td>
-                      <td className="px-4 py-2.5 font-bold">₹2,161</td>
-                    </tr>
-                    <tr className="bg-[#FAFAFB] font-extrabold">
-                      <td className="px-4 py-3" colSpan={4}>Subtotal</td>
-                      <td className="px-4 py-3 text-[#7A0A17]">₹67,924</td>
-                    </tr>
-                  </tbody>
+                  <RegistrationIncentiveTable />
                 </table>
               </div>
             </div>
@@ -1784,32 +1920,7 @@ export default function HrmsPage() {
               {/* Table */}
               <div className="mt-4 overflow-x-auto border border-black/8 rounded-xl">
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
-                      <th className="px-4 py-3">Item</th>
-                      <th className="px-4 py-3">Count</th>
-                      <th className="px-4 py-3">Rate</th>
-                      <th className="px-4 py-3">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold">&gt;30 meetings</td>
-                      <td className="px-4 py-2.5">6</td>
-                      <td className="px-4 py-2.5">₹70</td>
-                      <td className="px-4 py-2.5 font-bold">₹2,100</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold">&gt;50 meetings</td>
-                      <td className="px-4 py-2.5">-</td>
-                      <td className="px-4 py-2.5">₹100</td>
-                      <td className="px-4 py-2.5 text-[#9CA3AF]">-</td>
-                    </tr>
-                    <tr className="bg-[#FAFAFB] font-extrabold">
-                      <td className="px-4 py-3" colSpan={3}>Subtotal</td>
-                      <td className="px-4 py-3 text-[#7A0A17]">₹2,100</td>
-                    </tr>
-                  </tbody>
+                  <MeetingsIncentiveTable />
                 </table>
               </div>
             </div>
@@ -1819,49 +1930,7 @@ export default function HrmsPage() {
               <h3 className="text-base font-extrabold text-[#111827] mb-3">3. Additional performance incentives</h3>
               <div className="overflow-x-auto border border-black/8 rounded-xl">
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
-                      <th className="px-4 py-3">Item</th>
-                      <th className="px-4 py-3">Rule</th>
-                      <th className="px-4 py-3">Count</th>
-                      <th className="px-4 py-3">Rate</th>
-                      <th className="px-4 py-3">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold">Google Reviews</td>
-                      <td className="px-4 py-2.5 text-[#6B7280]">&gt;5 - ₹70 each</td>
-                      <td className="px-4 py-2.5">6</td>
-                      <td className="px-4 py-2.5">₹70</td>
-                      <td className="px-4 py-2.5 font-bold">₹420</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold">Testimonial videos</td>
-                      <td className="px-4 py-2.5 text-[#6B7280]">&gt;5 - ₹70 each</td>
-                      <td className="px-4 py-2.5">6</td>
-                      <td className="px-4 py-2.5">₹150</td>
-                      <td className="px-4 py-2.5 font-bold">₹900</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold">Wedding photos published</td>
-                      <td className="px-4 py-2.5 text-[#6B7280]">₹50 per case</td>
-                      <td className="px-4 py-2.5">4</td>
-                      <td className="px-4 py-2.5">₹50</td>
-                      <td className="px-4 py-2.5 font-bold">₹200</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-2.5 font-bold">Negative review</td>
-                      <td className="px-4 py-2.5 text-[#6B7280]">-₹100 penalty</td>
-                      <td className="px-4 py-2.5">1</td>
-                      <td className="px-4 py-2.5 text-[#DC2626]">-₹100</td>
-                      <td className="px-4 py-2.5 font-bold text-[#DC2626]">-₹100</td>
-                    </tr>
-                    <tr className="bg-[#FAFAFB] font-extrabold">
-                      <td className="px-4 py-3" colSpan={4}>Subtotal</td>
-                      <td className="px-4 py-3 text-[#7A0A17]">₹1,420</td>
-                    </tr>
-                  </tbody>
+                  <PerformanceIncentiveTable />
                 </table>
               </div>
             </div>
@@ -1889,14 +1958,14 @@ export default function HrmsPage() {
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
-                      <th className="px-4 py-3">#</th>
-                      <th className="px-4 py-3">Program</th>
-                      <th className="px-4 py-3">Date &amp; Time</th>
-                      <th className="px-4 py-3">Location</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Score</th>
-                      <th className="px-4 py-3">Attendance</th>
-                      <th className="px-4 py-3">Actions</th>
+                      <SortableTh label="#" sortKey="id" unsortable className={HRMS_TH} />
+                      <SortableTh label="Program" sortKey="program" sort={trainingSort} onSort={toggleTrainingSort} className={HRMS_TH} />
+                      <SortableTh label="Date & Time" sortKey="dateTime" sort={trainingSort} onSort={toggleTrainingSort} className={HRMS_TH} />
+                      <SortableTh label="Location" sortKey="location" sort={trainingSort} onSort={toggleTrainingSort} className={HRMS_TH} />
+                      <SortableTh label="Status" sortKey="status" sort={trainingSort} onSort={toggleTrainingSort} className={HRMS_TH} />
+                      <SortableTh label="Score" sortKey="score" sort={trainingSort} onSort={toggleTrainingSort} className={HRMS_TH} />
+                      <SortableTh label="Attendance" sortKey="attendance" sort={trainingSort} onSort={toggleTrainingSort} className={HRMS_TH} />
+                      <SortableTh label="Actions" sortKey="actions" unsortable className={HRMS_TH} />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
@@ -2002,44 +2071,21 @@ export default function HrmsPage() {
               <div className="overflow-x-auto border border-black/8 rounded-xl">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
-                      <th className="px-4 py-3">#</th>
-                      <th className="px-4 py-3">
-                        <button type="button" onClick={() => toggleGoalSort("title")} className="inline-flex items-center gap-1 uppercase">
-                          Title
-                          {goalSort.key === "title" ? (
-                            goalSort.dir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
-                          ) : (
-                            <ChevronDown size={12} className="opacity-30" />
-                          )}
-                        </button>
-                      </th>
-                      <th className="px-4 py-3">Employee</th>
-                      <th className="px-4 py-3">Goal Type</th>
-                      <th className="px-4 py-3">
-                        <button type="button" onClick={() => toggleGoalSort("startDate")} className="inline-flex items-center gap-1 uppercase">
-                          Start Date
-                          {goalSort.key === "startDate" ? (
-                            goalSort.dir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
-                          ) : (
-                            <ChevronDown size={12} className="opacity-30" />
-                          )}
-                        </button>
-                      </th>
-                      <th className="px-4 py-3">
-                        <button type="button" onClick={() => toggleGoalSort("endDate")} className="inline-flex items-center gap-1 uppercase">
-                          End Date
-                          {goalSort.key === "endDate" ? (
-                            goalSort.dir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
-                          ) : (
-                            <ChevronDown size={12} className="opacity-30" />
-                          )}
-                        </button>
-                      </th>
-                      <th className="px-4 py-3">Progress</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Actions</th>
-                    </tr>
+                    <HrmsSortHead
+                      sort={goalSort}
+                      onSort={toggleGoalSort}
+                      cols={[
+                        { label: "#", key: "id", unsortable: true },
+                        { label: "Title", key: "title" },
+                        { label: "Employee", key: "employee" },
+                        { label: "Goal Type", key: "goalType" },
+                        { label: "Start Date", key: "startDate" },
+                        { label: "End Date", key: "endDate" },
+                        { label: "Progress", key: "progress" },
+                        { label: "Status", key: "status" },
+                        { label: "Actions", key: "actions", unsortable: true },
+                      ]}
+                    />
                   </thead>
                   <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
                     {pagedGoals.map((g, idx) => {
@@ -2221,15 +2267,19 @@ export default function HrmsPage() {
               <div className="overflow-x-auto border border-black/8 rounded-xl">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
-                      <th className="px-4 py-3">#</th>
-                      <th className="px-4 py-3">Name</th>
-                      <th className="px-4 py-3">Asset Code</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Assigned Date</th>
-                      <th className="px-4 py-3">Return Date</th>
-                      <th className="px-4 py-3">Actions</th>
-                    </tr>
+                    <HrmsSortHead
+                      sort={assetSort}
+                      onSort={toggleAssetSort}
+                      cols={[
+                        { label: "#", key: "id", unsortable: true },
+                        { label: "Name", key: "name" },
+                        { label: "Asset Code", key: "code" },
+                        { label: "Status", key: "status" },
+                        { label: "Assigned Date", key: "assignedDate" },
+                        { label: "Return Date", key: "returnDate" },
+                        { label: "Actions", key: "actions", unsortable: true },
+                      ]}
+                    />
                   </thead>
                   <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
                     {pagedAssets.map((a, idx) => (
@@ -2898,15 +2948,15 @@ export default function HrmsPage() {
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-[#FAFAFB] text-[#6B7280] uppercase text-[10px] tracking-wide">
-                <th className="text-left font-bold px-3 py-2">Leave Type</th>
-                <th className="text-center font-bold px-2 py-2">Total</th>
-                <th className="text-center font-bold px-2 py-2">Used</th>
-                <th className="text-center font-bold px-2 py-2">Available</th>
+                <SortableTh label="Leave Type" sortKey="type" sort={leaveSort} onSort={toggleLeaveSort} className="text-left font-bold px-3 py-2" />
+                <SortableTh label="Total" sortKey="total" sort={leaveSort} onSort={toggleLeaveSort} className="text-center font-bold px-2 py-2" />
+                <SortableTh label="Used" sortKey="used" sort={leaveSort} onSort={toggleLeaveSort} className="text-center font-bold px-2 py-2" />
+                <SortableTh label="Available" sortKey="available" sort={leaveSort} onSort={toggleLeaveSort} className="text-center font-bold px-2 py-2" />
                 <th className="w-8 px-2 py-2" />
               </tr>
             </thead>
             <tbody className="divide-y divide-black/5">
-              {LEAVE_BALANCE_TYPES.map((lt) => (
+              {sortedLeaveTypes.map((lt) => (
                 <tr key={lt.type} className="hover:bg-[#FAFAFB]/60 transition-colors">
                   <td className="px-3 py-2 font-semibold text-[#111]">{lt.type}</td>
                   <td className="px-2 py-2 text-center text-[#374151]">{lt.total}</td>

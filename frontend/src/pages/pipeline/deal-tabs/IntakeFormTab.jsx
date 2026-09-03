@@ -1,3 +1,4 @@
+import { useTableSort } from "../../../components/common/useTableSort.jsx";
 import TableCard from "../../../components/common/TableCard";
 import StatusPill from "../../../components/common/StatusPill";
 
@@ -9,16 +10,26 @@ const SECTIONS = [
   { section: "5 · Package interest",            fields: 2, filled: 2, status: "Complete" },
 ];
 
-/** Intake Form tab — per-section field completion for the client intake. */
+const COLUMNS = [
+  { label: "Section", key: "section" },
+  { label: "Fields", key: "fields" },
+  { label: "Filled", key: "filled" },
+  { label: "Status", key: "status" },
+];
+
 export default function IntakeFormTab() {
+  const { sorted, sort, toggle } = useTableSort(SECTIONS, { defaultKey: "section" });
+
   return (
     <TableCard
       title="Client Intake Form"
       subtitle="Standardised across branches · locks P1 until complete"
-      columns={["Section", "Fields", "Filled", "Status"]}
+      columns={COLUMNS}
+      sort={sort}
+      onSort={toggle}
       footnote="11 of 14 mandatory fields filled. P1 remains locked until all sections show Complete"
     >
-      {SECTIONS.map((row) => (
+      {sorted.map((row) => (
         <tr key={row.section} className="border-b border-black/5 last:border-0">
           <td className="px-3 py-2.5 text-[12.5px] font-semibold text-[#111] whitespace-nowrap">{row.section}</td>
           <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.fields}</td>

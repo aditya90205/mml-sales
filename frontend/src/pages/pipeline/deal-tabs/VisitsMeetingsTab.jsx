@@ -1,3 +1,4 @@
+import { useTableSort } from "../../../components/common/useTableSort.jsx";
 import TableCard from "../../../components/common/TableCard";
 import StatusPill from "../../../components/common/StatusPill";
 
@@ -19,15 +20,28 @@ const VISITS = [
   },
 ];
 
-/** Visits & Meetings tab — logged home/office visits with GPS and capture status. */
+const COLUMNS = [
+  { label: "Date", key: "date" },
+  { label: "Type", key: "type" },
+  { label: "Venue", key: "venue" },
+  { label: "Attended By", key: "attendedBy" },
+  { label: "GPS", key: "gps" },
+  { label: "Capture", key: "capture" },
+  { label: "Outcome", key: "outcome" },
+];
+
 export default function VisitsMeetingsTab() {
+  const { sorted, sort, toggle } = useTableSort(VISITS, { defaultKey: "date" });
+
   return (
     <TableCard
       title="Visits"
       subtitle="Home and office visits with GPS, selfie and activity form"
-      columns={["Date", "Type", "Venue", "Attended By", "GPS", "Capture", "Outcome"]}
+      columns={COLUMNS}
+      sort={sort}
+      onSort={toggle}
     >
-      {VISITS.map((row, i) => (
+      {sorted.map((row, i) => (
         <tr key={i} className="border-b border-black/5 last:border-0">
           <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.date}</td>
           <td className="px-3 py-2.5 text-[12.5px] font-semibold text-[#111] whitespace-nowrap">{row.type}</td>
