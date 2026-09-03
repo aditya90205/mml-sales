@@ -89,32 +89,32 @@ const OWNER = { name: "Aditya Sharma", label: "Owner", role: "Sales Manager", br
 /** Two sample cards per stage, mirroring the lead roster used on the dashboard. */
 const LEADS_BY_STAGE = {
   P0: [
-    { name: "Kuhu Sharma",    starred: true,  mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { name: "Ankit Sharma",   starred: true,  mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p0-1", name: "Kuhu Sharma",    starred: true,  mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p0-2", name: "Ankit Sharma",   starred: true,  mmlId: "MML - D - 10429", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
   ],
   P1: [
-    { name: "Harshit Sharma", starred: false, mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 40,  days: 4,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { name: "Arjun Rampal",   starred: false, mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p1-1", name: "Harshit Sharma", starred: false, mmlId: "MML - D - 10430", temperature: "Hot",  score: 8.5, priority: "High",   completion: 40,  days: 4,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p1-2", name: "Arjun Rampal",   starred: false, mmlId: "MML - D - 10431", temperature: "Hot",  score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
   ],
   P2: [
-    { name: "Ankur Sharma",   starred: false, mmlId: "MML - D - 10428", temperature: "Cold", score: 7.5, priority: "Medium", completion: 75,  days: 6,  hrs: 24, source: "Community Events",  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10428", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 6,  source: "Community Events",  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p2-1", name: "Ankur Sharma",   starred: false, mmlId: "MML - D - 10432", temperature: "Cold", score: 7.5, priority: "Medium", completion: 75,  days: 6,  hrs: 24, source: "Community Events",  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p2-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10433", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 6,  source: "Community Events",  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
   ],
   P3: [
-    { name: "Aditya Sharma",  starred: true,  mmlId: "MML - D - 10428", temperature: "Cold", score: 8.5, priority: "Medium", completion: 85,  days: 8,  hrs: 24, source: "Channel Partner",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10428", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Channel Partner",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p3-1", name: "Aditya Sharma",  starred: true,  mmlId: "MML - D - 10434", temperature: "Cold", score: 8.5, priority: "Medium", completion: 85,  days: 8,  hrs: 24, source: "Channel Partner",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p3-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10435", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Channel Partner",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
   ],
   P4: [
-    { name: "Vivek Sharma",   starred: true,  mmlId: "MML - D - 10428", temperature: "Cold", score: 9.0, priority: "Low",    completion: 90,  days: 10, hrs: 6,  source: "Reference - Satish", lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10428", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Reference - Satish", lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p4-1", name: "Vivek Sharma",   starred: true,  mmlId: "MML - D - 10436", temperature: "Cold", score: 9.0, priority: "Low",    completion: 90,  days: 10, hrs: 6,  source: "Reference - Satish", lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p4-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10437", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Reference - Satish", lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
   ],
   P5: [
-    { name: "Rohit Sharma",   starred: true,  mmlId: "MML - D - 10428", temperature: "Warm", score: 7.5, priority: "Medium", completion: 60,  days: 12, hrs: 24, source: "Manual Sourcing",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10428", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Manual Sourcing",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p5-1", name: "Rohit Sharma",   starred: true,  mmlId: "MML - D - 10438", temperature: "Warm", score: 7.5, priority: "Medium", completion: 60,  days: 12, hrs: 24, source: "Manual Sourcing",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p5-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10439", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Manual Sourcing",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
   ],
   P6: [
-    { name: "Virat Sharma",   starred: true,  mmlId: "MML - D - 10428", temperature: "Warm", score: 8.5, priority: "Low",    completion: 55,  days: 14, hrs: 24, source: "Online - Insta",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10428", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Online - Insta",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p6-1", name: "Virat Sharma",   starred: true,  mmlId: "MML - D - 10440", temperature: "Warm", score: 8.5, priority: "Low",    completion: 55,  days: 14, hrs: 24, source: "Online - Insta",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p6-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10441", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Online - Insta",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
   ],
 };
 
@@ -469,9 +469,9 @@ function PipelineColumn({ stage, leads, nextStageId, onOpenScoreModal, onMoveSta
         {leads.length === 0 ? (
           <p className="text-[12px] text-[#9CA3AF] text-center py-6">No leads in this stage</p>
         ) : (
-          leads.map((lead, i) => (
+          leads.map((lead) => (
             <LeadCard
-              key={`${stage.id}-${i}`}
+              key={lead.id}
               lead={lead}
               stageKey={stage.id}
               stageColor={stage.color}
@@ -860,16 +860,17 @@ export default function PipelineBoard() {
   const [activeLead, setActiveLead]     = useState(null);
 
   const handleAddProspect = (newLead) => {
+    const leadWithId = { id: `p0-${Date.now()}`, ...newLead };
     setLeadsData((prev) => ({
       ...prev,
-      P0: [newLead, ...(prev.P0 || [])],
+      P0: [leadWithId, ...(prev.P0 || [])],
     }));
     toast.success(`Prospect "${newLead.name}" created successfully in P0 Prospect!`);
   };
 
   const handleMoveToP1 = (lead, updatedData) => {
     setLeadsData((prev) => {
-      const p0Filtered = (prev.P0 || []).filter((l) => l.mmlId !== lead.mmlId);
+      const p0Filtered = (prev.P0 || []).filter((l) => l.id !== lead.id);
       const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 8.5, completion: 45 };
       return {
         ...prev,
@@ -882,7 +883,7 @@ export default function PipelineBoard() {
 
   const handleMoveToP2 = (lead, updatedData) => {
     setLeadsData((prev) => {
-      const p1Filtered = (prev.P1 || []).filter((l) => l.mmlId !== lead.mmlId);
+      const p1Filtered = (prev.P1 || []).filter((l) => l.id !== lead.id);
       const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 9.0, completion: 70 };
       return {
         ...prev,
@@ -895,7 +896,7 @@ export default function PipelineBoard() {
 
   const handleMoveToP5 = (lead) => {
     setLeadsData((prev) => {
-      const p4Filtered = (prev.P4 || []).filter((l) => l.mmlId !== lead.mmlId);
+      const p4Filtered = (prev.P4 || []).filter((l) => l.id !== lead.id);
       const updatedLead = { ...lead, temperature: "Warm", completion: 100 };
       return {
         ...prev,
