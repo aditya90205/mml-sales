@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import PipelineBoard from "./pages/PipelineBoard";
 import HrmsPage from "./pages/HrmsPage";
 import BulkImportPage from "./pages/BulkImportPage";
+import TasksPage from "./pages/TasksPage";
 
 // ── Placeholder for pages not yet built ──────────────────────────────────────
 function Placeholder({ title }) {
@@ -100,7 +101,7 @@ export default function App() {
         {/* ── Sidebar nav pages ── */}
         <Route path="/hrms"         element={<LayoutRoute><HrmsPage /></LayoutRoute>} />
         <Route path="/calendar"     element={<LayoutRoute><Placeholder title="Calendar" /></LayoutRoute>} />
-        <Route path="/tasks"        element={<LayoutRoute><Placeholder title="Tasks" /></LayoutRoute>} />
+        <Route path="/tasks"        element={<LayoutRoute><TasksPage /></LayoutRoute>} />
         <Route path="/bulk-upload"  element={<LayoutRoute><BulkImportPage /></LayoutRoute>} />
         <Route path="/pipeline"     element={<LayoutRoute><PipelineBoard /></LayoutRoute>} />
         <Route path="/leaderboard"  element={<LayoutRoute><Placeholder title="Leaderboard" /></LayoutRoute>} />
