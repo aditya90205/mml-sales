@@ -133,6 +133,13 @@ export default function DealDetailPage({ lead, onBack, onMoveToP5 }) {
           <div className="flex items-center gap-2 shrink-0 ml-auto">
             <button
               type="button"
+              onClick={onBack}
+              className="h-9 px-4 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
               onClick={handleMarkLost}
               className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
             >
