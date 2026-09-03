@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Clock, Bell, ArrowUpRight, CheckCheck, User, LogOut, Search, CircleDot, ChevronRight } from "lucide-react";
 import Avatar from "../ui/Avatar";
+import TimesheetDetailsModal from "../hrms/TimesheetDetailsModal";
 
 
 const USER = {
@@ -304,6 +305,7 @@ function ProfileMenu() {
  */
 export default function TopBar({ page = "Dashboard" }) {
   const location = useLocation();
+  const [regularizeOpen, setRegularizeOpen] = useState(false);
 
   const pathname = location?.pathname || "/dashboard";
   const pathnames = pathname.split("/").filter(Boolean);
@@ -379,11 +381,15 @@ export default function TopBar({ page = "Dashboard" }) {
           Idle: {SESSION.idle}
         </span>
 
-        <span className="flex items-center gap-1.5 text-xs font-semibold text-[#3B82F6] whitespace-nowrap">
+        <button
+          type="button"
+          onClick={() => setRegularizeOpen(true)}
+          className="flex items-center gap-1.5 text-xs font-semibold text-[#3B82F6] whitespace-nowrap hover:underline underline-offset-2"
+        >
           <span className="size-1.5 rounded-full bg-[#3B82F6]" />
           Active: {SESSION.active}
           <ArrowUpRight size={12} />
-        </span>
+        </button>
       </div>
 
       {/* Right: search + bell + profile */}
@@ -400,6 +406,18 @@ export default function TopBar({ page = "Dashboard" }) {
         <NotificationBell />
         <ProfileMenu />
       </div>
+
+      <TimesheetDetailsModal
+        open={regularizeOpen}
+        onClose={() => setRegularizeOpen(false)}
+        mode="edit"
+        employee={{
+          name: USER.name,
+          role: USER.role || "Relationship Manager",
+          id: "EMP00116",
+          avatar: USER.avatar,
+        }}
+      />
     </header>
   );
 }
