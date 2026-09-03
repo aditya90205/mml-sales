@@ -1,6 +1,8 @@
 import { AlertTriangle, Check } from "lucide-react";
+import { toast } from "react-toastify";
 import LockedTabOverlay from "../../../components/pipeline/LockedTabOverlay";
 import StatusPill from "../../../components/common/StatusPill";
+import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 
 const CHECKLIST = [
   { label: "Identity & verification documents", note: "Identity & verification documents 6 of 7 items verified", status: "1 Pending", tone: "amber", state: "pending" },
@@ -22,8 +24,13 @@ export default function P6ChecklistTab() {
   return (
     <LockedTabOverlay title="Payment is locked." message="This screen will open at P5 stage.">
       <div className="bg-white border border-black/8 rounded-2xl p-5">
-        <h3 className="text-[14px] font-bold text-[#111]">P6 Checklist</h3>
-        <p className="text-[12px] text-[#9CA3AF] mt-0.5 mb-1">The gate between Sales and Service</p>
+        <div className="flex items-start justify-between gap-3 mb-1 flex-wrap">
+          <div className="min-w-0">
+            <h3 className="text-[14px] font-bold text-[#111]">P6 Checklist</h3>
+            <p className="text-[12px] text-[#9CA3AF] mt-0.5">The gate between Sales and Service</p>
+          </div>
+          <TabHeaderButton onClick={() => toast.info("Handover request sent.")}>Request handover</TabHeaderButton>
+        </div>
 
         <div className="flex flex-col divide-y divide-black/5">
           {CHECKLIST.map((item) => (

@@ -1,5 +1,7 @@
+import { toast } from "react-toastify";
 import { useTableSort } from "../../../components/common/useTableSort.jsx";
 import TableCard from "../../../components/common/TableCard";
+import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 
 const AUDIT_LOG = [
   { timestamp: "28 Jul 09:14", actor: "Rohit Khanna", action: "Viewed masked mobile",     object: "Client contact", source: "CRM Web" },
@@ -24,6 +26,7 @@ export default function AuditTab() {
     <TableCard
       title="Audit"
       subtitle="Immutable log of every view, edit, export and approval"
+      action={<TabHeaderButton onClick={() => toast.info("Audit log exported.")}>Export log</TabHeaderButton>}
       columns={COLUMNS}
       sort={sort}
       onSort={toggle}

@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Check, ChevronDown, Sparkles } from "lucide-react";
+import { toast } from "react-toastify";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
+import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
+import Modal from "../../../components/ui/Modal";
 
 const SLA_STATUS_STYLES = {
   "Within SLA":         { color: "#16A34A", bg: "#E7F8EF" },
@@ -23,10 +26,62 @@ function DetailField({ label, value }) {
   );
 }
 
+const FIELD =
+  "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
+
 function DealDetailsCard({ deal }) {
+  const [open, setOpen] = useState(false);
+  const [profession, setProfession] = useState(deal.profession || "");
+  const [nextAction, setNextAction] = useState(deal.nextAction || "");
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    toast.success("Deal details updated.");
+    setOpen(false);
+  };
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-5">
-      <h3 className="text-[14px] font-bold text-[#111] mb-4">Deal details</h3>
+      <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+        <h3 className="text-[14px] font-bold text-[#111]">Deal details</h3>
+        <TabHeaderButton onClick={() => setOpen(true)}>Edit details</TabHeaderButton>
+      </div>
+
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Edit details"
+        subtitle="Update deal fields for this client"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="edit-deal-form"
+              className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+            >
+              Save
+            </button>
+          </>
+        }
+      >
+        <form id="edit-deal-form" onSubmit={handleSave} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Profession</label>
+            <input value={profession} onChange={(e) => setProfession(e.target.value)} className={FIELD} />
+          </div>
+          <div>
+            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Next action</label>
+            <input value={nextAction} onChange={(e) => setNextAction(e.target.value)} className={FIELD} />
+          </div>
+        </form>
+      </Modal>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
         <DetailField label="Deal code" value={deal.dealCode} />
         <DetailField label="Stage" value={deal.stageLabel} />

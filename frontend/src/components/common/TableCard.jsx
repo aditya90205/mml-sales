@@ -6,7 +6,7 @@ import { SortableTh } from "./useTableSort.jsx";
  * `columns` may be strings or `{ label, key, unsortable }`.
  * Pass `sort` + `onSort` from `useTableSort` to enable header sorting.
  */
-export default function TableCard({ title, subtitle, badge, columns, children, footnote, sort, onSort }) {
+export default function TableCard({ title, subtitle, badge, action, columns, children, footnote, sort, onSort }) {
   const cols = columns.map((col) => (typeof col === "string" ? { label: col } : col));
 
   return (
@@ -16,7 +16,12 @@ export default function TableCard({ title, subtitle, badge, columns, children, f
           <h3 className="text-[14px] font-bold text-[#111]">{title}</h3>
           {subtitle && <p className="text-[12px] text-[#9CA3AF] mt-0.5">{subtitle}</p>}
         </div>
-        {badge}
+        {(action || badge) && (
+          <div className="flex items-center gap-2 shrink-0">
+            {action}
+            {badge}
+          </div>
+        )}
       </div>
 
       <div className="overflow-x-auto -mx-1">

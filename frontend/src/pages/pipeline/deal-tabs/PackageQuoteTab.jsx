@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { Check, TrendingUp, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
+import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
+import Modal from "../../../components/ui/Modal";
 
 const PACKAGES = [
   {
@@ -166,15 +169,84 @@ function UpsellBanner() {
   );
 }
 
+const FIELD =
+  "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
+
 function QuotationCard() {
-  const { sorted, sort, toggle } = useTableSort(QUOTE_ITEMS, { defaultKey: "item" });
+  const [items, setItems] = useState(QUOTE_ITEMS);
+  const { sorted, sort, toggle } = useTableSort(items, { defaultKey: "item" });
+  const [open, setOpen] = useState(false);
+  const [itemName, setItemName] = useState("");
+  const [quoted, setQuoted] = useState("");
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    if (!itemName.trim() || !quoted.trim()) {
+      toast.error("Please add an item and amount.");
+      return;
+    }
+    setItems((prev) => [
+      ...prev,
+      {
+        item: itemName.trim(),
+        note: "Added to this quote",
+        type: "Add-on",
+        qty: 1,
+        quoted: quoted.trim().startsWith("₹") ? quoted.trim() : `₹${quoted.trim()}`,
+        rate: quoted.trim().startsWith("₹") ? quoted.trim() : `₹${quoted.trim()}`,
+      },
+    ]);
+    toast.success("Line item added.");
+    setItemName("");
+    setQuoted("");
+    setOpen(false);
+  };
 
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-5 min-w-0">
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <h3 className="text-[14px] font-bold text-[#111]">Quotation — MML-D-10428</h3>
-        <span className="text-[10.5px] font-semibold text-[#6B7280] bg-[#F1F2F4] rounded-full px-2.5 py-1">Draft v2</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10.5px] font-semibold text-[#6B7280] bg-[#F1F2F4] rounded-full px-2.5 py-1">Draft v2</span>
+          <TabHeaderButton onClick={() => setOpen(true)}>Add add-on</TabHeaderButton>
+        </div>
       </div>
+
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Add add-on"
+        subtitle="Add a line to this quotation"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="addon-form"
+              className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+            >
+              Add item
+            </button>
+          </>
+        }
+      >
+        <form id="addon-form" onSubmit={handleSave} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Item</label>
+            <input value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="e.g. Photo reshoot" className={FIELD} />
+          </div>
+          <div>
+            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Quoted</label>
+            <input value={quoted} onChange={(e) => setQuoted(e.target.value)} placeholder="2500" className={FIELD} />
+          </div>
+        </form>
+      </Modal>
 
       <div className="overflow-x-auto -mx-1">
         <table className="w-full border-collapse min-w-[480px]">
