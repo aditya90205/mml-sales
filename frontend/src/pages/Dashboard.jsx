@@ -1191,25 +1191,27 @@ function RecentAnnouncementsCard() {
         </div>
       </div>
 
-      <div className="border border-black/8 rounded-xl divide-y divide-black/8">
-        {RECENT_ANNOUNCEMENTS.map((a, i) => (
-          <div key={i} className="flex items-start gap-3 px-4 py-3.5 hover:bg-[#FAFAFB] transition-colors">
-            <span className="size-7 rounded-lg bg-[#E8F2FE] grid place-items-center shrink-0">
-              <Megaphone size={14} className="text-[#3B82F6]" strokeWidth={1.8} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-bold text-[#111]">{a.title}</p>
-              <p className="text-[11px] text-[#9CA3AF] mt-0.5">{a.desc}</p>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="inline-block text-[10px] font-semibold text-[#3B82F6] bg-[#E8F2FE] rounded-md px-2 py-1">{a.type}</span>
-                <span className="inline-block text-[10px] font-semibold text-[#E8395B] bg-[#FDECEE] rounded-md px-2 py-1">{a.priority}</span>
+      <div className="border border-black/8 rounded-xl overflow-hidden">
+        <div className="divide-y divide-black/8 max-h-[294px] overflow-y-auto overscroll-contain">
+          {RECENT_ANNOUNCEMENTS.map((a, i) => (
+            <div key={i} className="flex items-start gap-3 px-4 py-3.5 hover:bg-[#FAFAFB] transition-colors">
+              <span className="size-7 rounded-lg bg-[#E8F2FE] grid place-items-center shrink-0">
+                <Megaphone size={14} className="text-[#3B82F6]" strokeWidth={1.8} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-bold text-[#111]">{a.title}</p>
+                <p className="text-[11px] text-[#9CA3AF] mt-0.5">{a.desc}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="inline-block text-[10px] font-semibold text-[#3B82F6] bg-[#E8F2FE] rounded-md px-2 py-1">{a.type}</span>
+                  <span className="inline-block text-[10px] font-semibold text-[#E8395B] bg-[#FDECEE] rounded-md px-2 py-1">{a.priority}</span>
+                </div>
               </div>
+              <button type="button" className="size-8 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center hover:bg-[#FFE8CC] transition-colors shrink-0" aria-label="Comment">
+                <MessageCircle size={14} />
+              </button>
             </div>
-            <button type="button" className="size-8 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center hover:bg-[#FFE8CC] transition-colors shrink-0" aria-label="Comment">
-              <MessageCircle size={14} />
-            </button>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
