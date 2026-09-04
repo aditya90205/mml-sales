@@ -10,6 +10,8 @@ import TasksPage from "./pages/TasksPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import CampaignManagementPage from "./pages/CampaignManagementPage";
 import CreateCampaignPage from "./pages/CreateCampaignPage";
+import ClientDatabasePage from "./pages/ClientDatabasePage";
+import CreateGroupPage from "./pages/CreateGroupPage";
 import ProfileSettings from "./pages/ProfileSettings";
 
 // ── Placeholder for pages not yet built ──────────────────────────────────────
@@ -75,7 +77,11 @@ export default function App() {
         {/* ── Sales ── */}
         <Route
           path="/clients"
-          element={<LayoutRoute><Placeholder title="My Clients" /></LayoutRoute>}
+          element={<LayoutRoute><ClientDatabasePage /></LayoutRoute>}
+        />
+        <Route
+          path="/clients/create-group"
+          element={<LayoutRoute><CreateGroupPage /></LayoutRoute>}
         />
         <Route
           path="/sales/funnel"
