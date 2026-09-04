@@ -47,6 +47,9 @@ import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx"
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import DealDetailPage from "./pipeline/DealDetailPage";
+import MoveToP1Page from "./pipeline/MoveToP1Page";
+import MoveToP2Page from "./pipeline/MoveToP2Page";
+import { toast } from "react-toastify";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -1421,7 +1424,7 @@ function stageKeyFromLead(lead) {
   return match ? match[0] : "P0";
 }
 
-function MyLeadsCard({ onOpenDeal }) {
+function MyLeadsCard({ onOpenDeal, onMoveStage }) {
   const [period, setPeriod] = useState("today");
   const [leadsView, setLeadsView] = useState("team");
   const [leadsViewOpen, setLeadsViewOpen] = useState(false);
@@ -1572,15 +1575,39 @@ function MyLeadsCard({ onOpenDeal }) {
                     <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.ownerRole}</p>
                   </td>
                   <td className="px-2.5 py-3">
-                    <p className="text-[12px] text-[#374151] leading-tight">
-                      {lead.stage}
-                      {lead.stageTone && (
-                        <span className={`ml-1 text-[11px] font-semibold ${lead.stageTone === "Won" ? "text-[#16A34A]" : lead.stageTone === "Lost" ? "text-[#E8395B]" : "text-[#3B82F6]"}`}>
-                          ({lead.stageTone})
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.timeAtStage}</p>
+                    {(() => {
+                      const stageKey = stageKeyFromLead(lead);
+                      const canMove = stageKey === "P0" || stageKey === "P1";
+                      const body = (
+                        <>
+                          {lead.stage}
+                          {lead.stageTone && (
+                            <span className={`ml-1 text-[11px] font-semibold ${lead.stageTone === "Won" ? "text-[#16A34A]" : lead.stageTone === "Lost" ? "text-[#E8395B]" : "text-[#3B82F6]"}`}>
+                              ({lead.stageTone})
+                            </span>
+                          )}
+                        </>
+                      );
+                      return canMove ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onMoveStage?.(lead, stageKey);
+                          }}
+                          className="text-left text-[12px] text-[#374151] leading-tight hover:text-[#7A0A17] hover:underline decoration-[#7A0A17]/40 underline-offset-2 transition-colors"
+                          title={stageKey === "P0" ? "Move to P1" : "Move to P2"}
+                        >
+                          <span className="block">{body}</span>
+                          <span className="block text-[10px] text-[#9CA3AF] leading-tight no-underline">{lead.timeAtStage}</span>
+                        </button>
+                      ) : (
+                        <>
+                          <p className="text-[12px] text-[#374151] leading-tight">{body}</p>
+                          <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.timeAtStage}</p>
+                        </>
+                      );
+                    })()}
                   </td>
                   <td className="px-2.5 py-3">
                     <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md ${priority.bg}`} style={{ color: priority.color }}>
@@ -1613,27 +1640,27 @@ function MyLeadsCard({ onOpenDeal }) {
                   <td className="pl-1 pr-2.5 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-0 flex-nowrap">
                       {lead.lost ? (
-                        <button type="button" className="p-1.5 text-[#E8395B] hover:bg-black/4 rounded-lg transition-colors" aria-label="Call">
+                        <button type="button" className="p-1.5 text-[#E8395B] hover:bg-black/4 rounded-lg transition-colors" title="Dropped Call" aria-label="Dropped Call">
                           <PhoneOff size={14} />
                         </button>
                       ) : (
-                        <button type="button" className="p-1.5 text-[#16A34A] hover:bg-black/4 rounded-lg transition-colors" aria-label="Call">
+                        <button type="button" className="p-1.5 text-[#16A34A] hover:bg-black/4 rounded-lg transition-colors" title="Call" aria-label="Call">
                           <Phone size={14} />
                         </button>
                       )}
-                      <button type="button" className="p-1.5 text-[#F59E0B] hover:bg-black/4 rounded-lg transition-colors" aria-label="Message">
+                      <button type="button" className="p-1.5 text-[#F59E0B] hover:bg-black/4 rounded-lg transition-colors" title="Message" aria-label="Message">
                         <MessageSquare size={14} />
                       </button>
-                      <button type="button" className="relative p-1.5 text-[#3B82F6] hover:bg-black/4 rounded-lg transition-colors" aria-label="Email">
+                      <button type="button" className="relative p-1.5 text-[#3B82F6] hover:bg-black/4 rounded-lg transition-colors" title="Email" aria-label="Email">
                         <Mail size={14} />
                         {i % 2 === 0 && (
                           <span className="absolute top-1 right-1 size-1.5 rounded-full bg-[#DC2626]" />
                         )}
                       </button>
-                      <button type="button" className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors" aria-label="Schedule">
+                      <button type="button" className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors" title="Schedule" aria-label="Schedule">
                         <Calendar size={14} />
                       </button>
-                      <button type="button" className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors" aria-label="More">
+                      <button type="button" className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors" title="More Options" aria-label="More Options">
                         <MoreVertical size={14} />
                       </button>
                     </div>
@@ -1653,6 +1680,7 @@ function MyLeadsCard({ onOpenDeal }) {
 export default function Dashboard() {
   const [period, setPeriod] = useState("this_month");
   const [dealLead, setDealLead] = useState(null);
+  const [moveLead, setMoveLead] = useState(null);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
@@ -1660,6 +1688,32 @@ export default function Dashboard() {
     if (h < 17) return "Good Afternoon";
     return "Good Evening";
   }, []);
+
+  if (moveLead && stageKeyFromLead(moveLead) === "P0") {
+    return (
+      <MoveToP1Page
+        lead={{ name: moveLead.name, mmlId: moveLead.id, source: moveLead.source }}
+        onBack={() => setMoveLead(null)}
+        onMoveToP1={() => {
+          toast.success(`Lead "${moveLead.name}" successfully moved to P1 Qualified!`);
+          setMoveLead(null);
+        }}
+      />
+    );
+  }
+
+  if (moveLead && stageKeyFromLead(moveLead) === "P1") {
+    return (
+      <MoveToP2Page
+        lead={{ name: moveLead.name, mmlId: moveLead.id, source: moveLead.source }}
+        onBack={() => setMoveLead(null)}
+        onMoveToP2={() => {
+          toast.success(`Lead "${moveLead.name}" successfully moved to P2 Data Collection!`);
+          setMoveLead(null);
+        }}
+      />
+    );
+  }
 
   if (dealLead) {
     return (
@@ -1716,7 +1770,7 @@ export default function Dashboard() {
           <LeaderboardCard />
         </div>
 
-        <MyLeadsCard onOpenDeal={setDealLead} />
+        <MyLeadsCard onOpenDeal={setDealLead} onMoveStage={(lead) => setMoveLead(lead)} />
 
         <GoalsPerformanceCard />
 

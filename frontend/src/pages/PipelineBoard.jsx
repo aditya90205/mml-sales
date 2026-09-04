@@ -619,10 +619,25 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
 
                     {/* Stage */}
                     <td className="px-3 py-2.5 whitespace-nowrap">
-                      <p className="text-[12px] text-[#374151]">
-                        {stage.id} - {stage.label}{" "}
-                        <span style={{ color: temp.color }} className="font-semibold">({lead.temperature})</span>
-                      </p>
+                      {stage.id === "P0" || stage.id === "P1" ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onMoveStage?.(lead, stage.id);
+                          }}
+                          className="text-left text-[12px] text-[#374151] hover:text-[#7A0A17] hover:underline decoration-[#7A0A17]/40 underline-offset-2 transition-colors"
+                          title={stage.id === "P0" ? "Move to P1" : "Move to P2"}
+                        >
+                          {stage.id} - {stage.label}{" "}
+                          <span style={{ color: temp.color }} className="font-semibold no-underline">({lead.temperature})</span>
+                        </button>
+                      ) : (
+                        <p className="text-[12px] text-[#374151]">
+                          {stage.id} - {stage.label}{" "}
+                          <span style={{ color: temp.color }} className="font-semibold">({lead.temperature})</span>
+                        </p>
+                      )}
                     </td>
 
                     {/* Priority */}
