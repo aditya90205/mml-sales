@@ -244,14 +244,11 @@ export default function CampaignManagementPage() {
   const table = usePagedTable(rows, ["name", "tag", "target", "channel", "owner", "status"]);
 
   const toggleStatus = (id) => {
-    setRows((prev) =>
-      prev.map((row) => {
-        if (row.id !== id) return row;
-        const next = row.status === "Active" ? "Stop Manually" : "Active";
-        toast.success(`${row.name} ${next === "Active" ? "started" : "stopped"}.`);
-        return { ...row, status: next };
-      })
-    );
+    const row = rows.find((r) => r.id === id);
+    if (!row) return;
+    const next = row.status === "Active" ? "Stop Manually" : "Active";
+    setRows((prev) => prev.map((r) => (r.id !== id ? r : { ...r, status: next })));
+    toast.success(`${row.name} ${next === "Active" ? "started" : "stopped"}.`);
   };
 
   const duplicateRow = (row) => {
