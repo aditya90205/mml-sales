@@ -45,6 +45,8 @@ import {
 } from "lucide-react";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
+import LeadScoreModal from "../components/pipeline/LeadScoreModal";
+import DealDetailPage from "./pipeline/DealDetailPage";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -1414,10 +1416,16 @@ const MY_LEADS_VIEWS = [
   { id: "branch", label: "My Branch" },
 ];
 
-function MyLeadsCard() {
+function stageKeyFromLead(lead) {
+  const match = String(lead.stage || "").match(/P[0-6]/);
+  return match ? match[0] : "P0";
+}
+
+function MyLeadsCard({ onOpenDeal }) {
   const [period, setPeriod] = useState("today");
   const [leadsView, setLeadsView] = useState("team");
   const [leadsViewOpen, setLeadsViewOpen] = useState(false);
+  const [scoreLead, setScoreLead] = useState(null);
   const leadsViewRef = useRef(null);
   const { sorted, sort, toggle } = useTableSort(MY_LEADS, { defaultKey: "name" });
 
@@ -1431,6 +1439,7 @@ function MyLeadsCard() {
 
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
+      <LeadScoreModal lead={scoreLead} onClose={() => setScoreLead(null)} />
       <div className="flex items-center justify-between gap-3 mb-3 px-1 flex-wrap">
         <div className="relative" ref={leadsViewRef}>
           <button
@@ -1541,7 +1550,11 @@ function MyLeadsCard() {
             {sorted.map((lead, i) => {
               const priority = PRIORITY_STYLES[lead.priority];
               return (
-                <tr key={i} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
+                <tr
+                  key={i}
+                  onClick={() => onOpenDeal?.(lead)}
+                  className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
+                >
                   <td className="px-2.5 py-3">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: LEAD_DOT_COLORS[i % LEAD_DOT_COLORS.length] }} />
@@ -1576,10 +1589,18 @@ function MyLeadsCard() {
                     </span>
                   </td>
                   <td className="px-2.5 py-3">
-                    <span className="inline-flex items-center gap-1 text-[13px] font-bold text-[#111]">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setScoreLead(lead);
+                      }}
+                      className="inline-flex items-center gap-1 text-[13px] font-bold text-[#111] hover:bg-[#F3F4F6] px-1.5 py-0.5 rounded transition-colors"
+                      title="Click to view Lead Score Details"
+                    >
                       {lead.leadScore.toFixed(1)}
                       <Flag size={11} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} />
-                    </span>
+                    </button>
                   </td>
                   <td className="px-2.5 py-3 text-[12px] text-[#6B7280]">{lead.profileCompletion}%</td>
                   <td className="px-2.5 py-3 text-[12px] text-[#6B7280] leading-tight">{lead.source}</td>
@@ -1589,7 +1610,7 @@ function MyLeadsCard() {
                     </span>
                     <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.followUpNote}</p>
                   </td>
-                  <td className="pl-1 pr-2.5 py-3 whitespace-nowrap">
+                  <td className="pl-1 pr-2.5 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-0 flex-nowrap">
                       {lead.lost ? (
                         <button type="button" className="p-1.5 text-[#E8395B] hover:bg-black/4 rounded-lg transition-colors" aria-label="Call">
@@ -1603,8 +1624,11 @@ function MyLeadsCard() {
                       <button type="button" className="p-1.5 text-[#F59E0B] hover:bg-black/4 rounded-lg transition-colors" aria-label="Message">
                         <MessageSquare size={14} />
                       </button>
-                      <button type="button" className="p-1.5 text-[#3B82F6] hover:bg-black/4 rounded-lg transition-colors" aria-label="Email">
+                      <button type="button" className="relative p-1.5 text-[#3B82F6] hover:bg-black/4 rounded-lg transition-colors" aria-label="Email">
                         <Mail size={14} />
+                        {i % 2 === 0 && (
+                          <span className="absolute top-1 right-1 size-1.5 rounded-full bg-[#DC2626]" />
+                        )}
                       </button>
                       <button type="button" className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors" aria-label="Schedule">
                         <Calendar size={14} />
@@ -1628,6 +1652,7 @@ function MyLeadsCard() {
 
 export default function Dashboard() {
   const [period, setPeriod] = useState("this_month");
+  const [dealLead, setDealLead] = useState(null);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
@@ -1635,6 +1660,16 @@ export default function Dashboard() {
     if (h < 17) return "Good Afternoon";
     return "Good Evening";
   }, []);
+
+  if (dealLead) {
+    return (
+      <DealDetailPage
+        lead={{ name: dealLead.name, mmlId: dealLead.id }}
+        currentStage={stageKeyFromLead(dealLead)}
+        onBack={() => setDealLead(null)}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -1681,7 +1716,7 @@ export default function Dashboard() {
           <LeaderboardCard />
         </div>
 
-        <MyLeadsCard />
+        <MyLeadsCard onOpenDeal={setDealLead} />
 
         <GoalsPerformanceCard />
 
