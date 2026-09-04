@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Check, ChevronDown, Sparkles } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 import { toast } from "react-toastify";
+import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
@@ -202,24 +203,29 @@ function StageHistoryCard({ rows, footnote }) {
   );
 }
 
-function StageGateCard({ items }) {
+function StageGateCard({ items: initialItems }) {
+  const [items, setItems] = useState(initialItems);
+
+  const toggleItem = (label) => {
+    setItems((prev) => prev.map((item) => (item.label === label ? { ...item, done: !item.done } : item)));
+  };
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-5">
       <h3 className="text-[14px] font-bold text-[#111] mb-3.5">Stage gate</h3>
       <div className="flex flex-col gap-3">
         {items.map((item) => (
-          <div key={item.label} className="flex items-center gap-2.5">
-            <span
-              className={`size-[18px] rounded-full grid place-items-center shrink-0 ${
-                item.done ? "bg-[#16A34A]" : "bg-white border border-black/15"
-              }`}
-            >
-              {item.done && <Check size={12} className="text-white" strokeWidth={3} />}
-            </span>
+          <button
+            key={item.label}
+            type="button"
+            onClick={() => toggleItem(item.label)}
+            className="flex items-center gap-2.5 text-left cursor-pointer"
+          >
+            <ChecklistCheck done={item.done} />
             <span className={`text-[12.5px] ${item.done ? "text-[#111] font-medium" : "text-[#9CA3AF]"}`}>
               {item.label}
             </span>
-          </div>
+          </button>
         ))}
       </div>
     </div>

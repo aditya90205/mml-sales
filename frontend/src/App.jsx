@@ -13,6 +13,12 @@ import CreateCampaignPage from "./pages/CreateCampaignPage";
 import ClientDatabasePage from "./pages/ClientDatabasePage";
 import CreateGroupPage from "./pages/CreateGroupPage";
 import ProfileSettings from "./pages/ProfileSettings";
+import HomeOfficeVisitsPage from "./pages/pipeline/desk/HomeOfficeVisitsPage";
+import CrossBranchFlagsPage from "./pages/pipeline/desk/CrossBranchFlagsPage";
+import QuotationsPage from "./pages/pipeline/desk/QuotationsPage";
+import DiscountRequestsPage from "./pages/pipeline/desk/DiscountRequestsPage";
+import ContractPaymentPage from "./pages/pipeline/desk/ContractPaymentPage";
+import P6HandoverPage from "./pages/pipeline/desk/P6HandoverPage";
 
 // ── Placeholder for pages not yet built ──────────────────────────────────────
 function Placeholder({ title }) {
@@ -114,6 +120,12 @@ export default function App() {
         <Route path="/tasks"        element={<LayoutRoute><TasksPage /></LayoutRoute>} />
         <Route path="/bulk-upload"  element={<LayoutRoute><BulkImportPage /></LayoutRoute>} />
         <Route path="/pipeline"     element={<LayoutRoute><PipelineBoard /></LayoutRoute>} />
+        <Route path="/pipeline/visits"             element={<LayoutRoute><HomeOfficeVisitsPage /></LayoutRoute>} />
+        <Route path="/pipeline/cross-branch"       element={<LayoutRoute><CrossBranchFlagsPage /></LayoutRoute>} />
+        <Route path="/pipeline/quotations"         element={<LayoutRoute><QuotationsPage /></LayoutRoute>} />
+        <Route path="/pipeline/discount-requests"  element={<LayoutRoute><DiscountRequestsPage /></LayoutRoute>} />
+        <Route path="/pipeline/contract-payment"   element={<LayoutRoute><ContractPaymentPage /></LayoutRoute>} />
+        <Route path="/pipeline/p6-handover"        element={<LayoutRoute><P6HandoverPage /></LayoutRoute>} />
         <Route path="/leaderboard"  element={<LayoutRoute><LeaderboardPage /></LayoutRoute>} />
         <Route path="/contest"      element={<LayoutRoute><Placeholder title="Contest" /></LayoutRoute>} />
         <Route path="/campaign/management" element={<LayoutRoute><CampaignManagementPage /></LayoutRoute>} />

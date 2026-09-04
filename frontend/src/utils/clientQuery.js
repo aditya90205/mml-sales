@@ -2,6 +2,26 @@ export const FIELD_OPTIONS = ["Gender", "Area", "Branch", "Status", "Education /
 
 export const OPERATOR_OPTIONS = ["is", "is not", "contains", "greater than", "less than"];
 
+const STATIC_VALUE_OPTIONS = {
+  Gender: ["Female", "Male"],
+  Status: ["Active", "Inactive"],
+  "Education / College": ["IIM", "IIT", "MBA", "MBBS", "B.Tech", "B.Com"],
+};
+
+export function valueOptionsFor(field, clients = []) {
+  if (STATIC_VALUE_OPTIONS[field]) return STATIC_VALUE_OPTIONS[field];
+  const keyMap = { Area: "area", Branch: "branch" };
+  const key = keyMap[field];
+  if (!key) return [];
+  return [...new Set(clients.map((c) => c[key]).filter(Boolean))];
+}
+
+export function usesSelectValue(field, operator) {
+  if (field === "Income (LPA)") return false;
+  if (operator === "greater than" || operator === "less than") return false;
+  return true;
+}
+
 const FIELD_KEY_MAP = {
   Gender: "gender",
   Area: "area",

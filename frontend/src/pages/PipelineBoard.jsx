@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   AlarmClock,
   ArrowRight,
@@ -47,6 +48,15 @@ const PIPELINE_STAGES = [
   { id: "P5", label: "Closed",                  color: "#16A34A" },
   { id: "P6", label: "Closed Sale Onboarding",  color: "#EAB308" },
 ];
+
+const CHIP_ROUTES = {
+  "Smart Home & Office Visits": "/pipeline/visits",
+  "Cross Branch Flags": "/pipeline/cross-branch",
+  "Quotations": "/pipeline/quotations",
+  "Discount Request": "/pipeline/discount-requests",
+  "Contract & Payment": "/pipeline/contract-payment",
+  "P6 Handover": "/pipeline/p6-handover",
+};
 
 const QUICK_GROUPS = [
   {
@@ -192,41 +202,51 @@ function QuickLinksRow() {
             <p className="text-[13px] font-bold text-[#111]">{group.title}</p>
           </div>
 
-          {/* Chips – all same height via min-h + fixed padding */}
-          <div className="flex flex-wrap gap-2">
-            {group.chips.map((chip) => (
-              <button
-                key={chip}
-                type="button"
-                style={{ backgroundColor: group.bg }}
-                className="
-                  inline-flex items-center justify-between gap-2
-                  text-[11.5px] font-medium rounded-lg
-                  px-2.5 py-[9px]
-                  min-h-[52px] flex-1 basis-0
-                  transition-colors text-left text-[#111]
-                "
-              >
-                {/* Label – allow up to 2 lines, clamp overflow */}
-                <span
-                  className="leading-snug flex-1 min-w-0"
-                  style={{
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
+          {/* Chips – Deal Docs keeps all five cards on one row */}
+          <div className={`flex gap-2 ${group.title === "Deal Docs" ? "flex-wrap lg:flex-nowrap" : "flex-wrap"}`}>
+            {group.chips.map((chip) => {
+              const chipClass = `
+                inline-flex items-center justify-between gap-2
+                text-[11.5px] font-medium rounded-lg
+                px-2.5 py-[9px]
+                min-h-[52px] flex-1
+                ${group.title === "Deal Docs" ? "basis-0 min-w-0" : "basis-[140px]"}
+                transition-colors text-left text-[#111] no-underline
+              `;
+              const inner = (
+                <>
+                  <span
+                    className="leading-snug flex-1 min-w-0"
+                    style={{
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {chip}
+                  </span>
+                  <span className="shrink-0 text-[10px] font-semibold bg-white/70 rounded px-1.5 py-0.5 self-center text-[#111]">
+                    3
+                  </span>
+                </>
+              );
+              const to = CHIP_ROUTES[chip];
+              return to ? (
+                <Link
+                  key={chip}
+                  to={to}
+                  style={{ backgroundColor: group.bg }}
+                  className={`${chipClass} hover:brightness-[0.97] hover:ring-1 hover:ring-black/8`}
                 >
-                  {chip}
+                  {inner}
+                </Link>
+              ) : (
+                <span key={chip} style={{ backgroundColor: group.bg }} className={chipClass}>
+                  {inner}
                 </span>
-                {/* Count badge */}
-                <span
-                  className="shrink-0 text-[10px] font-semibold bg-white/70 rounded px-1.5 py-0.5 self-center text-[#111]"
-                >
-                  3
-                </span>
-              </button>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}
