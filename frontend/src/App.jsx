@@ -7,6 +7,7 @@ import PipelineBoard from "./pages/PipelineBoard";
 import HrmsPage from "./pages/HrmsPage";
 import BulkImportPage from "./pages/BulkImportPage";
 import TasksPage from "./pages/TasksPage";
+import LeaderboardPage from "./pages/LeaderboardPage";
 import ProfileSettings from "./pages/ProfileSettings";
 
 // ── Placeholder for pages not yet built ──────────────────────────────────────
@@ -105,7 +106,7 @@ export default function App() {
         <Route path="/tasks"        element={<LayoutRoute><TasksPage /></LayoutRoute>} />
         <Route path="/bulk-upload"  element={<LayoutRoute><BulkImportPage /></LayoutRoute>} />
         <Route path="/pipeline"     element={<LayoutRoute><PipelineBoard /></LayoutRoute>} />
-        <Route path="/leaderboard"  element={<LayoutRoute><Placeholder title="Leaderboard" /></LayoutRoute>} />
+        <Route path="/leaderboard"  element={<LayoutRoute><LeaderboardPage /></LayoutRoute>} />
         <Route path="/contest"      element={<LayoutRoute><Placeholder title="Contest" /></LayoutRoute>} />
 
         {/* ── Activities ── */}
