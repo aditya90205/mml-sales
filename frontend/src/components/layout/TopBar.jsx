@@ -327,6 +327,9 @@ export default function TopBar({ page = "Dashboard" }) {
     "bulk-upload": "Bulk Upload",
     leaderboard: "Leaderboard",
     contest: "Contest",
+    campaign: "Campaign",
+    management: "Campaign Management",
+    create: "All Campaigns",
     meetings: "Meetings",
     announcements: "Announcements",
     reports: "Reports",
@@ -340,12 +343,15 @@ export default function TopBar({ page = "Dashboard" }) {
     notifications: "Notifications",
   };
 
-  const breadcrumbs = pathnames.length
-    ? pathnames.map((seg, idx) => {
-        const to = `/${pathnames.slice(0, idx + 1).join("/")}`;
-        const name = routeNameMap[seg] || seg.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-        return { to, name };
-      })
+  const breadcrumbs = pathnames.length && pathnames[0] !== "dashboard"
+    ? [
+        { to: "/dashboard", name: routeNameMap.dashboard },
+        ...pathnames.map((seg, idx) => {
+          const to = `/${pathnames.slice(0, idx + 1).join("/")}`;
+          const name = routeNameMap[seg] || seg.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+          return { to, name };
+        }),
+      ]
     : [{ to: "/dashboard", name: routeNameMap.dashboard }];
 
   return (

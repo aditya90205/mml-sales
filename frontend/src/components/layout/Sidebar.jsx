@@ -9,6 +9,7 @@ import {
   Database,
   Trophy,
   Gift,
+  Megaphone,
 } from "lucide-react";
 import logo from "../../assets/logo.png";
 
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
   { label: "Calendar",        icon: CalendarDays,    to: "/calendar" },
   { label: "Bulk Upload",     icon: Upload,          to: "/bulk-upload" },
   { label: "Pipeline Board",  icon: KanbanSquare,    to: "/pipeline" },
+  { label: "Campaign",        icon: Megaphone,       to: "/campaign/management" },
   { label: "Client Database", icon: Database,        to: "/clients" },
   { label: "Tasks",           icon: CheckSquare,     to: "/tasks" },
   { label: "HRMS",            icon: Users,           to: "/hrms" },
