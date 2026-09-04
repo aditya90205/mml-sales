@@ -12,6 +12,9 @@ import CampaignManagementPage from "./pages/CampaignManagementPage";
 import CreateCampaignPage from "./pages/CreateCampaignPage";
 import ClientDatabasePage from "./pages/ClientDatabasePage";
 import CreateGroupPage from "./pages/CreateGroupPage";
+import WinLossAnalysisPage from "./pages/WinLossAnalysisPage";
+import IncentiveStatementPage from "./pages/IncentiveStatementPage";
+import ColdCommonPoolPage from "./pages/ColdCommonPoolPage";
 import ProfileSettings from "./pages/ProfileSettings";
 import HomeOfficeVisitsPage from "./pages/pipeline/desk/HomeOfficeVisitsPage";
 import CrossBranchFlagsPage from "./pages/pipeline/desk/CrossBranchFlagsPage";
@@ -88,6 +91,18 @@ export default function App() {
         <Route
           path="/clients/create-group"
           element={<LayoutRoute><CreateGroupPage /></LayoutRoute>}
+        />
+        <Route
+          path="/win-loss"
+          element={<LayoutRoute><WinLossAnalysisPage /></LayoutRoute>}
+        />
+        <Route
+          path="/incentives"
+          element={<LayoutRoute><IncentiveStatementPage /></LayoutRoute>}
+        />
+        <Route
+          path="/cold-pool"
+          element={<LayoutRoute><ColdCommonPoolPage /></LayoutRoute>}
         />
         <Route
           path="/sales/funnel"
