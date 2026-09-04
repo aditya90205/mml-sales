@@ -1,4 +1,5 @@
-import { ChevronDown } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import StatusPill from "../common/StatusPill";
 import ChecklistCheck from "../common/ChecklistCheck";
 import { SortableTh } from "../common/useTableSort.jsx";
@@ -7,13 +8,25 @@ export const FIELD =
   "w-full h-11 border border-black/12 rounded-xl px-3.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none bg-white focus:border-[#7A0A17] transition-colors";
 
 export function DeskPage({ title, actions, children }) {
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="px-3 sm:px-5 pt-4 sm:pt-5 pb-8 flex flex-col gap-4 sm:gap-5 min-w-0">
         <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
-          <h1 className="text-[22px] sm:text-[26px] font-bold text-[#111] tracking-tight min-w-0 break-words">
-            {title}
-          </h1>
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={() => navigate("/pipeline")}
+              className="inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors shrink-0"
+            >
+              <ArrowLeft size={16} />
+              Back
+            </button>
+            <h1 className="text-[22px] sm:text-[26px] font-bold text-[#111] tracking-tight min-w-0 break-words">
+              {title}
+            </h1>
+          </div>
           {actions && (
             <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 flex-wrap w-full sm:w-auto">
               {actions}
@@ -92,10 +105,14 @@ export function Field({ label, required, children }) {
   );
 }
 
-export function SectionCard({ title, subtitle, meta, action, children, footnote }) {
+export function SectionCard({ title, subtitle, meta, action, children, footnote, divided }) {
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 sm:p-5 overflow-hidden">
-      <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+    <div className={`bg-white border border-black/8 rounded-2xl overflow-hidden ${divided ? "" : "p-4 sm:p-5"}`}>
+      <div
+        className={`flex items-start justify-between gap-3 flex-wrap ${
+          divided ? "px-4 sm:px-5 pt-4 sm:pt-5 pb-3.5 border-b border-[#EEEEEE]" : "mb-4"
+        }`}
+      >
         <div className="min-w-0 flex-1">
           {title && <h3 className="text-[14px] sm:text-[15px] font-bold text-[#111] break-words">{title}</h3>}
           {subtitle && <p className="text-[12px] text-[#9CA3AF] mt-0.5 break-words">{subtitle}</p>}
@@ -105,7 +122,11 @@ export function SectionCard({ title, subtitle, meta, action, children, footnote 
       </div>
       {children}
       {footnote && (
-        <p className="text-[11.5px] text-[#9CA3AF] bg-[#FAFAFB] border border-black/6 rounded-xl px-3.5 py-2.5 mt-4">
+        <p
+          className={`text-[11.5px] text-[#9CA3AF] bg-[#FAFAFB] border border-black/6 rounded-xl px-3.5 py-2.5 ${
+            divided ? "mx-4 sm:mx-5 mb-4 sm:mb-5 mt-4" : "mt-4"
+          }`}
+        >
           {footnote}
         </p>
       )}
@@ -141,19 +162,12 @@ export function TimelineItem({ tone = "green", title, note, time, last }) {
     blue: "bg-[#3B82F6]",
   };
   return (
-    <div className="flex gap-3">
-      <div className="flex flex-col items-center shrink-0">
-        <span className={`size-2.5 rounded-full mt-1.5 ${colors[tone] || colors.green}`} />
-        {!last && <span className="w-px flex-1 bg-black/8 mt-1" />}
-      </div>
-      <div className={`min-w-0 flex-1 ${last ? "pb-0" : "pb-5"}`}>
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-[#111]">{title}</p>
-            {note && <p className="text-[12px] text-[#6B7280] mt-0.5 leading-relaxed">{note}</p>}
-          </div>
-          {time && <p className="text-[11.5px] text-[#9CA3AF] whitespace-nowrap">{time}</p>}
-        </div>
+    <div className={`flex gap-3 px-4 sm:px-5 py-4 ${last ? "" : "border-b border-[#EEEEEE]"}`}>
+      <span className={`size-2.5 rounded-full mt-1.5 shrink-0 ${colors[tone] || colors.green}`} />
+      <div className="min-w-0 flex-1">
+        <p className="text-[13px] font-semibold text-[#111]">{title}</p>
+        {note && <p className="text-[12px] text-[#4B5563] mt-0.5 leading-relaxed">{note}</p>}
+        {time && <p className="text-[11.5px] text-[#9CA3AF] mt-1.5">{time}</p>}
       </div>
     </div>
   );

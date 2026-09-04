@@ -135,6 +135,7 @@ export default function ContractPaymentPage() {
       <SectionCard
         title="Contract & e-signature"
         subtitle="Sanjay Mehta · MML-D-10428 · signed copy filed to the admin dashboard (BRD 3.5)"
+        divided
       >
         {CONTRACT_TIMELINE.map((item, i) => (
           <TimelineItem key={item.title} {...item} last={i === CONTRACT_TIMELINE.length - 1} />

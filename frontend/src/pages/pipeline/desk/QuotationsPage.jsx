@@ -32,9 +32,10 @@ const COLUMNS = [
 ];
 
 const HISTORY = [
-  { tone: "amber", title: "v2 held for discount approval", note: "Quoted ₹43,500 against list ₹51,000. Document locked until Branch Head signs the 14.7% request.", time: "26 Jul 2026, 5:04 PM — system" },
-  { tone: "red", title: "Client cited Rajouri branch price", note: "Same Premium list was quoted at Rajouri. Cross-branch flag raised; quote cannot undercut catalogue.", time: "26 Jul 2026, 4:51 PM — you" },
-  { tone: "green", title: "v1 sent to client", note: "Premium package at list ₹51,000. Valid till 05 Aug. PDF filed to the deal.", time: "22 Jul 2026, 11:18 AM — you" },
+  { tone: "amber", title: "v2 held for discount approval", note: "Quoted ₹43,500 against list ₹51,000. Document locked until Branch Head signs the 14.7% request.", time: "26 Jul 2026, 5:04 PM · system" },
+  { tone: "red", title: "Client cited Rajouri branch price", note: "Same Premium list was quoted at Rajouri. Cross-branch flag raised; quote cannot undercut catalogue.", time: "26 Jul 2026, 4:51 PM · you" },
+  { tone: "green", title: "v2 generated", note: "Premium package regenerated at quoted ₹43,500. Waiting on discount approval before the PDF can be sent.", time: "26 Jul 2026, 4:40 PM · you" },
+  { tone: "green", title: "v1 sent to client", note: "Premium package at list ₹51,000. Valid till 05 Aug. PDF filed to the deal.", time: "22 Jul 2026, 11:18 AM · you" },
 ];
 
 export default function QuotationsPage() {
@@ -105,7 +106,7 @@ export default function QuotationsPage() {
         </DeskTable>
       </SectionCard>
 
-      <SectionCard title="MML-Q-2211 — history" subtitle="Sanjay Mehta · Premium">
+      <SectionCard title="MML-Q-2211 — history" subtitle="Sanjay Mehta · Premium" divided>
         {HISTORY.map((item, i) => (
           <TimelineItem key={item.title} {...item} last={i === HISTORY.length - 1} />
         ))}
