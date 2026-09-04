@@ -38,6 +38,9 @@ import {
   Coffee,
   ArrowLeftRight,
   Hand,
+  CalendarCheck,
+  CalendarPlus,
+  Timer,
 } from "lucide-react";
 import { USER } from "../components/layout/TopBar";
 import Modal from "../components/ui/Modal";
@@ -158,7 +161,7 @@ function formatHoursMinutes(totalMinutes) {
   const safe = Math.max(0, Number(totalMinutes) || 0);
   const h = Math.floor(safe / 60);
   const m = safe % 60;
-  return `${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m`;
+  return `${h}h ${String(m).padStart(2, "0")}m`;
 }
 
 /** Dummy login / logout / hours for each attendance status. */
@@ -189,7 +192,7 @@ function getDeduction(totalMin, status) {
     return { minutes: 0, billedHours: 0, amount: 0 };
   }
   const minutes = NINE_HOURS_MIN - totalMin;
-  const billedHours = Math.ceil(minutes / 60);
+  const billedHours = Math.round((minutes / 60) * 100) / 100;
   return { minutes, billedHours, amount: billedHours * DEDUCTION_RATE_PER_HOUR };
 }
 
@@ -311,7 +314,7 @@ function AttendanceDayCell({ d, onRegularize }) {
                   </span>
                   <span className="block text-[10px] text-[#9CA3AF] font-semibold mt-0.5">
                     {deduction.billedHours > 0
-                      ? `${deduction.billedHours} × ₹${DEDUCTION_RATE_PER_HOUR} = ${formatRupees(deduction.amount)}`
+                      ? `${deduction.billedHours.toFixed(2)} × ₹${DEDUCTION_RATE_PER_HOUR} = ${formatRupees(deduction.amount)}`
                       : formatRupees(0)}
                   </span>
                 </span>
@@ -362,6 +365,7 @@ function getAttendanceDays(monthName, year) {
       week: WEEKDAY_SHORT[dow],
       weekdayLong: WEEKDAY_LONG[dow],
       dateLabel: `${i + 1} ${monthName}, ${y} (${WEEKDAY_LONG[dow]})`,
+      dateShort: `${String(i + 1).padStart(2, "0")} ${monthName.slice(0, 3)} ${y}`,
       status,
       timesheet,
     };
@@ -487,7 +491,13 @@ function Pagination({ page, totalPages, totalItems, pageSize, itemLabel, onChang
   );
 }
 
-const HRMS_TH = "px-4 py-3";
+const ATTENDANCE_KPI_CARDS = [
+  { title: "Total Present Days", value: "21 Days", sub: "Out of 30 Days", icon: CalendarCheck, iconBg: "#DCFCE7", iconColor: "#16A34A" },
+  { title: "Late Days", value: "4 Days", sub: "Total late arrivals", icon: Clock, iconBg: "#FEE2E2", iconColor: "#DC2626" },
+  { title: "Total Leaves", value: "2 Days", sub: "Casual: 1  Sick: 1", icon: CalendarPlus, iconBg: "#FEF3C7", iconColor: "#D97706" },
+  { title: "Half Days", value: "2 Days", sub: "Total half days", icon: Coffee, iconBg: "#F3E8FF", iconColor: "#7C3AED" },
+  { title: "Total Working Hours", value: "186h 30m", sub: "Monthly Total", icon: Timer, iconBg: "#DBEAFE", iconColor: "#2563EB" },
+];
 
 const HOURLY_WORK_ROWS = [
   { start: "09:00:00 AM", end: "10:00:35 AM", module: "Calendar", description: "Meetings with clients", by: "System", hours: "1.00h" },
@@ -608,6 +618,102 @@ function HourlyWorkTable() {
         ))}
       </tbody>
     </>
+  );
+}
+
+function AttendanceStatCard({ title, value, sub, icon: Icon, iconBg, iconColor }) {
+  return (
+    <div className="bg-white border border-black/10 rounded-2xl px-3.5 py-3 shadow-sm flex items-center gap-3 min-w-0">
+      <span
+        className="size-11 rounded-xl grid place-items-center shrink-0"
+        style={{ backgroundColor: iconBg, color: iconColor }}
+      >
+        <Icon size={20} />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[12px] font-semibold text-[#6B7280] leading-tight">{title}</p>
+        <p className="text-[20px] font-black text-[#111827] leading-tight mt-0.5">{value}</p>
+        <p className="text-[11px] font-medium text-[#9CA3AF] mt-0.5">{sub}</p>
+      </div>
+    </div>
+  );
+}
+
+function RegularizationPendingTable({ days, onRegularize }) {
+  const rows = (days || [])
+    .filter((d) => d.status !== "WO" && d.status !== "H" && d.timesheet.totalMin < NINE_HOURS_MIN)
+    .map((d) => {
+      const deduction = getDeduction(d.timesheet.totalMin, d.status);
+      return {
+        key: d.dateShort,
+        date: d.dateShort,
+        day: d.week,
+        hours: formatHoursMinutes(d.timesheet.totalMin),
+        shortBy: formatHoursMinutes(deduction.minutes),
+        calc: `${deduction.billedHours.toFixed(2)} x ${DEDUCTION_RATE_PER_HOUR}`,
+        deduction: deduction.amount.toFixed(2),
+        amount: deduction.amount,
+      };
+    });
+  const total = rows.reduce((sum, r) => sum + r.amount, 0);
+
+  return (
+    <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+      <h3 className="text-base font-extrabold text-[#111827] mb-4">
+        Days Pending for Regularization (Less than 9 Working Hours)
+      </h3>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[860px] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-black/8 bg-[#F9FAFB]">
+              {["Sr. No.", "Date", "Day", "Actual Working Hours", "Short by", "Calculation", "Deduction (₹)", "Action"].map((h) => (
+                <th key={h} className="px-4 py-3 text-[11px] font-extrabold text-[#6B7280] uppercase tracking-wide whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={8} className="px-4 py-8 text-center text-[13px] text-[#9CA3AF] font-medium">
+                  No days pending regularization this month.
+                </td>
+              </tr>
+            )}
+            {rows.map((row, i) => (
+              <tr key={row.key} className="border-b border-black/6">
+                <td className="px-4 py-3 text-[13px] font-semibold text-[#111827]">{i + 1}</td>
+                <td className="px-4 py-3 text-[13px] font-semibold text-[#111827]">{row.date}</td>
+                <td className="px-4 py-3 text-[13px] font-medium text-[#4B5563]">{row.day}</td>
+                <td className="px-4 py-3 text-[13px] font-semibold text-[#111827]">{row.hours}</td>
+                <td className="px-4 py-3 text-[13px] font-semibold text-[#E8395B]">{row.shortBy}</td>
+                <td className="px-4 py-3 text-[13px] font-medium text-[#4B5563]">{row.calc}</td>
+                <td className="px-4 py-3 text-[13px] font-semibold text-[#111827]">{row.deduction}</td>
+                <td className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={onRegularize}
+                    className="h-8 px-3 rounded-lg text-[12px] font-bold border border-[#7A0A17] text-[#7A0A17] bg-white hover:bg-[#FCF5F6] transition-colors"
+                  >
+                    Regularize
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {rows.length > 0 && (
+              <tr>
+                <td colSpan={6} />
+                <td className="px-4 py-3.5 text-[13px] font-extrabold text-[#111827] whitespace-nowrap">Total Deduction</td>
+                <td className="px-4 py-3.5 text-[15px] font-black text-[#7A0A17] whitespace-nowrap">
+                  {formatRupees(total)}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
@@ -1543,6 +1649,12 @@ export default function HrmsPage() {
         {/* 2. ATTENDANCE & TIMESHEET TAB */}
         {activeTab === "Attendance & Timesheet" && (
           <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+              {ATTENDANCE_KPI_CARDS.map((card) => (
+                <AttendanceStatCard key={card.title} {...card} />
+              ))}
+            </div>
+
             <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-extrabold text-[#111827]">Attendance Records</h2>
@@ -1605,6 +1717,8 @@ export default function HrmsPage() {
                 </span>
               </div>
             </div>
+
+            <RegularizationPendingTable days={attendanceDays} onRegularize={() => setTimesheetModal("edit")} />
 
             <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
               <h3 className="text-lg font-extrabold text-[#111827] mb-4">Attendance Policies</h3>
