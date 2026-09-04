@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Edit2, Filter, Search, Star } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTableSort } from "../components/common/useTableSort.jsx";
@@ -10,16 +10,16 @@ import eyeIcon from "../assets/eye.png";
 
 const PER_PAGE_OPTIONS = [10, 25, 50];
 
-const GLOBAL_LEADERBOARD = [
-  { rank: 1, name: "Sachin Pilot",     taskScore: 50, contestScore: 54, warningScore: 0, complaints: 0, xp: 104 },
-  { rank: 2, name: "Anil Rastogi",     taskScore: 48, contestScore: 52, warningScore: 0, complaints: 0, xp: 100 },
-  { rank: 3, name: "Sunil Bajaj",      taskScore: 46, contestScore: 50, warningScore: 0, complaints: 0, xp: 96 },
-  { rank: 4, name: "Amitabh Bachchan", taskScore: 44, contestScore: 48, warningScore: 2, complaints: 1, xp: 90 },
-  { rank: 5, name: "Anil Kapoor",      taskScore: 42, contestScore: 46, warningScore: 0, complaints: 0, xp: 88 },
-  { rank: 6, name: "Akshay Kumar",     taskScore: 40, contestScore: 44, warningScore: 1, complaints: 0, xp: 83 },
-  { rank: 7, name: "Kuhu Sharma",      taskScore: 38, contestScore: 42, warningScore: 0, complaints: 0, xp: 80 },
-  { rank: 8, name: "Satish Pal",       taskScore: 36, contestScore: 40, warningScore: 3, complaints: 2, xp: 71 },
-  { rank: 9, name: "Ankur Sharma",     taskScore: 34, contestScore: 38, warningScore: 1, complaints: 1, xp: 70 },
+const INITIAL_GLOBAL_LEADERBOARD = [
+  { id: 1, rank: 1, name: "Sachin Pilot",   taskScore: 50, contestScore: 70, warningScore: 5, complaints: 11, xp: 104 },
+  { id: 2, rank: 2, name: "Anil Rastogi",   taskScore: 50, contestScore: 66, warningScore: 5, complaints: 9,  xp: 98 },
+  { id: 3, rank: 3, name: "Sunil Bajaj",    taskScore: 40, contestScore: 60, warningScore: 5, complaints: 5,  xp: 90 },
+  { id: 4, rank: 4, name: "Rojalin Mishra", taskScore: 30, contestScore: 50, warningScore: 4, complaints: 4,  xp: 72 },
+  { id: 5, rank: 5, name: "Narendra Nayak", taskScore: 20, contestScore: 40, warningScore: 3, complaints: 3,  xp: 54 },
+  { id: 6, rank: 6, name: "Akshay Kumar",   taskScore: 40, contestScore: 44, warningScore: 1, complaints: 0,  xp: 83 },
+  { id: 7, rank: 7, name: "Kuhu Sharma",    taskScore: 38, contestScore: 42, warningScore: 0, complaints: 0,  xp: 80 },
+  { id: 8, rank: 8, name: "Satish Pal",     taskScore: 36, contestScore: 40, warningScore: 3, complaints: 2,  xp: 71 },
+  { id: 9, rank: 9, name: "Ankur Sharma",   taskScore: 34, contestScore: 38, warningScore: 1, complaints: 1,  xp: 70 },
 ];
 
 const MY_CONTESTS = [
@@ -272,12 +272,72 @@ function usePagedTable(rows, searchKeys, defaultKey) {
   };
 }
 
+function useLiveLeaderboard(initialRows, intervalMs = 4500) {
+  const [rows, setRows] = useState(initialRows);
+  const [activeId, setActiveId] = useState(null);
+  const clearRef = useRef(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRows((prev) => {
+        const idx = Math.floor(Math.random() * prev.length);
+        const changedId = prev[idx].id;
+        const taskBump = Math.floor(Math.random() * 4) + 1;
+        const contestBump = Math.floor(Math.random() * 3);
+
+        const bumped = prev.map((row, i) =>
+          i === idx
+            ? {
+                ...row,
+                taskScore: row.taskScore + taskBump,
+                contestScore: row.contestScore + contestBump,
+                xp: row.xp + taskBump * 2 + contestBump,
+              }
+            : row
+        );
+        bumped.sort((a, b) => b.xp - a.xp);
+        const ranked = bumped.map((row, i) => ({ ...row, rank: i + 1 }));
+
+        setActiveId(changedId);
+        return ranked;
+      });
+    }, intervalMs);
+
+    return () => clearInterval(interval);
+  }, [intervalMs]);
+
+  useEffect(() => {
+    if (activeId == null) return undefined;
+    clearTimeout(clearRef.current);
+    clearRef.current = setTimeout(() => setActiveId(null), 1600);
+    return () => clearTimeout(clearRef.current);
+  }, [activeId]);
+
+  return { rows, activeId };
+}
+
+function LiveBadge() {
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#DCFCE7] border border-[#16A34A]/25 text-[#15803D] text-[10px] font-bold uppercase tracking-wide">
+      <span className="relative flex size-1.5">
+        <span className="absolute inline-flex h-full w-full rounded-full bg-[#16A34A] opacity-75 animate-ping" />
+        <span className="relative inline-flex size-1.5 rounded-full bg-[#16A34A]" />
+      </span>
+      Live
+    </span>
+  );
+}
+
 function GlobalLeaderboardSection({ onMessage }) {
-  const table = usePagedTable(GLOBAL_LEADERBOARD, LEADERBOARD_SEARCH_KEYS, "rank");
+  const { rows: liveRows, activeId } = useLiveLeaderboard(INITIAL_GLOBAL_LEADERBOARD);
+  const table = usePagedTable(liveRows, LEADERBOARD_SEARCH_KEYS, "rank");
 
   return (
     <section className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
-      <h2 className="text-[22px] font-bold text-[#111] tracking-tight">Global Leaderboard</h2>
+      <div className="flex items-center gap-3">
+        <h2 className="text-[22px] font-bold text-[#111] tracking-tight">Global Leaderboard</h2>
+        <LiveBadge />
+      </div>
 
       <ListToolbar
         search={table.search}
@@ -312,14 +372,24 @@ function GlobalLeaderboardSection({ onMessage }) {
               </tr>
             ) : (
               table.paged.map((row) => (
-                <tr key={row.rank} className="hover:bg-[#FAFAFB] transition-colors">
+                <tr
+                  key={row.id}
+                  className={`transition-colors duration-700 ${
+                    row.id === activeId ? "bg-[#FCF5F6]" : "hover:bg-[#FAFAFB]"
+                  }`}
+                >
                   <td className="px-4 py-3.5 text-[13px] font-semibold text-[#374151]">{row.rank}</td>
                   <td className="px-4 py-3.5 text-[13px] font-semibold text-[#111] whitespace-nowrap">{row.name}</td>
                   <td className="px-4 py-3.5 text-[13px] font-medium text-[#111]">{row.taskScore}</td>
                   <td className="px-4 py-3.5 text-[13px] font-medium text-[#111]">{row.contestScore}</td>
                   <td className="px-4 py-3.5 text-[13px] font-semibold text-[#E8395B]">{row.warningScore}</td>
                   <td className="px-4 py-3.5 text-[13px] font-semibold text-[#E8395B]">{row.complaints}</td>
-                  <td className="px-4 py-3.5 text-[13px] font-semibold text-[#111] whitespace-nowrap">{row.xp} XP</td>
+                  <td className="px-4 py-3.5 text-[13px] font-semibold text-[#111] whitespace-nowrap">
+                    {row.xp} XP
+                    {row.id === activeId && (
+                      <span className="ml-2 text-[10px] font-bold text-[#16A34A] align-middle">▲ live</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-0.5">
                       <IconBtn label={`Email ${row.name}`} onClick={() => toast.info(`Emailing ${row.name}`)}>
