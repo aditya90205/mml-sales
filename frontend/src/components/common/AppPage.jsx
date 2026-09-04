@@ -1,0 +1,123 @@
+import { ChevronDown } from "lucide-react";
+
+export function AppPage({ title, actions, children }) {
+  return (
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="px-5 pt-5 pb-8 flex flex-col gap-5 min-w-0">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h1 className="text-[26px] font-bold text-[#111] tracking-tight">{title}</h1>
+          {actions && <div className="flex items-center gap-2.5 shrink-0 flex-wrap">{actions}</div>}
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function OutlineBtn({ children, onClick, type = "button", className = "" }) {
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      className={`inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors whitespace-nowrap ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function PrimaryBtn({ children, onClick, type = "button", className = "" }) {
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      className={`inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors whitespace-nowrap ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function NativeSelect({ value, onChange, options }) {
+  return (
+    <div className="relative shrink-0">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="appearance-none h-10 pl-4 pr-9 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] outline-none cursor-pointer hover:bg-[#FAFAFB] transition-colors"
+      >
+        {options.map((o) => (
+          <option key={o.value ?? o} value={o.value ?? o}>
+            {o.label ?? o}
+          </option>
+        ))}
+      </select>
+      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
+    </div>
+  );
+}
+
+const NOTE_TONE = {
+  green: "text-[#16A34A]",
+  red: "text-[#E8395B]",
+  amber: "text-[#D97706]",
+  grey: "text-[#6B7280]",
+};
+
+export function MetricCard({ label, value, note, noteTone = "grey", highlight = false }) {
+  return (
+    <div
+      className={`rounded-2xl p-4 min-w-0 border ${
+        highlight ? "bg-[#FCF5F6] border-[#7A0A17]/20" : "bg-white border-black/8"
+      }`}
+    >
+      <p className={`text-[12px] font-semibold ${highlight ? "text-[#7A0A17]" : "text-[#6B7280]"}`}>{label}</p>
+      <p className={`text-[26px] font-bold leading-tight mt-1.5 ${highlight ? "text-[#7A0A17]" : "text-[#111]"}`}>
+        {value}
+      </p>
+      {note && (
+        <p className={`text-[12px] font-semibold mt-2 ${highlight ? "text-[#7A0A17]/80" : NOTE_TONE[noteTone] || NOTE_TONE.grey}`}>
+          {note}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function Panel({ title, subtitle, action, children, footnote }) {
+  return (
+    <section className="bg-white border border-black/8 rounded-2xl p-5">
+      {(title || action) && (
+        <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+          <div className="min-w-0">
+            {title && <h2 className="text-[15px] font-bold text-[#111]">{title}</h2>}
+            {subtitle && <p className="text-[12px] text-[#9CA3AF] mt-0.5">{subtitle}</p>}
+          </div>
+          {action && <div className="flex items-center gap-2 shrink-0 flex-wrap">{action}</div>}
+        </div>
+      )}
+      {children}
+      {footnote && <p className="text-[11.5px] text-[#9CA3AF] mt-4 leading-relaxed">{footnote}</p>}
+    </section>
+  );
+}
+
+export function Th({ children, className = "" }) {
+  return (
+    <th className={`px-4 py-3 text-left text-[10px] font-extrabold text-[#9CA3AF] uppercase tracking-wide whitespace-nowrap ${className}`}>
+      {children}
+    </th>
+  );
+}
+
+export function Td({ children, strong, muted, className = "" }) {
+  return (
+    <td
+      className={`px-4 py-3 text-[13px] whitespace-nowrap ${
+        strong ? "font-semibold text-[#111]" : muted ? "text-[#9CA3AF]" : "text-[#374151] font-medium"
+      } ${className}`}
+    >
+      {children}
+    </td>
+  );
+}

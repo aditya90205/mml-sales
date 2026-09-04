@@ -10,6 +10,9 @@ import {
   Trophy,
   Gift,
   Megaphone,
+  BarChart3,
+  Wallet,
+  Snowflake,
 } from "lucide-react";
 import logo from "../../assets/logo.png";
 
@@ -20,6 +23,9 @@ const NAV_ITEMS = [
   { label: "Pipeline Board",  icon: KanbanSquare,    to: "/pipeline" },
   { label: "Campaign",        icon: Megaphone,       to: "/campaign/management" },
   { label: "Client Database", icon: Database,        to: "/clients" },
+  { label: "Win / Loss",      icon: BarChart3,       to: "/win-loss" },
+  { label: "Incentives",      icon: Wallet,          to: "/incentives" },
+  { label: "Cold Pool",       icon: Snowflake,       to: "/cold-pool" },
   { label: "Tasks",           icon: CheckSquare,     to: "/tasks" },
   { label: "HRMS",            icon: Users,           to: "/hrms" },
   { label: "Leaderboard",     icon: Trophy,          to: "/leaderboard" },
