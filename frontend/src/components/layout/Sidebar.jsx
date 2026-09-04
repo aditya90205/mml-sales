@@ -13,6 +13,7 @@ import {
   BarChart3,
   Wallet,
   Snowflake,
+  Handshake,
 } from "lucide-react";
 import logo from "../../assets/logo.png";
 
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { label: "Calendar",        icon: CalendarDays,    to: "/calendar" },
   { label: "Bulk Upload",     icon: Upload,          to: "/bulk-upload" },
   { label: "Pipeline Board",  icon: KanbanSquare,    to: "/pipeline" },
+  { label: "Post Sales",      icon: Handshake,       to: "/post-sales" },
   { label: "Campaign",        icon: Megaphone,       to: "/campaign/management" },
   { label: "Client Database", icon: Database,        to: "/clients" },
   { label: "Win / Loss",      icon: BarChart3,       to: "/win-loss" },

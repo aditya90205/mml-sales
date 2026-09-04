@@ -325,6 +325,7 @@ export default function TopBar({ page = "Dashboard" }) {
     "win-loss": "Win / Loss Analysis",
     incentives: "My Incentive Statement",
     "cold-pool": "Cold & Common Pool",
+    "post-sales": "Post Sales",
     sales: "Sales",
     funnel: "Sales Funnel",
     leads: "Lead Management",

@@ -16,6 +16,7 @@ import CreateGroupPage from "./pages/CreateGroupPage";
 import WinLossAnalysisPage from "./pages/WinLossAnalysisPage";
 import IncentiveStatementPage from "./pages/IncentiveStatementPage";
 import ColdCommonPoolPage from "./pages/ColdCommonPoolPage";
+import PostSalesPage from "./pages/PostSalesPage";
 import ProfileSettings from "./pages/ProfileSettings";
 import HomeOfficeVisitsPage from "./pages/pipeline/desk/HomeOfficeVisitsPage";
 import CrossBranchFlagsPage from "./pages/pipeline/desk/CrossBranchFlagsPage";
@@ -104,6 +105,10 @@ export default function App() {
         <Route
           path="/cold-pool"
           element={<LayoutRoute><ColdCommonPoolPage /></LayoutRoute>}
+        />
+        <Route
+          path="/post-sales"
+          element={<LayoutRoute><PostSalesPage /></LayoutRoute>}
         />
         <Route
           path="/sales/funnel"

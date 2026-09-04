@@ -64,20 +64,31 @@ const NOTE_TONE = {
   grey: "text-[#6B7280]",
 };
 
-export function MetricCard({ label, value, note, noteTone = "grey", highlight = false }) {
+export function MetricCard({ label, value, note, detail, noteTone = "grey", highlight = false, compact = false }) {
   return (
     <div
-      className={`rounded-2xl p-4 min-w-0 border ${
+      className={`rounded-2xl min-w-0 border ${compact ? "px-3 py-2.5" : "p-4"} ${
         highlight ? "bg-[#FCF5F6] border-[#7A0A17]/20" : "bg-white border-black/8"
       }`}
     >
-      <p className={`text-[12px] font-semibold ${highlight ? "text-[#7A0A17]" : "text-[#6B7280]"}`}>{label}</p>
-      <p className={`text-[26px] font-bold leading-tight mt-1.5 ${highlight ? "text-[#7A0A17]" : "text-[#111]"}`}>
+      <p
+        className={`font-semibold ${compact ? "text-[10px] uppercase tracking-wide" : "text-[12px]"} ${
+          highlight ? "text-[#7A0A17]" : "text-[#6B7280]"
+        }`}
+      >
+        {label}
+      </p>
+      <p className={`font-bold leading-tight ${compact ? "text-[22px] mt-1" : "text-[26px] mt-1.5"} ${highlight ? "text-[#7A0A17]" : "text-[#111]"}`}>
         {value}
       </p>
       {note && (
-        <p className={`text-[12px] font-semibold mt-2 ${highlight ? "text-[#7A0A17]/80" : NOTE_TONE[noteTone] || NOTE_TONE.grey}`}>
+        <p className={`font-semibold ${compact ? "text-[11px] mt-1 leading-snug" : "text-[12px] mt-2"} ${highlight ? "text-[#7A0A17]/80" : NOTE_TONE[noteTone] || NOTE_TONE.grey}`}>
           {note}
+        </p>
+      )}
+      {detail && (
+        <p className={`text-[#9CA3AF] font-medium leading-snug ${compact ? "text-[10.5px] mt-0.5" : "text-[11.5px] mt-1"}`}>
+          {detail}
         </p>
       )}
     </div>
