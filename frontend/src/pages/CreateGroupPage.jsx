@@ -1,49 +1,86 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Mail, MessageSquare, Phone, Plus, Sparkles, X } from "lucide-react";
+import { Mail, MessageSquare, Phone, Plus, Sparkles, X } from "lucide-react";
 import { toast } from "react-toastify";
+import ClientStatusBadge from "../components/common/ClientStatusBadge.jsx";
 import Modal from "../components/ui/Modal.jsx";
 import { CLIENTS } from "../utils/clientsData.js";
 import { addSavedGroup } from "../utils/clientGroups.js";
-import { FIELD_OPTIONS, OPERATOR_OPTIONS, makeCondition, matchesAll, parseDescription } from "../utils/clientQuery.js";
+import {
+  FIELD_OPTIONS,
+  OPERATOR_OPTIONS,
+  makeCondition,
+  matchesAll,
+  parseDescription,
+  usesSelectValue,
+  valueOptionsFor,
+} from "../utils/clientQuery.js";
+
+function FieldSelect({ value, onChange, options, placeholder, className = "w-[200px]" }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`h-11 shrink-0 appearance-none border border-black/12 rounded-lg px-3.5 pr-8 text-[14px] text-[#111] outline-none bg-white bg-[length:12px] bg-[right_12px_center] bg-no-repeat focus:border-[#7A0A17]/40 ${className}`}
+      style={{
+        backgroundImage:
+          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")",
+      }}
+    >
+      {placeholder && <option value="">{placeholder}</option>}
+      {options.map((o) => (
+        <option key={o} value={o}>
+          {o}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 function ConditionRow({ index, condition, onChange, onRemove }) {
+  const valueOpts = valueOptionsFor(condition.field, CLIENTS);
+  const showSelect = usesSelectValue(condition.field, condition.operator) && valueOpts.length > 0;
+
   return (
-    <div className="flex items-center gap-3 flex-wrap">
+    <div className="flex items-center gap-3">
       <span className="w-14 shrink-0 text-[13px] font-extrabold text-[#111]">{index === 0 ? "WHERE" : "AND"}</span>
 
-      <select
+      <FieldSelect
         value={condition.field}
-        onChange={(e) => onChange({ ...condition, field: e.target.value })}
-        className="h-12 min-w-[200px] flex-1 border border-black/12 rounded-xl px-3.5 text-[14px] text-[#111] outline-none bg-white"
-      >
-        {FIELD_OPTIONS.map((f) => (
-          <option key={f}>{f}</option>
-        ))}
-      </select>
-
-      <select
-        value={condition.operator}
-        onChange={(e) => onChange({ ...condition, operator: e.target.value })}
-        className="h-12 min-w-[160px] flex-1 border border-black/12 rounded-xl px-3.5 text-[14px] text-[#111] outline-none bg-white"
-      >
-        {OPERATOR_OPTIONS.map((o) => (
-          <option key={o}>{o}</option>
-        ))}
-      </select>
-
-      <input
-        value={condition.value}
-        onChange={(e) => onChange({ ...condition, value: e.target.value })}
-        placeholder="Value"
-        className="h-12 min-w-[200px] flex-1 border border-black/12 rounded-xl px-3.5 text-[14px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40"
+        onChange={(field) => onChange({ ...condition, field, value: "" })}
+        options={FIELD_OPTIONS}
+        className="w-[220px]"
       />
+
+      <FieldSelect
+        value={condition.operator}
+        onChange={(operator) => onChange({ ...condition, operator })}
+        options={OPERATOR_OPTIONS}
+        className="w-[160px]"
+      />
+
+      {showSelect ? (
+        <FieldSelect
+          value={condition.value}
+          onChange={(value) => onChange({ ...condition, value })}
+          options={valueOpts}
+          placeholder="Select"
+          className="w-[200px]"
+        />
+      ) : (
+        <input
+          value={condition.value}
+          onChange={(e) => onChange({ ...condition, value: e.target.value })}
+          placeholder="Value"
+          className="h-11 w-[200px] shrink-0 border border-black/12 rounded-lg px-3.5 text-[14px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40"
+        />
+      )}
 
       <button
         type="button"
         onClick={onRemove}
         aria-label="Remove condition"
-        className="size-10 grid place-items-center rounded-xl border border-black/10 text-[#9CA3AF] hover:bg-[#FAFAFB] hover:text-[#DC2626] transition-colors shrink-0"
+        className="size-9 grid place-items-center rounded-lg text-[#9CA3AF] hover:bg-[#FAFAFB] hover:text-[#DC2626] transition-colors shrink-0"
       >
         <X size={16} />
       </button>
@@ -51,17 +88,12 @@ function ConditionRow({ index, condition, onChange, onRemove }) {
   );
 }
 
-const STATUS_STYLES = {
-  Active: "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/25",
-  Inactive: "bg-[#FEE2E2] text-[#DC2626] border-[#DC2626]/20",
-};
-
 export default function CreateGroupPage() {
   const navigate = useNavigate();
   const [description, setDescription] = useState("girls from Rohini who studied at IIM");
   const [matchMode, setMatchMode] = useState("ALL");
   const [conditions, setConditions] = useState([
-    { ...makeCondition(), field: "Gender", operator: "is", value: "" },
+    { ...makeCondition(), field: "Gender", operator: "is", value: "Female" },
     { ...makeCondition(), field: "Area", operator: "is", value: "Rohini" },
     { ...makeCondition(), field: "Education / College", operator: "contains", value: "IIM" },
   ]);
@@ -74,7 +106,7 @@ export default function CreateGroupPage() {
   };
 
   const removeCondition = (id) => {
-    setConditions((prev) => prev.filter((c) => c.id !== id));
+    setConditions((prev) => (prev.length === 1 ? prev : prev.filter((c) => c.id !== id)));
   };
 
   const addCondition = () => {
@@ -84,6 +116,7 @@ export default function CreateGroupPage() {
   const clearAll = () => {
     setConditions([makeCondition()]);
     setResults(null);
+    setDescription("");
   };
 
   const runBuildQuery = () => {
@@ -107,7 +140,11 @@ export default function CreateGroupPage() {
       toast.error("Please name this group.");
       return;
     }
-    addSavedGroup(groupName.trim());
+    addSavedGroup({
+      name: groupName.trim(),
+      conditions,
+      matchMode,
+    });
     toast.success(`"${groupName.trim()}" saved to your groups.`);
     setSaveOpen(false);
     navigate("/clients");
@@ -115,31 +152,22 @@ export default function CreateGroupPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <div className="px-5 pt-5 pb-8 flex flex-col gap-6 min-w-0">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate("/clients")}
-              className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-            >
-              <ArrowLeft size={15} /> Back
-            </button>
-            <h1 className="text-[26px] font-bold text-[#111] tracking-tight">Create Group</h1>
-          </div>
+      <div className="px-5 pt-5 pb-8 flex flex-col gap-8 min-w-0 w-full">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-[26px] font-bold text-[#111] tracking-tight">Create Group</h1>
           <button
             type="button"
             onClick={() => toast.info("Exporting results...")}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+            className="inline-flex items-center h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors shrink-0"
           >
-            <Plus size={14} /> Export results
+            Export results
           </button>
         </div>
 
-        <div>
-          <p className="text-[13px] font-semibold text-[#111] mb-2">Describe who you're looking for</p>
-          <div className="flex items-center gap-3">
-            <div className="flex-1 flex items-center gap-2.5 h-14 border border-black/12 rounded-xl px-4">
+        <div className="flex flex-col gap-2 w-full">
+          <p className="text-[14px] text-[#6B7280]">Describe who you're looking for</p>
+          <div className="flex items-center gap-3 w-full min-w-0">
+            <div className="flex-1 min-w-0 flex items-center gap-2.5 h-12 border border-black/12 rounded-lg px-4 bg-white">
               <Sparkles size={16} className="text-[#F59E0B] shrink-0" />
               <input
                 value={description}
@@ -152,27 +180,27 @@ export default function CreateGroupPage() {
             <button
               type="button"
               onClick={runBuildQuery}
-              className="h-14 px-6 rounded-xl bg-[#7A0A17] text-white text-[14px] font-bold hover:bg-[#640712] transition-colors shrink-0"
+              className="h-12 px-6 rounded-lg bg-[#7A0A17] text-white text-[14px] font-bold hover:bg-[#640712] transition-colors shrink-0"
             >
               Build query
             </button>
           </div>
         </div>
 
-        <p className="text-center text-[13px] font-bold text-[#111]">OR</p>
+        <p className="text-center text-[13px] font-bold text-[#111] tracking-wide">OR</p>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-5 w-full">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <span className="text-[14px] font-semibold text-[#111]">Match</span>
-              <div className="flex items-center rounded-xl border border-black/12 overflow-hidden">
+              <div className="flex items-center rounded-lg overflow-hidden">
                 {["ALL", "ANY"].map((m) => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => setMatchMode(m)}
-                    className={`h-9 px-4 text-[12px] font-extrabold tracking-wide transition-colors ${
-                      matchMode === m ? "bg-[#7A0A17] text-white" : "bg-white text-[#9CA3AF] hover:bg-[#FAFAFB]"
+                    className={`h-8 px-3.5 text-[12px] font-extrabold tracking-wide transition-colors ${
+                      matchMode === m ? "bg-[#7A0A17] text-white" : "bg-[#F3F4F6] text-[#9CA3AF] hover:text-[#6B7280]"
                     }`}
                   >
                     {m}
@@ -190,7 +218,7 @@ export default function CreateGroupPage() {
             </button>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 items-start">
             {conditions.map((c, i) => (
               <ConditionRow
                 key={c.id}
@@ -205,7 +233,7 @@ export default function CreateGroupPage() {
           <button
             type="button"
             onClick={addCondition}
-            className="self-start inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-white border border-[#7A0A17]/30 text-[13px] font-bold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors"
+            className="self-start inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-white border border-[#7A0A17]/35 text-[13px] font-bold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors"
           >
             <Plus size={15} /> Add condition
           </button>
@@ -236,11 +264,11 @@ export default function CreateGroupPage() {
                     <th className="px-4 py-3 whitespace-nowrap">Area</th>
                     <th className="px-4 py-3 whitespace-nowrap">Education</th>
                     <th className="px-4 py-3 whitespace-nowrap">Branch</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                    <th className="px-4 py-3 whitespace-nowrap text-center">Status</th>
                     <th className="px-4 py-3 whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-black/6">
+                <tbody>
                   {results.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-4 py-10 text-center text-[13px] text-[#9CA3AF] font-medium">
@@ -249,26 +277,26 @@ export default function CreateGroupPage() {
                     </tr>
                   ) : (
                     results.map((c) => (
-                      <tr key={c.id} className="hover:bg-[#FAFAFB] transition-colors">
-                        <td className="px-4 py-3.5 text-[13px] font-bold text-[#111] whitespace-nowrap">{c.name}</td>
-                        <td className="px-4 py-3.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.gender}</td>
-                        <td className="px-4 py-3.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.area}</td>
-                        <td className="px-4 py-3.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.education}</td>
-                        <td className="px-4 py-3.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.branch}</td>
-                        <td className="px-4 py-3.5">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap border ${STATUS_STYLES[c.status] || "bg-[#F1F2F4] text-[#6B7280] border-black/10"}`}>
-                            {c.status}
-                          </span>
+                      <tr key={c.id} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
+                        <td className="px-4 py-3 text-[13px] font-bold text-[#111] whitespace-nowrap">{c.name}</td>
+                        <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.gender}</td>
+                        <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.area}</td>
+                        <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.education}</td>
+                        <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.branch}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-center">
+                            <ClientStatusBadge status={c.status} married={c.married} />
+                          </div>
                         </td>
-                        <td className="px-4 py-3.5">
+                        <td className="px-4 py-3">
                           <div className="flex items-center gap-0.5">
-                            <button type="button" onClick={() => toast.info(`Calling ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors">
+                            <button type="button" onClick={() => toast.info(`Calling ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Call ${c.name}`}>
                               <Phone size={14} className="text-[#16A34A]" />
                             </button>
-                            <button type="button" onClick={() => toast.info(`Messaging ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors">
+                            <button type="button" onClick={() => toast.info(`Messaging ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Message ${c.name}`}>
                               <MessageSquare size={14} className="text-[#D97706]" />
                             </button>
-                            <button type="button" onClick={() => toast.info(`Emailing ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors">
+                            <button type="button" onClick={() => toast.info(`Emailing ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Email ${c.name}`}>
                               <Mail size={14} className="text-[#2563EB]" />
                             </button>
                           </div>

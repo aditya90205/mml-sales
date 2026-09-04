@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, TrendingUp, X } from "lucide-react";
 import { toast } from "react-toastify";
+import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
@@ -325,25 +326,30 @@ function QuotationCard() {
 }
 
 function DataRevealCard() {
+  const [levels, setLevels] = useState(DATA_REVEAL_LEVELS);
+
+  const toggleLevel = (label) => {
+    setLevels((prev) => prev.map((level) => (level.label === label ? { ...level, done: !level.done } : level)));
+  };
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-5 flex flex-col gap-5 min-w-0">
       <div>
         <h3 className="text-[14px] font-bold text-[#111] mb-3.5">Progressive data reveal by package</h3>
         <div className="flex flex-col gap-3.5">
-          {DATA_REVEAL_LEVELS.map((level) => (
-            <div key={level.label} className="flex items-start gap-2.5">
-              <span
-                className={`size-[18px] rounded-full grid place-items-center shrink-0 mt-0.5 ${
-                  level.done ? "bg-[#16A34A]" : "bg-white border border-black/15"
-                }`}
-              >
-                {level.done && <Check size={12} className="text-white" strokeWidth={3} />}
-              </span>
+          {levels.map((level) => (
+            <button
+              key={level.label}
+              type="button"
+              onClick={() => toggleLevel(level.label)}
+              className="flex items-start gap-2.5 text-left cursor-pointer"
+            >
+              <ChecklistCheck done={level.done} className="mt-0.5" />
               <div className="min-w-0">
                 <p className="text-[12.5px] font-semibold text-[#111]">{level.label}</p>
                 <p className="text-[11px] text-[#9CA3AF]">{level.note}</p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
