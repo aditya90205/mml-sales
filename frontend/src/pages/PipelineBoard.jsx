@@ -291,17 +291,6 @@ function BoardToolbar({ search, onSearchChange, perPage, onPerPageChange, view, 
         <div className="flex items-center h-10 rounded-xl border border-black/10 bg-white overflow-hidden shrink-0">
           <button
             type="button"
-            onClick={() => onViewChange("board")}
-            title="Board view"
-            className={`h-full px-3 flex items-center transition-colors ${
-              view === "board" ? "bg-[#7A0A17] text-white" : "text-[#9CA3AF] hover:text-[#4B5563] hover:bg-[#FAFAFB]"
-            }`}
-          >
-            <LayoutGrid size={15} />
-          </button>
-          <span className="w-px h-5 bg-black/10" />
-          <button
-            type="button"
             onClick={() => onViewChange("table")}
             title="Table view"
             className={`h-full px-3 flex items-center transition-colors ${
@@ -309,6 +298,17 @@ function BoardToolbar({ search, onSearchChange, perPage, onPerPageChange, view, 
             }`}
           >
             <LayoutList size={15} />
+          </button>
+          <span className="w-px h-5 bg-black/10" />
+          <button
+            type="button"
+            onClick={() => onViewChange("board")}
+            title="Board view"
+            className={`h-full px-3 flex items-center transition-colors ${
+              view === "board" ? "bg-[#7A0A17] text-white" : "text-[#9CA3AF] hover:text-[#4B5563] hover:bg-[#FAFAFB]"
+            }`}
+          >
+            <LayoutGrid size={15} />
           </button>
         </div>
 
@@ -589,7 +589,8 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                 return (
                   <tr
                     key={idx}
-                    className="border-b border-black/5 last:border-0 hover:bg-[#FAFAFB] transition-colors"
+                    onClick={() => onOpenDeal?.(lead, stage.id)}
+                    className="border-b border-black/5 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
                   >
                     {/* Client Name */}
                     <td className="px-3 py-2.5 whitespace-nowrap">
@@ -599,7 +600,6 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                           <div className="flex items-center gap-1">
                             <button
                               type="button"
-                              onClick={() => onOpenDeal?.(lead, stage.id)}
                               className="text-[12.5px] font-semibold text-[#111] hover:text-[#7A0A17] hover:underline"
                             >
                               {lead.name}
@@ -619,22 +619,10 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
 
                     {/* Stage */}
                     <td className="px-3 py-2.5 whitespace-nowrap">
-                      {["P0", "P1", "P4", "P5"].includes(stage.id) ? (
-                        <button
-                          type="button"
-                          onClick={() => onMoveStage?.(lead, stage.id)}
-                          className="text-left text-[12px] text-[#374151] hover:text-[#7A0A17] hover:underline decoration-[#7A0A17]/40 underline-offset-2 transition-colors"
-                          title={`Move this lead from ${stage.id}`}
-                        >
-                          {stage.id} - {stage.label}{" "}
-                          <span style={{ color: temp.color }} className="font-semibold no-underline">({lead.temperature})</span>
-                        </button>
-                      ) : (
-                        <p className="text-[12px] text-[#374151]">
-                          {stage.id} - {stage.label}{" "}
-                          <span style={{ color: temp.color }} className="font-semibold">({lead.temperature})</span>
-                        </p>
-                      )}
+                      <p className="text-[12px] text-[#374151]">
+                        {stage.id} - {stage.label}{" "}
+                        <span style={{ color: temp.color }} className="font-semibold">({lead.temperature})</span>
+                      </p>
                     </td>
 
                     {/* Priority */}
@@ -651,7 +639,10 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                     <td className="px-3 py-2.5 whitespace-nowrap">
                       <button
                         type="button"
-                        onClick={() => onOpenScoreModal?.(lead)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenScoreModal?.(lead);
+                        }}
                         className="inline-flex items-center gap-1 text-[12px] font-bold text-[#111] hover:bg-[#F3F4F6] px-1.5 py-0.5 rounded transition-colors"
                         title="Click to view Lead Score Details"
                       >
@@ -691,30 +682,30 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                     </td>
 
                     {/* Actions */}
-                    <td className="px-3 py-2.5 whitespace-nowrap">
+                    <td className="px-3 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-1">
                         {idx % 3 === 0 ? (
-                          <button className="p-1 rounded-lg text-[#DC2626] hover:bg-[#FEE2E2] transition-colors" title="Dropped Call">
+                          <button type="button" className="p-1 rounded-lg text-[#DC2626] hover:bg-[#FEE2E2] transition-colors" title="Dropped Call">
                             <PhoneOff size={14} />
                           </button>
                         ) : (
-                          <button className="p-1 rounded-lg text-[#16A34A] hover:bg-[#E7F8EF] transition-colors" title="Call">
+                          <button type="button" className="p-1 rounded-lg text-[#16A34A] hover:bg-[#E7F8EF] transition-colors" title="Call">
                             <Phone size={14} />
                           </button>
                         )}
-                        <button className="p-1 rounded-lg text-[#F59E0B] hover:bg-[#FFF3E4] transition-colors" title="Message">
+                        <button type="button" className="p-1 rounded-lg text-[#F59E0B] hover:bg-[#FFF3E4] transition-colors" title="Message">
                           <MessageSquare size={14} />
                         </button>
-                        <button className="relative p-1 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] transition-colors" title="Email">
+                        <button type="button" className="relative p-1 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] transition-colors" title="Email">
                           <Mail size={14} />
                           {idx % 2 === 0 && (
                             <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-[#DC2626]" />
                           )}
                         </button>
-                        <button className="p-1 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] transition-colors" title="Schedule">
+                        <button type="button" className="p-1 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] transition-colors" title="Schedule">
                           <Calendar size={14} />
                         </button>
-                        <button className="p-1 rounded-lg text-[#9CA3AF] hover:bg-black/5 transition-colors" title="More Options">
+                        <button type="button" className="p-1 rounded-lg text-[#9CA3AF] hover:bg-black/5 transition-colors" title="More Options">
                           <MoreVertical size={14} />
                         </button>
                       </div>
@@ -888,7 +879,7 @@ function LeadScoreModal({ lead, onClose }) {
 export default function PipelineBoard() {
   const [search, setSearch]             = useState("");
   const [perPage, setPerPage]           = useState(10);
-  const [view,   setView]               = useState("board"); // "board" | "table"
+  const [view,   setView]               = useState("table"); // "board" | "table"
   const [selectedScoreLead, setSelectedScoreLead] = useState(null);
 
   // Dynamic state for pipeline lead items
