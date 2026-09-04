@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "react-toastify";
 import {
   ChevronRight,
@@ -17,6 +18,7 @@ import {
   Trash2,
   CheckCircle2,
   FileCheck,
+  BadgeCheck,
   ShieldCheck,
   MessageSquare,
   X,
@@ -82,8 +84,7 @@ const INITIAL_SHIFT_CHANGE_REQUESTS = [
 const HRMS_TABS = [
   "Summary",
   "Incentives",
-  "Attendance",
-  "Timesheet",
+  "Attendance & Timesheet",
   "Salary & Payslip",
   "Trainings",
   "Goals & Reviews",
@@ -149,12 +150,188 @@ const LEADERBOARD_MEMBERS = [
 ];
 
 const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const NINE_HOURS_MIN = 9 * 60;
+
+function formatHoursMinutes(totalMinutes) {
+  const safe = Math.max(0, Number(totalMinutes) || 0);
+  const h = Math.floor(safe / 60);
+  const m = safe % 60;
+  return `${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m`;
+}
+
+/** Dummy login / logout / hours for each attendance status. */
+function getDummyTimesheet(status, dayIndex) {
+  if (status === "WO" || status === "H") {
+    return { login: "—", logout: "—", systemMin: 0, totalMin: 0 };
+  }
+  if (status === "X") {
+    return { login: "—", logout: "—", systemMin: 0, totalMin: 0 };
+  }
+  if (status === "1/2") {
+    return { login: "09:15 AM", logout: "01:40 PM", systemMin: 280, totalMin: 260 };
+  }
+  const shortDay = dayIndex % 3 !== 0;
+  if (shortDay) {
+    return { login: "09:15 AM", logout: "06:25 PM", systemMin: 496, totalMin: 490 };
+  }
+  return { login: "09:00 AM", logout: "06:18 PM", systemMin: 558, totalMin: 550 };
+}
+
+const DEDUCTION_RATE_PER_HOUR = 150;
+
+function getDeduction(totalMin, status) {
+  if (status === "WO" || status === "H") {
+    return { minutes: 0, billedHours: 0, amount: 0 };
+  }
+  if (totalMin >= NINE_HOURS_MIN) {
+    return { minutes: 0, billedHours: 0, amount: 0 };
+  }
+  const minutes = NINE_HOURS_MIN - totalMin;
+  const billedHours = Math.ceil(minutes / 60);
+  return { minutes, billedHours, amount: billedHours * DEDUCTION_RATE_PER_HOUR };
+}
+
+function formatRupees(amount) {
+  return `₹${Number(amount).toFixed(2)}`;
+}
 
 const ATTENDANCE_STATUS_PATTERN = [
   "WO", "WO", "WO", "X", "P", "H", "P", "WO", "WO", "1/2",
   "P", "P", "P", "X", "WO", "WO", "P", "H", "P", "1/2",
   "X", "WO", "WO", "P", "P", "1/2", "X", "P", "P", "P", "P",
 ];
+
+function AttendanceDayCell({ d, onRegularize }) {
+  const ref = useRef(null);
+  const hideTimer = useRef(null);
+  const [pos, setPos] = useState(null);
+  const ts = d.timesheet;
+  const underHours = ts.totalMin < NINE_HOURS_MIN;
+  const showRegularize = underHours && d.status !== "WO" && d.status !== "H";
+  const deduction = getDeduction(ts.totalMin, d.status);
+
+  const open = () => {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    const width = 280;
+    let left = r.left + r.width / 2 - width / 2;
+    left = Math.max(12, Math.min(left, window.innerWidth - width - 12));
+    const below = r.bottom + 8;
+    const top = below + 280 > window.innerHeight ? r.top - 8 : below;
+    setPos({
+      top,
+      left,
+      placeAbove: below + 280 > window.innerHeight,
+    });
+  };
+
+  const scheduleClose = () => {
+    hideTimer.current = setTimeout(() => setPos(null), 120);
+  };
+
+  return (
+    <>
+      <div
+        ref={ref}
+        className="flex flex-col items-center gap-1.5 w-7 text-center cursor-pointer"
+        onMouseEnter={open}
+        onMouseLeave={scheduleClose}
+      >
+        <span className="text-[10px] font-bold text-[#9CA3AF]">{d.day}</span>
+        <span className="text-[10px] font-extrabold text-[#111827]">{d.week}</span>
+        {d.status === "P" && (
+          <span className="size-6 rounded-full bg-[#DCFCE7] text-[#15803D] grid place-items-center text-xs font-bold">✓</span>
+        )}
+        {d.status === "X" && (
+          <span className="size-6 rounded-full bg-[#FEE2E2] text-[#DC2626] grid place-items-center text-xs font-bold">✕</span>
+        )}
+        {d.status === "1/2" && (
+          <span className="size-6 rounded-full bg-[#FEF3C7] text-[#D97706] grid place-items-center text-[10px] font-black">½</span>
+        )}
+        {d.status === "H" && (
+          <span className="size-6 rounded-full bg-[#F3E8FF] text-[#9333EA] grid place-items-center text-[10px] font-black">H</span>
+        )}
+        {d.status === "WO" && (
+          <span className="size-6 rounded-full bg-[#475569] text-white grid place-items-center text-[9px] font-bold">WO</span>
+        )}
+      </div>
+
+      {pos &&
+        createPortal(
+          <div
+            className="fixed z-[80] w-[280px] bg-white border border-black/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.14)] p-4"
+            style={{
+              top: pos.placeAbove ? undefined : pos.top,
+              bottom: pos.placeAbove ? window.innerHeight - pos.top : undefined,
+              left: pos.left,
+            }}
+            onMouseEnter={open}
+            onMouseLeave={scheduleClose}
+          >
+            <p className="text-[13px] font-extrabold text-[#111827]">Attendance Details</p>
+            <p className="text-[11px] text-[#9CA3AF] font-semibold mt-0.5 mb-3">{d.dateLabel}</p>
+
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <p className="text-[10px] font-bold text-[#9CA3AF] uppercase">Login</p>
+                <p className="text-[13px] font-extrabold text-[#16A34A] mt-0.5">{ts.login}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-[#9CA3AF] uppercase">Logout</p>
+                <p className="text-[13px] font-extrabold text-[#16A34A] mt-0.5">{ts.logout}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-[12px]">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[#6B7280] font-semibold">System Time</span>
+                <span className="font-extrabold text-[#111827]">{formatHoursMinutes(ts.systemMin)}</span>
+              </div>
+              <div className="flex items-start justify-between gap-3">
+                <span>
+                  <span className="block font-extrabold text-[#111827]">Total</span>
+                  <span className="block text-[10px] text-[#9CA3AF] font-semibold">(Total Time Worked)</span>
+                </span>
+                <span className={`font-extrabold ${underHours ? "text-[#DC2626]" : "text-[#16A34A]"}`}>
+                  {formatHoursMinutes(ts.totalMin)}
+                </span>
+              </div>
+              <div className="h-px bg-black/8" />
+              <div className="flex items-start justify-between gap-3">
+                <span>
+                  <span className="block font-extrabold text-[#111827]">Deduction</span>
+                  <span className="block text-[10px] text-[#9CA3AF] font-semibold">(Time / Amount Deducted)</span>
+                </span>
+                <span className="text-right">
+                  <span className={`block font-extrabold ${deduction.minutes > 0 ? "text-[#DC2626]" : "text-[#111827]"}`}>
+                    {formatHoursMinutes(deduction.minutes)}
+                  </span>
+                  <span className="block text-[10px] text-[#9CA3AF] font-semibold mt-0.5">
+                    {deduction.billedHours > 0
+                      ? `${deduction.billedHours} × ₹${DEDUCTION_RATE_PER_HOUR} = ${formatRupees(deduction.amount)}`
+                      : formatRupees(0)}
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            {showRegularize && (
+              <button
+                type="button"
+                onClick={() => onRegularize?.()}
+                className="mt-3.5 w-full h-9 rounded-xl bg-[#7A0A17] hover:bg-[#600712] text-white text-[12px] font-extrabold transition-colors"
+              >
+                Regularize
+              </button>
+            )}
+          </div>,
+          document.body
+        )}
+    </>
+  );
+}
 
 function YouHandIcon() {
   return (
@@ -178,10 +355,14 @@ function getAttendanceDays(monthName, year) {
     const dow = date.getDay();
     let status = ATTENDANCE_STATUS_PATTERN[i % ATTENDANCE_STATUS_PATTERN.length];
     if (dow === 0 || dow === 6) status = "WO";
+    const timesheet = getDummyTimesheet(status, i);
     return {
       day: String(i + 1).padStart(2, "0"),
       week: WEEKDAY_SHORT[dow],
+      weekdayLong: WEEKDAY_LONG[dow],
+      dateLabel: `${i + 1} ${monthName}, ${y} (${WEEKDAY_LONG[dow]})`,
       status,
+      timesheet,
     };
   });
 }
@@ -1342,10 +1523,9 @@ export default function HrmsPage() {
           </>
         )}
 
-        {/* 2. ATTENDANCE TAB */}
-        {activeTab === "Attendance" && (
+        {/* 2. ATTENDANCE & TIMESHEET TAB */}
+        {activeTab === "Attendance & Timesheet" && (
           <div className="flex flex-col gap-6">
-            {/* Top Attendance Records Card */}
             <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-extrabold text-[#111827]">Attendance Records</h2>
@@ -1358,7 +1538,6 @@ export default function HrmsPage() {
                 </button>
               </div>
 
-              {/* User Meta Row */}
               <div className="flex items-center gap-3 mb-5">
                 <img
                   src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face"
@@ -1371,54 +1550,26 @@ export default function HrmsPage() {
                 </div>
               </div>
 
-              {/* Calendar Grid Matrix */}
               <div className="overflow-x-auto pb-2 scrollbar-none">
                 <div className="flex items-center gap-2 min-w-max">
-                  {attendanceDays.map((d, index) => {
-                    return (
-                      <div key={index} className="flex flex-col items-center gap-1.5 w-7 text-center">
-                        <span className="text-[10px] font-bold text-[#9CA3AF]">{d.day}</span>
-                        <span className="text-[10px] font-extrabold text-[#111827]">{d.week}</span>
+                  {attendanceDays.map((d, index) => (
+                    <AttendanceDayCell
+                      key={index}
+                      d={d}
+                      onRegularize={() => setTimesheetModal("edit")}
+                    />
+                  ))}
 
-                        {/* Status Icon */}
-                        {d.status === "P" && (
-                          <span className="size-6 rounded-full bg-[#DCFCE7] text-[#15803D] grid place-items-center text-xs font-bold">
-                            ✓
-                          </span>
-                        )}
-                        {d.status === "X" && (
-                          <span className="size-6 rounded-full bg-[#FEE2E2] text-[#DC2626] grid place-items-center text-xs font-bold">
-                            ✕
-                          </span>
-                        )}
-                        {d.status === "1/2" && (
-                          <span className="size-6 rounded-full bg-[#FEF3C7] text-[#D97706] grid place-items-center text-[10px] font-black">
-                            ½
-                          </span>
-                        )}
-                        {d.status === "H" && (
-                          <span className="size-6 rounded-full bg-[#F3E8FF] text-[#9333EA] grid place-items-center text-[10px] font-black">
-                            H
-                          </span>
-                        )}
-                        {d.status === "WO" && (
-                          <span className="size-6 rounded-full bg-[#475569] text-white grid place-items-center text-[9px] font-bold">
-                            WO
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  {/* Total Summary */}
                   <div className="flex flex-col items-center justify-center pl-4 border-l border-black/10">
-                    <span className="text-[10px] font-extrabold text-[#6B7280] uppercase">Total</span>
-                    <span className="text-sm font-black text-[#111827] mt-2">{Number.isInteger(attendancePresent) ? attendancePresent : attendancePresent.toFixed(1)}<span className="text-xs text-[#9CA3AF]">/{attendanceDays.length}</span></span>
+                    <span className="text-[10px] font-extrabold text-[#6B7280] uppercase whitespace-nowrap">Grand Total</span>
+                    <span className="text-sm font-black text-[#111827] mt-2">
+                      {Number.isInteger(attendancePresent) ? attendancePresent : attendancePresent.toFixed(1)}
+                      <span className="text-xs text-[#9CA3AF]">/{attendanceDays.length}</span>
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Legend Footer */}
               <div className="flex items-center gap-6 mt-6 pt-4 border-t border-black/8 text-xs font-bold flex-wrap">
                 <span className="flex items-center gap-1.5 text-[#15803D]">
                   <span className="size-4 rounded-full bg-[#DCFCE7] grid place-items-center text-[10px]">✓</span> Present
@@ -1438,13 +1589,10 @@ export default function HrmsPage() {
               </div>
             </div>
 
-            {/* Bottom Attendance Policies Card */}
             <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
               <h3 className="text-lg font-extrabold text-[#111827] mb-4">Attendance Policies</h3>
-
-              <div className="space-y-4">
-                {/* Policy 1: Working Hours */}
-                <div className="bg-[#FFF8F7] border border-[#7A0A17]/15 rounded-xl p-4 border-l-4 border-l-[#7A0A17]">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-[#FFF5F5] border border-[#FECACA] rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2 text-[#7A0A17] font-extrabold text-sm">
                     <Clock size={16} /> Working Hours
                   </div>
@@ -1455,152 +1603,39 @@ export default function HrmsPage() {
                   </ul>
                 </div>
 
-                {/* Policy 2: Leave Policy */}
-                <div className="bg-[#F4FBF7] border border-[#16A34A]/20 rounded-xl p-4 border-l-4 border-l-[#16A34A]">
+                <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2 text-[#1D4ED8] font-extrabold text-sm">
+                    <BadgeCheck size={16} /> Standard Attendance Policy
+                  </div>
+                  <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
+                    <li>Late Arrival Grace: 15 Minutes</li>
+                    <li>Early Departure Grace: 15 Minutes</li>
+                    <li>Overtime Rate: ₹150/hr</li>
+                  </ul>
+                </div>
+
+                <div className="bg-[#F0FDF4] border border-[#BBF7D0] rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2 text-[#15803D] font-extrabold text-sm">
                     <Calendar size={16} /> Leave Policy
                   </div>
                   <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
-                    <li>Casual Leave: 12 days per annum (non-cumulative)</li>
-                    <li>Sick Leave: 8 days per annum (cumulative up to 30 days)</li>
-                    <li>Earned Leave: 18 days per annum (can carry forward 10 days)</li>
-                    <li>Minimum 2 days notice required for leave applications</li>
+                    <li>Casual Leave: 12 days per annum</li>
+                    <li>Sick Leave: 8 days per annum</li>
+                    <li>Earned Leave: 18 days per annum</li>
+                    <li>Minimum 2 days notice for leave applications</li>
                   </ul>
                 </div>
 
-                {/* Policy 3: Attendance Rules */}
-                <div className="bg-[#F8FAFC] border border-black/10 rounded-xl p-4 border-l-4 border-l-[#6366F1]">
-                  <div className="flex items-center gap-2 mb-2 text-[#4F46E5] font-extrabold text-sm">
-                    <AlertTriangle size={16} /> Attendance Policy
+                <div className="bg-[#F5F3FF] border border-[#DDD6FE] rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2 text-[#6D28D9] font-extrabold text-sm">
+                    <AlertTriangle size={16} /> Late Arrival Policy
                   </div>
                   <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
-                    <li>Minimum 80% attendance required per month</li>
+                    <li>Min. 80% attendance required per month</li>
                     <li>Late arrival after 9:15 AM requires regularization</li>
                     <li>3 consecutive absences without intimation may result in show-cause notice</li>
-                    <li>Proxy attendance is strictly prohibited</li>
+                    <li>Proxy attendance is prohibited</li>
                   </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 3. TIMESHEET TAB */}
-        {activeTab === "Timesheet" && (
-          <div className="flex flex-col gap-6">
-            {/* Header User Session Bar */}
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <img
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face"
-                  alt=""
-                  className="size-11 rounded-full object-cover border border-black/10"
-                />
-                <div>
-                  <h3 className="text-base font-extrabold text-[#111827]">Ankur Sharma</h3>
-                  <div className="flex items-center gap-2 text-xs text-[#6B7280] font-medium mt-0.5">
-                    <span>Relationship Manager</span>
-                    <span className="bg-[#FCF5F6] text-[#7A0A17] font-bold text-[10px] px-2 py-0.5 rounded-md border border-[#7A0A17]/20">EMP00116</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-6 sm:gap-8 text-xs font-bold">
-                <div>
-                  <p className="text-[10px] text-[#9CA3AF] uppercase font-bold">Date</p>
-                  <p className="text-sm font-extrabold text-[#111827] mt-0.5">26-08-2026</p>
-                </div>
-                <div className="h-7 w-px bg-black/10" />
-                <div>
-                  <p className="text-[10px] text-[#9CA3AF] uppercase font-bold">Login Time</p>
-                  <p className="text-sm font-extrabold text-[#16A34A] mt-0.5">09:00 AM</p>
-                </div>
-                <div className="h-7 w-px bg-black/10" />
-                <div>
-                  <p className="text-[10px] text-[#9CA3AF] uppercase font-bold">Logout Time</p>
-                  <p className="text-sm font-extrabold text-[#DC2626] mt-0.5">02:00 PM</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setTimesheetModal("edit")}
-                  className="bg-[#7A0A17] text-white hover:bg-[#600712] px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-2xs ml-2"
-                >
-                  <Edit size={14} /> Edit
-                </button>
-              </div>
-            </div>
-
-            {/* Hourly Work Details Table */}
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <h3 className="text-base font-extrabold text-[#111827] mb-4">Hourly Work Details</h3>
-
-              <div className="overflow-x-auto border border-black/8 rounded-xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <HourlyWorkTable />
-                </table>
-
-                {/* Subtotal System Hours Bar */}
-                <div className="flex items-center justify-between px-4 py-2.5 bg-[#EFF6FF] text-[#1E40AF] font-extrabold text-xs border-t border-black/6">
-                  <span>Total Hours Calculated by System</span>
-                  <span className="text-sm">6.00h</span>
-                </div>
-              </div>
-
-              {/* Manual Entry Add Controls */}
-              <div className="mt-5 pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={() => setAddManualRowOpen(true)}
-                  className="border border-[#3B82F6] text-[#3B82F6] hover:bg-[#EFF6FF] px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 self-start transition-all"
-                >
-                  <Plus size={14} /> Add Row (Manual Entry)
-                </button>
-                <p className="text-xs text-[#DC2626] font-semibold">
-                  Note: All manual entries will require regularization or approval.
-                </p>
-              </div>
-
-              {/* Manual Entries Table */}
-              <div className="mt-4 overflow-x-auto border border-black/8 rounded-xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <TimesheetManualTable />
-                </table>
-
-                {/* Comment Rejection Bar */}
-                <div className="flex items-center justify-between px-4 py-2 bg-[#FFF1F2] border-t border-black/6 text-xs font-bold">
-                  <span className="text-[#4B5563]">
-                    <span className="text-[#3B82F6]">Comment:</span> We can't give you leave on that particular date.
-                  </span>
-                  <span className="text-[#DC2626] font-extrabold">Regularization Rejected</span>
-                </div>
-
-                {/* Subtotal Manual Hours Bar */}
-                <div className="flex items-center justify-between px-4 py-2.5 bg-[#EFF6FF] text-[#1E40AF] font-extrabold text-xs border-t border-black/6">
-                  <span>Total Hours Calculated by Manual</span>
-                  <span className="text-sm">3.00h</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Work Summary Footer */}
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <h4 className="text-sm font-extrabold text-[#111827] mb-3">Hourly Work Details</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="border border-black/8 rounded-xl p-3.5 text-center">
-                  <p className="text-[11px] font-bold text-[#6B7280]">Total Working Hours</p>
-                  <p className="text-lg font-black text-[#3B82F6] mt-1">9.00h</p>
-                </div>
-                <div className="border border-black/8 rounded-xl p-3.5 text-center">
-                  <p className="text-[11px] font-bold text-[#6B7280]">Break Hours</p>
-                  <p className="text-lg font-black text-[#F59E0B] mt-1">1.00h</p>
-                </div>
-                <div className="border border-black/8 rounded-xl p-3.5 text-center">
-                  <p className="text-[11px] font-bold text-[#6B7280]">System Calculated</p>
-                  <p className="text-lg font-black text-[#3B82F6] mt-1">6.00h</p>
-                </div>
-                <div className="border border-black/8 rounded-xl p-3.5 text-center">
-                  <p className="text-[11px] font-bold text-[#6B7280]">Manual Calculated</p>
-                  <p className="text-lg font-black text-[#3B82F6] mt-1">3.00h</p>
                 </div>
               </div>
             </div>
@@ -2361,7 +2396,7 @@ export default function HrmsPage() {
         )}
 
         {/* Placeholder View for remaining tabs */}
-        {!["Summary", "Attendance", "Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset"].includes(activeTab) && (
+        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset"].includes(activeTab) && (
           <div className="bg-white border border-black/8 rounded-2xl p-12 text-center my-6 shadow-sm">
             <div className="size-16 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
               <FileText size={28} />
