@@ -345,15 +345,25 @@ function BoardToolbar({ search, onSearchChange, perPage, onPerPageChange, view, 
 
 /* ───────────────────────── Lead card ───────────────────────── */
 
-function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal, onMoveStage }) {
+function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal, onMoveStage, onOpenDeal }) {
   const temperature = TEMPERATURE_STYLES[lead.temperature];
   const priority = PRIORITY_STYLES[lead.priority];
 
   const urgentHrs = lead.hrs <= 8;
+  const canOpenDeal = true;
 
   return (
     <div
-      className="bg-white border border-black/8 rounded-xl p-3.5 flex flex-col gap-3 border-l-4"
+      role={canOpenDeal ? "button" : undefined}
+      tabIndex={canOpenDeal ? 0 : undefined}
+      onClick={() => canOpenDeal && onOpenDeal?.(lead, stageKey)}
+      onKeyDown={(e) => {
+        if (canOpenDeal && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onOpenDeal?.(lead, stageKey);
+        }
+      }}
+      className={`bg-white border border-black/8 rounded-xl p-3.5 flex flex-col gap-3 border-l-4 ${canOpenDeal ? "cursor-pointer hover:shadow-sm" : ""}`}
       style={{ borderLeftColor: stageColor }}
     >
       {/* Name row */}
@@ -365,7 +375,7 @@ function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal
           </span>
           <p className="text-[10px] text-[#9CA3AF]">{lead.mmlId}</p>
         </div>
-        <button type="button" className="p-1 text-[#9CA3AF] hover:text-[#111] rounded-md hover:bg-black/4 transition-colors shrink-0" aria-label="More options">
+        <button type="button" onClick={(e) => e.stopPropagation()} className="p-1 text-[#9CA3AF] hover:text-[#111] rounded-md hover:bg-black/4 transition-colors shrink-0" aria-label="More options">
           <MoreVertical size={15} />
         </button>
       </div>
@@ -375,7 +385,10 @@ function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal
         <Pill tone={temperature}>{lead.temperature}</Pill>
         <button
           type="button"
-          onClick={() => onOpenScoreModal?.(lead)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenScoreModal?.(lead);
+          }}
           className="inline-flex items-center gap-1 text-[11px] font-bold text-[#111] shrink-0 hover:bg-[#F3F4F6] px-1.5 py-0.5 rounded transition-colors"
           title="Click to view Lead Score Details"
         >
@@ -413,6 +426,7 @@ function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal
           </span>
           <button
             type="button"
+            onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center gap-1 text-[#3B82F6] font-semibold bg-[#E8F2FE] border border-[#BFDBFE] rounded-md px-2 py-0.5 hover:bg-[#DBE9FD] transition-colors shrink-0"
           >
             <Link2 size={11} /> Join
@@ -454,7 +468,10 @@ function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal
       {nextStageLabel ? (
         <button
           type="button"
-          onClick={() => onMoveStage?.(lead, stageKey)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveStage?.(lead, stageKey);
+          }}
           className="w-full inline-flex items-center justify-center gap-1.5 h-9 rounded-lg border border-[#7A0A17]/25 text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#FCF5F6] transition-colors"
         >
           Move to {nextStageLabel} <ArrowRight size={13} />
@@ -470,7 +487,7 @@ function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal
 
 /* ───────────────────────── Column ───────────────────────── */
 
-function PipelineColumn({ stage, leads, nextStageId, onOpenScoreModal, onMoveStage }) {
+function PipelineColumn({ stage, leads, nextStageId, onOpenScoreModal, onMoveStage, onOpenDeal }) {
   return (
     <div className="flex flex-col w-[280px] shrink-0 bg-[#F7F8FA] border border-black/6 rounded-2xl overflow-hidden">
       <div className="flex items-center justify-between gap-2 px-3.5 py-3 bg-white border-b border-black/8">
@@ -498,6 +515,7 @@ function PipelineColumn({ stage, leads, nextStageId, onOpenScoreModal, onMoveSta
               nextStageLabel={nextStageId}
               onOpenScoreModal={onOpenScoreModal}
               onMoveStage={onMoveStage}
+              onOpenDeal={onOpenDeal}
             />
           ))
         )}
@@ -521,7 +539,7 @@ const TABLE_COLS = [
   { key: "actions",    label: "Actions" },
 ];
 
-function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage }) {
+function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDeal }) {
   const getValue = useCallback((row, key) => {
     if (key === "stage") return `${row.stage.id} ${row.stage.label}`;
     if (key === "owner") return OWNER.name;
@@ -579,7 +597,13 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage }) {
                         <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: stage.color }} />
                         <div>
                           <div className="flex items-center gap-1">
-                            <span className="text-[12.5px] font-semibold text-[#111]">{lead.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => onOpenDeal?.(lead, stage.id)}
+                              className="text-[12.5px] font-semibold text-[#111] hover:text-[#7A0A17] hover:underline"
+                            >
+                              {lead.name}
+                            </button>
                             {lead.starred && <Star size={11} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />}
                           </div>
                           <p className="text-[10px] text-[#9CA3AF]">{lead.mmlId}</p>
@@ -595,7 +619,7 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage }) {
 
                     {/* Stage */}
                     <td className="px-3 py-2.5 whitespace-nowrap">
-                      {["P0", "P1", "P4"].includes(stage.id) ? (
+                      {["P0", "P1", "P4", "P5"].includes(stage.id) ? (
                         <button
                           type="button"
                           onClick={() => onMoveStage?.(lead, stage.id)}
@@ -908,6 +932,22 @@ export default function PipelineBoard() {
     toast.success(`Lead "${lead.name}" successfully moved to P2 Data Collection!`);
   };
 
+  const handleMoveToP3 = (lead) => {
+    setLeadsData((prev) => {
+      const from = (prev.P2 || []).filter((l) => l.id !== lead.id);
+      return { ...prev, P2: from, P3: [{ ...lead, completion: 80 }, ...(prev.P3 || [])] };
+    });
+    toast.success(`Lead "${lead.name}" moved to P3 Visit / Video!`);
+  };
+
+  const handleMoveToP4 = (lead) => {
+    setLeadsData((prev) => {
+      const from = (prev.P3 || []).filter((l) => l.id !== lead.id);
+      return { ...prev, P3: from, P4: [{ ...lead, completion: 90 }, ...(prev.P4 || [])] };
+    });
+    toast.success(`Lead "${lead.name}" moved to P4 Negotiation!`);
+  };
+
   const handleMoveToP5 = (lead) => {
     setLeadsData((prev) => {
       const p4Filtered = (prev.P4 || []).filter((l) => l.id !== lead.id);
@@ -918,6 +958,7 @@ export default function PipelineBoard() {
         P5: [updatedLead, ...(prev.P5 || [])],
       };
     });
+    toast.success(`Lead "${lead.name}" moved to P5 Payment!`);
   };
 
   const handleMoveToP6 = (lead) => {
@@ -930,20 +971,38 @@ export default function PipelineBoard() {
         P6: [updatedLead, ...(prev.P6 || [])],
       };
     });
+    toast.success(`Lead "${lead.name}" moved to P6 Handover!`);
+  };
+
+  const handleOpenDeal = (lead, stageKey) => {
+    setActiveLead(lead);
+    setDealTargetStage(stageKey);
+    setSubView("deal-detail");
   };
 
   const handleMoveStage = (lead, stageKey) => {
-    setActiveLead(lead);
     if (stageKey === "P0") {
+      setActiveLead(lead);
       setSubView("move-p1");
     } else if (stageKey === "P1") {
+      setActiveLead(lead);
       setSubView("move-p2");
+    } else if (stageKey === "P2") {
+      handleMoveToP3(lead);
+      setSubView(null);
+      setActiveLead(null);
+    } else if (stageKey === "P3") {
+      handleMoveToP4(lead);
+      setSubView(null);
+      setActiveLead(null);
     } else if (stageKey === "P4") {
-      setDealTargetStage("P5");
-      setSubView("deal-detail");
+      handleMoveToP5(lead);
+      setSubView(null);
+      setActiveLead(null);
     } else if (stageKey === "P5") {
-      setDealTargetStage("P6");
-      setSubView("deal-detail");
+      handleMoveToP6(lead);
+      setSubView(null);
+      setActiveLead(null);
     }
   };
 
@@ -1007,10 +1066,9 @@ export default function PipelineBoard() {
     return (
       <DealDetailPage
         lead={activeLead}
-        targetStage={dealTargetStage}
+        currentStage={dealTargetStage}
         onBack={() => { setSubView(null); setActiveLead(null); }}
-        onMoveToP5={handleMoveToP5}
-        onMoveToP6={handleMoveToP6}
+        onAdvance={handleMoveStage}
       />
     );
   }
@@ -1067,6 +1125,7 @@ export default function PipelineBoard() {
                 nextStageId={nextStageId}
                 onOpenScoreModal={(lead) => setSelectedScoreLead(lead)}
                 onMoveStage={handleMoveStage}
+                onOpenDeal={handleOpenDeal}
               />
             ))}
           </div>
@@ -1075,6 +1134,7 @@ export default function PipelineBoard() {
             flatLeads={flatLeads}
             onOpenScoreModal={(lead) => setSelectedScoreLead(lead)}
             onMoveStage={handleMoveStage}
+            onOpenDeal={handleOpenDeal}
           />
         )}
       </div>

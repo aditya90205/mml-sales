@@ -68,18 +68,46 @@ const DEAL_DEFAULTS = {
   fieldsFilledNote: "11 of 14 mandatory fields filled. P1 remains locked until all sections show Complete",
 };
 
+const STAGE_LABELS = {
+  P0: "P0 Prospect",
+  P1: "P1 Qualified",
+  P2: "P2 Data Collection",
+  P3: "P3 Visit / Video",
+  P4: "P4 Negotiation",
+  P5: "P5 Payment",
+  P6: "P6 Handover",
+};
+
+const NEXT_STAGE = {
+  P0: "P1",
+  P1: "P2",
+  P2: "P3",
+  P3: "P4",
+  P4: "P5",
+  P5: "P6",
+};
+
+const LOCK_NOTES = {
+  P0: "Qualify the lead and capture intent before this deal can move to P1.",
+  P1: "Complete data collection requirements before this deal can move to P2.",
+  P2: "Log a visit or video call before this deal can move to P3.",
+  P3: "Finish negotiation checks before this deal can move to P4.",
+  P4: "The approved discount has not been applied to a quote yet, and one KYC document is outstanding.",
+  P5: "Complete payment and the handover checklist before this deal can move to P6.",
+};
+
 function initials(name = "") {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 }
 
 /**
- * Deal detail screen for Move to P5 (from P4) and Move to P6 (from P5).
- * Payments and P6 Checklist stay blurred until the P6 flow.
+ * Deal detail opened by clicking any pipeline card (P0–P6).
+ * Payments and P6 Checklist stay blurred until P5.
  */
-export default function DealDetailPage({ lead, onBack, onMoveToP5, onMoveToP6, targetStage = "P5" }) {
+export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAdvance }) {
   const [activeTab, setActiveTab] = useState("overview");
-  const isP6Flow = targetStage === "P6";
-  const lateTabsUnlocked = isP6Flow;
+  const lateTabsUnlocked = currentStage === "P5" || currentStage === "P6";
+  const nextStage = NEXT_STAGE[currentStage];
   const tabs = BASE_TABS.map((tab) =>
     tab.key === "payments" || tab.key === "p6" ? { ...tab, locked: !lateTabsUnlocked } : tab
   );
@@ -89,22 +117,16 @@ export default function DealDetailPage({ lead, onBack, onMoveToP5, onMoveToP6, t
     return {
       ...DEAL_DEFAULTS,
       dealCode,
-      stageLabel: isP6Flow ? "P5 Payment" : "P4 Negotiation",
+      stageLabel: STAGE_LABELS[currentStage] || STAGE_LABELS.P4,
       name: lead?.name || "Ananya Gupta",
     };
-  }, [lead, isP6Flow]);
+  }, [lead, currentStage]);
 
   const handleMarkLost = () => toast.info(`${deal.name} marked as lost.`);
   const handleMoveToCold = () => toast.info(`${deal.name} moved to Cold.`);
   const handleConfirmMove = () => {
-    if (isP6Flow) {
-      onMoveToP6?.(lead);
-      toast.success(`${deal.name} moved to P6 Handover!`);
-    } else {
-      onMoveToP5?.(lead);
-      toast.success(`${deal.name} moved to P5 Payment!`);
-    }
-    onBack?.();
+    if (!nextStage) return;
+    onAdvance?.(lead, currentStage);
   };
 
   const renderTab = () => {
@@ -142,19 +164,17 @@ export default function DealDetailPage({ lead, onBack, onMoveToP5, onMoveToP6, t
         {/* Locked-stage banner */}
         <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-2xl px-4 py-3.5 flex items-center gap-3 flex-wrap">
           <p className="text-[13px] text-[#111] min-w-0 flex-1">
-            {isP6Flow ? (
+            {nextStage ? (
               <>
-                <span className="font-bold">P6 handover is ready.</span>{" "}
+                <span className="font-bold">{nextStage} is locked.</span>{" "}
                 <span className="text-[#6B7280]">
-                  Payments and the P6 checklist are unlocked. Complete them, then move the deal to Service.
+                  {LOCK_NOTES[currentStage] || "Complete the required steps for this stage before advancing."}
                 </span>
               </>
             ) : (
               <>
-                <span className="font-bold">P5 is locked.</span>{" "}
-                <span className="text-[#6B7280]">
-                  The approved discount has not been applied to a quote yet, and one KYC document is outstanding.
-                </span>
+                <span className="font-bold">Onboarding complete.</span>{" "}
+                <span className="text-[#6B7280]">This deal is at P6 handover. No further pipeline move is required.</span>
               </>
             )}
           </p>
@@ -186,18 +206,20 @@ export default function DealDetailPage({ lead, onBack, onMoveToP5, onMoveToP6, t
             >
               Cancel
             </button>
-            <button
-              type="button"
-              onClick={handleConfirmMove}
-              className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
-            >
-              {isP6Flow ? "Move to P6" : "Move to P5"}
-            </button>
+            {nextStage && (
+              <button
+                type="button"
+                onClick={handleConfirmMove}
+                className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
+              >
+                Move to {nextStage}
+              </button>
+            )}
           </div>
         </div>
 
         {/* Stage progress */}
-        <StageStepper activeStageId={isP6Flow ? "P5" : "P4"} />
+        <StageStepper activeStageId={currentStage} />
 
         {/* Deal header + tabs */}
         <div className="bg-white border border-black/8 rounded-2xl overflow-hidden">
