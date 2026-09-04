@@ -40,7 +40,6 @@ import {
   Hand,
   CalendarCheck,
   CalendarPlus,
-  Timer,
 } from "lucide-react";
 import { USER } from "../components/layout/TopBar";
 import Modal from "../components/ui/Modal";
@@ -239,12 +238,12 @@ function AttendanceDayCell({ d, onRegularize }) {
     <>
       <div
         ref={ref}
-        className="flex flex-col items-center gap-1.5 w-7 text-center cursor-pointer"
+        className="flex flex-col items-center gap-1.5 flex-1 min-w-0 text-center cursor-pointer"
         onMouseEnter={open}
         onMouseLeave={scheduleClose}
       >
         <span className="text-[10px] font-bold text-[#9CA3AF]">{d.day}</span>
-        <span className="text-[10px] font-extrabold text-[#111827]">{d.week}</span>
+        <span className="text-[10px] font-extrabold text-[#111827] whitespace-nowrap">{d.week}</span>
         {d.status === "P" && (
           <span className="size-6 rounded-full bg-[#DCFCE7] text-[#15803D] grid place-items-center text-xs font-bold">✓</span>
         )}
@@ -490,14 +489,6 @@ function Pagination({ page, totalPages, totalItems, pageSize, itemLabel, onChang
     </div>
   );
 }
-
-const ATTENDANCE_KPI_CARDS = [
-  { title: "Total Present Days", value: "21 Days", sub: "Out of 30 Days", icon: CalendarCheck, iconBg: "#DCFCE7", iconColor: "#16A34A" },
-  { title: "Late Days", value: "4 Days", sub: "Total late arrivals", icon: Clock, iconBg: "#FEE2E2", iconColor: "#DC2626" },
-  { title: "Total Leaves", value: "2 Days", sub: "Casual: 1  Sick: 1", icon: CalendarPlus, iconBg: "#FEF3C7", iconColor: "#D97706" },
-  { title: "Half Days", value: "2 Days", sub: "Total half days", icon: Coffee, iconBg: "#F3E8FF", iconColor: "#7C3AED" },
-  { title: "Total Working Hours", value: "186h 30m", sub: "Monthly Total", icon: Timer, iconBg: "#DBEAFE", iconColor: "#2563EB" },
-];
 
 const HOURLY_WORK_ROWS = [
   { start: "09:00:00 AM", end: "10:00:35 AM", module: "Calendar", description: "Meetings with clients", by: "System", hours: "1.00h" },
@@ -918,6 +909,21 @@ export default function HrmsPage() {
     if (d.status === "1/2") return sum + 0.5;
     return sum;
   }, 0);
+  const attendanceKpis = useMemo(() => {
+    const totalDays = attendanceDays.length;
+    const presentDays = attendanceDays.filter((d) => d.status === "P").length;
+    const lateDays = attendanceDays.filter((d) => d.status === "P" && d.timesheet.login === "09:15 AM").length;
+    const leaveDays = attendanceDays.filter((d) => d.status === "X").length;
+    const halfDays = attendanceDays.filter((d) => d.status === "1/2").length;
+    const grand = Number.isInteger(attendancePresent) ? String(attendancePresent) : attendancePresent.toFixed(1);
+    return [
+      { title: "Total Present Days", value: `${presentDays} Days`, sub: `Out of ${totalDays} Days`, icon: CalendarCheck, iconBg: "#DCFCE7", iconColor: "#16A34A" },
+      { title: "Late Days", value: `${lateDays} Days`, sub: "Total late arrivals", icon: Clock, iconBg: "#FEE2E2", iconColor: "#DC2626" },
+      { title: "Total Leaves", value: `${leaveDays} Days`, sub: "Absent days this month", icon: CalendarPlus, iconBg: "#FEF3C7", iconColor: "#D97706" },
+      { title: "Half Days", value: `${halfDays} Days`, sub: "Total half days", icon: Coffee, iconBg: "#F3E8FF", iconColor: "#7C3AED" },
+      { title: "Grand Total", value: `${grand}/${totalDays}`, sub: "Present days this month", icon: BarChart3, iconBg: "#DBEAFE", iconColor: "#2563EB" },
+    ];
+  }, [attendanceDays, attendancePresent]);
 
   // Expenses & Leaves State
   const [expenses, setExpenses] = useState(INITIAL_EXPENSES);
@@ -1650,7 +1656,7 @@ export default function HrmsPage() {
         {activeTab === "Attendance & Timesheet" && (
           <div className="flex flex-col gap-6">
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-              {ATTENDANCE_KPI_CARDS.map((card) => (
+              {attendanceKpis.map((card) => (
                 <AttendanceStatCard key={card.title} {...card} />
               ))}
             </div>
@@ -1679,8 +1685,8 @@ export default function HrmsPage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto pb-2 scrollbar-none">
-                <div className="flex items-center gap-2 min-w-max">
+              <div className="w-full overflow-x-auto pb-1 scrollbar-none">
+                <div className="flex w-full min-w-[680px] items-start justify-between gap-1">
                   {attendanceDays.map((d, index) => (
                     <AttendanceDayCell
                       key={index}
@@ -1688,14 +1694,6 @@ export default function HrmsPage() {
                       onRegularize={() => setTimesheetModal("edit")}
                     />
                   ))}
-
-                  <div className="flex flex-col items-center justify-center pl-4 border-l border-black/10">
-                    <span className="text-[10px] font-extrabold text-[#6B7280] uppercase whitespace-nowrap">Grand Total</span>
-                    <span className="text-sm font-black text-[#111827] mt-2">
-                      {Number.isInteger(attendancePresent) ? attendancePresent : attendancePresent.toFixed(1)}
-                      <span className="text-xs text-[#9CA3AF]">/{attendanceDays.length}</span>
-                    </span>
-                  </div>
                 </div>
               </div>
 
