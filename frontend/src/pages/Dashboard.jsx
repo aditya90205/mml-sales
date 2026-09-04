@@ -37,7 +37,6 @@ import {
   Megaphone,
   ArrowUpRight,
   Info,
-  CalendarDays,
   Globe,
   Share2,
   Smartphone,
@@ -74,8 +73,8 @@ import leaderboardIcon from "../assets/leaderboard.png";
 /* ───────────────────────── Data ───────────────────────── */
 
 const PERIOD_OPTIONS = [
+  { id: "this_week",    label: "This Week" },
   { id: "this_month",   label: "This Month" },
-  { id: "last_month",   label: "Last Month" },
   { id: "this_quarter", label: "This Quarter" },
   { id: "this_year",    label: "This Year" },
 ];
@@ -332,10 +331,10 @@ const RECENT_ANNOUNCEMENTS = [
 
 /* ───────────────────────── Header controls ───────────────────────── */
 
-function PeriodSelect({ value, onChange }) {
+function PeriodSelect({ value, onChange, compact = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const selected = PERIOD_OPTIONS.find((o) => o.id === value) ?? PERIOD_OPTIONS[0];
+  const selected = PERIOD_OPTIONS.find((o) => o.id === value) ?? PERIOD_OPTIONS[1];
 
   useEffect(() => {
     const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -348,7 +347,9 @@ function PeriodSelect({ value, onChange }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-2 h-[38px] px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+        className={`inline-flex items-center gap-2 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors ${
+          compact ? "h-9" : "h-[38px]"
+        }`}
       >
         {selected.label}
         <ChevronDown size={14} className={`text-[#9CA3AF] transition-transform ${open ? "rotate-180" : ""}`} />
@@ -815,7 +816,7 @@ function GoalsPerformanceCard() {
             <p className="text-[11px] text-[#9CA3AF]">Total Leads</p>
           </div>
         </div>
-        <PeriodSelect value={period} onChange={setPeriod} />
+        <PeriodSelect value={period} onChange={setPeriod} compact />
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
@@ -976,7 +977,7 @@ function LeadsConversionCard() {
             <p className="text-[11px] text-[#9CA3AF]">Total Leads</p>
           </div>
         </div>
-        <PeriodSelect value={period} onChange={setPeriod} />
+        <PeriodSelect value={period} onChange={setPeriod} compact />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
@@ -1155,6 +1156,7 @@ function AcquisitionDonutLabel({ cx, cy, midAngle, innerRadius, outerRadius, per
 }
 
 function ClientAcquisitionCard() {
+  const [period, setPeriod] = useState("this_month");
   const { sorted, sort, toggle } = useTableSort(ACQUISITION_SOURCES, { defaultKey: "source" });
 
   return (
@@ -1169,12 +1171,7 @@ function ClientAcquisitionCard() {
             <p className="text-[11px] text-[#9CA3AF]">Leads by Source</p>
           </div>
         </div>
-        <button
-          type="button"
-          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-        >
-          <CalendarDays size={13} /> This Month
-        </button>
+        <PeriodSelect value={period} onChange={setPeriod} compact />
       </div>
 
       <div className="flex flex-col md:flex-row items-center gap-4">
@@ -1464,7 +1461,7 @@ function stageKeyFromLead(lead) {
 }
 
 function MyLeadsCard({ onOpenDeal, onMoveStage }) {
-  const [period, setPeriod] = useState("today");
+  const [period, setPeriod] = useState("this_month");
   const [leadsView, setLeadsView] = useState("team");
   const [leadsViewOpen, setLeadsViewOpen] = useState(false);
   const [scoreLead, setScoreLead] = useState(null);
@@ -1539,17 +1536,12 @@ function MyLeadsCard({ onOpenDeal, onMoveStage }) {
             <SlidersHorizontal size={13} /> Filter
           </button>
 
-          <button
-            type="button"
-            onClick={() => setPeriod((p) => (p === "today" ? "week" : "today"))}
-            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-          >
-            {period === "today" ? "Today" : "This Week"}
-            <span className="inline-flex items-center gap-0.5 text-[#16A34A] font-semibold">
+          <div className="flex items-center gap-2">
+            <PeriodSelect value={period} onChange={setPeriod} compact />
+            <span className="inline-flex items-center gap-0.5 text-[12px] text-[#16A34A] font-semibold">
               <TrendingUp size={12} /> 12% (34)
             </span>
-            <ChevronDown size={14} className="text-[#9CA3AF]" />
-          </button>
+          </div>
 
           <button
             type="button"
