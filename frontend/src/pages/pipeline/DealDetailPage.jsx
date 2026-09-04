@@ -15,6 +15,7 @@ import AuditTab from "./deal-tabs/AuditTab";
 import PaymentsTab from "./deal-tabs/PaymentsTab";
 import P6ChecklistTab from "./deal-tabs/P6ChecklistTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
+import { EMPTY, atLeast, historyUntil, maybeDash, stageGateFor } from "./deal-tabs/stageContent.jsx";
 
 const BASE_TABS = [
   { key: "overview",  label: "Overview" },
@@ -40,30 +41,16 @@ const DEAL_DEFAULTS = {
   profession: "Chartered Accountant",
   familyIncomeBand: "₹60L–₹1Cr p.a.",
   nextAction: "First contact call",
-  packageInterest: "—",
-  weightedValueLabel: "Weighted value at P0",
+  packageInterest: "Premium",
+  weightedValueLabel: "Weighted value",
   weightedValue: "₹30,600",
   weightedValueNote:
     "60% probability at P4 Negotiation. Rises to 90% once the discount is approved and the quote is accepted.",
-  stageGate: [
-    { label: "Intake form complete", done: false },
-    { label: "Video call or visit logged", done: true },
-    { label: "Package selected & quoted", done: true },
-    { label: "Discount approved (if any)", done: false },
-    { label: "KYC documents uploaded", done: false },
-  ],
   rmFlags: [
     { label: "Preference mismatch", tone: "amber" },
     { label: "High-demand criteria", tone: "red" },
     { label: "Parent is decision maker", tone: "blue" },
     { label: "Cross-branch price enquiry", tone: "amber" },
-  ],
-  stageHistory: [
-    { stage: "P0 Prospect",       entered: "24 Jun", exited: "25 Jun", duration: "1d",  sla: "3d", status: "Within SLA" },
-    { stage: "P1 Qualified",      entered: "25 Jun", exited: "27 Jun", duration: "2d",  sla: "5d", status: "Within SLA" },
-    { stage: "P2 Data Collection", entered: "27 Jun", exited: "1 Jul", duration: "4d",  sla: "7d", status: "Within SLA" },
-    { stage: "P3 Visit / Video",  entered: "1 Jul",  exited: "19 Jul", duration: "18d", sla: "10d", status: "Breached" },
-    { stage: "P4 Negotiation",    entered: "19 Jul", exited: "-",      duration: "9d",  sla: "7d", status: "Breached - escalated" },
   ],
   fieldsFilledNote: "11 of 14 mandatory fields filled. P1 remains locked until all sections show Complete",
 };
@@ -102,11 +89,11 @@ function initials(name = "") {
 
 /**
  * Deal detail opened by clicking any pipeline card (P0–P6).
- * Payments and P6 Checklist stay blurred until P5.
+ * Tab data fills in by stage. Payments and P6 Checklist stay blurred until P5.
  */
 export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAdvance }) {
   const [activeTab, setActiveTab] = useState("overview");
-  const lateTabsUnlocked = currentStage === "P5" || currentStage === "P6";
+  const lateTabsUnlocked = atLeast(currentStage, "P5");
   const nextStage = NEXT_STAGE[currentStage];
   const tabs = BASE_TABS.map((tab) =>
     tab.key === "payments" || tab.key === "p6" ? { ...tab, locked: !lateTabsUnlocked } : tab
@@ -114,11 +101,32 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
 
   const deal = useMemo(() => {
     const dealCode = (lead?.mmlId || "MML - D - 10471").replace(/\s*-\s*/g, "-");
+    const detailsFilled = atLeast(currentStage, "P1");
+    const flagsFilled = atLeast(currentStage, "P2");
     return {
       ...DEAL_DEFAULTS,
       dealCode,
       stageLabel: STAGE_LABELS[currentStage] || STAGE_LABELS.P4,
       name: lead?.name || "Ananya Gupta",
+      dealValue: currentStage === "P0" ? "₹25,000" : DEAL_DEFAULTS.dealValue,
+      packageInterest: maybeDash(detailsFilled, DEAL_DEFAULTS.packageInterest),
+      leadScore: maybeDash(detailsFilled, DEAL_DEFAULTS.leadScore),
+      enquiryBy: maybeDash(detailsFilled, DEAL_DEFAULTS.enquiryBy),
+      lookingFor: maybeDash(detailsFilled, DEAL_DEFAULTS.lookingFor),
+      areaOfHouse: maybeDash(detailsFilled, DEAL_DEFAULTS.areaOfHouse),
+      profession: maybeDash(detailsFilled, DEAL_DEFAULTS.profession),
+      familyIncomeBand: maybeDash(detailsFilled, DEAL_DEFAULTS.familyIncomeBand),
+      nextAction: maybeDash(detailsFilled, DEAL_DEFAULTS.nextAction),
+      rmFlags: DEAL_DEFAULTS.rmFlags.map((flag) =>
+        flagsFilled ? flag : { ...flag, label: EMPTY }
+      ),
+      stageGate: stageGateFor(currentStage),
+      stageHistory: historyUntil(currentStage),
+      fieldsFilledNote: detailsFilled
+        ? DEAL_DEFAULTS.fieldsFilledNote
+        : "0 of 14 mandatory fields filled. P1 remains locked until intake is complete",
+      weightedValue: maybeDash(detailsFilled, DEAL_DEFAULTS.weightedValue),
+      weightedValueNote: maybeDash(detailsFilled, DEAL_DEFAULTS.weightedValueNote),
     };
   }, [lead, currentStage]);
 
@@ -134,23 +142,33 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
       case "overview":
         return <OverviewTab deal={deal} />;
       case "intake":
-        return <IntakeFormTab />;
+        return <IntakeFormTab empty={currentStage === "P0"} />;
       case "visits":
-        return <VisitsMeetingsTab />;
+        return <VisitsMeetingsTab empty={!atLeast(currentStage, "P3")} />;
       case "package":
-        return <PackageQuoteTab />;
+        return <PackageQuoteTab empty={!atLeast(currentStage, "P4")} />;
       case "discounts":
-        return <DiscountApprovalsTab />;
+        return <DiscountApprovalsTab empty={!atLeast(currentStage, "P4")} />;
       case "documents":
-        return <DocumentsKycTab />;
+        return <DocumentsKycTab empty={!atLeast(currentStage, "P5")} />;
       case "notes":
-        return <NotesRmFlagsTab />;
+        return <NotesRmFlagsTab empty={!atLeast(currentStage, "P2")} />;
       case "audit":
-        return <AuditTab />;
+        return <AuditTab currentStage={currentStage} />;
       case "payments":
-        return <PaymentsTab locked={!lateTabsUnlocked} />;
+        return (
+          <PaymentsTab
+            locked={!lateTabsUnlocked}
+            empty={!atLeast(currentStage, "P5")}
+          />
+        );
       case "p6":
-        return <P6ChecklistTab locked={!lateTabsUnlocked} />;
+        return (
+          <P6ChecklistTab
+            locked={!lateTabsUnlocked}
+            allUnchecked={!atLeast(currentStage, "P5")}
+          />
+        );
       default:
         return <ComingSoonTab label={tabs.find((t) => t.key === activeTab)?.label || "This tab"} />;
     }
@@ -272,7 +290,7 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
         </div>
 
         {/* Tab content */}
-        {renderTab()}
+        <div key={`${currentStage}-${activeTab}`}>{renderTab()}</div>
       </div>
     </div>
   );

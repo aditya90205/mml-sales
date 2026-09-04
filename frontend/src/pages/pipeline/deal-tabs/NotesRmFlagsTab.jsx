@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import StatusPill from "../../../components/common/StatusPill";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
+import { dashRows, EMPTY } from "./stageContent.jsx";
 
 const INITIAL_NOTES = [
   {
@@ -37,7 +38,7 @@ const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
 /** Notes & RM Flags tab — qualitative context that carries into service handover. */
-export default function NotesRmFlagsTab() {
+export default function NotesRmFlagsTab({ empty = false }) {
   const [notes, setNotes] = useState(INITIAL_NOTES);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -72,6 +73,8 @@ export default function NotesRmFlagsTab() {
     setOpen(false);
   };
 
+  const visibleNotes = dashRows(notes, empty);
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-5">
       <div className="flex items-start justify-between gap-3 mb-1 flex-wrap">
@@ -83,7 +86,7 @@ export default function NotesRmFlagsTab() {
       </div>
 
       <div className="flex flex-col divide-y divide-black/5">
-        {notes.map((n, i) => (
+        {visibleNotes.map((n, i) => (
           <div key={`${n.title}-${i}`} className="flex items-start gap-3 py-3.5 flex-wrap sm:flex-nowrap">
             <span
               className={`size-[18px] rounded-full grid place-items-center shrink-0 mt-0.5 ${
@@ -96,7 +99,11 @@ export default function NotesRmFlagsTab() {
               <p className="text-[13px] font-semibold text-[#111]">{n.title}</p>
               <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 leading-relaxed">{n.note}</p>
             </div>
-            <StatusPill tone={n.tone}>{n.tag}</StatusPill>
+            {n.tag === EMPTY ? (
+              <span className="text-[12px] text-[#9CA3AF]">-</span>
+            ) : (
+              <StatusPill tone={n.tone}>{n.tag}</StatusPill>
+            )}
           </div>
         ))}
       </div>

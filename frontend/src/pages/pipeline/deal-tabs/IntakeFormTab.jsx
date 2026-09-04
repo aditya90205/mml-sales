@@ -6,11 +6,19 @@ import StatusPill from "../../../components/common/StatusPill";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
 
-const INITIAL_SECTIONS = [
+const MISSING_SECTIONS = [
+  { section: "1 · Who is the client",           fields: 6, filled: "-", status: "-" },
+  { section: "2 · Family background",           fields: 4, filled: "-", status: "-" },
+  { section: "3 · Profession & income",         fields: 3, filled: "-", status: "-" },
+  { section: "4 · Area of house & lifestyle",   fields: 3, filled: "-", status: "-" },
+  { section: "5 · Package interest",            fields: 2, filled: "-", status: "-" },
+];
+
+const COMPLETE_SECTIONS = [
   { section: "1 · Who is the client",           fields: 6, filled: 6, status: "Complete" },
-  { section: "2 · Family background",           fields: 4, filled: 4, status: "2 missing" },
-  { section: "3 · Profession & income",         fields: 3, filled: 1, status: "Complete" },
-  { section: "4 · Area of house & lifestyle",   fields: 3, filled: 2, status: "2 missing" },
+  { section: "2 · Family background",           fields: 4, filled: 4, status: "Complete" },
+  { section: "3 · Profession & income",         fields: 3, filled: 3, status: "Complete" },
+  { section: "4 · Area of house & lifestyle",   fields: 3, filled: 3, status: "Complete" },
   { section: "5 · Package interest",            fields: 2, filled: 2, status: "Complete" },
 ];
 
@@ -24,8 +32,8 @@ const COLUMNS = [
 const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
-export default function IntakeFormTab() {
-  const [sections, setSections] = useState(INITIAL_SECTIONS);
+export default function IntakeFormTab({ empty = false }) {
+  const [sections, setSections] = useState(empty ? MISSING_SECTIONS : COMPLETE_SECTIONS);
   const { sorted, sort, toggle } = useTableSort(sections, { defaultKey: "section" });
   const [open, setOpen] = useState(false);
   const [profession, setProfession] = useState("");
@@ -58,7 +66,7 @@ export default function IntakeFormTab() {
         columns={COLUMNS}
         sort={sort}
         onSort={toggle}
-        footnote="11 of 14 mandatory fields filled. P1 remains locked until all sections show Complete"
+        footnote={empty ? "0 of 14 mandatory fields filled. P1 remains locked until all sections show Complete" : "14 of 14 mandatory fields filled."}
       >
         {sorted.map((row) => (
           <tr key={row.section} className="border-b border-black/5 last:border-0">
@@ -66,7 +74,11 @@ export default function IntakeFormTab() {
             <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.fields}</td>
             <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.filled}</td>
             <td className="px-3 py-2.5 whitespace-nowrap">
-              <StatusPill tone={row.status === "Complete" ? "green" : "amber"}>{row.status}</StatusPill>
+              {row.status === "-" ? (
+                <span className="text-[12px] text-[#9CA3AF]">-</span>
+              ) : (
+                <StatusPill tone={row.status === "Complete" ? "green" : "amber"}>{row.status}</StatusPill>
+              )}
             </td>
           </tr>
         ))}

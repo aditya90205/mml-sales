@@ -5,6 +5,7 @@ import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
+import { dashRows, EMPTY } from "./stageContent.jsx";
 
 const PACKAGES = [
   {
@@ -75,8 +76,8 @@ const DATA_REVEAL_LEVELS = [
   { label: "Level 4 — Address", note: "Exclusive only · Branch Head approval", done: false },
 ];
 
-function PackageCard({ pkg, onSelect }) {
-  const isHighlighted = pkg.selected;
+function PackageCard({ pkg, empty = false, onSelect }) {
+  const isHighlighted = !empty && pkg.selected;
   return (
     <div
       className={`relative rounded-2xl border p-5 flex flex-col ${
@@ -85,13 +86,13 @@ function PackageCard({ pkg, onSelect }) {
     >
       {pkg.upsellBadge && (
         <span className="absolute -top-3 right-4 inline-flex items-center gap-1 text-[10.5px] font-bold text-white bg-[#7A0A17] rounded-full px-2.5 py-1">
-          <TrendingUp size={11} /> UPSELL · {pkg.upsellBadge}
+          <TrendingUp size={11} /> UPSELL · {empty ? EMPTY : pkg.upsellBadge}
         </span>
       )}
 
       <h3 className="text-[15px] font-bold text-[#111]">{pkg.name}</h3>
-      <p className="text-[24px] font-bold text-[#111] mt-1">{pkg.price}</p>
-      <p className="text-[11.5px] text-[#9CA3AF] mt-0.5">{pkg.subtitle}</p>
+      <p className="text-[24px] font-bold text-[#111] mt-1">{empty ? EMPTY : pkg.price}</p>
+      <p className="text-[11.5px] text-[#9CA3AF] mt-0.5">{empty ? EMPTY : pkg.subtitle}</p>
 
       <ul className="flex flex-col gap-2 mt-4 flex-1">
         {pkg.features.map((f) => (
@@ -173,9 +174,10 @@ function UpsellBanner() {
 const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
-function QuotationCard() {
+function QuotationCard({ empty = false }) {
   const [items, setItems] = useState(QUOTE_ITEMS);
-  const { sorted, sort, toggle } = useTableSort(items, { defaultKey: "item" });
+  const visibleItems = dashRows(items, empty, ["item"]);
+  const { sorted, sort, toggle } = useTableSort(visibleItems, { defaultKey: "item" });
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState("");
   const [quoted, setQuoted] = useState("");
@@ -208,7 +210,9 @@ function QuotationCard() {
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <h3 className="text-[14px] font-bold text-[#111]">Quotation — MML-D-10428</h3>
         <div className="flex items-center gap-2">
-          <span className="text-[10.5px] font-semibold text-[#6B7280] bg-[#F1F2F4] rounded-full px-2.5 py-1">Draft v2</span>
+          <span className="text-[10.5px] font-semibold text-[#6B7280] bg-[#F1F2F4] rounded-full px-2.5 py-1">
+            {empty ? EMPTY : "Draft v2"}
+          </span>
           <TabHeaderButton onClick={() => setOpen(true)}>Add add-on</TabHeaderButton>
         </div>
       </div>
@@ -294,12 +298,12 @@ function QuotationCard() {
         {QUOTE_SUMMARY.map((row) => (
           <div key={row.label} className="flex items-center justify-between text-[12.5px] text-[#4B5563]">
             <span>{row.label}</span>
-            <span className="font-medium text-[#111]">{row.value}</span>
+            <span className="font-medium text-[#111]">{empty ? EMPTY : row.value}</span>
           </div>
         ))}
         <div className="flex items-center justify-between text-[13.5px] font-bold text-[#111] pt-2 border-t border-black/6 mt-1">
           <span>Total payable</span>
-          <span>₹53,100</span>
+          <span>{empty ? EMPTY : "₹53,100"}</span>
         </div>
       </div>
 
@@ -325,8 +329,9 @@ function QuotationCard() {
   );
 }
 
-function DataRevealCard() {
+function DataRevealCard({ empty = false }) {
   const [levels, setLevels] = useState(DATA_REVEAL_LEVELS);
+  const visibleLevels = dashRows(levels, empty, ["label"]);
 
   const toggleLevel = (label) => {
     setLevels((prev) => prev.map((level) => (level.label === label ? { ...level, done: !level.done } : level)));
@@ -337,7 +342,7 @@ function DataRevealCard() {
       <div>
         <h3 className="text-[14px] font-bold text-[#111] mb-3.5">Progressive data reveal by package</h3>
         <div className="flex flex-col gap-3.5">
-          {levels.map((level) => (
+          {visibleLevels.map((level) => (
             <button
               key={level.label}
               type="button"
@@ -359,9 +364,9 @@ function DataRevealCard() {
       <div>
         <h4 className="text-[13px] font-bold text-[#111] mb-2.5">Cross-branch price check</h4>
         <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl p-3.5">
-          <p className="text-[12.5px] font-semibold text-[#111]">Client contacted Rajouri branch.</p>
+          <p className="text-[12.5px] font-semibold text-[#111]">{empty ? EMPTY : "Client contacted Rajouri branch."}</p>
           <p className="text-[11.5px] text-[#6B7280] mt-1 leading-relaxed">
-            Quoted ₹51,000 there too. Flagged to your Branch Head on 29 Jun
+            {empty ? EMPTY : "Quoted ₹51,000 there too. Flagged to your Branch Head on 29 Jun"}
           </p>
         </div>
       </div>
@@ -370,7 +375,7 @@ function DataRevealCard() {
 }
 
 /** Package & Quote tab — package catalogue, upsell prompt and the live quotation. */
-export default function PackageQuoteTab() {
+export default function PackageQuoteTab({ empty = false }) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -394,15 +399,15 @@ export default function PackageQuoteTab() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {PACKAGES.map((pkg) => (
-          <PackageCard key={pkg.key} pkg={pkg} onSelect={(p) => toast.success(`${p.name} package selected.`)} />
+          <PackageCard key={pkg.key} pkg={pkg} empty={empty} onSelect={(p) => toast.success(`${p.name} package selected.`)} />
         ))}
       </div>
 
       <UpsellBanner />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-5 items-start">
-        <QuotationCard />
-        <DataRevealCard />
+        <QuotationCard empty={empty} />
+        <DataRevealCard empty={empty} />
       </div>
     </div>
   );

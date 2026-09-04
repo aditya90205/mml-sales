@@ -5,6 +5,7 @@ import TableCard from "../../../components/common/TableCard";
 import StatusPill from "../../../components/common/StatusPill";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
+import { dashRows } from "./stageContent.jsx";
 
 const INITIAL_APPROVALS = [
   { raised: "28 July", requested: "₹51,000", discount: "14.7%", approver: "Pooja Sharma", level: "Branch Head", status: "Pending" },
@@ -25,9 +26,9 @@ const COLUMNS = [
 const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
-export default function DiscountApprovalsTab() {
+export default function DiscountApprovalsTab({ empty = false }) {
   const [rows, setRows] = useState(INITIAL_APPROVALS);
-  const { sorted, sort, toggle } = useTableSort(rows, { defaultKey: "raised" });
+  const { sorted, sort, toggle } = useTableSort(dashRows(rows, empty), { defaultKey: "raised" });
   const [open, setOpen] = useState(false);
   const [requested, setRequested] = useState("");
   const [discount, setDiscount] = useState("");
@@ -76,7 +77,11 @@ export default function DiscountApprovalsTab() {
             <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.approver}</td>
             <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.level}</td>
             <td className="px-3 py-2.5 whitespace-nowrap">
-              <StatusPill tone={STATUS_TONES[row.status] || "gray"}>{row.status}</StatusPill>
+              {row.status === "-" ? (
+                <span className="text-[12px] text-[#9CA3AF]">-</span>
+              ) : (
+                <StatusPill tone={STATUS_TONES[row.status] || "gray"}>{row.status}</StatusPill>
+              )}
             </td>
           </tr>
         ))}

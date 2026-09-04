@@ -4,6 +4,7 @@ import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import StatusPill from "../../../components/common/StatusPill";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
+import { dashRows, EMPTY } from "./stageContent.jsx";
 
 const INITIAL_DOCUMENTS = [
   { label: "Aadhaar card — client",    note: "Uploaded 29 Jun · auto-verified via KYC API",             done: true,  status: "Verified",    tone: "green" },
@@ -19,7 +20,7 @@ const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
 /** Documents & KYC tab — per-document verification checklist. */
-export default function DocumentsKycTab() {
+export default function DocumentsKycTab({ empty = false }) {
   const fileRef = useRef(null);
   const [docs, setDocs] = useState(INITIAL_DOCUMENTS);
   const [open, setOpen] = useState(false);
@@ -63,6 +64,8 @@ export default function DocumentsKycTab() {
     );
   };
 
+  const visibleDocs = dashRows(docs, empty, ["label"]);
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-5">
       <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
@@ -74,7 +77,7 @@ export default function DocumentsKycTab() {
       </div>
 
       <div className="flex flex-col divide-y divide-black/5">
-        {docs.map((doc, i) => (
+        {visibleDocs.map((doc, i) => (
           <div key={`${doc.label}-${i}`} className="flex items-center gap-3 py-3.5 flex-wrap sm:flex-nowrap">
             <ChecklistCheck done={doc.done} onClick={() => toggleDoc(i)} label={doc.label} />
             <button type="button" onClick={() => toggleDoc(i)} className="min-w-0 flex-1 text-left">
@@ -82,7 +85,11 @@ export default function DocumentsKycTab() {
               <p className="text-[11.5px] text-[#9CA3AF] mt-0.5">{doc.note}</p>
             </button>
             <button type="button" onClick={() => toggleDoc(i)}>
-              <StatusPill tone={doc.tone}>{doc.status}</StatusPill>
+              {doc.status === EMPTY ? (
+                <span className="text-[12px] text-[#9CA3AF]">-</span>
+              ) : (
+                <StatusPill tone={doc.tone}>{doc.status}</StatusPill>
+              )}
             </button>
           </div>
         ))}

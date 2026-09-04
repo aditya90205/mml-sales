@@ -5,8 +5,9 @@ import TableCard from "../../../components/common/TableCard";
 import StatusPill from "../../../components/common/StatusPill";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
+import { dashRows } from "./stageContent.jsx";
 
-const INITIAL_VISITS = [
+const INITIAL_ROWS = [
   {
     date: "02 Jul 2026", type: "Home visit", venue: "Greater Kailash",
     attendedBy: "Client + both parents", gps: "28.5621, 77.2410",
@@ -37,9 +38,9 @@ const COLUMNS = [
 const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
-export default function VisitsMeetingsTab() {
-  const [visits, setVisits] = useState(INITIAL_VISITS);
-  const { sorted, sort, toggle } = useTableSort(visits, { defaultKey: "date" });
+export default function VisitsMeetingsTab({ empty = false }) {
+  const [rows, setRows] = useState(INITIAL_ROWS);
+  const { sorted, sort, toggle } = useTableSort(dashRows(rows, empty), { defaultKey: "date" });
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ type: "Home visit", venue: "", attendedBy: "", outcome: "" });
 
@@ -49,7 +50,7 @@ export default function VisitsMeetingsTab() {
       toast.error("Please add venue and who attended.");
       return;
     }
-    setVisits((prev) => [
+    setRows((prev) => [
       {
         date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
         type: form.type,
@@ -70,7 +71,7 @@ export default function VisitsMeetingsTab() {
   return (
     <>
       <TableCard
-        title="Visits"
+        title="Visits & Meetings"
         subtitle="Home and office visits with GPS, selfie and activity form"
         action={<TabHeaderButton onClick={() => setOpen(true)}>Log visit</TabHeaderButton>}
         columns={COLUMNS}
@@ -85,7 +86,11 @@ export default function VisitsMeetingsTab() {
             <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.attendedBy}</td>
             <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.gps}</td>
             <td className="px-3 py-2.5 whitespace-nowrap">
-              <StatusPill tone={row.captureTone}>{row.capture}</StatusPill>
+              {row.capture === "-" ? (
+                <span className="text-[12px] text-[#9CA3AF]">-</span>
+              ) : (
+                <StatusPill tone={row.captureTone}>{row.capture}</StatusPill>
+              )}
             </td>
             <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.outcome}</td>
           </tr>

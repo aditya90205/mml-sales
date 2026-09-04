@@ -14,9 +14,18 @@ const INITIAL_CHECKLIST = [
   { label: "Service assignment",                 note: "Blocked until all items verified",                       status: "Blocked",   tone: "red",   done: false, blocked: true },
 ];
 
-/** P6 Checklist tab — blurred until Move to P6. */
-export default function P6ChecklistTab({ locked = true }) {
-  const [items, setItems] = useState(INITIAL_CHECKLIST);
+const UNCHECKED_CHECKLIST = INITIAL_CHECKLIST.map((item) => ({
+  ...item,
+  done: false,
+  blocked: false,
+  note: "-",
+  status: "-",
+  tone: "gray",
+}));
+
+/** P6 Checklist tab — blurred until P6. */
+export default function P6ChecklistTab({ locked = true, allUnchecked = false }) {
+  const [items, setItems] = useState(allUnchecked ? UNCHECKED_CHECKLIST : INITIAL_CHECKLIST);
 
   const toggleItem = (label) => {
     setItems((prev) =>
@@ -57,7 +66,7 @@ export default function P6ChecklistTab({ locked = true }) {
               <p className="text-[13px] font-semibold text-[#111]">{item.label}</p>
               <p className="text-[11.5px] text-[#9CA3AF] mt-0.5">{item.note}</p>
             </div>
-            <StatusPill tone={item.tone}>{item.status}</StatusPill>
+            <StatusPill tone={item.tone}>{item.status === "-" ? "-" : item.status}</StatusPill>
           </button>
         ))}
       </div>
@@ -67,7 +76,7 @@ export default function P6ChecklistTab({ locked = true }) {
   if (!locked) return content;
 
   return (
-    <LockedTabOverlay title="P6 Checklist is locked." message="This screen will open at P6 stage.">
+    <LockedTabOverlay title="P6 Checklist is locked." message="This screen will open at P5 stage.">
       {content}
     </LockedTabOverlay>
   );

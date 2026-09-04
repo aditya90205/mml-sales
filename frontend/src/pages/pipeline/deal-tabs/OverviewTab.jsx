@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, Sparkles } from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
@@ -22,7 +22,7 @@ function DetailField({ label, value }) {
   return (
     <div>
       <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{label}</p>
-      <p className="text-[13px] font-semibold text-[#111] mt-1">{value || "—"}</p>
+      <p className="text-[13px] font-semibold text-[#111] mt-1">{value || "-"}</p>
     </div>
   );
 }
@@ -87,15 +87,12 @@ function DealDetailsCard({ deal }) {
         <DetailField label="Deal code" value={deal.dealCode} />
         <DetailField label="Stage" value={deal.stageLabel} />
         <DetailField label="Package interest" value={deal.packageInterest} />
-
         <DetailField label="Deal value" value={deal.dealValue} />
         <DetailField label="Lead source" value={deal.leadSource} />
         <DetailField label="Lead score" value={deal.leadScore} />
-
         <DetailField label="Enquiry made by" value={deal.enquiryBy} />
         <DetailField label="Looking for" value={deal.lookingFor} />
         <DetailField label="Area of house" value={deal.areaOfHouse} />
-
         <DetailField label="Profession" value={deal.profession} />
         <DetailField label="Family income band" value={deal.familyIncomeBand} />
         <DetailField label="Next action" value={deal.nextAction} />
@@ -171,7 +168,7 @@ function StageHistoryCard({ rows, footnote }) {
           </thead>
           <tbody>
             {sorted.map((row) => {
-              const status = SLA_STATUS_STYLES[row.status] || SLA_STATUS_STYLES["Within SLA"];
+              const status = SLA_STATUS_STYLES[row.status];
               return (
                 <tr key={row.stage} className="border-b border-black/5 last:border-0">
                   <td className="px-2.5 py-2.5 text-[12.5px] font-semibold text-[#111] whitespace-nowrap">{row.stage}</td>
@@ -180,12 +177,16 @@ function StageHistoryCard({ rows, footnote }) {
                   <td className="px-2.5 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.duration}</td>
                   <td className="px-2.5 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.sla}</td>
                   <td className="px-2.5 py-2.5 whitespace-nowrap">
-                    <span
-                      className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md"
-                      style={{ color: status.color, backgroundColor: status.bg }}
-                    >
-                      {row.status}
-                    </span>
+                    {status ? (
+                      <span
+                        className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md"
+                        style={{ color: status.color, backgroundColor: status.bg }}
+                      >
+                        {row.status}
+                      </span>
+                    ) : (
+                      row.status
+                    )}
                   </td>
                 </tr>
               );
@@ -205,6 +206,10 @@ function StageHistoryCard({ rows, footnote }) {
 
 function StageGateCard({ items: initialItems }) {
   const [items, setItems] = useState(initialItems);
+
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
 
   const toggleItem = (label) => {
     setItems((prev) => prev.map((item) => (item.label === label ? { ...item, done: !item.done } : item)));
@@ -248,15 +253,16 @@ function RmFlagsCard({ flags }) {
       <h3 className="text-[14px] font-bold text-[#111]">RM flags</h3>
       <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 mb-3.5">Visible to the service team at handover (BRD S3.10)</p>
       <div className="grid grid-cols-2 gap-2">
-        {flags.map((flag) => {
-          const tone = RM_FLAG_TONES[flag.tone] || RM_FLAG_TONES.amber;
+        {flags.map((flag, i) => {
+          const empty = !flag.label || flag.label === "-";
+          const tone = empty ? { color: "#9CA3AF", bg: "#F3F4F6" } : RM_FLAG_TONES[flag.tone] || RM_FLAG_TONES.amber;
           return (
             <span
-              key={flag.label}
+              key={`${flag.label}-${i}`}
               className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg text-center"
               style={{ color: tone.color, backgroundColor: tone.bg }}
             >
-              {flag.label}
+              {flag.label || "-"}
             </span>
           );
         })}

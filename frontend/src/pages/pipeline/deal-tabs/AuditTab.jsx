@@ -2,6 +2,7 @@ import { toast } from "react-toastify";
 import { useTableSort } from "../../../components/common/useTableSort.jsx";
 import TableCard from "../../../components/common/TableCard";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
+import { maskAuditLog } from "./stageContent.jsx";
 
 const AUDIT_LOG = [
   { timestamp: "28 Jul 09:14", actor: "Rohit Khanna", action: "Viewed masked mobile",     object: "Client contact", source: "CRM Web" },
@@ -19,8 +20,9 @@ const COLUMNS = [
   { label: "Source", key: "source" },
 ];
 
-export default function AuditTab() {
-  const { sorted, sort, toggle } = useTableSort(AUDIT_LOG, { defaultKey: "timestamp" });
+export default function AuditTab({ currentStage = "P0" }) {
+  const rows = maskAuditLog(currentStage, AUDIT_LOG);
+  const { sorted, sort, toggle } = useTableSort(rows);
 
   return (
     <TableCard
