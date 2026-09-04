@@ -134,25 +134,24 @@ function CategoryChip({ id, checked, onToggle, count }) {
 }
 
 function EventBlock({ ev, onClick, dense }) {
-  const cat = CATEGORIES[ev.category];
   return (
     <button
       type="button"
       onClick={() => onClick(ev)}
-      className="w-full text-left rounded-lg px-2.5 py-2 border-l-[3px] hover:brightness-[0.97] transition-[filter] shrink-0"
-      style={{ backgroundColor: cat.bg, borderLeftColor: cat.dot }}
+      className="w-full text-left rounded-lg px-2.5 py-2 hover:brightness-[0.97] transition-[filter] shrink-0"
+      style={{ backgroundColor: "#EFF6FF", border: "1px solid #386FB833" }}
     >
       {!dense && (
-        <p className="text-[11px] font-semibold" style={{ color: cat.text }}>
+        <p className="text-[11px] font-semibold text-[#386FB8]">
           {fmtTime(ev.startH)} - {fmtTime(ev.endH)}
         </p>
       )}
-      <p className="text-[12.5px] font-bold text-[#1a1a1a] leading-snug mt-0.5">{ev.title}</p>
+      <p className="text-[12.5px] font-bold text-[#41703D] leading-snug mt-0.5">{ev.title}</p>
       {!dense && ev.meta?.location && (
         <p className="text-[11px] text-[#6B7280] mt-0.5">({ev.meta.location})</p>
       )}
       {!dense && ev.meta?.link && (
-        <p className="text-[11px] font-semibold mt-1" style={{ color: cat.text }}>
+        <p className="text-[11px] font-semibold text-[#386FB8] mt-1">
           {ev.meta.link}
         </p>
       )}
