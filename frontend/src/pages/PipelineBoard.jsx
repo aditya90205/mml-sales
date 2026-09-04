@@ -871,6 +871,7 @@ export default function PipelineBoard() {
   const [leadsData, setLeadsData]       = useState(LEADS_BY_STAGE);
   const [subView, setSubView]           = useState(null); // null | "add-p0" | "move-p1" | "move-p2" | "deal-detail"
   const [activeLead, setActiveLead]     = useState(null);
+  const [dealTargetStage, setDealTargetStage] = useState("P5");
 
   const handleAddProspect = (newLead) => {
     const leadWithId = { id: `p0-${Date.now()}`, ...newLead };
@@ -919,6 +920,18 @@ export default function PipelineBoard() {
     });
   };
 
+  const handleMoveToP6 = (lead) => {
+    setLeadsData((prev) => {
+      const p5Filtered = (prev.P5 || []).filter((l) => l.id !== lead.id);
+      const updatedLead = { ...lead, temperature: "Warm", completion: 100 };
+      return {
+        ...prev,
+        P5: p5Filtered,
+        P6: [updatedLead, ...(prev.P6 || [])],
+      };
+    });
+  };
+
   const handleMoveStage = (lead, stageKey) => {
     setActiveLead(lead);
     if (stageKey === "P0") {
@@ -926,6 +939,10 @@ export default function PipelineBoard() {
     } else if (stageKey === "P1") {
       setSubView("move-p2");
     } else if (stageKey === "P4") {
+      setDealTargetStage("P5");
+      setSubView("deal-detail");
+    } else if (stageKey === "P5") {
+      setDealTargetStage("P6");
       setSubView("deal-detail");
     }
   };
@@ -990,8 +1007,10 @@ export default function PipelineBoard() {
     return (
       <DealDetailPage
         lead={activeLead}
+        targetStage={dealTargetStage}
         onBack={() => { setSubView(null); setActiveLead(null); }}
         onMoveToP5={handleMoveToP5}
+        onMoveToP6={handleMoveToP6}
       />
     );
   }

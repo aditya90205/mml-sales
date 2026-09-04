@@ -90,6 +90,7 @@ const HRMS_TABS = [
   "Goals & Reviews",
   "Documents",
   "Asset",
+  "Awards & Contest"
 ];
 
 const INITIAL_EXPENSES = [

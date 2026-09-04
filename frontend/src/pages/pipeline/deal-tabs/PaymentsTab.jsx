@@ -24,7 +24,7 @@ const COLUMNS = [
 const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
-export default function PaymentsTab() {
+export default function PaymentsTab({ locked = true }) {
   const [payments, setPayments] = useState(INITIAL_PAYMENTS);
   const { sorted, sort, toggle } = useTableSort(payments, { defaultKey: "date" });
   const [open, setOpen] = useState(false);
@@ -54,9 +54,7 @@ export default function PaymentsTab() {
     setOpen(false);
   };
 
-  return (
-    <>
-      <LockedTabOverlay title="Payment is locked." message="This screen will open at P5 stage.">
+  const table = (
         <TableCard
           title="Payments"
           subtitle="Part payments, receipts and reconciliation"
@@ -78,7 +76,17 @@ export default function PaymentsTab() {
             </tr>
           ))}
         </TableCard>
-      </LockedTabOverlay>
+  );
+
+  return (
+    <>
+      {locked ? (
+        <LockedTabOverlay title="Payment is locked." message="This screen will open at P6 stage.">
+          {table}
+        </LockedTabOverlay>
+      ) : (
+        table
+      )}
 
       <Modal
         open={open}

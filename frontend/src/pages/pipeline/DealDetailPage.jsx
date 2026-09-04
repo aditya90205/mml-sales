@@ -16,7 +16,7 @@ import PaymentsTab from "./deal-tabs/PaymentsTab";
 import P6ChecklistTab from "./deal-tabs/P6ChecklistTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
 
-const TABS = [
+const BASE_TABS = [
   { key: "overview",  label: "Overview" },
   { key: "intake",    label: "Intake Form" },
   { key: "visits",    label: "Visits & Meetings" },
@@ -25,22 +25,9 @@ const TABS = [
   { key: "documents", label: "Documents & KYC" },
   { key: "notes",     label: "Notes & RM Flags" },
   { key: "audit",     label: "Audit" },
-  { key: "payments",  label: "Payments",     locked: true },
-  { key: "p6",        label: "P6 Checklist", locked: true },
+  { key: "payments",  label: "Payments" },
+  { key: "p6",        label: "P6 Checklist" },
 ];
-
-/** Tabs with no dependency on `deal` — Overview is handled separately since it needs deal data. */
-const TAB_CONTENT = {
-  intake:    <IntakeFormTab />,
-  visits:    <VisitsMeetingsTab />,
-  package:   <PackageQuoteTab />,
-  discounts: <DiscountApprovalsTab />,
-  documents: <DocumentsKycTab />,
-  notes:     <NotesRmFlagsTab />,
-  audit:     <AuditTab />,
-  payments:  <PaymentsTab />,
-  p6:        <P6ChecklistTab />,
-};
 
 /** Static demo fields shown on the overview tab, layered over the lead's board data. */
 const DEAL_DEFAULTS = {
@@ -86,29 +73,65 @@ function initials(name = "") {
 }
 
 /**
- * Deal detail screen shown when advancing a P4 Negotiation deal to P5
- * Payment. Renders the stage progress bar, deal header and the tabbed
- * detail views (Overview today; remaining tabs land as they're built).
+ * Deal detail screen for Move to P5 (from P4) and Move to P6 (from P5).
+ * Payments and P6 Checklist stay blurred until the P6 flow.
  */
-export default function DealDetailPage({ lead, onBack, onMoveToP5 }) {
+export default function DealDetailPage({ lead, onBack, onMoveToP5, onMoveToP6, targetStage = "P5" }) {
   const [activeTab, setActiveTab] = useState("overview");
+  const isP6Flow = targetStage === "P6";
+  const lateTabsUnlocked = isP6Flow;
+  const tabs = BASE_TABS.map((tab) =>
+    tab.key === "payments" || tab.key === "p6" ? { ...tab, locked: !lateTabsUnlocked } : tab
+  );
 
   const deal = useMemo(() => {
     const dealCode = (lead?.mmlId || "MML - D - 10471").replace(/\s*-\s*/g, "-");
     return {
       ...DEAL_DEFAULTS,
       dealCode,
-      stageLabel: "P0 Prospect",
+      stageLabel: isP6Flow ? "P5 Payment" : "P4 Negotiation",
       name: lead?.name || "Ananya Gupta",
     };
-  }, [lead]);
+  }, [lead, isP6Flow]);
 
   const handleMarkLost = () => toast.info(`${deal.name} marked as lost.`);
   const handleMoveToCold = () => toast.info(`${deal.name} moved to Cold.`);
-  const handleMoveToP5 = () => {
-    onMoveToP5?.(lead);
-    toast.success(`${deal.name} moved to P5 Payment!`);
+  const handleConfirmMove = () => {
+    if (isP6Flow) {
+      onMoveToP6?.(lead);
+      toast.success(`${deal.name} moved to P6 Handover!`);
+    } else {
+      onMoveToP5?.(lead);
+      toast.success(`${deal.name} moved to P5 Payment!`);
+    }
     onBack?.();
+  };
+
+  const renderTab = () => {
+    switch (activeTab) {
+      case "overview":
+        return <OverviewTab deal={deal} />;
+      case "intake":
+        return <IntakeFormTab />;
+      case "visits":
+        return <VisitsMeetingsTab />;
+      case "package":
+        return <PackageQuoteTab />;
+      case "discounts":
+        return <DiscountApprovalsTab />;
+      case "documents":
+        return <DocumentsKycTab />;
+      case "notes":
+        return <NotesRmFlagsTab />;
+      case "audit":
+        return <AuditTab />;
+      case "payments":
+        return <PaymentsTab locked={!lateTabsUnlocked} />;
+      case "p6":
+        return <P6ChecklistTab locked={!lateTabsUnlocked} />;
+      default:
+        return <ComingSoonTab label={tabs.find((t) => t.key === activeTab)?.label || "This tab"} />;
+    }
   };
 
   return (
@@ -119,10 +142,21 @@ export default function DealDetailPage({ lead, onBack, onMoveToP5 }) {
         {/* Locked-stage banner */}
         <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-2xl px-4 py-3.5 flex items-center gap-3 flex-wrap">
           <p className="text-[13px] text-[#111] min-w-0 flex-1">
-            <span className="font-bold">P5 is locked.</span>{" "}
-            <span className="text-[#6B7280]">
-              The approved discount has not been applied to a quote yet, and one KYC document is outstanding.
-            </span>
+            {isP6Flow ? (
+              <>
+                <span className="font-bold">P6 handover is ready.</span>{" "}
+                <span className="text-[#6B7280]">
+                  Payments and the P6 checklist are unlocked. Complete them, then move the deal to Service.
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="font-bold">P5 is locked.</span>{" "}
+                <span className="text-[#6B7280]">
+                  The approved discount has not been applied to a quote yet, and one KYC document is outstanding.
+                </span>
+              </>
+            )}
           </p>
           <button
             type="button"
@@ -154,16 +188,16 @@ export default function DealDetailPage({ lead, onBack, onMoveToP5 }) {
             </button>
             <button
               type="button"
-              onClick={handleMoveToP5}
+              onClick={handleConfirmMove}
               className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
             >
-              Move to P5 
+              {isP6Flow ? "Move to P6" : "Move to P5"}
             </button>
           </div>
         </div>
 
         {/* Stage progress */}
-        <StageStepper activeStageId="P4" />
+        <StageStepper activeStageId={isP6Flow ? "P5" : "P4"} />
 
         {/* Deal header + tabs */}
         <div className="bg-white border border-black/8 rounded-2xl overflow-hidden">
@@ -211,18 +245,12 @@ export default function DealDetailPage({ lead, onBack, onMoveToP5 }) {
           </div>
 
           <div className="px-5">
-            <DealTabs tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
+            <DealTabs tabs={tabs} activeKey={activeTab} onChange={setActiveTab} />
           </div>
         </div>
 
         {/* Tab content */}
-        {activeTab === "overview" ? (
-          <OverviewTab deal={deal} />
-        ) : (
-          TAB_CONTENT[activeTab] || (
-            <ComingSoonTab label={TABS.find((t) => t.key === activeTab)?.label || "This tab"} />
-          )
-        )}
+        {renderTab()}
       </div>
     </div>
   );
