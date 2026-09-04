@@ -9,6 +9,7 @@ import BulkImportPage from "./pages/BulkImportPage";
 import TasksPage from "./pages/TasksPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import CalendarPage from "./pages/CalendarPage";
+import LoginPage from "./pages/LoginPage";
 import CampaignManagementPage from "./pages/CampaignManagementPage";
 import CreateCampaignPage from "./pages/CreateCampaignPage";
 import ClientDatabasePage from "./pages/ClientDatabasePage";
@@ -70,6 +71,9 @@ export default function App() {
       <Routes>
         {/* Root redirect */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+        {/* Auth */}
+        <Route path="/login" element={<LoginPage />} />
 
         {/* Dashboard */}
         <Route
