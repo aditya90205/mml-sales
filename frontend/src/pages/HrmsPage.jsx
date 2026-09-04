@@ -65,8 +65,8 @@ const LEAVE_BALANCE_TYPES = [
   { type: "Emergency Leave",   total: 23, used: 8, available: 15, info: "Short-notice leave for unforeseen personal emergencies." },
   { type: "Personal Leave",    total: 23, used: 8, available: 15, info: "Leave for personal matters not covered by other categories." },
   { type: "Casual Leave",      total: 23, used: 8, available: 15, info: "Short leave for everyday personal reasons." },
-  { type: "Study Leave",       total: 23, used: 8, available: 15, info: "Leave to attend exams, courses, or certifications." },
-  { type: "Marriage Leave",    total: 23, used: 8, available: 15, info: "Leave granted for an employee's own wedding." },
+  { type: "Study Leave",       total: 5,  used: 5, available: 0,  info: "Leave to attend exams, courses, or certifications." },
+  { type: "Marriage Leave",    total: 5,  used: 5, available: 0,  info: "Leave granted for an employee's own wedding." },
   { type: "Bereavement Leave", total: 23, used: 8, available: 15, info: "Leave following the loss of an immediate family member." },
 ];
 
@@ -827,7 +827,6 @@ export default function HrmsPage() {
   const [viewExpense, setViewExpense] = useState(null);
   const [applyLeaveOpen, setApplyLeaveOpen] = useState(false);
   const [applyLeaveFormOpen, setApplyLeaveFormOpen] = useState(false);
-  const [leaveMenuOpen, setLeaveMenuOpen] = useState(false);
   const [shiftChangeFormOpen, setShiftChangeFormOpen] = useState(false);
   const [shiftChangeRequests, setShiftChangeRequests] = useState(INITIAL_SHIFT_CHANGE_REQUESTS);
   const [sendMessageOpen, setSendMessageOpen] = useState(false);
@@ -918,6 +917,11 @@ export default function HrmsPage() {
 
   const handleApplyLeave = (e) => {
     e.preventDefault();
+    const selected = LEAVE_BALANCE_TYPES.find((lt) => lt.type === leaveForm.type);
+    if (!selected || selected.available <= 0) {
+      toast.error(`No ${leaveForm.type} balance remaining. You cannot apply for this category.`);
+      return;
+    }
     if (!leaveForm.startDate) return;
     const dateStr = leaveForm.endDate && leaveForm.endDate !== leaveForm.startDate
       ? `${leaveForm.startDate} - ${leaveForm.endDate}`
@@ -932,7 +936,8 @@ export default function HrmsPage() {
     setLeaves([newLeave, ...leaves]);
     toast.success("Leave application submitted successfully!");
     setLeaveForm({ type: "Casual Leave", startDate: "", endDate: "", comment: "" });
-    setApplyLeaveOpen(false);
+    setApplyLeaveFormOpen(false);
+    return true;
   };
 
   const filteredTrainings = INITIAL_TRAININGS.filter((t) =>
@@ -977,6 +982,11 @@ export default function HrmsPage() {
   const { sorted: sortedLeaveTypes, sort: leaveSort, toggle: toggleLeaveSort } = useTableSort(LEAVE_BALANCE_TYPES, {
     defaultKey: "type",
   });
+
+  const selectedLeaveBalance = LEAVE_BALANCE_TYPES.find((lt) => lt.type === leaveForm.type);
+  const selectedAvailable = selectedLeaveBalance?.available ?? 0;
+  const selectedPending = leaves.filter((l) => l.type === leaveForm.type && l.status === "Pending").length;
+  const canApplySelectedLeave = selectedAvailable > 0;
 
   return (
     <div className="flex flex-col flex-1 min-h-screen bg-[#F7F8FA] text-[#111827] font-sans">
@@ -1477,14 +1487,20 @@ export default function HrmsPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setApplyLeaveOpen(true)}
+                    onClick={() => setApplyLeaveFormOpen(true)}
                     className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-all shadow-2xs"
                   >
                     Apply Leave
                   </button>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b border-black/8 mb-3 text-xs font-bold shrink-0">
-                  <span className="text-[#374151]">Leave Balance</span>
+                  <button
+                    type="button"
+                    onClick={() => setApplyLeaveOpen(true)}
+                    className="text-[#2563EB] underline underline-offset-2 hover:text-[#1D4ED8]"
+                  >
+                    Leave Balance
+                  </button>
                   <span className="text-[#3B82F6]">1 day available</span>
                 </div>
                 <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-1">
@@ -2951,42 +2967,19 @@ export default function HrmsPage() {
       {/* 9. Leave Balances Overview Modal */}
       <Modal
         open={applyLeaveOpen}
-        onClose={() => { setApplyLeaveOpen(false); setLeaveMenuOpen(false); }}
+        onClose={() => setApplyLeaveOpen(false)}
         width="max-w-lg"
         title="Leave Balances"
       >
-        <div className="-mt-2 mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <img
-              src={USER.avatar}
-              alt={USER.name}
-              className="size-11 rounded-full object-cover shrink-0 ring-2 ring-[#7A0A17]/10"
-            />
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-[#111] truncate">{USER.name}</p>
-              <p className="text-xs text-[#6B7280]">Relationship Manager</p>
-            </div>
-          </div>
-          <div className="relative shrink-0">
-            <button
-              type="button"
-              onClick={() => setLeaveMenuOpen((v) => !v)}
-              className="p-1.5 rounded-lg text-[#6B7280] hover:bg-black/5 transition-colors"
-              aria-label="More options"
-            >
-              <MoreVertical size={18} />
-            </button>
-            {leaveMenuOpen && (
-              <div className="absolute right-0 top-[calc(100%+6px)] w-44 bg-white border border-black/10 rounded-xl shadow-lg z-10 overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => { setLeaveMenuOpen(false); setApplyLeaveFormOpen(true); }}
-                  className="w-full flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors"
-                >
-                  <Plus size={14} className="text-[#7A0A17]" /> Apply for Leave
-                </button>
-              </div>
-            )}
+        <div className="-mt-2 mb-4 flex items-center gap-3 min-w-0">
+          <img
+            src={USER.avatar}
+            alt={USER.name}
+            className="size-11 rounded-full object-cover shrink-0 ring-2 ring-[#7A0A17]/10"
+          />
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-[#111] truncate">{USER.name}</p>
+            <p className="text-xs text-[#6B7280]">Relationship Manager</p>
           </div>
         </div>
 
@@ -3030,7 +3023,7 @@ export default function HrmsPage() {
         open={applyLeaveFormOpen}
         onClose={() => setApplyLeaveFormOpen(false)}
         title="Apply for Leave"
-        subtitle="Available Balance: 15 days"
+        subtitle={`Available Balance: ${selectedAvailable} day${selectedAvailable === 1 ? "" : "s"}`}
         icon={<Calendar size={17} />}
         iconBg="#FDE9EC"
         iconColor="#7A0A17"
@@ -3044,13 +3037,18 @@ export default function HrmsPage() {
             >
               Cancel
             </button>
-            <button type="submit" form="apply-leave-form" className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl font-bold text-xs">
+            <button
+              type="submit"
+              form="apply-leave-form"
+              disabled={!canApplySelectedLeave}
+              className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+            >
               Submit Application
             </button>
           </>
         }
       >
-        <form id="apply-leave-form" onSubmit={(e) => { handleApplyLeave(e); setApplyLeaveFormOpen(false); }} className="space-y-3 text-xs">
+        <form id="apply-leave-form" onSubmit={handleApplyLeave} className="space-y-3 text-xs">
           <div>
             <label className="block font-bold text-[#374151] mb-1">Leave Type</label>
             <select
@@ -3059,9 +3057,15 @@ export default function HrmsPage() {
               className="w-full border border-black/15 rounded-xl p-2.5 font-semibold outline-none focus:border-[#7A0A17]"
             >
               {LEAVE_BALANCE_TYPES.map((lt) => (
-                <option key={lt.type} value={lt.type}>{lt.type}</option>
+                <option key={lt.type} value={lt.type}>
+                  {lt.type}
+                </option>
               ))}
             </select>
+            <p className="mt-1.5 text-[11px] font-semibold text-[#E8395B]">
+              {selectedPending} pending leave{selectedPending === 1 ? "" : "s"} in this category
+              {selectedAvailable === 0 ? " · 0 days available — you cannot apply" : ""}
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
