@@ -8,6 +8,10 @@ import HrmsPage from "./pages/HrmsPage";
 import BulkImportPage from "./pages/BulkImportPage";
 import TasksPage from "./pages/TasksPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
+import CampaignManagementPage from "./pages/CampaignManagementPage";
+import CreateCampaignPage from "./pages/CreateCampaignPage";
+import ClientDatabasePage from "./pages/ClientDatabasePage";
+import CreateGroupPage from "./pages/CreateGroupPage";
 import ProfileSettings from "./pages/ProfileSettings";
 
 // ── Placeholder for pages not yet built ──────────────────────────────────────
@@ -73,7 +77,11 @@ export default function App() {
         {/* ── Sales ── */}
         <Route
           path="/clients"
-          element={<LayoutRoute><Placeholder title="My Clients" /></LayoutRoute>}
+          element={<LayoutRoute><ClientDatabasePage /></LayoutRoute>}
+        />
+        <Route
+          path="/clients/create-group"
+          element={<LayoutRoute><CreateGroupPage /></LayoutRoute>}
         />
         <Route
           path="/sales/funnel"
@@ -108,6 +116,8 @@ export default function App() {
         <Route path="/pipeline"     element={<LayoutRoute><PipelineBoard /></LayoutRoute>} />
         <Route path="/leaderboard"  element={<LayoutRoute><LeaderboardPage /></LayoutRoute>} />
         <Route path="/contest"      element={<LayoutRoute><Placeholder title="Contest" /></LayoutRoute>} />
+        <Route path="/campaign/management" element={<LayoutRoute><CampaignManagementPage /></LayoutRoute>} />
+        <Route path="/campaign/create"     element={<LayoutRoute><CreateCampaignPage /></LayoutRoute>} />
 
         {/* ── Activities ── */}
         <Route
