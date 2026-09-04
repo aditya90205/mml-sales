@@ -392,9 +392,13 @@ function AssessmentBanner() {
 
       <p className="text-[13px] text-[#4B5563] leading-relaxed">
         You are pacing well against target and currently{" "}
-        <span className="text-[#2563EB] underline underline-offset-2">holding #2</span>{" "}
+        <Link to="/leaderboard" className="text-[#2563EB] underline underline-offset-2 hover:text-[#1D4ED8]">
+          holding #2
+        </Link>{" "}
         on the leaderboard, showing strong and consistent performance. However,{" "}
-        <span className="text-[#2563EB] underline underline-offset-2">2 high-value</span>{" "}
+        <Link to="/pipeline" className="text-[#2563EB] underline underline-offset-2 hover:text-[#1D4ED8]">
+          2 high-value
+        </Link>{" "}
         leads are approaching their 24-hour reassignment window. Prioritize those calls before anything else today.
       </p>
     </div>
