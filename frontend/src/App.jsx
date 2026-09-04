@@ -8,6 +8,7 @@ import HrmsPage from "./pages/HrmsPage";
 import BulkImportPage from "./pages/BulkImportPage";
 import TasksPage from "./pages/TasksPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
+import CalendarPage from "./pages/CalendarPage";
 import CampaignManagementPage from "./pages/CampaignManagementPage";
 import CreateCampaignPage from "./pages/CreateCampaignPage";
 import ClientDatabasePage from "./pages/ClientDatabasePage";
@@ -131,7 +132,7 @@ export default function App() {
 
         {/* ── Sidebar nav pages ── */}
         <Route path="/hrms"         element={<LayoutRoute><HrmsPage /></LayoutRoute>} />
-        <Route path="/calendar"     element={<LayoutRoute><Placeholder title="Calendar" /></LayoutRoute>} />
+        <Route path="/calendar"     element={<LayoutRoute><CalendarPage /></LayoutRoute>} />
         <Route path="/tasks"        element={<LayoutRoute><TasksPage /></LayoutRoute>} />
         <Route path="/bulk-upload"  element={<LayoutRoute><BulkImportPage /></LayoutRoute>} />
         <Route path="/pipeline"     element={<LayoutRoute><PipelineBoard /></LayoutRoute>} />
