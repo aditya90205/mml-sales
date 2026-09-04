@@ -105,12 +105,42 @@ const AI_PROMPTS = [
 const AI_TAGS = ["Summary of the month", "Tomorrow Meetings", "Yesterday Feedbacks"];
 
 const PRIORITY_ITEMS = [
-  "5 high-value leads waiting for follow-up",
-  "₹18,400 in discount approvals pending across 3 requests",
-  "2 client profiles awaiting completion before their meetings",
-  "You're at 74% of this month's ₹2.5L target",
-  "1 urgent complaint flagged — needs a same-day response",
-  "AI recommends contacting clients Ananya Verma and Vikram Chawla today — both are close to closing",
+  {
+    before: "5 high-value leads waiting for ",
+    link: "follow-up",
+    to: "/follow-ups",
+    after: "",
+  },
+  {
+    before: "₹18,400 in ",
+    link: "discount",
+    to: "/pipeline/discount-requests",
+    after: " approvals pending across 3 requests",
+  },
+  {
+    before: "2 ",
+    link: "client",
+    to: "/profiles",
+    after: " profiles awaiting completion before their meetings",
+  },
+  {
+    before: "You're at 74% of this month's ₹25L ",
+    link: "target",
+    to: "/targets",
+    after: "",
+  },
+  {
+    before: "1 urgent ",
+    link: "complaint",
+    to: "/reviews",
+    after: " flagged — needs a same-day response",
+  },
+  {
+    before: "AI recommends contacting ",
+    link: "clients",
+    to: "/clients",
+    after: " Ananya Verma and Vikram Chawla today — both are close to closing",
+  },
 ];
 
 /**
@@ -461,7 +491,16 @@ function AIAssistant() {
           {PRIORITY_ITEMS.map((item, i) => (
             <li key={i} className="flex items-start gap-2.5 text-[13px] text-[#374151]">
               <span className="size-[5px] rounded-full bg-[#C9CDD4] shrink-0 mt-[7px]" />
-              <span className="leading-relaxed">{item}</span>
+              <span className="leading-relaxed">
+                {item.before}
+                <Link
+                  to={item.to}
+                  className="text-[#2563EB] underline underline-offset-2 decoration-current hover:text-[#1D4ED8]"
+                >
+                  {item.link}
+                </Link>
+                {item.after}
+              </span>
             </li>
           ))}
         </ul>
