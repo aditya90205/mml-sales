@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   CheckCheck,
@@ -16,8 +16,10 @@ import {
   Trash2,
   UserRoundCheck,
   Users,
+  X,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import CampaignViewModal from "../components/campaign/CampaignViewModal.jsx";
 
 const INITIAL_CAMPAIGNS = [
   {
@@ -157,43 +159,45 @@ function IconBtn({ label, onClick, children }) {
   );
 }
 
-function LeadsByChannelPanel({ open, onClose }) {
-  const ref = useRef(null);
+function LeadsByChannelModal({ open, onClose }) {
   const max = Math.max(...LEADS_BY_CHANNEL.map((c) => c.value));
-
-  useEffect(() => {
-    if (!open) return;
-    const h = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) onClose();
-    };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, [open, onClose]);
 
   if (!open) return null;
 
   return (
-    <div
-      ref={ref}
-      className="absolute right-0 top-[calc(100%+8px)] w-[340px] bg-white border border-black/8 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-30 p-4"
-    >
-      <div className="flex items-baseline gap-2 mb-3">
-        <p className="text-sm font-bold text-[#111]">Leads by channel</p>
-        <p className="text-xs text-[#9CA3AF]">August to date</p>
-      </div>
-      <div className="flex flex-col gap-2.5">
-        {LEADS_BY_CHANNEL.map((c) => (
-          <div key={c.label} className="flex items-center gap-3 text-xs">
-            <span className="w-[92px] shrink-0 text-[#374151] font-medium truncate">{c.label}</span>
-            <span className="flex-1 h-2 rounded-full bg-black/6 overflow-hidden">
-              <span
-                className="block h-full rounded-full transition-all duration-500"
-                style={{ width: `${(c.value / max) * 100}%`, backgroundColor: c.color }}
-              />
-            </span>
-            <span className="w-6 shrink-0 text-right font-bold text-[#111]">{c.value}</span>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" aria-modal="true" role="dialog">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden />
+
+      <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-black/8 shrink-0">
+          <div>
+            <p className="text-base font-bold text-[#111]">Leads by channel</p>
+            <p className="text-xs text-[#9CA3AF] mt-0.5">August to date</p>
           </div>
-        ))}
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-lg text-[#6f7886] hover:bg-black/5 transition-colors shrink-0"
+            aria-label="Close"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-3">
+          {LEADS_BY_CHANNEL.map((c) => (
+            <div key={c.label} className="flex items-center gap-3 text-xs">
+              <span className="w-[100px] shrink-0 text-[#374151] font-medium truncate">{c.label}</span>
+              <span className="flex-1 h-2.5 rounded-full bg-black/6 overflow-hidden">
+                <span
+                  className="block h-full rounded-full transition-all duration-500"
+                  style={{ width: `${(c.value / max) * 100}%`, backgroundColor: c.color }}
+                />
+              </span>
+              <span className="w-7 shrink-0 text-right font-bold text-[#111]">{c.value}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -231,7 +235,8 @@ function usePagedTable(rows, searchKeys) {
 
 export default function CampaignManagementPage() {
   const [rows, setRows] = useState(INITIAL_CAMPAIGNS);
-  const [channelPanelOpen, setChannelPanelOpen] = useState(false);
+  const [channelModalOpen, setChannelModalOpen] = useState(false);
+  const [viewCampaign, setViewCampaign] = useState(null);
   const table = usePagedTable(rows, ["name", "tag", "target", "channel", "owner", "status"]);
 
   const toggleStatus = (id) => {
@@ -314,17 +319,14 @@ export default function CampaignManagementPage() {
               <Filter size={14} /> Filter
             </button>
 
-            <div className="relative shrink-0 ml-auto">
-              <button
-                type="button"
-                onClick={() => setChannelPanelOpen((v) => !v)}
-                className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-              >
-                Leads by Channel
-                <ChevronDown size={14} className={`text-[#9CA3AF] transition-transform ${channelPanelOpen ? "rotate-180" : ""}`} />
-              </button>
-              <LeadsByChannelPanel open={channelPanelOpen} onClose={() => setChannelPanelOpen(false)} />
-            </div>
+            <button
+              type="button"
+              onClick={() => setChannelModalOpen(true)}
+              className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors shrink-0 ml-auto"
+            >
+              Leads by Channel
+              <ChevronDown size={14} className="text-[#9CA3AF]" />
+            </button>
           </div>
 
           <div className="overflow-x-auto border border-black/8 rounded-xl">
@@ -363,7 +365,7 @@ export default function CampaignManagementPage() {
                       <td className="px-4 py-3.5"><StatusBadge label={row.status} /></td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-0.5">
-                          <IconBtn label={`View ${row.name}`} onClick={() => toast.info(`Viewing ${row.name}`)}>
+                          <IconBtn label={`View ${row.name}`} onClick={() => setViewCampaign(row)}>
                             <Eye size={15} className="text-[#CA8A04]" />
                           </IconBtn>
                           <IconBtn label={`Start ${row.name}`} onClick={() => toggleStatus(row.id)}>
@@ -425,6 +427,9 @@ export default function CampaignManagementPage() {
           </div>
         </section>
       </div>
+
+      <LeadsByChannelModal open={channelModalOpen} onClose={() => setChannelModalOpen(false)} />
+      <CampaignViewModal open={Boolean(viewCampaign)} campaign={viewCampaign} onClose={() => setViewCampaign(null)} />
     </div>
   );
 }
