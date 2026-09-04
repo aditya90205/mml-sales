@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { Check } from "lucide-react";
 import { toast } from "react-toastify";
+import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import StatusPill from "../../../components/common/StatusPill";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
@@ -53,6 +53,16 @@ export default function DocumentsKycTab() {
     setOpen(false);
   };
 
+  const toggleDoc = (index) => {
+    setDocs((prev) =>
+      prev.map((doc, i) => {
+        if (i !== index) return doc;
+        const done = !doc.done;
+        return { ...doc, done, status: done ? "Verified" : "Pending", tone: done ? "green" : "gray" };
+      })
+    );
+  };
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-5">
       <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
@@ -66,18 +76,14 @@ export default function DocumentsKycTab() {
       <div className="flex flex-col divide-y divide-black/5">
         {docs.map((doc, i) => (
           <div key={`${doc.label}-${i}`} className="flex items-center gap-3 py-3.5 flex-wrap sm:flex-nowrap">
-            <span
-              className={`size-[18px] rounded-full grid place-items-center shrink-0 ${
-                doc.done ? "bg-[#16A34A]" : "bg-white border border-black/15"
-              }`}
-            >
-              {doc.done && <Check size={12} className="text-white" strokeWidth={3} />}
-            </span>
-            <div className="min-w-0 flex-1">
+            <ChecklistCheck done={doc.done} onClick={() => toggleDoc(i)} label={doc.label} />
+            <button type="button" onClick={() => toggleDoc(i)} className="min-w-0 flex-1 text-left">
               <p className="text-[13px] font-semibold text-[#111]">{doc.label}</p>
               <p className="text-[11.5px] text-[#9CA3AF] mt-0.5">{doc.note}</p>
-            </div>
-            <StatusPill tone={doc.tone}>{doc.status}</StatusPill>
+            </button>
+            <button type="button" onClick={() => toggleDoc(i)}>
+              <StatusPill tone={doc.tone}>{doc.status}</StatusPill>
+            </button>
           </div>
         ))}
       </div>
