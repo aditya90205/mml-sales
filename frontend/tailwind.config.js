@@ -24,6 +24,7 @@ export default {
           "-apple-system",
           "sans-serif",
         ],
+        display: ["Playfair Display", "ui-serif", "Georgia", "serif"],
       },
       borderRadius: {
         "2xl": "1rem",
