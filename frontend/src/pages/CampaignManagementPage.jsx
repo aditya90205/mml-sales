@@ -1,18 +1,13 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  CheckCheck,
   ChevronDown,
   Copy,
   Eye,
   Filter,
-  MailOpen,
   MousePointerClick,
-  PlayCircle,
   Plus,
   Search,
-  Send,
-  StopCircle,
   Trash2,
   UserRoundCheck,
   Users,
@@ -20,6 +15,11 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import CampaignViewModal from "../components/campaign/CampaignViewModal.jsx";
+import biPlayCircle from "../assets/bi_play-circle.png";
+import biStopCircle from "../assets/bi_stop-circle.png";
+import hugeiconsSent from "../assets/hugeicons_sent.png";
+import charmTickDouble from "../assets/charm_tick-double.png";
+import biEnvelopeOpen from "../assets/bi_envelope-open.png";
 
 const INITIAL_CAMPAIGNS = [
   {
@@ -103,9 +103,9 @@ const LEADS_BY_CHANNEL = [
 const STAT_CARDS = [
   { key: "leads", label: "Leads Generated", value: "412", note: "+10% vs Month", noteTone: "green", icon: Users, bg: "#FCE9EC", fg: "#E8395B" },
   { key: "active", label: "Active Campaigns", value: "07", note: "+10% Last Month", noteTone: "green", icon: UserRoundCheck, bg: "#EFEAFB", fg: "#7C3AED" },
-  { key: "sent", label: "Sent", value: "25", note: "14 Calls | 12 Video Calls", noteTone: "muted", icon: Send, bg: "#FFF3E0", fg: "#F59E0B" },
-  { key: "delivered", label: "Delivered", value: "20", note: "18.4% Conversion", noteTone: "green", icon: CheckCheck, bg: "#E7F8EF", fg: "#16A34A" },
-  { key: "opened", label: "Opened", value: "14", note: "+15.3% this Month", noteTone: "green", icon: MailOpen, bg: "#E7EEFC", fg: "#2563EB" },
+  { key: "sent", label: "Sent", value: "25", note: "14 Calls | 12 Video Calls", noteTone: "muted", img: hugeiconsSent, bg: "#FFF3E0" },
+  { key: "delivered", label: "Delivered", value: "20", note: "18.4% Conversion", noteTone: "green", img: charmTickDouble, bg: "#E7F8EF" },
+  { key: "opened", label: "Opened", value: "14", note: "+15.3% this Month", noteTone: "green", img: biEnvelopeOpen, bg: "#E7EEFC" },
   { key: "clicked", label: "Clicked", value: "08", note: null, noteTone: "muted", icon: MousePointerClick, bg: "#FCE9EC", fg: "#E8395B" },
 ];
 
@@ -122,7 +122,11 @@ function StatCard({ stat }) {
   return (
     <div className="bg-white border border-black/8 rounded-2xl px-4 py-3.5 flex items-center gap-3.5">
       <span className="size-11 rounded-xl grid place-items-center shrink-0" style={{ backgroundColor: stat.bg }}>
-        <Icon size={21} style={{ color: stat.fg }} strokeWidth={1.7} />
+        {stat.img ? (
+          <img src={stat.img} alt="" width={21} height={21} className="object-contain" />
+        ) : (
+          <Icon size={21} style={{ color: stat.fg }} strokeWidth={1.7} />
+        )}
       </span>
       <div className="min-w-0">
         <p className="text-[11px] text-[#6B7280] leading-snug">{stat.label}</p>
@@ -369,10 +373,10 @@ export default function CampaignManagementPage() {
                             <Eye size={15} className="text-[#CA8A04]" />
                           </IconBtn>
                           <IconBtn label={`Start ${row.name}`} onClick={() => toggleStatus(row.id)}>
-                            <PlayCircle size={15} className="text-[#16A34A]" />
+                            <img src={biPlayCircle} alt="Start" width={15} height={15} className="object-contain" />
                           </IconBtn>
                           <IconBtn label={`Stop ${row.name}`} onClick={() => toggleStatus(row.id)}>
-                            <StopCircle size={15} className="text-[#DC2626]" />
+                            <img src={biStopCircle} alt="Stop" width={15} height={15} className="object-contain" />
                           </IconBtn>
                           <IconBtn label={`Duplicate ${row.name}`} onClick={() => duplicateRow(row)}>
                             <Copy size={14} className="text-[#2563EB]" />

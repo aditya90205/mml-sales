@@ -1,6 +1,9 @@
-import { CheckCheck, MailOpen, MousePointerClick, Send } from "lucide-react";
+import { MousePointerClick } from "lucide-react";
 import { toast } from "react-toastify";
 import { parseChannels } from "../../utils/campaignChannels.js";
+import hugeiconsSent from "../../assets/hugeicons_sent.png";
+import charmTickDouble from "../../assets/charm_tick-double.png";
+import biEnvelopeOpen from "../../assets/bi_envelope-open.png";
 
 const AUDIENCE_SIZE_BY_TARGET = {
   "Common Pool": "612 Contacts",
@@ -12,9 +15,9 @@ const AUDIENCE_SIZE_BY_TARGET = {
 };
 
 const KPI_STATS = [
-  { key: "sent", label: "Sent", value: "25", icon: Send, fg: "#F59E0B" },
-  { key: "delivered", label: "Delivered", value: "20", icon: CheckCheck, fg: "#16A34A" },
-  { key: "opened", label: "Opened", value: "14", icon: MailOpen, fg: "#2563EB" },
+  { key: "sent", label: "Sent", value: "25", img: hugeiconsSent },
+  { key: "delivered", label: "Delivered", value: "20", img: charmTickDouble },
+  { key: "opened", label: "Opened", value: "14", img: biEnvelopeOpen },
   { key: "clicked", label: "Clicked", value: "08", icon: MousePointerClick, fg: "#E8395B" },
 ];
 
@@ -88,7 +91,11 @@ export default function CampaignViewModal({ open, onClose, campaign }) {
                 const Icon = s.icon;
                 return (
                   <div key={s.key} className="border border-black/10 rounded-xl px-2.5 py-3 flex flex-col items-center text-center gap-1.5">
-                    <Icon size={17} style={{ color: s.fg }} strokeWidth={1.8} />
+                    {s.img ? (
+                      <img src={s.img} alt="" width={17} height={17} className="object-contain" />
+                    ) : (
+                      <Icon size={17} style={{ color: s.fg }} strokeWidth={1.8} />
+                    )}
                     <p className="text-[10px] text-[#9CA3AF]">{s.label}</p>
                     <p className="text-[17px] font-bold text-[#111] leading-none">{s.value}</p>
                   </div>
