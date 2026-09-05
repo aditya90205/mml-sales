@@ -103,42 +103,50 @@ const AI_PROMPTS = [
 
 const AI_TAGS = ["Summary of the month", "Tomorrow Meetings", "Yesterday Feedbacks"];
 
+// Ananya Verma / Vikram Chawla aren't real pipeline leads — point at two
+// actual P4 (Negotiation) cards from PipelineBoard's LEADS_BY_STAGE instead,
+// via the `openLead` query param PipelineBoard reads to auto-open a deal.
 const PRIORITY_ITEMS = [
   {
-    before: "5 high-value leads waiting for ",
-    link: "follow-up",
-    to: "/follow-ups",
-    after: "",
+    parts: [
+      { text: "5 high-value leads waiting for " },
+      { text: "follow-up", to: "/pipeline" },
+    ],
   },
   {
-    before: "₹18,400 in ",
-    link: "discount",
-    to: "/pipeline/discount-requests",
-    after: " approvals pending across 3 requests",
+    parts: [
+      { text: "₹18,400 in " },
+      { text: "discount", to: "/pipeline/discount-requests" },
+      { text: " approvals pending across 3 requests" },
+    ],
   },
   {
-    before: "2 ",
-    link: "client",
-    to: "/profiles",
-    after: " profiles awaiting completion before their meetings",
+    parts: [
+      { text: "2 client profiles awaiting completion before their " },
+      { text: "meetings", to: "/calendar" },
+    ],
   },
   {
-    before: "You're at 74% of this month's ₹25L ",
-    link: "target",
-    to: "/targets",
-    after: "",
+    parts: [
+      { text: "You're at 74% of this month's ₹25L " },
+      { text: "target", to: "/targets" },
+    ],
   },
   {
-    before: "1 urgent ",
-    link: "complaint",
-    to: "/reviews",
-    after: " flagged — needs a same-day response",
+    parts: [
+      { text: "1 urgent " },
+      { text: "complaint", to: "/reviews" },
+      { text: " flagged — needs a same-day response" },
+    ],
   },
   {
-    before: "AI recommends contacting ",
-    link: "clients",
-    to: "/clients",
-    after: " Ananya Verma and Vikram Chawla today — both are close to closing",
+    parts: [
+      { text: "AI recommends contacting " },
+      { text: "Vivek Sharma", to: "/pipeline?openLead=p4-1" },
+      { text: " and " },
+      { text: "Priya Raheja", to: "/pipeline?openLead=p4-2" },
+      { text: " today — both are close to closing" },
+    ],
   },
 ];
 
@@ -497,14 +505,19 @@ function AIAssistant() {
             <li key={i} className="flex items-start gap-2.5 text-[13px] text-[#374151]">
               <span className="size-[5px] rounded-full bg-[#C9CDD4] shrink-0 mt-[7px]" />
               <span className="leading-relaxed">
-                {item.before}
-                <Link
-                  to={item.to}
-                  className="text-[#2563EB] underline underline-offset-2 decoration-current hover:text-[#1D4ED8]"
-                >
-                  {item.link}
-                </Link>
-                {item.after}
+                {item.parts.map((part, j) =>
+                  part.to ? (
+                    <Link
+                      key={j}
+                      to={part.to}
+                      className="text-[#2563EB] underline underline-offset-2 decoration-current hover:text-[#1D4ED8]"
+                    >
+                      {part.text}
+                    </Link>
+                  ) : (
+                    <span key={j}>{part.text}</span>
+                  )
+                )}
               </span>
             </li>
           ))}

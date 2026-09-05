@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   AlarmClock,
   ArrowRight,
@@ -736,7 +736,20 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
 
 /* ─────────────────────── Page ─────────────────────── */
 
+// Deep link support: /pipeline?openLead=<id> (e.g. from Dashboard's Today's
+// Priority list) jumps straight to that lead's deal detail view.
+function findLeadById(leadId) {
+  if (!leadId) return null;
+  for (const stageId of Object.keys(LEADS_BY_STAGE)) {
+    const lead = (LEADS_BY_STAGE[stageId] || []).find((l) => l.id === leadId);
+    if (lead) return { lead, stageId };
+  }
+  return null;
+}
+
 export default function PipelineBoard() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deepLinkedLead = useMemo(() => findLeadById(searchParams.get("openLead")), []); // eslint-disable-line react-hooks/exhaustive-deps
   const [search, setSearch]             = useState("");
   const [perPage, setPerPage]           = useState(10);
   const [view,   setView]               = useState("table"); // "board" | "table"
@@ -744,9 +757,19 @@ export default function PipelineBoard() {
 
   // Dynamic state for pipeline lead items
   const [leadsData, setLeadsData]       = useState(LEADS_BY_STAGE);
-  const [subView, setSubView]           = useState(null); // null | "add-p0" | "move-p1" | "move-p2" | "deal-detail"
-  const [activeLead, setActiveLead]     = useState(null);
-  const [dealTargetStage, setDealTargetStage] = useState("P5");
+  const [subView, setSubView]           = useState(deepLinkedLead ? "deal-detail" : null); // null | "add-p0" | "move-p1" | "move-p2" | "deal-detail"
+  const [activeLead, setActiveLead]     = useState(deepLinkedLead?.lead ?? null);
+  const [dealTargetStage, setDealTargetStage] = useState(deepLinkedLead?.stageId ?? "P5");
+
+  useEffect(() => {
+    if (!deepLinkedLead) return;
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("openLead");
+      return next;
+    }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAddProspect = (newLead) => {
     const leadWithId = { id: `p0-${Date.now()}`, ...newLead };
