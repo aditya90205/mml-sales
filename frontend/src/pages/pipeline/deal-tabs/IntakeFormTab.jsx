@@ -25,7 +25,6 @@ const SECTIONS_META = [
 
 // Static fill % for sections that aren't built out yet.
 const PLACEHOLDER_PROGRESS = {
-  medical: 62,
   declaration: 93,
   communication: 0,
   casesheet: 90,
@@ -483,6 +482,45 @@ const ESSENTIAL_BLOCKS = [
   },
 ];
 
+const MEDICAL_BLOCKS = [
+  {
+    title: "Candidate's medical history",
+    fields: [
+      { key: "preExistingConditions", label: "Pre-existing medical conditions", type: "pill", options: ["Yes", "No"] },
+      { key: "preExistingSpecify", label: "If yes, specify", type: "text" },
+      { key: "majorSurgeries", label: "Major surgeries or treatment", type: "pill", options: ["Yes", "No"] },
+      { key: "surgeryDetails", label: "Surgery details", type: "text" },
+      { key: "geneticHereditaryConditions", label: "Genetic or hereditary conditions", type: "pill", options: ["Yes", "No"] },
+      { key: "candidateConditionSpecified", label: "Condition specified", type: "text" },
+      { key: "longTermMedication", label: "Long-term medication", type: "pill", options: ["Yes", "No"] },
+      { key: "medicationDetails", label: "Medication details", type: "text" },
+      { key: "physicalDisability", label: "Physical disability or impairment", type: "pill", options: ["Yes", "No"] },
+      { key: "candidateConditionDetails", label: "Condition details", type: "text" },
+    ],
+  },
+  {
+    title: "Family's medical history",
+    fields: [
+      { key: "familyHereditaryConditions", label: "Hereditary conditions in the family", type: "pill", options: ["Yes", "No"] },
+      { key: "familyConditionSpecified", label: "Family condition specified", type: "text" },
+      { key: "familyMajorIllness", label: "Major illness in the family", type: "pill", options: ["Yes", "No"] },
+      { key: "familyIllnessDetails", label: "Illness details", type: "text" },
+      { key: "familyGeneticDisorders", label: "Family history of genetic disorders", type: "pill", options: ["Yes", "No"] },
+      { key: "familyDisorderDetails", label: "Disorder details", type: "text" },
+      { key: "familyPsychiatricBipolar", label: "Psychiatric illness — bipolar", type: "pill", options: ["Yes", "No"] },
+      { key: "familyOtherPsychiatricHistory", label: "Other psychiatric history", type: "text" },
+    ],
+  },
+  {
+    title: "Optional & consent",
+    fields: [
+      { key: "dietaryRestrictionsMedical", label: "Dietary restrictions (medical)", type: "text" },
+      { key: "knownAllergies", label: "Known allergies", type: "text" },
+      { key: "consentToUseForMatchmaking", label: "Consent to use for matchmaking", required: true, type: "pill", options: ["Given", "Not given"] },
+    ],
+  },
+];
+
 const SECTION_BLOCKS = {
   personal: PERSONAL_DETAILS_BLOCKS,
   education: EDUCATION_BLOCKS,
@@ -491,6 +529,7 @@ const SECTION_BLOCKS = {
   siblings: SIBLINGS_BLOCKS,
   match: MATCH_BLOCKS,
   essential: ESSENTIAL_BLOCKS,
+  medical: MEDICAL_BLOCKS,
 };
 
 const DEMO_PERSONAL_VALUES = {
@@ -641,6 +680,22 @@ const DEMO_ESSENTIAL_VALUES = {
   wellbeingGoalsAspirations: "Partner track, wants to travel more",
 };
 
+const DEMO_MEDICAL_VALUES = {
+  preExistingConditions: "No",
+  majorSurgeries: "No",
+  geneticHereditaryConditions: "No",
+  longTermMedication: "Yes",
+  medicationDetails: "Thyroid — since 2021",
+  physicalDisability: "No",
+  familyHereditaryConditions: "Yes",
+  familyConditionSpecified: "Diabetes — father",
+  familyGeneticDisorders: "No",
+  familyPsychiatricBipolar: "No",
+  dietaryRestrictionsMedical: "Low iodine",
+  knownAllergies: "Penicillin",
+  consentToUseForMatchmaking: "Given",
+};
+
 const SECTION_DEMO_VALUES = {
   ...DEMO_PERSONAL_VALUES,
   ...DEMO_EDUCATION_VALUES,
@@ -649,6 +704,7 @@ const SECTION_DEMO_VALUES = {
   ...DEMO_SIBLINGS_VALUES,
   ...DEMO_MATCH_VALUES,
   ...DEMO_ESSENTIAL_VALUES,
+  ...DEMO_MEDICAL_VALUES,
 };
 
 const INPUT =
