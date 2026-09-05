@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { toast } from "react-toastify";
 import {
@@ -898,9 +899,12 @@ function PerformanceIncentiveTable() {
 }
 
 export default function HrmsPage() {
+  const [searchParams] = useSearchParams();
   const [selectedMonth, setSelectedMonth] = useState("April");
   const [selectedYear, setSelectedYear] = useState("2025");
-  const [activeTab, setActiveTab] = useState("Summary");
+  const [activeTab, setActiveTab] = useState(() =>
+    HRMS_TABS.includes(searchParams.get("tab")) ? searchParams.get("tab") : "Summary"
+  );
 
   const attendanceDays = useMemo(
     () => getAttendanceDays(selectedMonth, selectedYear),

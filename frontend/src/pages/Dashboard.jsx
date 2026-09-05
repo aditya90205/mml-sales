@@ -128,8 +128,9 @@ const PRIORITY_ITEMS = [
   },
   {
     parts: [
-      { text: "You're at 74% of this month's ₹25L " },
-      { text: "target", to: "/targets" },
+      { text: "You're at 74% of this month, and your " },
+      { text: "incentive", to: "/hrms?tab=Incentives" },
+      { text: " payout this month." },
     ],
   },
   {
