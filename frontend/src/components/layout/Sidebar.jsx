@@ -11,6 +11,7 @@ import {
   Megaphone,
   BarChart3,
   Handshake,
+  PackageSearch,
 } from "lucide-react";
 import logo from "../../assets/logo.png";
 
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { label: "Pipeline Board",  icon: KanbanSquare,    to: "/pipeline" },
   { label: "Campaign",        icon: Megaphone,       to: "/campaign/management" },
   { label: "Client Database", icon: Database,        to: "/clients" },
+  { label: "Packages & Plans", icon: PackageSearch,  to: "/packages" },
   { label: "Win / Loss",      icon: BarChart3,       to: "/win-loss" },
   { label: "Post Sales",      icon: Handshake,       to: "/post-sales" },
   { label: "HRMS",            icon: Users,           to: "/hrms" },

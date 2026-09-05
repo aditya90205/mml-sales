@@ -15,6 +15,7 @@ import CreateCampaignPage from "./pages/CreateCampaignPage";
 import ClientDatabasePage from "./pages/ClientDatabasePage";
 import CreateGroupPage from "./pages/CreateGroupPage";
 import WinLossAnalysisPage from "./pages/WinLossAnalysisPage";
+import PackagesPlansPage from "./pages/PackagesPlansPage";
 import IncentiveStatementPage from "./pages/IncentiveStatementPage";
 import ColdCommonPoolPage from "./pages/ColdCommonPoolPage";
 import PostSalesPage from "./pages/PostSalesPage";
@@ -101,6 +102,10 @@ export default function App() {
         <Route
           path="/win-loss"
           element={<LayoutRoute><WinLossAnalysisPage /></LayoutRoute>}
+        />
+        <Route
+          path="/packages"
+          element={<LayoutRoute><PackagesPlansPage /></LayoutRoute>}
         />
         <Route
           path="/incentives"
