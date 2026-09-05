@@ -4,14 +4,6 @@ import { toast } from "react-toastify";
 import { AppPage, MetricCard, OutlineBtn, Panel, PrimaryBtn, Td } from "../components/common/AppPage.jsx";
 import StatusPill from "../components/common/StatusPill";
 
-const STATS = [
-  { label: "Active subscriptions", value: "517", note: "▲ 34 this month", noteTone: "green" },
-  { label: "Active plan value", value: "₹2.14Cr", note: "Sum of live packages", noteTone: "grey" },
-  { label: "Most popular plan", value: "Premium", note: "66% of new sign-ups", noteTone: "grey" },
-  { label: "Avg. upsell value", value: "₹28,400", note: "Basic/Premium → Exclusive", noteTone: "grey" },
-  { label: "Upgrade rate", value: "18.6%", note: "▲ 3.1% vs last quarter", noteTone: "green" },
-];
-
 const PACKAGES = [
   {
     key: "basic",
@@ -85,15 +77,10 @@ function PackageCard({ pkg, currency, onEdit }) {
         pkg.highlighted ? "bg-[#FEF4F5] border-[#F7C9CF]" : "bg-white border-black/8"
       }`}
     >
-      {pkg.upsellBadge && (
-        <span className="absolute -top-3 right-4 inline-flex items-center gap-1 text-[10.5px] font-bold text-white bg-[#7A0A17] rounded-full px-2.5 py-1">
-          <TrendingUp size={11} /> UPSELL · {pkg.upsellBadge}
-        </span>
-      )}
 
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-[15px] font-bold text-[#111]">{pkg.name}</h3>
-        <StatusPill tone={pkg.highlighted ? "red" : "gray"}>{pkg.active} active</StatusPill>
+      
       </div>
       <p className="text-[24px] font-bold text-[#111] mt-1">{price}</p>
       <p className="text-[11.5px] text-[#9CA3AF] mt-0.5">{pkg.subtitle}</p>
@@ -140,17 +127,11 @@ export default function PackagesPlansPage() {
           <OutlineBtn onClick={() => setCurrency((c) => (c === "inr" ? "usd" : "inr"))}>
             {currency === "inr" ? "Currency INR" : "NRI pricing (USD)"}
           </OutlineBtn>
-          <PrimaryBtn onClick={() => toast.info("Add package flow coming soon.")}>
-            <Plus size={14} /> Add package
-          </PrimaryBtn>
+        
         </>
       }
     >
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-        {STATS.map((s) => (
-          <MetricCard key={s.label} compact className="shadow-[0_1px_2px_rgba(0,0,0,0.04)]" {...s} />
-        ))}
-      </div>
+    
 
       <Panel title="Package catalogue" subtitle="Live pricing and active client count per package">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
