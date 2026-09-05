@@ -25,7 +25,6 @@ const SECTIONS_META = [
 
 // Static fill % for sections that aren't built out yet.
 const PLACEHOLDER_PROGRESS = {
-  residency: 6,
   family: 47,
   siblings: 92,
   match: 55,
@@ -218,9 +217,72 @@ const EDUCATION_BLOCKS = [
   },
 ];
 
+const RESIDENCY_BLOCKS = [
+  {
+    title: "Residency",
+    fields: [
+      {
+        key: "residentialStatus",
+        label: "Residential status",
+        required: true,
+        type: "pill",
+        options: ["Indian", "NRI", "Temporarily abroad", "Citizen", "PR holder", "OCI"],
+      },
+      { key: "recentVisitCountry", label: "Most recent visit to country of origin", type: "text" },
+    ],
+  },
+  {
+    title: "If NRI",
+    badge: "NOT APPLICABLE — resident client",
+    fields: [
+      { key: "visaType", label: "Visa type", type: "text" },
+      { key: "accommodationAbroad", label: "Accommodation abroad", type: "pill", options: ["Own house", "Rented accommodation", "Company accommodation"] },
+      { key: "passportCopy", label: "Passport copy", type: "pill", options: ["Received", "Pending"] },
+      { key: "overseasAddress", label: "Overseas address", type: "textarea" },
+    ],
+  },
+  {
+    title: "Previous marriage",
+    badge: "NOT APPLICABLE — first marriage",
+    fields: [
+      { key: "prevMarriageCase", label: "Case", type: "pill", options: ["For divorcee", "For annulled"] },
+      { key: "marriageDate", label: "Marriage date", type: "text" },
+      { key: "timeDuration", label: "Time duration", type: "text" },
+      { key: "separationPeriod", label: "Separation period", type: "text" },
+      { key: "formalitiesCompleted", label: "Formalities completed", type: "pill", options: ["Yes", "No", "On final stages"] },
+      { key: "children", label: "Children", type: "pill", options: ["Do not have children", "Have children"] },
+      { key: "noOfChildren", label: "No. of children", type: "text" },
+      { key: "custody", label: "Custody", type: "pill", options: ["Yes", "No"] },
+      { key: "prevMarriageCause", label: "Cause", type: "textarea" },
+      { key: "prevMarriageStatus", label: "Status of case", type: "textarea" },
+    ],
+  },
+  {
+    title: "Address on record",
+    fields: [
+      { key: "addrContactPerson", label: "Contact person", type: "text" },
+      { key: "addrContactInfo", label: "Contact info", type: "text" },
+      { key: "addrAreaLocality", label: "Area / locality", type: "text" },
+      { key: "addrAreaOfHouse", label: "Area of house (sq yd)", type: "text" },
+      { key: "addrCity", label: "City", required: true, type: "text" },
+      { key: "addrState", label: "State", type: "text" },
+      { key: "addrPinCode", label: "Pin code", type: "text" },
+      { key: "addrCountry", label: "Country", type: "text" },
+      { key: "addrZone", label: "Zone", type: "pill", options: ["Delhi NCR", "Gurgaon", "Punjab", "Haryana", "Rajasthan", "Maharashtra", "Other"] },
+      { key: "addrRelation", label: "Relation to this address", type: "pill", options: ["Self", "Parent", "Relative", "Rented"] },
+      { key: "addrHouseOwnership", label: "House ownership", type: "pill", options: ["Owned", "Rented", "Family", "Company provided"] },
+      { key: "addrHouseType", label: "House type", type: "pill", options: ["Apartment", "Independent", "Villa", "Farmhouse", "Kothi"] },
+      { key: "addrResidingCity", label: "Residing city", type: "text" },
+      { key: "addrResidingCountry", label: "Residing country", type: "text" },
+      { key: "addrNationality", label: "Nationality", type: "text" },
+    ],
+  },
+];
+
 const SECTION_BLOCKS = {
   personal: PERSONAL_DETAILS_BLOCKS,
   education: EDUCATION_BLOCKS,
+  residency: RESIDENCY_BLOCKS,
 };
 
 const DEMO_PERSONAL_VALUES = {
@@ -282,9 +344,14 @@ const DEMO_EDUCATION_VALUES = {
   currentAddress: "House 214, Sector 43, Gurugram, Haryana 122009",
 };
 
+const DEMO_RESIDENCY_VALUES = {
+  residentialStatus: "Indian",
+};
+
 const SECTION_DEMO_VALUES = {
   ...DEMO_PERSONAL_VALUES,
   ...DEMO_EDUCATION_VALUES,
+  ...DEMO_RESIDENCY_VALUES,
 };
 
 const INPUT =
@@ -453,7 +520,14 @@ function FormBlock({ block, values, chipValues, onFieldChange, onRemoveChip }) {
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-5">
       <div className="flex items-center justify-between gap-3 mb-4">
-        <h3 className="text-[11px] font-bold text-[#7A0A17] uppercase tracking-wide">{block.title}</h3>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <h3 className="text-[11px] font-bold text-[#7A0A17] uppercase tracking-wide shrink-0">{block.title}</h3>
+          {block.badge && (
+            <span className="text-[10px] font-semibold text-[#6B7280] bg-[#F3F4F6] rounded-full px-2.5 py-1 truncate">
+              {block.badge}
+            </span>
+          )}
+        </div>
         <span className="text-[11px] text-[#9CA3AF] shrink-0">
           {filled} of {total} filled
         </span>
