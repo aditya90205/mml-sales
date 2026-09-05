@@ -17,12 +17,12 @@ import logo from "../../assets/logo.png";
 const NAV_ITEMS = [
   { label: "Dashboard",       icon: LayoutDashboard, to: "/dashboard" },
   { label: "Calendar",        icon: CalendarDays,    to: "/calendar" },
+  { label: "Tasks",           icon: CheckSquare,     to: "/tasks" },
   { label: "Bulk Upload",     icon: Upload,          to: "/bulk-upload" },
   { label: "Pipeline Board",  icon: KanbanSquare,    to: "/pipeline" },
   { label: "Campaign",        icon: Megaphone,       to: "/campaign/management" },
   { label: "Client Database", icon: Database,        to: "/clients" },
   { label: "Win / Loss",      icon: BarChart3,       to: "/win-loss" },
-  { label: "Tasks",           icon: CheckSquare,     to: "/tasks" },
   { label: "Post Sales",      icon: Handshake,       to: "/post-sales" },
   { label: "HRMS",            icon: Users,           to: "/hrms" },
   { label: "Leaderboard",     icon: Trophy,          to: "/leaderboard" },
