@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
+import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 // TopBar is now provided by Layout
 import eyeIcon from "../assets/eye.png";
 import AddP0ProspectPage from "./pipeline/AddP0ProspectPage";
@@ -636,18 +637,26 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                     </td>
 
                     {/* Follow Up */}
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        {(urgent || idx % 3 === 0) && (
-                          <Video size={15} className="text-[#3B82F6] shrink-0" />
-                        )}
-                        <div>
-                          <p className={`text-[12px] font-semibold ${urgent ? "text-[#E8395B]" : "text-[#374151]"}`}>
-                            {lead.hrs} HRS Left
-                          </p>
-                          <p className="text-[10px] text-[#9CA3AF]">Start Time: 12:00</p>
+                    <td className="px-3 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <FollowUpHoverCard
+                        lastDiscussionAt={lead.lastDiscussion}
+                        nextActionAt={lead.nextAction}
+                        nextActionNote="Follow-up call scheduled"
+                        urgency={`${lead.hrs} Hrs Left`}
+                        onFollowUp={() => toast.info("Follow-up history coming soon.")}
+                      >
+                        <div className="flex items-center gap-1.5 cursor-default">
+                          {(urgent || idx % 3 === 0) && (
+                            <Video size={15} className="text-[#3B82F6] shrink-0" />
+                          )}
+                          <div>
+                            <p className={`text-[12px] font-semibold ${urgent ? "text-[#E8395B]" : "text-[#374151]"}`}>
+                              {lead.hrs} HRS Left
+                            </p>
+                            <p className="text-[10px] text-[#9CA3AF]">Start Time: 12:00</p>
+                          </div>
                         </div>
-                      </div>
+                      </FollowUpHoverCard>
                     </td>
 
                     {/* Actions */}

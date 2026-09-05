@@ -44,6 +44,7 @@ import {
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
+import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import DealDetailPage from "./pipeline/DealDetailPage";
 import MoveToP1Page from "./pipeline/MoveToP1Page";
@@ -219,13 +220,13 @@ const PRIORITY_STYLES = {
 const LEAD_DOT_COLORS = ["#E8395B", "#F59E0B", "#3B82F6", "#E8395B", "#16A34A", "#F59E0B", "#3B82F6"];
 
 const MY_LEADS = [
-  { id: "MML-ID-D-10428", name: "Kuhu Sharma",    starred: true,  owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P0 - New",              stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, timeAtStage: "2 Days", source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start at 12:00", lost: false },
-  { id: "MML-ID-D-10428", name: "Harshit Sharma", starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P1 - Qualified",        stageTone: "Lost", priority: "High",   leadScore: 7.0, profileCompletion: 50,  timeAtStage: "2 Days", source: "Brand Walking",    followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: true },
-  { id: "MML-ID-D-10428", name: "Ankur Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P2 - Profile Creation", stageTone: null,   priority: "Medium", leadScore: 7.5, profileCompletion: 75,  timeAtStage: "2 Days", source: "Community Events", followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false },
-  { id: "MML-ID-D-10428", name: "Aditya Sharma",  starred: true,  owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P3 - Video Call/Visit", stageTone: "Cold", priority: "Medium", leadScore: 8.5, profileCompletion: 85,  timeAtStage: "2 Days", source: "Channel Partner",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false },
-  { id: "MML-ID-D-10428", name: "Vivek Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P4 - Negotiation",      stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  timeAtStage: "2 Days", source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start at 12:00", lost: false },
-  { id: "MML-ID-D-10428", name: "Rohit Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P5 - Profile Creation", stageTone: "Won",  priority: "Medium", leadScore: 7.5, profileCompletion: 75,  timeAtStage: "2 Days", source: "Manual Sourcing",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false },
-  { id: "MML-ID-D-10428", name: "Virat Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P6 - Service Handover", stageTone: null,   priority: "Low",    leadScore: 8.5, profileCompletion: 90,  timeAtStage: "2 Days", source: "Online - Insta",   followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false },
+  { id: "MML-ID-D-10428", name: "Kuhu Sharma",    starred: true,  owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P0 - New",              stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, timeAtStage: "2 Days", source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start at 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Outbound follow-up call" },
+  { id: "MML-ID-D-10428", name: "Harshit Sharma", starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P1 - Qualified",        stageTone: "Lost", priority: "High",   leadScore: 7.0, profileCompletion: 50,  timeAtStage: "2 Days", source: "Brand Walking",    followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: true, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Re-engagement call" },
+  { id: "MML-ID-D-10428", name: "Ankur Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P2 - Profile Creation", stageTone: null,   priority: "Medium", leadScore: 7.5, profileCompletion: 75,  timeAtStage: "2 Days", source: "Community Events", followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Complete profile details" },
+  { id: "MML-ID-D-10428", name: "Aditya Sharma",  starred: true,  owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P3 - Video Call/Visit", stageTone: "Cold", priority: "Medium", leadScore: 8.5, profileCompletion: 85,  timeAtStage: "2 Days", source: "Channel Partner",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm video call slot" },
+  { id: "MML-ID-D-10428", name: "Vivek Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P4 - Negotiation",      stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  timeAtStage: "2 Days", source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start at 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
+  { id: "MML-ID-D-10428", name: "Rohit Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P5 - Profile Creation", stageTone: "Won",  priority: "Medium", leadScore: 7.5, profileCompletion: 75,  timeAtStage: "2 Days", source: "Manual Sourcing",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Share payment link" },
+  { id: "MML-ID-D-10428", name: "Virat Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P6 - Service Handover", stageTone: null,   priority: "Low",    leadScore: 8.5, profileCompletion: 90,  timeAtStage: "2 Days", source: "Online - Insta",   followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm handover checklist" },
 ];
 
 const GOALS_STATS = [
@@ -1683,11 +1684,19 @@ function MyLeadsCard({ onOpenDeal, onMoveStage }) {
                   </td>
                   <td className="px-2.5 py-3 text-[12px] text-[#6B7280]">{lead.profileCompletion}%</td>
                   <td className="px-2.5 py-3 text-[12px] text-[#6B7280] leading-tight">{lead.source}</td>
-                  <td className="px-2.5 py-3">
-                    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${lead.followUpTone}`}>
-                      <Clock size={11} className="shrink-0" /> {lead.followUp}
-                    </span>
-                    <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.followUpNote}</p>
+                  <td className="px-2.5 py-3" onClick={(e) => e.stopPropagation()}>
+                    <FollowUpHoverCard
+                      lastDiscussionAt={lead.lastDiscussion}
+                      nextActionAt={lead.nextAction}
+                      nextActionNote={lead.nextActionNote}
+                      urgency={lead.followUp}
+                      onFollowUp={() => toast.info("Follow-up history coming soon.")}
+                    >
+                      <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${lead.followUpTone}`}>
+                        <Clock size={11} className="shrink-0" /> {lead.followUp}
+                      </span>
+                      <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.followUpNote}</p>
+                    </FollowUpHoverCard>
                   </td>
                   <td className="pl-1 pr-2.5 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-0 flex-nowrap">
