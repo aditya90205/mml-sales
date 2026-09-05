@@ -940,7 +940,7 @@ export default function PipelineBoard() {
           perPage={perPage} onPerPageChange={setPerPage}
           view={view} onViewChange={setView}
         />
-        <PipelineStageStrip leadsData={leadsData} />
+        {view === "table" && <PipelineStageStrip leadsData={leadsData} />}
 
         {view === "board" ? (
           /* Board – break out of px-5 so scroll area is edge-to-edge */
