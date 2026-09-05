@@ -1,139 +1,160 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import LockedTabOverlay from "../../../components/pipeline/LockedTabOverlay";
-import { useTableSort } from "../../../components/common/useTableSort.jsx";
-import TableCard from "../../../components/common/TableCard";
 import StatusPill from "../../../components/common/StatusPill";
-import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
-import Modal from "../../../components/ui/Modal";
-import { dashRows, EMPTY } from "./stageContent.jsx";
+import { useTableSort } from "../../../components/common/useTableSort.jsx";
+import {
+  CheckRow,
+  DeskTable,
+  FilterSelect,
+  OutlineButton,
+  PrimaryButton,
+  ProgressMeter,
+  SectionCard,
+  Td,
+  TimelineItem,
+} from "../../../components/pipeline/deskUi";
+import { dashRow, dashRows } from "./stageContent.jsx";
 
-const INITIAL_PAYMENTS = [
-  { date: "29 Jun 2026", method: "UPI",          reference: "MML-R-88213", amount: "₹15,000", status: "Received", tone: "green" },
-  { date: "29 Jun 2026", method: "Cheque",       reference: "MML-R-88213", amount: "₹15,000", status: "Cleared",  tone: "green" },
-  { date: "Due 02 Aug",  method: "Payment Link", reference: "MML-R-88213", amount: "₹15,000", status: "Awaiting", tone: "amber" },
+const CONSENTS = [
+  { title: "Data privacy notification", note: "Accepted by the client on 29 Jun, 4:02 PM. Copy filed to the deal.", status: "Accepted", tone: "green", done: true },
+  { title: "Profile sharing consent", note: "Client allowed photo and basic details to be shown to matches.", status: "Accepted", tone: "green", done: true },
+  { title: "Marketing consent", note: "Opted in to WhatsApp and email · opted out of SMS.", status: "Partial", tone: "blue", done: false, pending: true },
+];
+
+const PAYMENTS = [
+  { date: "29 Jun 2026", mode: "UPI", reference: "MML-R-88213", amount: "₹15,000", collectedBy: "Payment link", status: "Received", tone: "green" },
+  { date: "12 Jul 2026", mode: "Cheque", reference: "MML-R-88407", amount: "₹20,000", collectedBy: "Rohit Khanna", status: "Cleared", tone: "green" },
+  { date: "Due 02 Aug", mode: "Payment link", reference: "MML-R-88512", amount: "₹18,100", collectedBy: "—", status: "Awaiting", tone: "amber" },
 ];
 
 const COLUMNS = [
   { label: "Date", key: "date" },
-  { label: "Method", key: "method" },
+  { label: "Mode", key: "mode" },
   { label: "Reference", key: "reference" },
   { label: "Amount", key: "amount" },
+  { label: "Collected by", key: "collectedBy" },
   { label: "Status", key: "status" },
 ];
 
-const FIELD =
-  "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
+const CONTRACT_TIMELINE = [
+  { tone: "gray", title: "Handwritten annexure — OCR pending", note: "Scanned page uploaded. AI extraction queued for RM validation. 2 pages.", time: "Queued — 2 pages" },
+  { tone: "green", title: "OTP verified & signed", note: "OTP sent to +91 98•• •• 4412. Verified from IP 49.36.xx.xx.", time: "29 Jun 2026, 6:18 PM — client" },
+  { tone: "green", title: "Sent to client by email + app", note: "Delivered to sanjay.mehta@email.com. Signed copy auto-filed to admin.", time: "29 Jun 2026, 5:41 PM — system" },
+  { tone: "green", title: "Contract generated from quote v2", note: "Premium package — ₹53,100 after approved discount and GST.", time: "29 Jun 2026, 5:40 PM — you" },
+];
 
+/** Same design and data as the standalone "Contract, E-Signature & Payment" page. */
 export default function PaymentsTab({ locked = true, empty = false }) {
-  const [payments, setPayments] = useState(INITIAL_PAYMENTS);
-  const visiblePayments = dashRows(payments, empty);
-  const { sorted, sort, toggle } = useTableSort(visiblePayments, { defaultKey: "date" });
-  const [open, setOpen] = useState(false);
-  const [method, setMethod] = useState("UPI");
-  const [amount, setAmount] = useState("");
+  const [dealFilter, setDealFilter] = useState("deal");
+  const [modeFilter, setModeFilter] = useState("all");
+  const [consents, setConsents] = useState(CONSENTS);
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    if (!amount.trim()) {
-      toast.error("Please add an amount.");
-      return;
-    }
-    setPayments((prev) => [
-      {
-        date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-        method,
-        reference: `MML-R-${Math.floor(80000 + Math.random() * 9999)}`,
-        amount: amount.trim().startsWith("₹") ? amount.trim() : `₹${amount.trim()}`,
-        status: "Awaiting",
-        tone: "amber",
-      },
-      ...prev,
-    ]);
-    toast.success("Payment recorded.");
-    setAmount("");
-    setMethod("UPI");
-    setOpen(false);
+  const consentItems = empty ? consents.map((item) => dashRow({ ...item, done: false, tone: "gray" }, ["title", "note"])) : consents;
+  const consentDone = consentItems.filter((i) => i.done).length;
+  const consentTotal = consentItems.length;
+
+  const toggleConsent = (title) => {
+    if (empty) return;
+    setConsents((prev) =>
+      prev.map((item) => {
+        if (item.title !== title) return item;
+        const done = !item.done;
+        return { ...item, done, status: done ? "Accepted" : "Pending", tone: done ? "green" : "amber" };
+      })
+    );
   };
 
-  const table = (
-        <TableCard
-          title="Payments"
-          subtitle="Part payments, receipts and reconciliation"
-          action={<TabHeaderButton onClick={() => setOpen(true)}>Record payment</TabHeaderButton>}
-          columns={COLUMNS}
-          sort={sort}
-          onSort={toggle}
-          footnote="Prices are standardised across branches. A quoted price below list requires an approved discount request."
-        >
-          {sorted.map((row, i) => (
-            <tr key={`${row.date}-${row.method}-${i}`} className="border-b border-black/5 last:border-0">
-              <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.date}</td>
-              <td className="px-3 py-2.5 text-[12.5px] font-semibold text-[#111] whitespace-nowrap">{row.method}</td>
-              <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.reference}</td>
-              <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.amount}</td>
-              <td className="px-3 py-2.5 whitespace-nowrap">
-                {row.status === EMPTY ? (
-                  <span className="text-[12px] text-[#9CA3AF]">-</span>
-                ) : (
-                  <StatusPill tone={row.tone}>{row.status}</StatusPill>
-                )}
-              </td>
-            </tr>
-          ))}
-        </TableCard>
+  const rows = useMemo(
+    () => PAYMENTS.filter((r) => modeFilter === "all" || r.mode === modeFilter),
+    [modeFilter]
   );
+  const { sorted, sort, toggle } = useTableSort(dashRows(rows, empty, ["mode"]), { defaultKey: "date" });
+  const timeline = empty ? CONTRACT_TIMELINE.map((item) => dashRow({ ...item, tone: "gray" }, ["title"])) : CONTRACT_TIMELINE;
 
-  return (
-    <>
-      {locked ? (
-        <LockedTabOverlay title="Payment is locked." message="This screen will open at P5 stage.">
-          {table}
-        </LockedTabOverlay>
-      ) : (
-        table
-      )}
+  const content = (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <h2 className="text-[16px] font-bold text-[#111]">Contract, E-Signature & Payment</h2>
+        <div className="flex items-center gap-2">
+          <OutlineButton onClick={() => toast.info("Opening payment history...")}>Payment history</OutlineButton>
+          <PrimaryButton onClick={() => toast.info("P6 stays locked until the ₹18,100 balance clears.")}>
+            Advance to P6
+          </PrimaryButton>
+        </div>
+      </div>
 
-      <Modal
-        open={open}
-        onClose={() => setOpen(false)}
-        title="Record payment"
-        subtitle="Part payment, cheque or payment link"
-        footer={
+      <SectionCard
+        title="Consent & compliance"
+        subtitle="Mandatory before any data is processed (BRD 3.6)"
+        action={<ProgressMeter label={`${consentDone} of ${consentTotal}`} percent={consentTotal ? (consentDone / consentTotal) * 100 : 0} color={consentDone === consentTotal ? "#16A34A" : "#F59E0B"} />}
+      >
+        {consentItems.map((item, i) => (
+          <CheckRow key={`${item.title}-${i}`} {...item} onToggle={() => toggleConsent(item.title)} />
+        ))}
+      </SectionCard>
+
+      <SectionCard
+        title="Payments"
+        subtitle="Part payment is allowed. P6 cannot open until the balance clears."
+        action={
           <>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              form="payment-form"
-              className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-            >
-              Save payment
-            </button>
+            <FilterSelect
+              value={dealFilter}
+              onChange={setDealFilter}
+              options={[
+                { value: "deal", label: "This deal" },
+                { value: "all", label: "All deals" },
+              ]}
+            />
+            <FilterSelect
+              value={modeFilter}
+              onChange={setModeFilter}
+              options={[
+                { value: "all", label: "All modes" },
+                { value: "UPI", label: "UPI" },
+                { value: "Cheque", label: "Cheque" },
+                { value: "Payment link", label: "Payment link" },
+              ]}
+            />
           </>
         }
+        footnote="₹53,100 total including 18% GST · ₹35,000 collected · ₹18,100 outstanding · maker-checker cleared by Accounts."
       >
-        <form id="payment-form" onSubmit={handleSave} className="flex flex-col gap-4">
-          <div>
-            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Method</label>
-            <select value={method} onChange={(e) => setMethod(e.target.value)} className={FIELD}>
-              <option>UPI</option>
-              <option>Cheque</option>
-              <option>Payment Link</option>
-              <option>NEFT</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Amount</label>
-            <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="15000" className={FIELD} />
-          </div>
-        </form>
-      </Modal>
-    </>
+        <DeskTable columns={COLUMNS} sort={sort} onSort={toggle}>
+          {sorted.map((row, i) => (
+            <tr key={`${row.reference}-${i}`} className="border-b border-black/5 last:border-0">
+              <Td muted>{row.date}</Td>
+              <Td strong>{row.mode}</Td>
+              <Td>{row.reference}</Td>
+              <Td>{row.amount}</Td>
+              <Td>{row.collectedBy}</Td>
+              <Td>
+                <StatusPill tone={row.tone}>{row.status}</StatusPill>
+              </Td>
+            </tr>
+          ))}
+        </DeskTable>
+      </SectionCard>
+
+      <SectionCard
+        title="Contract & e-signature"
+        subtitle="Sanjay Mehta · MML-D-10428 · signed copy filed to the admin dashboard (BRD 3.5)"
+        divided
+      >
+        {timeline.map((item, i) => (
+          <TimelineItem key={`${item.title}-${i}`} {...item} last={i === timeline.length - 1} />
+        ))}
+      </SectionCard>
+    </div>
   );
+
+  if (locked) {
+    return (
+      <LockedTabOverlay title="Payment is locked." message="This screen will open at P5 stage.">
+        {content}
+      </LockedTabOverlay>
+    );
+  }
+  return content;
 }
