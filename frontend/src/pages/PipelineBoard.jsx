@@ -44,7 +44,7 @@ const PIPELINE_STAGES = [
   { id: "P3", label: "Video Call/Visit",        color: "#7C3AED" },
   { id: "P4", label: "Negotiation",             color: "#6366F1" },
   { id: "P5", label: "Closed",                  color: "#16A34A" },
-  { id: "P6", label: "Closed Sale Onboarding",  color: "#EAB308" },
+  { id: "P6", label: "Handover Onboarding",  color: "#EAB308" },
 ];
 
 const TEMPERATURE_STYLES = {
