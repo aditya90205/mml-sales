@@ -56,14 +56,17 @@ const SOURCE_COLS = [
 
 const CHANNEL_MAX = Math.max(...CHANNELS.map((c) => c.value));
 
+const reasonLabel = (id) => REASONS.find((r) => r.id === id)?.label ?? id;
+const reasonLabels = (...ids) => ids.map(reasonLabel);
+
 const FUNNEL_RAW = [
-  { stage: "P0", name: "New", count: 1248, avgTime: "1.2 days", reasons: ["Wrong enquiry", "No response", "Low intent"] },
-  { stage: "P1", name: "Qualified", count: 842, avgTime: "2.4 days", reasons: ["Price / Budget", "No decision", "Trust / Fit"] },
-  { stage: "P2", name: "Profile Creation", count: 421, avgTime: "4.1 days", reasons: ["Incomplete data", "Timing", "Family"] },
-  { stage: "P3", name: "Video call / Visit", count: 218, avgTime: "3.6 days", reasons: ["No show", "Competitor", "Timing"] },
-  { stage: "P4", name: "Negotiation", count: 96, avgTime: "5.8 days", reasons: ["Price", "Discount", "Decision maker"] },
-  { stage: "P5", name: "Closed — Payment Done", count: 42, avgTime: "2.1 days", reasons: ["Payment delay", "Package mismatch", "Family"] },
-  { stage: "P6", name: "Post Sale Onboarding", count: 24, avgTime: "3.0 days", reasons: ["Docs pending", "Onboarding delay", "No show"] },
+  { stage: "P0", name: "New", count: 1248, avgTime: "1.2 days", reasons: reasonLabels("wrong", "noresponse", "trust") },
+  { stage: "P1", name: "Qualified", count: 842, avgTime: "2.4 days", reasons: reasonLabels("price", "nodeal", "trust") },
+  { stage: "P2", name: "Profile Creation", count: 421, avgTime: "4.1 days", reasons: reasonLabels("timing", "nodeal", "decision") },
+  { stage: "P3", name: "Video call / Visit", count: 218, avgTime: "3.6 days", reasons: reasonLabels("noresponse", "competitor", "timing") },
+  { stage: "P4", name: "Negotiation", count: 96, avgTime: "5.8 days", reasons: reasonLabels("price", "decision", "competitor") },
+  { stage: "P5", name: "Closed — Payment Done", count: 42, avgTime: "2.1 days", reasons: reasonLabels("timing", "trust", "nodeal") },
+  { stage: "P6", name: "Post Sale Onboarding", count: 24, avgTime: "3.0 days", reasons: reasonLabels("decision", "timing", "noresponse") },
 ];
 
 const FUNNEL_ROWS = FUNNEL_RAW.map((row, i) => {
