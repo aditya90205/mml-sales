@@ -1,149 +1,181 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { useTableSort } from "../../../components/common/useTableSort.jsx";
-import TableCard from "../../../components/common/TableCard";
 import StatusPill from "../../../components/common/StatusPill";
-import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
-import Modal from "../../../components/ui/Modal";
-import { dashRows } from "./stageContent.jsx";
+import { useTableSort } from "../../../components/common/useTableSort.jsx";
+import {
+  CheckRow,
+  DeskTable,
+  FIELD,
+  Field,
+  FilterSelect,
+  OutlineButton,
+  PrimaryButton,
+  ProgressMeter,
+  SectionCard,
+  StepLabel,
+  Td,
+} from "../../../components/pipeline/deskUi";
+import { dashRow, dashRows } from "./stageContent.jsx";
 
-const INITIAL_ROWS = [
-  {
-    date: "02 Jul 2026", type: "Home visit", venue: "Greater Kailash",
-    attendedBy: "Client + both parents", gps: "28.5621, 77.2410",
-    capture: "4 of 4", captureTone: "green", outcome: "Premium pitched",
-  },
-  {
-    date: "14 Jul 2026", type: "Office visit", venue: "Greater Kailash",
-    attendedBy: "Client + father", gps: "-",
-    capture: "2 of 2", captureTone: "green", outcome: "Price resistance raised",
-  },
-  {
-    date: "30 Jul 2026", type: "Home visit", venue: "Greater Kailash",
-    attendedBy: "Client + both parents", gps: "Pending",
-    capture: "Not Started", captureTone: "gray", outcome: "Scheduled",
-  },
+const CAPTURE_ITEMS = [
+  { title: "House / GPS photo", note: "Taken at the door with location accuracy under 15m.", status: "Captured", tone: "green", done: true },
+  { title: "Selfie with client", note: "Staff and client in frame. Used for in-person verification.", status: "Captured", tone: "green", done: true },
+  { title: "Staff activity form", note: "Who attended, talking points and next action.", status: "Pending", tone: "amber", done: false, pending: true },
+  { title: "Advance booking call log", note: "Call confirming the slot is logged against the deal.", status: "Not started", tone: "gray", done: false },
+];
+
+const VISITS = [
+  { date: "02 Jul", client: "Aditya Verma", type: "Home visit", executive: "Rohit Khanna", capture: "2 of 4", captureTone: "amber", vehicle: "Yes", status: "Scheduled", statusTone: "blue" },
+  { date: "14 Jul", client: "Sanjay Mehta", type: "Office visit", executive: "Pooja Sharma", capture: "4 of 4", captureTone: "green", vehicle: "No", status: "Completed", statusTone: "green" },
+  { date: "26 Jul", client: "Shalini Kapoor", type: "Home visit", executive: "Rohit Khanna", capture: "4 of 4", captureTone: "green", vehicle: "Yes", status: "Completed", statusTone: "green" },
+  { date: "30 Jul", client: "Vivek Sharma", type: "Home visit", executive: "Nikhil Bansal", capture: "0 of 4", captureTone: "gray", vehicle: "Yes", status: "Scheduled", statusTone: "blue" },
 ];
 
 const COLUMNS = [
   { label: "Date", key: "date" },
+  { label: "Client", key: "client" },
   { label: "Type", key: "type" },
-  { label: "Venue", key: "venue" },
-  { label: "Attended By", key: "attendedBy" },
-  { label: "GPS", key: "gps" },
+  { label: "Executive", key: "executive" },
   { label: "Capture", key: "capture" },
-  { label: "Outcome", key: "outcome" },
+  { label: "Vehicle", key: "vehicle" },
+  { label: "Status", key: "status" },
 ];
 
-const FIELD =
-  "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
-
+/** Same design and data as the standalone "Smart Home & Office Visits" page. */
 export default function VisitsMeetingsTab({ empty = false }) {
-  const [rows, setRows] = useState(INITIAL_ROWS);
-  const { sorted, sort, toggle } = useTableSort(dashRows(rows, empty), { defaultKey: "date" });
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ type: "Home visit", venue: "", attendedBy: "", outcome: "" });
+  const [visitType, setVisitType] = useState("Home visit");
+  const [date, setDate] = useState("2026-07-02");
+  const [slot, setSlot] = useState("11:00 AM – 1:00 PM");
+  const [client, setClient] = useState("Aditya Verma");
+  const [attend, setAttend] = useState("Client + both parents");
+  const [vehicle, setVehicle] = useState("Yes — branch car");
+  const [period, setPeriod] = useState("month");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [capture, setCapture] = useState(CAPTURE_ITEMS);
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    if (!form.venue.trim() || !form.attendedBy.trim()) {
-      toast.error("Please add venue and who attended.");
-      return;
-    }
-    setRows((prev) => [
-      {
-        date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-        type: form.type,
-        venue: form.venue.trim(),
-        attendedBy: form.attendedBy.trim(),
-        gps: "Pending",
-        capture: "Not Started",
-        captureTone: "gray",
-        outcome: form.outcome.trim() || "Scheduled",
-      },
-      ...prev,
-    ]);
-    toast.success("Visit logged.");
-    setForm({ type: "Home visit", venue: "", attendedBy: "", outcome: "" });
-    setOpen(false);
+  const captureItems = empty ? capture.map((item) => dashRow({ ...item, done: false, tone: "gray" }, ["title", "note"])) : capture;
+  const captureDone = captureItems.filter((i) => i.done).length;
+  const captureTotal = captureItems.length;
+
+  const toggleCapture = (title) => {
+    if (empty) return;
+    setCapture((prev) =>
+      prev.map((item) => {
+        if (item.title !== title) return item;
+        const done = !item.done;
+        return { ...item, done, status: done ? "Captured" : "Pending", tone: done ? "green" : "amber" };
+      })
+    );
   };
 
-  return (
-    <>
-      <TableCard
-        title="Visits & Meetings"
-        subtitle="Home and office visits with GPS, selfie and activity form"
-        action={<TabHeaderButton onClick={() => setOpen(true)}>Log visit</TabHeaderButton>}
-        columns={COLUMNS}
-        sort={sort}
-        onSort={toggle}
-      >
-        {sorted.map((row, i) => (
-          <tr key={`${row.date}-${row.type}-${i}`} className="border-b border-black/5 last:border-0">
-            <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.date}</td>
-            <td className="px-3 py-2.5 text-[12.5px] font-semibold text-[#111] whitespace-nowrap">{row.type}</td>
-            <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.venue}</td>
-            <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.attendedBy}</td>
-            <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.gps}</td>
-            <td className="px-3 py-2.5 whitespace-nowrap">
-              {row.capture === "-" ? (
-                <span className="text-[12px] text-[#9CA3AF]">-</span>
-              ) : (
-                <StatusPill tone={row.captureTone}>{row.capture}</StatusPill>
-              )}
-            </td>
-            <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.outcome}</td>
-          </tr>
-        ))}
-      </TableCard>
+  const rows = useMemo(
+    () => VISITS.filter((r) => typeFilter === "all" || r.type === typeFilter),
+    [typeFilter]
+  );
+  const { sorted, sort, toggle } = useTableSort(dashRows(rows, empty, ["client"]), { defaultKey: "date" });
 
-      <Modal
-        open={open}
-        onClose={() => setOpen(false)}
-        title="Log visit"
-        subtitle="Home visit, office visit or meeting"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              form="log-visit-form"
-              className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-            >
-              Save visit
-            </button>
-          </>
-        }
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <h2 className="text-[16px] font-bold text-[#111]">Visits & Meetings</h2>
+        <div className="flex items-center gap-2">
+          <OutlineButton onClick={() => toast.info("Reschedule slot opened.")}>Reschedule</OutlineButton>
+          <PrimaryButton onClick={() => toast.success("Visit started. Capture checklist is live.")}>Start Visit</PrimaryButton>
+        </div>
+      </div>
+
+      <SectionCard
+        title={`Home visit — ${empty ? "-" : "Aditya Verma"}`}
+        subtitle="MML-D-10434 · Greater Kailash · GPS required"
+        action={<ProgressMeter label="Scheduled" percent={35} color="#F59E0B" />}
       >
-        <form id="log-visit-form" onSubmit={handleSave} className="flex flex-col gap-4">
-          <div>
-            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Type</label>
-            <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} className={FIELD}>
+        <StepLabel n={1}>Visit details</StepLabel>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Field label="Visit type" required>
+            <select value={visitType} onChange={(e) => setVisitType(e.target.value)} className={FIELD}>
               <option>Home visit</option>
               <option>Office visit</option>
-              <option>Meeting</option>
             </select>
-          </div>
-          <div>
-            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Venue</label>
-            <input value={form.venue} onChange={(e) => setForm((f) => ({ ...f, venue: e.target.value }))} placeholder="Branch or locality" className={FIELD} />
-          </div>
-          <div>
-            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Attended by</label>
-            <input value={form.attendedBy} onChange={(e) => setForm((f) => ({ ...f, attendedBy: e.target.value }))} placeholder="Client + parents" className={FIELD} />
-          </div>
-          <div>
-            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Outcome</label>
-            <input value={form.outcome} onChange={(e) => setForm((f) => ({ ...f, outcome: e.target.value }))} placeholder="e.g. Premium pitched" className={FIELD} />
-          </div>
-        </form>
-      </Modal>
-    </>
+          </Field>
+          <Field label="Date" required>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={FIELD} />
+          </Field>
+          <Field label="Time slot" required>
+            <select value={slot} onChange={(e) => setSlot(e.target.value)} className={FIELD}>
+              <option>11:00 AM – 1:00 PM</option>
+              <option>2:00 PM – 4:00 PM</option>
+              <option>5:00 PM – 7:00 PM</option>
+            </select>
+          </Field>
+          <Field label="Client" required>
+            <input value={client} onChange={(e) => setClient(e.target.value)} className={FIELD} />
+          </Field>
+          <Field label="Who will attend" required>
+            <input value={attend} onChange={(e) => setAttend(e.target.value)} className={FIELD} />
+          </Field>
+          <Field label="Vehicle required">
+            <select value={vehicle} onChange={(e) => setVehicle(e.target.value)} className={FIELD}>
+              <option>Yes — branch car</option>
+              <option>No — staff travel</option>
+            </select>
+          </Field>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Mandatory capture"
+        subtitle="House photo, selfie, activity form and booking call. Incomplete visits do not count to KPI."
+        action={<ProgressMeter label={`${captureDone} of ${captureTotal}`} percent={captureTotal ? (captureDone / captureTotal) * 100 : 0} color={captureDone === captureTotal ? "#16A34A" : "#F59E0B"} />}
+      >
+        {captureItems.map((item, i) => (
+          <CheckRow key={`${item.title}-${i}`} {...item} onToggle={() => toggleCapture(item.title)} />
+        ))}
+      </SectionCard>
+
+      <SectionCard
+        title="Upcoming and recent visits"
+        subtitle="Home and office visits logged against the pipeline."
+        action={
+          <>
+            <FilterSelect
+              value={period}
+              onChange={setPeriod}
+              options={[
+                { value: "month", label: "This month" },
+                { value: "quarter", label: "This quarter" },
+              ]}
+            />
+            <FilterSelect
+              value={typeFilter}
+              onChange={setTypeFilter}
+              options={[
+                { value: "all", label: "Type: All" },
+                { value: "Home visit", label: "Home visit" },
+                { value: "Office visit", label: "Office visit" },
+              ]}
+            />
+          </>
+        }
+        footnote="Visits without complete capture do not count towards the KPI scorecard."
+      >
+        <DeskTable columns={COLUMNS} sort={sort} onSort={toggle}>
+          {sorted.map((row, i) => (
+            <tr key={`${row.date}-${row.client}-${i}`} className="border-b border-black/5 last:border-0">
+              <Td muted>{row.date}</Td>
+              <Td strong>{row.client}</Td>
+              <Td>{row.type}</Td>
+              <Td>{row.executive}</Td>
+              <Td>
+                <StatusPill tone={row.captureTone}>{row.capture}</StatusPill>
+              </Td>
+              <Td>{row.vehicle}</Td>
+              <Td>
+                <StatusPill tone={row.statusTone}>{row.status}</StatusPill>
+              </Td>
+            </tr>
+          ))}
+        </DeskTable>
+      </SectionCard>
+    </div>
   );
 }
