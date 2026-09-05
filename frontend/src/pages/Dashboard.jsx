@@ -1569,7 +1569,7 @@ function MyLeadsCard({ onOpenDeal, onMoveStage }) {
             className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
           >
             <Plus size={15} />
-            Create Lead
+            Add Prospect / Lead
           </button>
         </div>
       </div>
@@ -1792,7 +1792,7 @@ export default function Dashboard() {
             className="inline-flex items-center gap-2 h-[38px] px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors"
           >
             <Plus size={15} />
-            Create Lead
+            Add Prospect / Lead
           </button>
         </div>
       </div>
