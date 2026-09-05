@@ -24,15 +24,21 @@ const REASONS = [
   { id: "wrong", label: "No / Never enquired / Wrong enquiry" },
 ];
 
-const CHANNELS = [
-  { label: "Instagram Ads", value: 118, color: "#7A0A17" },
-  { label: "Google Ads", value: 91, color: "#D6A419" },
-  { label: "Website / SEO", value: 74, color: "#16A34A" },
-  { label: "Outdoor board", value: 41, color: "#2563EB" },
-  { label: "Newspaper", value: 24, color: "#9CA3AF" },
-  { label: "Events", value: 19, color: "#A16207" },
-  { label: "LinkedIn", value: 12, color: "#D1D5DB" },
-];
+// Share of lost deals attributed to each reason above — the 46% for
+// "Price / Budget / ROI" lines up with the "Lost to price" stat card.
+const REASON_SHARE = {
+  price: 46,
+  nodeal: 34,
+  competitor: 28,
+  timing: 21,
+  trust: 17,
+  noresponse: 14,
+  decision: 9,
+  wrong: 6,
+};
+
+const REASON_STATS = REASONS.map((r) => ({ id: r.id, label: r.label, value: REASON_SHARE[r.id] ?? 0 }));
+const REASON_MAX = Math.max(...REASON_STATS.map((r) => r.value));
 
 const SOURCES = [
   { source: "Outdoor board", leads: 84, closed: 11, roi: 11, rate: 13.1, revenue: "₹4.8L", cost: "₹4,400", loss: "Package mismatch" },
@@ -53,8 +59,6 @@ const SOURCE_COLS = [
   { label: "Cost / closed", key: "cost" },
   { label: "Top loss reason", key: "loss" },
 ];
-
-const CHANNEL_MAX = Math.max(...CHANNELS.map((c) => c.value));
 
 const reasonLabel = (id) => REASONS.find((r) => r.id === id)?.label ?? id;
 const reasonLabels = (...ids) => ids.map(reasonLabel);
@@ -234,20 +238,22 @@ export default function WinLossAnalysisPage() {
 
         <section className="xl:col-span-2 bg-white border border-black/8 rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex flex-col min-w-0">
           <div className="mb-4">
-            <h2 className="text-[15px] font-bold text-[#111]">Leads by channel</h2>
-            <p className="text-[12px] text-[#9CA3AF] mt-0.5">August to date</p>
+            <h2 className="text-[15px] font-bold text-[#111]">Loss reasons breakdown</h2>
+            <p className="text-[12px] text-[#9CA3AF] mt-0.5">Share of lost deals, month to date</p>
           </div>
           <div className="flex flex-col justify-between gap-3 flex-1">
-            {CHANNELS.map((c) => (
-              <div key={c.label} className="flex items-center gap-2.5">
-                <span className="w-[108px] shrink-0 text-[12px] font-medium text-[#374151] leading-tight">{c.label}</span>
-                <span className="flex-1 h-2.5 rounded-full bg-[#F1F2F4] overflow-hidden min-w-0">
+            {REASON_STATS.map((r) => (
+              <div key={r.id} className="flex flex-col gap-1">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-[12px] font-medium text-[#374151] leading-snug">{r.label}</span>
+                  <span className="shrink-0 text-[12px] font-bold text-[#111] tabular-nums">{r.value}%</span>
+                </div>
+                <span className="h-2.5 rounded-full bg-[#F1F2F4] overflow-hidden min-w-0">
                   <span
-                    className="block h-full rounded-full"
-                    style={{ width: `${(c.value / CHANNEL_MAX) * 100}%`, backgroundColor: c.color }}
+                    className="block h-full rounded-full bg-[#7A0A17]"
+                    style={{ width: `${(r.value / REASON_MAX) * 100}%` }}
                   />
                 </span>
-                <span className="w-8 shrink-0 text-right text-[12px] font-bold text-[#111] tabular-nums">{c.value}</span>
               </div>
             ))}
           </div>
