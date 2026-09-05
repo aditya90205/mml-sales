@@ -7,7 +7,7 @@ import mmlLoginBg from "../assets/mml-login-page.png";
 
 // Percentages are measured against the 5760x3112 mml-login-page.png artwork
 // so overlaid content lands exactly on the blank slots baked into the image.
-const STAT_VALUES = ["17+", "1000+", "4+", "Global Reach"];
+const STAT_VALUES = ["17+", "1000+", "4+", ""];
 const STAT_X = [5.6, 16.7, 27.8, 38.9]; // column centers, % of image width
 const STAT_Y = 93.2; // row center, % of image height
 
