@@ -1,12 +1,15 @@
 import { ChevronDown } from "lucide-react";
 
-export function AppPage({ title, actions, children }) {
+export function AppPage({ title, subtitle, actions, children }) {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="px-5 pt-5 pb-8 flex flex-col gap-5 min-w-0">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <h1 className="text-[26px] font-bold text-[#111] tracking-tight">{title}</h1>
-          {actions && <div className="flex items-center gap-2.5 shrink-0 flex-wrap">{actions}</div>}
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="text-[26px] font-bold text-[#111] tracking-tight">{title}</h1>
+            {subtitle && <p className="text-[13.5px] text-[#6B7280] mt-1 max-w-3xl leading-relaxed">{subtitle}</p>}
+          </div>
+          {actions && <div className="flex items-center gap-2.5 shrink-0 flex-wrap pt-0.5">{actions}</div>}
         </div>
         {children}
       </div>
@@ -64,12 +67,12 @@ const NOTE_TONE = {
   grey: "text-[#6B7280]",
 };
 
-export function MetricCard({ label, value, note, detail, noteTone = "grey", highlight = false, compact = false }) {
+export function MetricCard({ label, value, note, detail, noteTone = "grey", highlight = false, compact = false, className = "" }) {
   return (
     <div
-      className={`rounded-2xl min-w-0 border ${compact ? "px-3 py-2.5" : "p-4"} ${
+      className={`rounded-2xl min-w-0 border ${compact ? "px-3 py-3" : "p-4"} ${
         highlight ? "bg-[#FCF5F6] border-[#7A0A17]/20" : "bg-white border-black/8"
-      }`}
+      } ${className}`}
     >
       <p
         className={`font-semibold ${compact ? "text-[10px] uppercase tracking-wide" : "text-[12px]"} ${

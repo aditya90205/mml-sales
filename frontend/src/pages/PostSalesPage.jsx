@@ -113,7 +113,7 @@ const UPSELL_ROWS = [
 ];
 
 const TAB_META = {
-  overview: ["Post-Sales Desk", "Everything owed after the match is confirmed — balance payments, testimonials, reviews, cross-sell and upsell."],
+  overview: ["Post-Sales Desk", "Everything owed after the match is confirmed — balance payments, testimonials, reviews, cross-sell and upsell. (BRD S7)"],
   payment: ["Payment Collection", "Instalments and balance amounts due after matchmaking begins. Receipts post to Finance automatically."],
   followup: ["Final Payment Follow-up", "Reminder cadence for overdue balances, with escalation to Branch Head after the third attempt."],
   testimonial: ["Testimonial Collection", "Written and video testimonials requested after engagement or marriage confirmation. Consent required before publishing."],
@@ -510,6 +510,7 @@ export default function PostSalesPage() {
   return (
     <AppPage
       title={pageTitle}
+      subtitle={pageSub}
       actions={
         <>
           <NativeSelect
@@ -525,37 +526,43 @@ export default function PostSalesPage() {
         </>
       }
     >
-      <p className="-mt-2 text-[13.5px] text-[#6B7280] max-w-3xl">{pageSub}</p>
-
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-        {TABS.map((t) => {
-          const on = tab === t.k;
-          return (
-            <button
-              key={t.k}
-              type="button"
-              onClick={() => setTab(t.k)}
-              className={`inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors ${
-                on ? "bg-[#7A0A17] text-white" : "bg-white text-[#4B5563] border border-black/8 hover:bg-[#FAFAFB]"
-              }`}
-            >
-              {t.label}
-              {t.count != null && (
-                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md ${on ? "bg-white/20 text-white" : "bg-[#F1F2F4] text-[#6B7280]"}`}>
-                  {t.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      <div className="w-full overflow-x-auto scrollbar-none">
+        <div className="flex w-full items-center gap-1 bg-white rounded-full p-1.5 border border-black/6 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          {TABS.map((t) => {
+            const on = tab === t.k;
+            return (
+              <button
+                key={t.k}
+                type="button"
+                onClick={() => setTab(t.k)}
+                className={`flex flex-1 min-w-fit items-center justify-center gap-1.5 h-8 px-2.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors ${
+                  on ? "bg-[#7A0A17] text-white" : "text-[#374151] hover:bg-black/[0.04]"
+                }`}
+              >
+                {t.label}
+                {t.count != null && (
+                  <span
+                    className={`min-w-[18px] h-[18px] px-1.5 rounded-md text-[10px] font-bold grid place-items-center ${
+                      on ? "bg-white/20 text-white" : "bg-[#F1F2F4] text-[#6B7280]"
+                    }`}
+                  >
+                    {t.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className={`rounded-2xl border px-4 py-3 text-[13.5px] ${BANNER_CLASS[banner.k]}`}>
-        <span className="font-bold">{banner.strong}</span>{" "}
-        <span className="opacity-90">{banner.text}</span>{" "}
+      <div className={`rounded-xl px-4 py-3 text-[13.5px] flex items-start sm:items-center justify-between gap-3 flex-wrap ${BANNER_CLASS[banner.k]}`}>
+        <p className="min-w-0">
+          <span className="font-semibold">{banner.strong}</span>{" "}
+          <span className="opacity-90">{banner.text}</span>
+        </p>
         <button
           type="button"
-          className="font-bold underline underline-offset-2"
+          className="font-semibold underline underline-offset-2 shrink-0"
           onClick={() => {
             if (banner.cta === "Open referral desk") setTab("referral");
             else toast.info(banner.cta);
@@ -567,11 +574,12 @@ export default function PostSalesPage() {
 
       {tab === "overview" && (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
             {kpis.map((k) => (
               <MetricCard
                 key={k.label}
                 compact
+                className="shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
                 label={k.label}
                 value={k.value}
                 note={k.note}
@@ -581,118 +589,142 @@ export default function PostSalesPage() {
             ))}
           </div>
 
-          <div className="grid lg:grid-cols-5 gap-4">
-            <div className="lg:col-span-3 min-w-0">
-            <Panel
-              title="Today’s post-sales tasks"
-              subtitle={head ? "11 tasks across 4 executives" : "6 tasks · Rohit Khanna"}
-            >
-              <div className="flex flex-col divide-y divide-black/6 -mx-1">
-                {tasks.map((task) => (
-                  <div key={task.title} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
-                    <span className="text-[11px] font-bold text-[#9CA3AF] w-12 shrink-0 pt-0.5">{task.time}</span>
-                    <div className="min-w-0 flex-1">
-                      <StatusPill tone={task.tone}>{task.kind}</StatusPill>
-                      <p className="text-[13.5px] font-semibold text-[#111] mt-1">{task.title}</p>
-                      <p className="text-[12px] text-[#9CA3AF] mt-0.5">{task.sub}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[13px] font-bold text-[#111] mb-1.5">{task.value}</p>
+          <div className="grid lg:grid-cols-12 gap-4 items-start">
+            <div className="lg:col-span-8 flex flex-col gap-4 min-w-0">
+              <section className="bg-white border border-black/8 rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+                <div className="flex items-baseline justify-between gap-3 mb-1">
+                  <div className="flex items-baseline gap-2 min-w-0 flex-wrap">
+                    <h2 className="text-[15px] font-bold text-[#111]">My post-sales tasks today</h2>
+                    <span className="text-[12px] text-[#9CA3AF] font-medium">
+                      {head ? "11 tasks across 4 executives" : "6 tasks · Rohit Khanna"}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toast.info("Opening task list…")}
+                    className="text-[13px] font-semibold text-[#7A0A17] hover:underline shrink-0"
+                  >
+                    Open task list
+                  </button>
+                </div>
+                <div className="flex flex-col divide-y divide-black/6 mt-2">
+                  {tasks.map((task) => (
+                    <div key={task.title} className="flex items-center gap-3 py-3.5">
+                      <span className="text-[12px] font-medium text-[#9CA3AF] w-11 shrink-0">{task.time}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <StatusPill tone={task.tone}>{task.kind}</StatusPill>
+                          <p className="text-[13.5px] font-semibold text-[#111] truncate">{task.title}</p>
+                        </div>
+                        <p className="text-[12px] text-[#9CA3AF] mt-0.5 truncate">{task.sub}</p>
+                      </div>
+                      <p className="text-[13px] font-bold text-[#111] shrink-0 w-16 text-right">{task.value}</p>
                       <button
                         type="button"
                         onClick={() => setTab(task.go)}
-                        className="h-8 px-3 rounded-lg text-[12px] font-semibold bg-[#7A0A17] text-white hover:bg-[#640712]"
+                        className="text-[13px] font-semibold text-[#7A0A17] hover:underline shrink-0 w-16 text-right"
                       >
                         {task.cta}
                       </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </Panel>
+                  ))}
+                </div>
+              </section>
+
+              <section className="bg-white border border-black/8 rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+                <div className="flex items-baseline gap-3 flex-wrap mb-4">
+                  <h2 className="text-[15px] font-bold text-[#111]">Post-sales completion by client</h2>
+                  <p className="text-[12px] text-[#9CA3AF] font-medium">{COMPLETION_STEPS.join("  ·  ")}</p>
+                </div>
+                <div className="flex flex-col divide-y divide-black/6">
+                  {completion.map(([name, code, steps, pct]) => (
+                    <div key={code} className="flex items-center gap-4 py-3.5">
+                      <div className="w-[140px] shrink-0 min-w-0">
+                        <p className="text-[13.5px] font-semibold text-[#111] truncate">{name}</p>
+                        <p className="text-[11px] text-[#9CA3AF] mt-0.5">{code}</p>
+                      </div>
+                      <div className="flex-1 min-w-0 grid grid-cols-6 gap-2">
+                        {steps.map((done, i) => (
+                          <div key={COMPLETION_STEPS[i]} className="min-w-0">
+                            <div
+                              className="h-[5px] rounded-full"
+                              style={{ background: done ? "#2F8F5B" : "#F0E2E0" }}
+                            />
+                            <p
+                              className={`text-[10px] mt-1.5 truncate ${done ? "text-[#5A4D4C] font-medium" : "text-[#B8AAA9]"}`}
+                            >
+                              {COMPLETION_STEPS[i]}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-[14px] font-bold text-[#111] w-10 text-right shrink-0">{pct}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
             </div>
-            <div className="lg:col-span-2 flex flex-col gap-4">
-              <Panel title="Collection target — September" subtitle={head ? "Branch collection" : "My collection"}>
-                <div className="flex items-end justify-between mb-2">
-                  <p className="text-[22px] font-bold text-[#111]">
-                    {collectDone} <span className="text-[13px] font-medium text-[#9CA3AF]">of {collectGoal}</span>
-                  </p>
-                  <p className="text-[13px] font-bold text-[#16A34A]">{collectPct}%</p>
+
+            <div className="lg:col-span-4 flex flex-col gap-4 min-w-0">
+              <section className="rounded-2xl p-5 text-white" style={{ background: "#7A0A17" }}>
+                <p className="text-[11px] font-bold tracking-[0.08em] uppercase text-white/80">
+                  {head ? "Branch collection target — September" : "My collection target — September"}
+                </p>
+                <p className="text-[28px] font-bold leading-tight mt-2">
+                  {collectDone}{" "}
+                  <span className="text-[15px] font-medium text-white/70">of {collectGoal}</span>
+                </p>
+                <div className="h-2 rounded-full bg-black/25 overflow-hidden mt-4">
+                  <div className="h-full rounded-full bg-[#E8C36A]" style={{ width: `${collectPct}%` }} />
                 </div>
-                <div className="h-2.5 rounded-full bg-[#F1F2F4] overflow-hidden">
-                  <div className="h-full rounded-full bg-[#7A0A17]" style={{ width: `${collectPct}%` }} />
-                </div>
-                <p className="text-[12px] text-[#6B7280] mt-3 leading-relaxed">
+                <p className="text-[12px] text-white/80 mt-3 leading-relaxed">
                   {head
                     ? "Incentive unlocks at 85%. ₹11.4L still to collect with 26 days left."
                     : "Post-sales incentive is 1.5% of collected balance. ₹3.9L left this month."}
                 </p>
-              </Panel>
-              <Panel title="Escalations" subtitle="Needs a decision">
-                <div className="flex flex-col gap-3">
+              </section>
+
+              <section className="bg-white border border-black/8 rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+                <div className="flex items-baseline justify-between gap-2 mb-4">
+                  <h2 className="text-[15px] font-bold text-[#111]">Escalations</h2>
+                  <span className="text-[12px] text-[#9CA3AF] font-medium">Needs a decision</span>
+                </div>
+                <div className="flex flex-col gap-4">
                   {[
                     { dot: "#E8395B", title: "Shalini Kapoor — 34 days overdue", body: "₹1,25,000 of ₹5,00,000 pending. Client asked to split into two instalments." },
                     { dot: "#a8760f", title: "Karan Malhotra — refund request", body: "Requested partial refund after 3 months with no shortlist. Retention call pending." },
                     { dot: "#3b6fd4", title: "Gupta family — testimonial consent", body: "Family agreed to a written testimonial but not to photographs being used." },
-                    { dot: "#16A34A", title: "Nair wedding — decor partner", body: "₹4,20,000 decor order confirmed. Commission invoice to be raised to partner." },
+                    { dot: "#2f8f5b", title: "Nair wedding — decor partner", body: "₹4,20,000 decor order confirmed. Commission invoice to be raised to partner." },
                   ].map((e) => (
                     <div key={e.title} className="flex gap-3">
                       <span className="mt-1.5 size-2 rounded-full shrink-0" style={{ background: e.dot }} />
                       <div>
-                        <p className="text-[13px] font-semibold text-[#111]">{e.title}</p>
-                        <p className="text-[12px] text-[#6B7280] mt-0.5 leading-relaxed">{e.body}</p>
+                        <p className="text-[13.5px] font-semibold text-[#111] leading-snug">{e.title}</p>
+                        <p className="text-[12.5px] text-[#6B7280] mt-0.5 leading-relaxed">{e.body}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-              </Panel>
+              </section>
+
+              <section className="bg-white border border-black/8 rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+                <h2 className="text-[15px] font-bold text-[#111] mb-3">Referral & advocacy</h2>
+                <div className="flex flex-col divide-y divide-black/6">
+                  {[
+                    ["Referrals received from matched clients", head ? "17" : "6"],
+                    ["Referrals converted to deals", head ? "9" : "3"],
+                    ["Average rating in collected feedback", "4.7 / 5"],
+                    ["Clients who declined to be contacted", head ? "5" : "2"],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                      <p className="text-[13px] text-[#6B7280] leading-snug">{label}</p>
+                      <p className="text-[14px] font-bold text-[#111] shrink-0">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
             </div>
           </div>
-
-          <Panel title="Post-sales completion" subtitle="Payment · Testimonial · Review · Cross-sell · Upsell · Feedback">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] border-collapse">
-                <thead>
-                  <tr className="border-b border-black/8">
-                    <Th>Client</Th>
-                    {COMPLETION_STEPS.map((s) => (
-                      <Th key={s}>{s}</Th>
-                    ))}
-                    <Th>Done</Th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {completion.map(([name, code, steps, pct]) => (
-                    <tr key={code} className="border-b border-black/6 last:border-0">
-                      <ClientCell name={name} code={code} />
-                      {steps.map((done, i) => (
-                        <Td key={COMPLETION_STEPS[i]}>
-                          <div className="h-1.5 w-16 rounded-full" style={{ background: done ? "#16A34A" : "#F1F2F4" }} />
-                        </Td>
-                      ))}
-                      <Td strong>{pct}</Td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Panel>
-
-          <Panel title="Advocacy" subtitle="Referrals and feedback from matched clients">
-            <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
-              {[
-                ["Referrals received from matched clients", head ? "17" : "6"],
-                ["Referrals converted to deals", head ? "9" : "3"],
-                ["Average rating in collected feedback", "4.7 / 5"],
-                ["Clients who declined to be contacted", head ? "5" : "2"],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-xl border border-black/8 p-4">
-                  <p className="text-[12px] text-[#6B7280] font-medium">{label}</p>
-                  <p className="text-[22px] font-bold text-[#111] mt-1">{value}</p>
-                </div>
-              ))}
-            </div>
-          </Panel>
         </>
       )}
 
