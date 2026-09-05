@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { ChevronDown, Sparkles, Video } from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
@@ -18,11 +18,69 @@ const RM_FLAG_TONES = {
   blue:  { color: "#3B82F6", bg: "#E8F2FE" },
 };
 
+const TEMPERATURE_TONES = {
+  Hot:  { color: "#E8395B", bg: "#FDECEE" },
+  Warm: { color: "#F59E0B", bg: "#FFF3E4" },
+  Cold: { color: "#3B82F6", bg: "#E8F2FE" },
+};
+
 function DetailField({ label, value }) {
   return (
     <div>
       <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{label}</p>
       <p className="text-[13px] font-semibold text-[#111] mt-1">{value || "-"}</p>
+    </div>
+  );
+}
+
+function MeetingField({ label, value }) {
+  return (
+    <div>
+      <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{label}</p>
+      <p className="text-[13px] font-semibold text-[#111] mt-1 flex items-center gap-1.5">
+        <Video size={13} className="text-[#3B82F6] shrink-0" />
+        {value || "-"}
+      </p>
+    </div>
+  );
+}
+
+function WinLossReasonsField({ label, value, tone }) {
+  const toneStyle = TEMPERATURE_TONES[tone] || TEMPERATURE_TONES.Cold;
+  return (
+    <div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{label}</p>
+        <span
+          className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
+          style={{ color: toneStyle.color, backgroundColor: toneStyle.bg }}
+        >
+          {tone}
+        </span>
+      </div>
+      <p className="text-[13px] font-semibold text-[#111] mt-1">{value || "-"}</p>
+    </div>
+  );
+}
+
+function DiscussionField({ label, at, note, urgency, onFollowUp }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{label}</p>
+        {urgency && <span className="text-[11px] font-bold text-[#E8395B] shrink-0">{urgency}</span>}
+      </div>
+      <p className="text-[13px] font-semibold text-[#111] mt-1">{at || "-"}</p>
+      {note && <p className="text-[12px] text-[#4B5563] mt-0.5">{note}</p>}
+      {onFollowUp && (
+        <button
+          type="button"
+          onClick={onFollowUp}
+          className="text-[11.5px] font-semibold text-[#2563EB] hover:underline mt-1"
+        >
+          Follow up History
+        </button>
+      )}
     </div>
   );
 }
@@ -95,7 +153,20 @@ function DealDetailsCard({ deal }) {
         <DetailField label="Area of house" value={deal.areaOfHouse} />
         <DetailField label="Profession" value={deal.profession} />
         <DetailField label="Family income band" value={deal.familyIncomeBand} />
-        <DetailField label="Next action" value={deal.nextAction} />
+        <MeetingField label="Next schedule meeting" value={deal.nextMeeting} />
+        <WinLossReasonsField label="Win / loss analysis - reasons" value={deal.winLossReasons} tone={deal.winLossTone} />
+        <DiscussionField
+          label="Last discussion"
+          at={deal.lastDiscussionAt}
+          note={deal.lastDiscussionNote}
+          onFollowUp={() => toast.info("Follow-up history coming soon.")}
+        />
+        <DiscussionField
+          label="Next action"
+          at={deal.nextActionAt}
+          note={deal.nextAction}
+          urgency={deal.nextActionUrgency}
+        />
       </div>
     </div>
   );
