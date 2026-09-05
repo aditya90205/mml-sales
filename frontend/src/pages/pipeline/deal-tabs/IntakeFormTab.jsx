@@ -25,7 +25,6 @@ const SECTIONS_META = [
 
 // Static fill % for sections that aren't built out yet.
 const PLACEHOLDER_PROGRESS = {
-  siblings: 92,
   match: 55,
   essential: 74,
   medical: 62,
@@ -149,7 +148,8 @@ const EDUCATION_BLOCKS = [
       {
         key: "courses",
         label: "Courses (most recent first)",
-        type: "qualifications",
+        type: "rows",
+        rowLabel: "Qualification",
         fullWidth: true,
         rowCount: 4,
         rowFields: QUALIFICATION_ROW_FIELDS,
@@ -344,11 +344,55 @@ const FAMILY_BLOCKS = [
   },
 ];
 
+const SIBLING_ROW_FIELDS = [
+  { key: "name", label: "Name" },
+  { key: "relation", label: "Relation" },
+  { key: "age", label: "Age" },
+  { key: "personalDetails", label: "Personal details" },
+  { key: "maritalStatus", label: "Marital status" },
+  { key: "spouseDetails", label: "Spouse's details" },
+];
+
+const SIBLINGS_BLOCKS = [
+  {
+    title: "Siblings",
+    fields: [
+      { key: "numberOfSiblings", label: "Number of siblings", type: "text" },
+      { key: "brothers", label: "Brothers", type: "text" },
+      { key: "sisters", label: "Sisters", type: "text" },
+      { key: "marriedSiblings", label: "Married siblings", type: "text" },
+      {
+        key: "siblingDetails",
+        label: "Sibling detail",
+        type: "rows",
+        rowLabel: "Sibling",
+        fullWidth: true,
+        rowCount: 3,
+        rowFields: SIBLING_ROW_FIELDS,
+      },
+    ],
+  },
+  {
+    title: "Other financial details of family",
+    fields: [
+      { key: "turnover", label: "Turnover", type: "text" },
+      { key: "annualFamilyIncome", label: "Annual family income", type: "text" },
+      { key: "numberOfEmployees", label: "Number of employees", type: "text" },
+      { key: "familyBudget", label: "Budget", type: "text" },
+      { key: "vehicles", label: "Vehicles", type: "text" },
+      { key: "countriesTravelled", label: "Countries travelled", type: "text" },
+      { key: "otherPropertyDetails", label: "Other property details", type: "textarea" },
+      { key: "yourLifestyle", label: "Your lifestyle", type: "textarea" },
+    ],
+  },
+];
+
 const SECTION_BLOCKS = {
   personal: PERSONAL_DETAILS_BLOCKS,
   education: EDUCATION_BLOCKS,
   residency: RESIDENCY_BLOCKS,
   family: FAMILY_BLOCKS,
+  siblings: SIBLINGS_BLOCKS,
 };
 
 const DEMO_PERSONAL_VALUES = {
@@ -435,11 +479,38 @@ const DEMO_FAMILY_VALUES = {
   motherPhone: "98••• ••902",
 };
 
+const DEMO_SIBLINGS_VALUES = {
+  numberOfSiblings: "1",
+  brothers: "0",
+  sisters: "1",
+  siblingDetails: [
+    {
+      name: "Ankita Raheja",
+      relation: "Sister",
+      age: "34",
+      personalDetails: "Architect, own practice",
+      maritalStatus: "Married",
+      spouseDetails: "Doctor — orthopaedic, Apollo Hospital",
+    },
+    {},
+    {},
+  ],
+  turnover: "₹6–8 Cr",
+  annualFamilyIncome: "₹25–50L p.a.",
+  numberOfEmployees: "24",
+  familyBudget: "₹60–80L",
+  vehicles: "Fortuner, Baleno",
+  countriesTravelled: "9",
+  otherPropertyDetails: "Plot in Hisar (approx. 300 sq yd), shop at Chandni Chowk",
+  yourLifestyle: "Owned 500 sq yd house in Sector 43, understated, travels twice a year",
+};
+
 const SECTION_DEMO_VALUES = {
   ...DEMO_PERSONAL_VALUES,
   ...DEMO_EDUCATION_VALUES,
   ...DEMO_RESIDENCY_VALUES,
   ...DEMO_FAMILY_VALUES,
+  ...DEMO_SIBLINGS_VALUES,
 };
 
 const INPUT =
@@ -450,13 +521,13 @@ function isFilled(value) {
   return Boolean(value && String(value).trim());
 }
 
-function isQualificationsFilled(rows) {
+function isRowsFilled(rows) {
   return Array.isArray(rows) && rows.some((r) => Object.values(r || {}).some((v) => v && String(v).trim()));
 }
 
 function isFieldFilled(field, values, chipValues) {
   if (field.chipsKey) return (chipValues?.[field.chipsKey]?.length || 0) > 0;
-  if (field.type === "qualifications") return isQualificationsFilled(values[field.key]);
+  if (field.type === "rows") return isRowsFilled(values[field.key]);
   return isFilled(values[field.key]);
 }
 
@@ -489,8 +560,9 @@ function Pill({ selected, onClick, children }) {
   );
 }
 
-function QualificationsField({ def, value, onChange }) {
+function RowsField({ def, value, onChange }) {
   const rows = value && value.length ? value : Array.from({ length: def.rowCount }, () => ({}));
+  const rowLabel = def.rowLabel || "Row";
 
   const updateRow = (i, rowKey, val) => {
     const next = rows.map((r, idx) => (idx === i ? { ...r, [rowKey]: val } : r));
@@ -503,7 +575,9 @@ function QualificationsField({ def, value, onChange }) {
       <div className="flex flex-col gap-3">
         {rows.map((row, i) => (
           <div key={i} className="border border-black/8 rounded-xl p-3.5">
-            <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wide mb-2.5">Qualification {i + 1}</p>
+            <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wide mb-2.5">
+              {rowLabel} {i + 1}
+            </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {def.rowFields.map((rf) => (
                 <div key={rf.key}>
@@ -554,8 +628,8 @@ function IntakeField({ def, value, chips, onChange, onRemoveChip }) {
     );
   }
 
-  if (def.type === "qualifications") {
-    return <QualificationsField def={def} value={value} onChange={onChange} />;
+  if (def.type === "rows") {
+    return <RowsField def={def} value={value} onChange={onChange} />;
   }
 
   if (def.type === "upload") {
@@ -622,7 +696,7 @@ function FormBlock({ block, values, chipValues, onFieldChange, onRemoveChip }) {
       </div>
       <div className={`grid grid-cols-1 ${colClass} gap-x-6 gap-y-4`}>
         {block.fields.map((f) => (
-          <div key={f.key} className={f.type === "textarea" || f.type === "qualifications" || f.fullWidth ? "sm:col-span-full" : ""}>
+          <div key={f.key} className={f.type === "textarea" || f.type === "rows" || f.fullWidth ? "sm:col-span-full" : ""}>
             <IntakeField
               def={f}
               value={values[f.key]}
