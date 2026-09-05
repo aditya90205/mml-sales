@@ -1,4 +1,5 @@
 import { ChevronDown } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function AppPage({ title, subtitle, actions, children }) {
   return (
@@ -67,7 +68,7 @@ const NOTE_TONE = {
   grey: "text-[#6B7280]",
 };
 
-export function MetricCard({ label, value, note, detail, noteTone = "grey", highlight = false, compact = false, className = "" }) {
+export function MetricCard({ label, value, note, detail, detailLink, noteTone = "grey", highlight = false, compact = false, className = "" }) {
   return (
     <div
       className={`rounded-2xl min-w-0 border ${compact ? "px-3 py-3" : "p-4"} ${
@@ -89,10 +90,21 @@ export function MetricCard({ label, value, note, detail, noteTone = "grey", high
           {note}
         </p>
       )}
-      {detail && (
-        <p className={`text-[#9CA3AF] font-medium leading-snug ${compact ? "text-[10.5px] mt-0.5" : "text-[11.5px] mt-1"}`}>
-          {detail}
-        </p>
+      {detailLink ? (
+        <Link
+          to={detailLink.to}
+          className={`inline-flex items-center justify-center w-full rounded-lg bg-[#7A0A17] text-white font-semibold hover:bg-[#640712] transition-colors ${
+            compact ? "h-7 px-2 mt-2 text-[11px]" : "h-8 px-3 mt-2.5 text-[12px]"
+          }`}
+        >
+          {detailLink.label}
+        </Link>
+      ) : (
+        detail && (
+          <p className={`text-[#9CA3AF] font-medium leading-snug ${compact ? "text-[10.5px] mt-0.5" : "text-[11.5px] mt-1"}`}>
+            {detail}
+          </p>
+        )
       )}
     </div>
   );

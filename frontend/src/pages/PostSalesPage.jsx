@@ -1,17 +1,20 @@
 import { useCallback, useMemo, useState } from "react";
+import { Flag, Mail, MessageSquare, Phone } from "lucide-react";
 import { toast } from "react-toastify";
 import StatusPill from "../components/common/StatusPill";
+import ClientStatusBadge from "../components/common/ClientStatusBadge.jsx";
+import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import {
   AppPage,
   MetricCard,
   NativeSelect,
   OutlineBtn,
-  Panel,
   PrimaryBtn,
   Td,
 } from "../components/common/AppPage.jsx";
 import Modal from "../components/ui/Modal.jsx";
+import { CLIENTS, PROBABILITY_META } from "../utils/clientsData.js";
 
 const TABS = [
   { k: "overview", label: "Overview" },
@@ -21,7 +24,7 @@ const TABS = [
   { k: "review", label: "Google Reviews", count: 7 },
   { k: "cross", label: "Cross-sell", count: 11 },
   { k: "upsell", label: "Upsell", count: 8 },
-  { k: "referral", label: "Referral" },
+  { k: "referral", label: "Referral", count: 9 },
 ];
 
 const MODES = ["UPI", "Card", "NEFT", "Cheque", "Cash"];
@@ -120,7 +123,7 @@ const TAB_META = {
   review: ["Google Reviews", "Review requests sent by WhatsApp and SMS, tracked to the posted review. (BRD S7.4)"],
   cross: ["Cross-sell", "Partner services offered to matched clients — photography, decor, venue, jewellery, travel. Commission tracked per deal. (BRD S7.5)"],
   upsell: ["Upsell", "Package upgrades, tenure extensions and add-on services for existing clients. (BRD S7.6)"],
-  referral: ["Referral", "Referrals from matched clients — requests sent, conversions, and follow-up. Full desk content will be added here."],
+  referral: ["Referral", "Referrals from matched clients — requests sent, conversions, and follow-up. (BRD S7.7)"],
 };
 
 const TAB_ACTIONS = {
@@ -169,6 +172,20 @@ function ClientCell({ name, code }) {
       <p className="font-semibold text-[#111]">{name}</p>
       <p className="text-[11px] text-[#9CA3AF] mt-0.5">{code}</p>
     </Td>
+  );
+}
+
+function IconBtn({ label, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors"
+    >
+      {children}
+    </button>
   );
 }
 
@@ -242,6 +259,10 @@ export default function PostSalesPage() {
   const [upReason, setUpReason] = useState("all");
   const [upPackage, setUpPackage] = useState("all");
   const [upStatus, setUpStatus] = useState("all");
+  const [rfStatus, setRfStatus] = useState("all");
+  const [rfOwner, setRfOwner] = useState("all");
+  const [rfBranch, setRfBranch] = useState("all");
+  const [messageFor, setMessageFor] = useState(null);
 
   const head = role === "head";
   const [pageTitle, pageSub] = TAB_META[tab];
@@ -287,6 +308,17 @@ export default function PostSalesPage() {
   const { sorted: sortedReviews, sort: rvSort, toggle: toggleRv } = useTableSort(REVIEW_ROWS);
   const { sorted: sortedCross, sort: crSort, toggle: toggleCr } = useTableSort(CROSS_ROWS);
   const { sorted: sortedUpsell, sort: upSort, toggle: toggleUp } = useTableSort(UPSELL_ROWS);
+  const referralRows = useMemo(
+    () =>
+      CLIENTS.filter((c) => {
+        if (rfStatus !== "all" && c.status !== rfStatus) return false;
+        if (rfOwner !== "all" && c.owner !== rfOwner) return false;
+        if (rfBranch !== "all" && c.branch !== rfBranch) return false;
+        return true;
+      }),
+    [rfStatus, rfOwner, rfBranch]
+  );
+  const { sorted: sortedReferrals, sort: rfSort, toggle: toggleRf } = useTableSort(referralRows);
 
   const openRecord = (cl) => {
     setModal({ kind: "record", cl });
@@ -377,7 +409,7 @@ export default function PostSalesPage() {
         { label: "Testimonials", value: "21", note: "4 awaiting consent", noteTone: "amber", detail: "12 video · 9 written" },
         { label: "Google reviews", value: "34", note: "4.6 average rating", noteTone: "green", detail: "7 requests sent, not posted" },
         { label: "Cross-sell & upsell", value: "₹9.8L", note: "₹68,400 commission", noteTone: "green", detail: "19 offers open this quarter" },
-        { label: "Referral", value: "17", note: "9 converted to deals", noteTone: "green", detail: "From matched clients" },
+        { label: "Referral", value: "17", note: "9 converted to deals", noteTone: "green", detailLink: { to: "/campaign/create", label: "Create campaign" } },
       ]
     : [
         { label: "Balance outstanding", value: "₹6.2L", note: "6 clients overdue", noteTone: "red", detail: "Across 14 active payment plans" },
@@ -385,7 +417,7 @@ export default function PostSalesPage() {
         { label: "Testimonials", value: "9", note: "4 awaiting consent", noteTone: "amber", detail: "12 video · 9 written" },
         { label: "Google reviews", value: "11", note: "4.6 average rating", noteTone: "green", detail: "7 requests sent, not posted" },
         { label: "Cross-sell & upsell", value: "₹3.4L", note: "₹68,400 commission", noteTone: "green", detail: "19 offers open this quarter" },
-        { label: "Referral", value: "6", note: "To get more refferals", noteTone: "green", detail: "From matched clients" },
+        { label: "Referral", value: "6", note: "To get more refferals", noteTone: "green", detailLink: { to: "/campaign/create", label: "Create campaign" } },
       ];
 
   const tasks = [
@@ -417,7 +449,7 @@ export default function PostSalesPage() {
     review: { k: "gold", strong: "Google rating is 4.6 from 218 reviews.", text: "7 clients matched last month have not been sent a review request yet.", cta: "Send batch" },
     cross: { k: "ok", strong: "₹68,400 commission earned this quarter.", text: "Partner offers only go out after the client confirms the match is progressing.", cta: "See rules" },
     upsell: { k: "warn", strong: "3 packages expire within 30 days.", text: "Renewal or tenure extension quotes should reach the client before expiry.", cta: "View expiring" },
-    referral: { k: "info", strong: head ? "17 referrals received in the branch." : "6 referrals received from matched clients.", text: "Ask after engagement or marriage confirmation. Conversion is tracked against the referring client.", cta: "Open referral desk" },
+    referral: { k: "info", strong: head ? "17 referrals received in the branch." : "6 referrals received from matched clients.", text: "Ask after engagement or marriage confirmation. Conversion is tracked against the referring client.", cta: "Send request" },
   };
 
   const tablePack = {
@@ -547,6 +579,27 @@ export default function PostSalesPage() {
         ],
       },
     },
+    referral: {
+      stats: [
+        { label: "Referrals received", value: head ? "17" : "6", note: "From matched clients" },
+        { label: "Converted to deals", value: head ? "9" : "3", note: "This quarter" },
+        { label: "Conversion", value: head ? "53%" : "50%", note: "Referral to deal" },
+        { label: "Awaiting follow-up", value: head ? "8" : "3", note: "Request not yet sent" },
+      ],
+      title: "Referral pipeline",
+      sub: "Matched clients who can introduce new families",
+      count: "9 clients",
+      footer: "Showing 9 of 9 clients",
+      playbook: {
+        title: "Referral playbook",
+        sub: "Ask after the match, not before",
+        items: [
+          { tag: "WHEN", tagColor: "#3b6fd4", meta: "After match", title: "Ask after engagement or marriage", body: "Referral requests go out only after the client confirms engagement or marriage. Nothing is asked while matchmaking is still in progress." },
+          { tag: "CREDIT", tagColor: "#16A34A", meta: "Attributed", title: "Conversion tracks to the referrer", body: "Every new enquiry is tagged to the matched client who introduced them, so incentive and follow-up stay with the right executive." },
+          { tag: "OPT OUT", tagColor: "#E8395B", meta: "Respect", title: "Do not chase declined contacts", body: "Clients who decline to be contacted for referrals are excluded. A second ask is blocked by the system." },
+        ],
+      },
+    },
   };
 
   const pack = tablePack[tab];
@@ -583,7 +636,7 @@ export default function PostSalesPage() {
             ]}
           />
           <OutlineBtn
-            className={tab === "payment" || tab === "followup" || tab === "upsell" ? "border-[#7A0A17]/45 text-[#7A0A17]" : ""}
+            className={tab === "payment" || tab === "followup" || tab === "upsell" || tab === "referral" ? "border-[#7A0A17]/45 text-[#7A0A17]" : ""}
             onClick={() => toast.info(`${outlineLabel}…`)}
           >
             {outlineLabel}
@@ -641,7 +694,9 @@ export default function PostSalesPage() {
                       ? "h-8 px-3 rounded-lg bg-white border border-[#16A34A]/40 text-[12px] font-semibold text-[#166534] hover:bg-[#F4FBF6] shrink-0"
                       : banner.cta === "View expiring"
                         ? "h-8 px-3 rounded-lg bg-white border border-[#D97706]/45 text-[12px] font-semibold text-[#B45309] hover:bg-[#FFF8EE] shrink-0"
-                        : "font-semibold underline underline-offset-2 shrink-0"
+                        : banner.cta === "Send request"
+                          ? "h-8 px-3 rounded-lg bg-white border border-[#3B82F6]/40 text-[12px] font-semibold text-[#1D4ED8] hover:bg-[#F8FBFF] shrink-0"
+                          : "font-semibold underline underline-offset-2 shrink-0"
           }
           onClick={() => {
             if (banner.cta === "Open referral desk") setTab("referral");
@@ -666,6 +721,7 @@ export default function PostSalesPage() {
                 note={k.note}
                 noteTone={k.noteTone}
                 detail={k.detail}
+                detailLink={k.detailLink}
               />
             ))}
           </div>
@@ -809,12 +865,151 @@ export default function PostSalesPage() {
         </>
       )}
 
-      {tab === "referral" && (
-        <Panel title="Referral desk" subtitle="Content for this tab will be added next">
-          <p className="text-[13.5px] text-[#6B7280] leading-relaxed">
-            This is a placeholder. Referral requests, conversions, and follow-up will show here once the page content is provided.
-          </p>
-        </Panel>
+      {tab === "referral" && pack && (
+        <>
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            {pack.stats.map((s) => (
+              <MetricCard
+                key={s.label}
+                compact
+                className="shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+                label={s.label}
+                value={s.value}
+                note={s.note}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <NativeSelect
+                value={rfStatus}
+                onChange={setRfStatus}
+                options={[
+                  { value: "all", label: "Status: All" },
+                  { value: "Active", label: "Status: Active" },
+                  { value: "Inactive", label: "Status: Inactive" },
+                ]}
+              />
+              <NativeSelect
+                value={rfOwner}
+                onChange={setRfOwner}
+                options={[
+                  { value: "all", label: "Owner: All" },
+                  { value: "Rohit Kumar", label: "Owner: Rohit Kumar" },
+                  { value: "Pooja Sharma", label: "Owner: Pooja Sharma" },
+                ]}
+              />
+              <NativeSelect
+                value={rfBranch}
+                onChange={setRfBranch}
+                options={[
+                  { value: "all", label: "Branch: All" },
+                  { value: "South Extension", label: "Branch: South Extension" },
+                  { value: "Rajouri Garden", label: "Branch: Rajouri Garden" },
+                  { value: "Gurgaon", label: "Branch: Gurgaon" },
+                  { value: "Dubai", label: "Branch: Dubai" },
+                ]}
+              />
+            </div>
+            <p className="text-[13px] font-semibold text-[#9CA3AF]">{pack.count}</p>
+          </div>
+
+          <section className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3 flex-wrap">
+              <div>
+                <h2 className="text-[15px] font-bold text-[#111]">{pack.title}</h2>
+                <p className="text-[12px] text-[#9CA3AF] mt-0.5">{pack.sub}</p>
+              </div>
+              <div className="flex items-center gap-5 flex-wrap text-[12px] font-medium text-[#374151]">
+                {Object.entries(PROBABILITY_META).map(([key, meta]) => (
+                  <span key={key} className="flex items-center gap-1.5">
+                    <Flag size={12} style={{ color: meta.color }} fill={meta.color} strokeWidth={0} />
+                    {meta.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1100px] border-collapse">
+                <thead>
+                  <tr className="border-y border-black/8">
+                    <PsTh label="Client name" sortKey="name" sort={rfSort} onSort={toggleRf} />
+                    <PsTh label="Client ID" sortKey="clientId" sort={rfSort} onSort={toggleRf} />
+                    <PsTh label="Phone" sortKey="phone" sort={rfSort} onSort={toggleRf} />
+                    <PsTh label="Status" sortKey="status" sort={rfSort} onSort={toggleRf} />
+                    <PsTh label="Address" sortKey="address" sort={rfSort} onSort={toggleRf} />
+                    <PsTh label="Owner" sortKey="owner" sort={rfSort} onSort={toggleRf} />
+                    <PsTh label="Branch" sortKey="branch" sort={rfSort} onSort={toggleRf} />
+                    <PsTh label="Last contact" sortKey="lastContact" sort={rfSort} onSort={toggleRf} />
+                    <PsTh label="Reason" sortKey="reason" sort={rfSort} onSort={toggleRf} />
+                    <PsTh label="Actions" sortKey="actions" unsortable />
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedReferrals.map((c) => {
+                    const prob = PROBABILITY_META[c.probability] || PROBABILITY_META.medium;
+                    return (
+                      <tr key={c.id} className="border-b border-black/6 last:border-0">
+                        <Td>
+                          <span className="inline-flex items-center gap-2">
+                            <Flag size={12} style={{ color: prob.color }} fill={prob.color} strokeWidth={0} className="shrink-0" />
+                            <span className="font-semibold text-[#111] whitespace-nowrap">{c.name}</span>
+                          </span>
+                        </Td>
+                        <Td>{c.clientId}</Td>
+                        <Td>{c.phone}</Td>
+                        <Td>
+                          <ClientStatusBadge status={c.status} married={c.married} />
+                        </Td>
+                        <Td>{c.address}</Td>
+                        <Td>{c.owner}</Td>
+                        <Td>{c.branch}</Td>
+                        <Td>{c.lastContact}</Td>
+                        <Td>{c.reason}</Td>
+                        <Td>
+                          <div className="flex items-center gap-0.5">
+                            <IconBtn label={`Call ${c.name}`} onClick={() => toast.info(`Calling ${c.name}…`)}>
+                              <Phone size={14} className="text-[#16A34A]" />
+                            </IconBtn>
+                            <IconBtn label={`Message ${c.name}`} onClick={() => setMessageFor(c)}>
+                              <MessageSquare size={14} className="text-[#D97706]" />
+                            </IconBtn>
+                            <IconBtn label={`Email ${c.name}`} onClick={() => toast.info(`Emailing ${c.name}…`)}>
+                              <Mail size={14} className="text-[#2563EB]" />
+                            </IconBtn>
+                          </div>
+                        </Td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
+              <p className="text-[12px] text-[#9CA3AF] font-medium">{pack.footer}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="size-8 rounded-lg grid place-items-center text-[13px] font-bold bg-[#7A0A17] text-white">1</span>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Page 2")}
+                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+                >
+                  2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Next page")}
+                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <Playbook title={pack.playbook.title} sub={pack.playbook.sub} items={pack.playbook.items} />
+        </>
       )}
 
       {tab === "payment" && pack && (
@@ -1655,6 +1850,7 @@ export default function PostSalesPage() {
           </div>
         )}
       </Modal>
+      <SendMessageModal open={Boolean(messageFor)} onClose={() => setMessageFor(null)} />
     </AppPage>
   );
 }
