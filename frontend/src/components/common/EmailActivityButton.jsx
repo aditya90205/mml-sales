@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Mail } from "lucide-react";
 
@@ -13,17 +13,19 @@ const POPOVER_MAX_HEIGHT = 300;
 
 /**
  * Mail icon used in lead-row action columns (Pipeline Board, Dashboard).
- * Hovering shows a portal-positioned popover previewing recent email
- * activity for that lead, so it works inside horizontally-scrolling tables
- * without being clipped.
+ * Only rows with unread activity (the red dot) open anything on hover — a
+ * notification-list-style popover of recent email activity, positioned via
+ * a portal so it isn't clipped by the tables' horizontal scroll, and kept
+ * anchored to the icon while the page scrolls underneath it.
  */
 export default function EmailActivityButton({ className = "", size = 14, hasUnread = false }) {
   const ref = useRef(null);
   const hideTimer = useRef(null);
   const [pos, setPos] = useState(null);
-  const unreadCount = hasUnread ? SAMPLE_EMAILS.filter((m) => m.unread).length : 0;
+  const unreadCount = SAMPLE_EMAILS.filter((m) => m.unread).length;
 
   const open = () => {
+    if (!hasUnread) return;
     if (hideTimer.current) clearTimeout(hideTimer.current);
     const r = ref.current?.getBoundingClientRect();
     if (!r) return;
@@ -37,6 +39,20 @@ export default function EmailActivityButton({ className = "", size = 14, hasUnre
   const scheduleClose = () => {
     hideTimer.current = setTimeout(() => setPos(null), 120);
   };
+
+  // Keep the popover anchored to the icon while the page (or any scrollable
+  // ancestor, e.g. the table's horizontal scroller) moves underneath it.
+  useEffect(() => {
+    if (!pos) return undefined;
+    const reposition = () => open();
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!pos]);
 
   return (
     <>
