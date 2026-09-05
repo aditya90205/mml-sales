@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { toast } from "react-toastify";
 
 /**
@@ -25,7 +25,6 @@ const SECTIONS_META = [
 
 // Static fill % for sections that aren't built out yet.
 const PLACEHOLDER_PROGRESS = {
-  declaration: 93,
   communication: 0,
   casesheet: 90,
 };
@@ -521,6 +520,54 @@ const MEDICAL_BLOCKS = [
   },
 ];
 
+const DECLARATION_BLOCKS = [
+  {
+    title: "Declaration",
+    fields: [
+      { key: "declaredBy", label: "Declared by", required: true, type: "text" },
+      { key: "relationToCandidate", label: "Relation to candidate", required: true, type: "text" },
+      { key: "registrationAmountAgreed", label: "Registration amount agreed", required: true, type: "text" },
+      { key: "rokaSuccessFeeAgreed", label: "Roka / success fee agreed", required: true, type: "text" },
+      { key: "declarationDate", label: "Date", required: true, type: "text" },
+      { key: "declarationPlace", label: "Place", required: true, type: "text" },
+      { key: "signatureMode", label: "Signature", type: "pill", options: ["Taken on paper", "e-Signed by OTP"] },
+      { key: "termsAccepted", label: "Terms & conditions accepted (19 clauses)", required: true, type: "pill", options: ["Accepted", "Pending"] },
+    ],
+  },
+  {
+    title: "Dispatch & handling",
+    fields: [
+      { key: "dispatchMode", label: "Dispatch mode", type: "pill", options: ["By courier", "By e-mail", "By post", "By phone", "By fax", "Personal collection"] },
+      { key: "filledBy", label: "Filled by", type: "text" },
+      { key: "whoMet", label: "Who met", type: "text" },
+      { key: "placeOfMeeting", label: "Place of meeting", type: "text" },
+      { key: "additionalServices", label: "Additional services", type: "textarea" },
+    ],
+  },
+  {
+    title: "Check list",
+    fields: [
+      {
+        key: "documentsCollected",
+        label: "Documents collected",
+        type: "checklist",
+        options: [
+          "Format complete",
+          "Proof of date of birth",
+          "Proof of I.D.",
+          "Photograph",
+          "Visiting cards (2)",
+          "Business profile",
+          "Self made profile",
+          "Divorce decree (if divorced)",
+          "Passport copy (NRI / abroad / non-Indian)",
+          "Report of medical test",
+        ],
+      },
+    ],
+  },
+];
+
 const SECTION_BLOCKS = {
   personal: PERSONAL_DETAILS_BLOCKS,
   education: EDUCATION_BLOCKS,
@@ -530,6 +577,7 @@ const SECTION_BLOCKS = {
   match: MATCH_BLOCKS,
   essential: ESSENTIAL_BLOCKS,
   medical: MEDICAL_BLOCKS,
+  declaration: DECLARATION_BLOCKS,
 };
 
 const DEMO_PERSONAL_VALUES = {
@@ -696,6 +744,22 @@ const DEMO_MEDICAL_VALUES = {
   consentToUseForMatchmaking: "Given",
 };
 
+const DEMO_DECLARATION_VALUES = {
+  declaredBy: "Rajesh Raheja",
+  relationToCandidate: "Father",
+  registrationAmountAgreed: "₹53,100",
+  rokaSuccessFeeAgreed: "₹1,11,000",
+  declarationDate: "02 Aug 2026",
+  declarationPlace: "New Delhi",
+  signatureMode: "e-Signed by OTP",
+  termsAccepted: "Accepted",
+  dispatchMode: "By e-mail",
+  filledBy: "Neha Sharma",
+  whoMet: "Neha Sharma",
+  placeOfMeeting: "Client residence, Sector 43",
+  documentsCollected: ["Format complete", "Proof of date of birth", "Proof of I.D.", "Photograph"],
+};
+
 const SECTION_DEMO_VALUES = {
   ...DEMO_PERSONAL_VALUES,
   ...DEMO_EDUCATION_VALUES,
@@ -705,6 +769,7 @@ const SECTION_DEMO_VALUES = {
   ...DEMO_MATCH_VALUES,
   ...DEMO_ESSENTIAL_VALUES,
   ...DEMO_MEDICAL_VALUES,
+  ...DEMO_DECLARATION_VALUES,
 };
 
 const INPUT =
@@ -722,6 +787,7 @@ function isRowsFilled(rows) {
 function isFieldFilled(field, values, chipValues) {
   if (field.chipsKey) return (chipValues?.[field.chipsKey]?.length || 0) > 0;
   if (field.type === "rows") return isRowsFilled(values[field.key]);
+  if (field.type === "checklist") return Array.isArray(values[field.key]) && values[field.key].length > 0;
   return isFilled(values[field.key]);
 }
 
@@ -791,6 +857,44 @@ function RowsField({ def, value, onChange }) {
   );
 }
 
+function ChecklistField({ def, value, onChange }) {
+  const checked = value || [];
+  const toggle = (opt) => {
+    const next = checked.includes(opt) ? checked.filter((c) => c !== opt) : [...checked, opt];
+    onChange(next);
+  };
+
+  return (
+    <div>
+      <FieldLabel label={def.label} />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        {def.options.map((opt) => {
+          const isChecked = checked.includes(opt);
+          return (
+            <button
+              type="button"
+              key={opt}
+              onClick={() => toggle(opt)}
+              className={`flex items-center gap-2 h-11 px-3 rounded-lg border text-[12.5px] font-medium text-left transition-colors ${
+                isChecked ? "bg-[#ECFDF3] border-[#16A34A]/30 text-[#111]" : "bg-white border-black/12 text-[#374151] hover:bg-[#FAFAFB]"
+              }`}
+            >
+              <span
+                className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${
+                  isChecked ? "bg-[#16A34A]" : "border border-black/20"
+                }`}
+              >
+                {isChecked && <Check size={11} className="text-white" strokeWidth={3} />}
+              </span>
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function IntakeField({ def, value, chips, onChange, onRemoveChip }) {
   if (def.type === "pill") {
     return (
@@ -824,6 +928,10 @@ function IntakeField({ def, value, chips, onChange, onRemoveChip }) {
 
   if (def.type === "rows") {
     return <RowsField def={def} value={value} onChange={onChange} />;
+  }
+
+  if (def.type === "checklist") {
+    return <ChecklistField def={def} value={value} onChange={onChange} />;
   }
 
   if (def.type === "upload") {
@@ -890,7 +998,10 @@ function FormBlock({ block, values, chipValues, onFieldChange, onRemoveChip }) {
       </div>
       <div className={`grid grid-cols-1 ${colClass} gap-x-6 gap-y-4`}>
         {block.fields.map((f) => (
-          <div key={f.key} className={f.type === "textarea" || f.type === "rows" || f.fullWidth ? "sm:col-span-full" : ""}>
+          <div
+            key={f.key}
+            className={f.type === "textarea" || f.type === "rows" || f.type === "checklist" || f.fullWidth ? "sm:col-span-full" : ""}
+          >
             <IntakeField
               def={f}
               value={values[f.key]}
