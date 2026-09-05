@@ -25,7 +25,6 @@ const SECTIONS_META = [
 
 // Static fill % for sections that aren't built out yet.
 const PLACEHOLDER_PROGRESS = {
-  essential: 74,
   medical: 62,
   declaration: 93,
   communication: 0,
@@ -442,6 +441,48 @@ const MATCH_BLOCKS = [
   },
 ];
 
+const ESSENTIAL_BLOCKS = [
+  {
+    title: "Work",
+    fields: [
+      { key: "workRemoteOrFixed", label: "Work is remote or fixed", type: "pill", options: ["Remote", "Fixed", "Hybrid"] },
+      { key: "interCityTransfers", label: "Inter-city or inter-country transfers", type: "pill", options: ["Yes", "No"] },
+      { key: "careerGoals", label: "Career goals", type: "textarea" },
+      { key: "partnerCareerExpectations", label: "Expectations from partner's career", type: "textarea" },
+    ],
+  },
+  {
+    title: "Family",
+    fields: [
+      { key: "wantChildren", label: "Do you want children", type: "pill", options: ["Yes", "No"] },
+      { key: "nuclearOrJointFamily", label: "Nuclear or joint family", type: "pill", options: ["Nuclear", "Joint family"] },
+      { key: "havePets", label: "Do you have pets", type: "pill", options: ["Yes", "No"] },
+      { key: "comfortableWithPets", label: "Comfortable living with pets", type: "pill", options: ["Yes", "No"] },
+    ],
+  },
+  {
+    title: "Social",
+    fields: [
+      { key: "socialMediaActivity", label: "Social media activity", type: "pill", options: ["Not active", "Moderately active", "Very active"] },
+      { key: "travelPreference", label: "Travel preference", type: "pill", options: ["Alone", "With family", "In big groups"] },
+      { key: "callYourselfSociable", label: "Would you call yourself sociable", type: "textarea" },
+      { key: "socialExpectationsFromPartner", label: "Social expectations from partner", type: "textarea" },
+    ],
+  },
+  {
+    title: "Wellbeing in a matrimonial context",
+    fields: [
+      { key: "wellbeingPhysicalHealth", label: "Physical health", type: "textarea" },
+      { key: "wellbeingMentalHealth", label: "Mental health", type: "textarea" },
+      { key: "wellbeingWorkLifeBalance", label: "Work-life balance", type: "textarea" },
+      { key: "wellbeingEmotionalIntelligence", label: "Emotional intelligence", type: "textarea" },
+      { key: "wellbeingPhysicalFitness", label: "Physical fitness", type: "textarea" },
+      { key: "wellbeingDietNutrition", label: "Diet and nutrition", type: "textarea" },
+      { key: "wellbeingGoalsAspirations", label: "Goals and aspirations", type: "textarea" },
+    ],
+  },
+];
+
 const SECTION_BLOCKS = {
   personal: PERSONAL_DETAILS_BLOCKS,
   education: EDUCATION_BLOCKS,
@@ -449,6 +490,7 @@ const SECTION_BLOCKS = {
   family: FAMILY_BLOCKS,
   siblings: SIBLINGS_BLOCKS,
   match: MATCH_BLOCKS,
+  essential: ESSENTIAL_BLOCKS,
 };
 
 const DEMO_PERSONAL_VALUES = {
@@ -582,6 +624,23 @@ const DEMO_MATCH_VALUES = {
   partnerExpectations: "Settled, travels, no rigid roles at home. A joint household of more than four is a deal-breaker.",
 };
 
+const DEMO_ESSENTIAL_VALUES = {
+  workRemoteOrFixed: "Hybrid",
+  interCityTransfers: "No",
+  careerGoals: "Partner track in four to five years",
+  partnerCareerExpectations: "Should be settled, no preference on sector",
+  wantChildren: "Yes",
+  nuclearOrJointFamily: "Nuclear",
+  havePets: "No",
+  comfortableWithPets: "Yes",
+  socialMediaActivity: "Moderately active",
+  travelPreference: "With family",
+  callYourselfSociable: "Selective — small circle",
+  wellbeingWorkLifeBalance: "Long audit seasons, protective of weekends",
+  wellbeingPhysicalFitness: "Yoga four days a week",
+  wellbeingGoalsAspirations: "Partner track, wants to travel more",
+};
+
 const SECTION_DEMO_VALUES = {
   ...DEMO_PERSONAL_VALUES,
   ...DEMO_EDUCATION_VALUES,
@@ -589,6 +648,7 @@ const SECTION_DEMO_VALUES = {
   ...DEMO_FAMILY_VALUES,
   ...DEMO_SIBLINGS_VALUES,
   ...DEMO_MATCH_VALUES,
+  ...DEMO_ESSENTIAL_VALUES,
 };
 
 const INPUT =
