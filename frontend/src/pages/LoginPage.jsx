@@ -4,20 +4,13 @@ import { UserRound, Lock, Eye, EyeOff, Heart } from "lucide-react";
 import { toast } from "react-toastify";
 import Input from "../components/ui/Input";
 import mmlLoginBg from "../assets/mml-login-page.png";
+import mmlLogo from "../assets/mml-logo.png";
 
 // The artwork is 5760x3112. All positions below are percentages measured
 // against that canvas so overlaid content lands on the blank slots baked
 // into the image (Global Reach's number is already baked in, so it's
 // skipped here).
-const IMAGE_RATIO = 5760 / 3112;
-const STATS = [
-  { value: "17+", x: 5.6 },
-  { value: "1000+", x: 16.7 },
-  { value: "4+", x: 27.8 },
-];
-const STAT_Y = 93.2; // row center, % of image height
-
-const FORM_BOX = { top: 46, left: 64.2, width: 20, height: 34.5 }; // % of image
+const FORM_BOX = { top: 46, left: 64.2, width: 20, height: 34.5 }; // kept for legacy positioning
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -41,46 +34,39 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-[#1a0a08]">
-      {/* Sized to always cover the viewport (same math as object-fit: cover),
-          so every child positioned by % lines up with the artwork exactly. */}
-      <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{
-          width: `max(100vw, calc(100vh * ${IMAGE_RATIO}))`,
-          height: `max(100vh, calc(100vw / ${IMAGE_RATIO}))`,
-        }}
+    <div className="relative w-screen h-screen bg-[#1a0a08] overflow-hidden">
+      <img
+        src={'/src/assets/mml-login-page-new.png'}
+        alt="Make My Lagan Matrimonials"
+        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = mmlLoginBg; }}
+        className="absolute inset-0 w-full h-full object-cover select-none"
+        style={{ objectPosition: 'left center' }}
+        draggable={false}
+      />
+
+      {/* Overlayed form: centered vertically, positioned to the right on md+ screens */}
+      <form
+        onSubmit={handleSubmit}
+        className="absolute top-1/2 -translate-y-1/2 w-full max-w-md p-4 z-20"
+        style={{ right: '6vw', left: 'auto' }}
       >
-        <img
-          src={mmlLoginBg}
-          alt="Make My Lagan Matrimonials"
-          className="absolute inset-0 w-full h-full select-none pointer-events-none"
-          draggable={false}
-        />
-
-        {/* ── Stat numbers, overlaid on the blank slots in the maroon bar ── */}
-        {STATS.map((s) => (
-          <div
-            key={s.value}
-            className="absolute -translate-x-1/2 -translate-y-1/2 font-bold text-white leading-none whitespace-nowrap drop-shadow-sm"
-            style={{ left: `${s.x}%`, top: `${STAT_Y}%`, fontSize: "clamp(12px, 1.9vh, 24px)" }}
-          >
-            {s.value}
-          </div>
-        ))}
-
-        {/* ── Sign-in form, overlaid on the blank card ── */}
-        <form
-          onSubmit={handleSubmit}
-          className="absolute flex flex-col justify-between"
-          style={{
-            top: `${FORM_BOX.top}%`,
-            left: `${FORM_BOX.left}%`,
-            width: `${FORM_BOX.width}%`,
-            height: `${FORM_BOX.height}%`,
-          }}
+        <div
+          className="rounded-3xl p-8"
+          style={{ background: "rgba(248, 241, 236, 0.96)", boxShadow: "0 14px 40px rgba(0,0,0,0.18)" }}
         >
-          <div className="flex flex-col" style={{ gap: "1.5vh" }}>
+          <div className="flex flex-col items-start mb-4">
+            <img
+              src={'/src/assets/login-form-logo.png'}
+              alt="Login logo"
+              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = mmlLogo; }}
+              className="h-12 w-auto mb-2 select-none"
+            />
+            <h2 className="text-2xl font-semibold text-[#5d151b]">Welcome Back,</h2>
+            <p className="text-xl font-bold text-[#5d151b] -mt-1">Team MML!</p>
+            <p className="text-sm text-[#7a6d66] mt-1">Sign in to access your CRM dashboard.</p>
+          </div>
+
+          <div className="flex flex-col" style={{ gap: "1rem" }}>
             <Input
               label="Username"
               type="text"
@@ -91,7 +77,7 @@ export default function LoginPage() {
               leftIcon={<UserRound size={16} />}
               wrapperClassName="gap-1.5"
               className="bg-white border-black/12 shadow-sm rounded-xl"
-              style={{ height: "4.6vh", fontSize: "clamp(11px, 1.35vh, 15px)" }}
+              style={{ height: "48px", fontSize: "14px" }}
             />
 
             <Input
@@ -104,7 +90,7 @@ export default function LoginPage() {
               leftIcon={<Lock size={16} />}
               wrapperClassName="gap-1.5"
               className="bg-white border-black/12 shadow-sm rounded-xl"
-              style={{ height: "4.6vh", fontSize: "clamp(11px, 1.35vh, 15px)" }}
+              style={{ height: "48px", fontSize: "14px" }}
               rightIcon={
                 <button
                   type="button"
@@ -122,34 +108,32 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => toast.info("Please contact your admin to reset your password.")}
                 className="font-medium text-[#68101E] hover:underline underline-offset-2"
-                style={{ fontSize: "clamp(10px, 1.15vh, 13px)" }}
+                style={{ fontSize: "13px" }}
               >
                 Forgot Password?
               </button>
             </div>
-          </div>
 
-          <div className="flex flex-col items-center" style={{ gap: "1.6vh" }}>
             <button
               type="submit"
               disabled={submitting}
               className="w-full rounded-xl bg-[#68101E] text-white font-semibold tracking-[0.14em] shadow-[0_8px_20px_rgba(104,16,30,0.35)] hover:bg-[#520d18] active:bg-[#430b14] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-              style={{ height: "5.4vh", fontSize: "clamp(11px, 1.4vh, 16px)" }}
+              style={{ height: "52px", fontSize: "14px" }}
             >
               {submitting ? "Signing in…" : "SIGN IN"}
             </button>
 
-            <div className="flex items-center justify-center gap-2.5 w-full">
-              <span className="h-px flex-1 max-w-[15%] bg-[#68101E]/25" />
-              <p className="text-[#8a7f77] whitespace-nowrap" style={{ fontSize: "clamp(9px, 1.05vh, 12px)" }}>
+            <div className="flex items-center justify-center gap-2.5 w-full mt-2">
+              <span className="h-px flex-1 max-w-[20%] bg-[#68101E]/25" />
+              <p className="text-[#8a7f77] whitespace-nowrap" style={{ fontSize: "12px" }}>
                 Together, let&apos;s create beautiful matches
               </p>
-              <span className="h-px flex-1 max-w-[15%] bg-[#68101E]/25" />
+              <span className="h-px flex-1 max-w-[20%] bg-[#68101E]/25" />
             </div>
-            <Heart size={12} className="text-[#68101E] -mt-1" fill="currentColor" />
+            <Heart size={12} className="text-[#68101E] mt-1" fill="currentColor" />
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   );
 }
