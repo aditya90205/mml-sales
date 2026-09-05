@@ -28,8 +28,6 @@ import { toast } from "react-toastify";
 import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 // TopBar is now provided by Layout
 import eyeIcon from "../assets/eye.png";
-import peopleIcon from "../assets/people.png";
-import fileIcon from "../assets/file.png";
 import AddP0ProspectPage from "./pipeline/AddP0ProspectPage";
 import MoveToP1Page from "./pipeline/MoveToP1Page";
 import MoveToP2Page from "./pipeline/MoveToP2Page";
@@ -47,39 +45,6 @@ const PIPELINE_STAGES = [
   { id: "P4", label: "Negotiation",             color: "#6366F1" },
   { id: "P5", label: "Closed",                  color: "#16A34A" },
   { id: "P6", label: "Closed Sale Onboarding",  color: "#EAB308" },
-];
-
-const CHIP_ROUTES = {
-  "Smart Home & Office Visits": "/pipeline/visits",
-  "Cross Branch Flags": "/pipeline/cross-branch",
-  "Quotations": "/pipeline/quotations",
-  "Discount Request": "/pipeline/discount-requests",
-  "Contract & Payment": "/pipeline/contract-payment",
-  "P6 Handover": "/pipeline/p6-handover",
-};
-
-const QUICK_GROUPS = [
-  {
-    title: "Capture & Visits",
-    icon: peopleIcon,
-    color: "#6366F1",
-    bg: "#EEF0FE",
-    chips: ["Client Intake", "Smart Home & Office Visits", "Video Call Desk"],
-  },
-  {
-    title: "Oversight",
-    icon: eyeIcon,
-    color: "#16A34A",
-    bg: "#E7F8EF",
-    chips: ["Cross Branch Flags"],
-  },
-  {
-    title: "Deal Docs",
-    icon: fileIcon,
-    color: "rgb(245, 158, 11)",
-    bg: "rgb(255, 243, 228)",
-    chips: ["Package Pricing", "Quotations", "Discount Request", "Contract & Payment", "P6 Handover"],
-  },
 ];
 
 const TEMPERATURE_STYLES = {
@@ -164,7 +129,7 @@ function Pill({ tone, children }) {
 
 function ActionAlertBanner() {
   return (
-    <div className="bg-[#FDECEE] border border-[#F7D3D9] rounded-2xl px-4 py-3.5 flex items-center gap-3.5 flex-wrap">
+    <div className="flex-1 min-w-0 bg-[#FDECEE] border border-[#F7D3D9] rounded-2xl px-4 py-3.5 flex items-center gap-3.5 flex-wrap">
       <span className="size-9 rounded-xl bg-[#FFE1CC] grid place-items-center shrink-0">
         <AlarmClock size={18} className="text-[#F97316]" strokeWidth={1.8} />
       </span>
@@ -184,72 +149,52 @@ function ActionAlertBanner() {
   );
 }
 
-/* ───────────────────────── Quick links row ───────────────────────── */
+/* ───────────────────────── Oversight quick link ───────────────────────── */
 
-function QuickLinksRow() {
+function OversightCard() {
   return (
-    <div className="bg-white border border-black/8 rounded-2xl divide-y divide-black/8 lg:divide-y-0 lg:flex lg:items-stretch">
-      {QUICK_GROUPS.map((group, i) => (
-        <div
-          key={group.title}
-          className={`px-4 py-3.5 ${
-            i === QUICK_GROUPS.length - 1 ? "lg:flex-1 lg:min-w-0" : "lg:shrink-0"
-          } ${i > 0 ? "lg:border-l lg:border-black/8" : ""}`}
-        >
-          {/* Group header with PNG icon */}
-          <div className="flex items-center gap-2 mb-2.5 whitespace-nowrap">
-            <img src={group.icon} alt={group.title} style={{ width: 15, height: 15, objectFit: "contain" }} />
-            <p className="text-[13px] font-bold text-[#111]">{group.title}</p>
-          </div>
+    <Link
+      to="/pipeline/cross-branch"
+      className="shrink-0 w-full lg:w-[230px] bg-white border border-black/8 rounded-2xl px-4 py-3.5 hover:bg-[#FAFAFB] transition-colors"
+    >
+      <div className="flex items-center gap-2 mb-2.5 whitespace-nowrap">
+        <img src={eyeIcon} alt="Oversight" style={{ width: 15, height: 15, objectFit: "contain" }} />
+        <p className="text-[13px] font-bold text-[#111]">Oversight</p>
+      </div>
+      <span className="flex items-center justify-between gap-2 w-full text-[11.5px] font-medium rounded-lg px-2.5 py-[9px] text-[#111] bg-[#E7F8EF]">
+        Cross Branch Flags
+        <span className="shrink-0 text-[10px] font-semibold bg-white/70 rounded px-1.5 py-0.5 text-[#111]">3</span>
+      </span>
+    </Link>
+  );
+}
 
-          {/* Chips – Deal Docs keeps all five cards on one row */}
-          <div className={`flex gap-2 ${group.title === "Deal Docs" ? "flex-wrap lg:flex-nowrap" : "flex-wrap"}`}>
-            {group.chips.map((chip) => {
-              const chipClass = `
-                inline-flex items-center justify-between gap-2
-                text-[11.5px] font-medium rounded-lg
-                px-2.5 py-[9px]
-                min-h-[52px] flex-1
-                ${group.title === "Deal Docs" ? "basis-0 min-w-0" : "basis-[140px]"}
-                transition-colors text-left text-[#111] no-underline
-              `;
-              const inner = (
-                <>
-                  <span
-                    className="leading-snug flex-1 min-w-0"
-                    style={{
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {chip}
-                  </span>
-                  <span className="shrink-0 text-[10px] font-semibold bg-white/70 rounded px-1.5 py-0.5 self-center text-[#111]">
-                    3
-                  </span>
-                </>
-              );
-              const to = CHIP_ROUTES[chip];
-              return to ? (
-                <Link
-                  key={chip}
-                  to={to}
-                  style={{ backgroundColor: group.bg }}
-                  className={`${chipClass} hover:brightness-[0.97] hover:ring-1 hover:ring-black/8`}
-                >
-                  {inner}
-                </Link>
-              ) : (
-                <span key={chip} style={{ backgroundColor: group.bg }} className={chipClass}>
-                  {inner}
-                </span>
-              );
-            })}
+/* ───────────────────────── Pipeline stage strip ───────────────────────── */
+
+function PipelineStageStrip({ leadsData }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+      {PIPELINE_STAGES.map((stage) => {
+        const count = leadsData[stage.id]?.length ?? 0;
+        return (
+          <div
+            key={stage.id}
+            className="flex items-center justify-between gap-2 bg-white border border-black/8 rounded-xl border-l-4 px-3.5 py-2.5 min-w-0"
+            style={{ borderLeftColor: stage.color }}
+          >
+            <div className="min-w-0">
+              <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#9CA3AF]">{stage.id}</p>
+              <p className="text-[13px] font-bold text-[#111] leading-tight truncate">{stage.label}</p>
+            </div>
+            <span
+              className="shrink-0 text-[12px] font-bold rounded-lg px-2 py-1"
+              style={{ color: stage.color, backgroundColor: `${stage.color}1A` }}
+            >
+              {count}
+            </span>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -986,13 +931,16 @@ export default function PipelineBoard() {
 
       {/* Body */}
       <div className="px-5 pb-8 flex flex-col gap-4 min-w-0">
-        <ActionAlertBanner />
-        <QuickLinksRow />
+        <div className="flex items-stretch gap-3 flex-wrap lg:flex-nowrap">
+          <ActionAlertBanner />
+          <OversightCard />
+        </div>
         <BoardToolbar
           search={search} onSearchChange={setSearch}
           perPage={perPage} onPerPageChange={setPerPage}
           view={view} onViewChange={setView}
         />
+        <PipelineStageStrip leadsData={leadsData} />
 
         {view === "board" ? (
           /* Board – break out of px-5 so scroll area is edge-to-edge */
