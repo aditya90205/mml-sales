@@ -36,7 +36,7 @@ const BANNER_CLASS = {
   ok: "bg-[#E7F8EF] border-[#16A34A]/25 text-[#166534]",
 };
 
-const KIND_TO_TONE = { ok: "green", warn: "amber", bad: "red", info: "blue", neu: "gray" };
+const KIND_TO_TONE = { ok: "green", warn: "amber", bad: "red", info: "blue", neu: "gray", peach: "peach" };
 
 function num(s) {
   return parseInt(String(s).replace(/[^0-9]/g, ""), 10) || 0;
@@ -104,7 +104,7 @@ const CROSS_ROWS = [
 const UPSELL_ROWS = [
   { name: "Aditya Verma", code: "MML-C-10444", current: "Premium · 4 mo left", suggested: "Exclusive", value: "+₹49,000", why: "6 profiles shared, none shortlisted", status: "Quote sent", kind: "info", action: "Follow up" },
   { name: "Ritu Saxena", code: "MML-C-10425", current: "Classic · 2 mo left", suggested: "Premium", value: "+₹26,000", why: "Wants contact reveal and horoscope match", status: "Interested", kind: "warn", action: "Quote" },
-  { name: "Karan Malhotra", code: "MML-C-10462", current: "Premium · 5 mo left", suggested: "Tenure extension 6 mo", value: "+₹18,000", why: "Search paused twice, needs more runway", status: "Retention first", kind: "neu", action: "Call" },
+  { name: "Karan Malhotra", code: "MML-C-10462", current: "Premium · 5 mo left", suggested: "Tenure extension 6 mo", value: "+₹18,000", why: "Search paused twice, needs more runway", status: "Retention first", kind: "peach", action: "Call" },
   { name: "Dr. Arjun Nair", code: "MML-C-10419", current: "Exclusive · 9 mo left", suggested: "Verified Report add-on ×2", value: "+₹16,000", why: "Family asked for background checks", status: "Quote sent", kind: "info", action: "Follow up" },
   { name: "Sanjay Mehta", code: "MML-C-10428", current: "Premium · 7 mo left", suggested: "Cross-branch search add-on", value: "+₹12,000", why: "Open to Mumbai and Pune profiles", status: "Interested", kind: "warn", action: "Quote" },
   { name: "Priya Raheja", code: "MML-C-10437", current: "Classic · 1 mo left", suggested: "Renewal — Classic", value: "+₹22,000", why: "Package expires 30 Sep, search active", status: "Renewal due", kind: "bad", action: "Renew" },
@@ -116,10 +116,10 @@ const TAB_META = {
   overview: ["Post-Sales Desk", "Everything owed after the match is confirmed — balance payments, testimonials, reviews, cross-sell and upsell. (BRD S7)"],
   payment: ["Payment Collection", "Instalments and balance amounts due after matchmaking begins. Receipts post to Finance automatically. (BRD S7.1)"],
   followup: ["Final Payment Follow-up", "Reminder cadence for overdue balances, with escalation to Branch Head after the third attempt. (BRD S7.2)"],
-  testimonial: ["Testimonial Collection", "Written and video testimonials requested after engagement or marriage confirmation. Consent required before publishing."],
-  review: ["Google Reviews", "Review requests sent by WhatsApp and SMS, tracked to the posted review."],
-  cross: ["Cross-sell", "Partner services offered to matched clients — photography, decor, venue, jewellery, travel. Commission tracked per deal."],
-  upsell: ["Upsell", "Package upgrades, tenure extensions and add-on services for existing clients."],
+  testimonial: ["Testimonial Collection", "Written and video testimonials requested after engagement or marriage confirmation. Consent required before publishing. (BRD S7.3)"],
+  review: ["Google Reviews", "Review requests sent by WhatsApp and SMS, tracked to the posted review. (BRD S7.4)"],
+  cross: ["Cross-sell", "Partner services offered to matched clients — photography, decor, venue, jewellery, travel. Commission tracked per deal. (BRD S7.5)"],
+  upsell: ["Upsell", "Package upgrades, tenure extensions and add-on services for existing clients. (BRD S7.6)"],
   referral: ["Referral", "Referrals from matched clients — requests sent, conversions, and follow-up. Full desk content will be added here."],
 };
 
@@ -129,7 +129,7 @@ const TAB_ACTIONS = {
   followup: ["Escalate to Branch Head", "Send reminder"],
   testimonial: ["Templates", "Request testimonial"],
   review: ["Review link", "Send review request"],
-  cross: ["Partner catalogue", "Create cross-sell offer"],
+  cross: ["Partner catalogue", "Create Cross-sell offer"],
   upsell: ["Upgrade pricing", "Create upgrade quote"],
   referral: ["Referral rules", "Log referral"],
 };
@@ -173,8 +173,7 @@ function ClientCell({ name, code }) {
 }
 
 function RowAction({ label, onClick }) {
-  const solid = ["Record", "Remind", "Escalate", "Call", "Schedule", "Send", "Quote", "Renew", "Invoice", "Confirm", "Chase"].includes(label);
-  const maroonOutline = label === "Follow up";
+  const solid = ["Record", "Remind", "Escalate", "Call", "Schedule", "Send", "Quote", "Renew", "Invoice", "Confirm", "Chase", "Follow up", "Respond", "Open"].includes(label);
   return (
     <Td className="text-right">
       <button
@@ -183,9 +182,7 @@ function RowAction({ label, onClick }) {
         className={`h-8 px-3 rounded-lg text-[12px] font-semibold border transition-colors ${
           solid
             ? "bg-[#7A0A17] text-white border-[#7A0A17] hover:bg-[#640712]"
-            : maroonOutline
-              ? "bg-white text-[#7A0A17] border-[#7A0A17]/50 hover:bg-[#FCF5F6]"
-              : "bg-white text-[#4B5563] border-black/10 hover:bg-[#FAFAFB]"
+            : "bg-white text-[#4B5563] border-black/10 hover:bg-[#FAFAFB]"
         }`}
       >
         {label}
@@ -194,11 +191,11 @@ function RowAction({ label, onClick }) {
   );
 }
 
-function Playbook({ title, sub, items }) {
+function Playbook({ title, sub, items, titleClass = "text-[#111]" }) {
   return (
     <section className="bg-white border border-black/8 rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
       <div className="flex items-baseline gap-2 mb-4">
-        <h2 className="text-[15px] font-bold text-[#111]">{title}</h2>
+        <h2 className={`text-[15px] font-bold ${titleClass}`}>{title}</h2>
         <p className="text-[12px] text-[#9CA3AF] font-medium">{sub}</p>
       </div>
       <div className="grid gap-3 md:grid-cols-3">
@@ -233,6 +230,18 @@ export default function PostSalesPage() {
   const [fuAge, setFuAge] = useState("all");
   const [fuAttempt, setFuAttempt] = useState("all");
   const [fuOwner, setFuOwner] = useState("me");
+  const [tmFormat, setTmFormat] = useState("all");
+  const [tmStage, setTmStage] = useState("all");
+  const [tmOwner, setTmOwner] = useState("me");
+  const [rvStatus, setRvStatus] = useState("all");
+  const [rvRating, setRvRating] = useState("all");
+  const [rvOwner, setRvOwner] = useState("me");
+  const [crService, setCrService] = useState("all");
+  const [crPartner, setCrPartner] = useState("all");
+  const [crStatus, setCrStatus] = useState("all");
+  const [upReason, setUpReason] = useState("all");
+  const [upPackage, setUpPackage] = useState("all");
+  const [upStatus, setUpStatus] = useState("all");
 
   const head = role === "head";
   const [pageTitle, pageSub] = TAB_META[tab];
@@ -498,7 +507,7 @@ export default function PostSalesPage() {
     },
     cross: {
       stats: [
-        { label: "Offers open", value: head ? "27" : "11", note: "Across 6 partners" },
+        { label: "Offers open", value: head ? "27" : "11", note: head ? "Across 6 partners" : "Across 5 partners" },
         { label: "Order value booked", value: head ? "₹9.8L" : "₹3.4L", note: "This quarter" },
         { label: "Commission earned", value: "₹68,400", note: "Average 8.5%" },
         { label: "Conversion", value: "34%", note: "Offers to confirmed orders" },
@@ -512,7 +521,7 @@ export default function PostSalesPage() {
         sub: "Service first, selling second",
         items: [
           { tag: "ELIGIBILITY", tagColor: "#3b6fd4", meta: "Automatic", title: "Only after the match progresses", body: "Partner offers unlock when the client confirms a shortlist or engagement. Nothing goes out while matchmaking is still early." },
-          { tag: "HOLD", tagColor: "#E8395B", meta: "Blocked", title: "No offers on overdue accounts", body: "Clients with a balance past due date are excluded until the payment is settled." },
+          { tag: "HOLD", tagColor: "#7A0A17", meta: "Blocked", title: "No offers on overdue accounts", body: "Clients with a balance past due date are excluded until the payment is settled." },
           { tag: "COMMISSION", tagColor: "#8a6110", meta: "5-8%", title: "Recorded against the executive", body: "Commission is booked when the partner confirms the order and is paid out with the next incentive cycle." },
         ],
       },
@@ -533,7 +542,7 @@ export default function PostSalesPage() {
         sub: "System flags, executive judges",
         items: [
           { tag: "LOW TRACTION", tagColor: "#3b6fd4", meta: "Auto flag", title: "No shortlist after 6 profiles", body: "A client seeing profiles without shortlisting usually needs a senior RM or a wider search, not more of the same." },
-          { tag: "EXPIRY", tagColor: "#8a6110", meta: "Day 30", title: "Renewal window before expiry", body: "A renewal or extension quote goes out 30 days before the package ends, while the search is still active." },
+          { tag: "EXPIRY", tagColor: "#D97706", meta: "Day 30", title: "Renewal window before expiry", body: "A renewal or extension quote goes out 30 days before the package ends, while the search is still active." },
           { tag: "RESTRAINT", tagColor: "#E8395B", meta: "Rule", title: "No upsell to unhappy clients", body: "Clients with an open complaint or a refund request are excluded until the service issue is closed." },
         ],
       },
@@ -574,7 +583,7 @@ export default function PostSalesPage() {
             ]}
           />
           <OutlineBtn
-            className={tab === "payment" || tab === "followup" ? "border-[#7A0A17]/45 text-[#7A0A17]" : ""}
+            className={tab === "payment" || tab === "followup" || tab === "upsell" ? "border-[#7A0A17]/45 text-[#7A0A17]" : ""}
             onClick={() => toast.info(`${outlineLabel}…`)}
           >
             {outlineLabel}
@@ -624,10 +633,19 @@ export default function PostSalesPage() {
               ? "h-8 px-3 rounded-lg bg-white border border-[#7A0A17]/40 text-[12px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] shrink-0"
               : banner.cta === "Escalate"
                 ? "h-8 px-3 rounded-lg bg-white border border-[#D97706]/45 text-[12px] font-semibold text-[#B45309] hover:bg-[#FFF8EE] shrink-0"
-                : "font-semibold underline underline-offset-2 shrink-0"
+                : banner.cta === "Collect consent"
+                  ? "h-8 px-3 rounded-lg bg-white border border-[#3B82F6]/40 text-[12px] font-semibold text-[#1D4ED8] hover:bg-[#F8FBFF] shrink-0"
+                  : banner.cta === "Send batch"
+                    ? "h-8 px-3 rounded-lg bg-white border border-[#D97706]/45 text-[12px] font-semibold text-[#B45309] hover:bg-[#FFF8EE] shrink-0"
+                    : banner.cta === "See rules"
+                      ? "h-8 px-3 rounded-lg bg-white border border-[#16A34A]/40 text-[12px] font-semibold text-[#166534] hover:bg-[#F4FBF6] shrink-0"
+                      : banner.cta === "View expiring"
+                        ? "h-8 px-3 rounded-lg bg-white border border-[#D97706]/45 text-[12px] font-semibold text-[#B45309] hover:bg-[#FFF8EE] shrink-0"
+                        : "font-semibold underline underline-offset-2 shrink-0"
           }
           onClick={() => {
             if (banner.cta === "Open referral desk") setTab("referral");
+            else if (banner.cta === "See rules") document.getElementById("cross-guardrails")?.scrollIntoView({ behavior: "smooth", block: "start" });
             else toast.info(banner.cta);
           }}
         >
@@ -1041,154 +1059,489 @@ export default function PostSalesPage() {
         </>
       )}
 
-      {tab !== "overview" && tab !== "payment" && tab !== "followup" && pack && (
+      {tab === "testimonial" && pack && (
         <>
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             {pack.stats.map((s) => (
-              <MetricCard key={s.label} label={s.label} value={s.value} note={s.note} />
+              <MetricCard
+                key={s.label}
+                compact
+                className="shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+                label={s.label}
+                value={s.value}
+                note={s.note}
+              />
             ))}
           </div>
 
-          <Panel
-            title={pack.title}
-            subtitle={pack.sub}
-            action={<span className="text-[12px] font-semibold text-[#9CA3AF]">{pack.count}</span>}
-            footnote={pack.footer}
-          >
-            <div className="overflow-x-auto -mx-5">
-              {tab === "testimonial" && (
-                <table className="w-full min-w-[1040px] border-collapse">
-                  <thead>
-                    <tr className="border-b border-black/8">
-                      <PsTh label="Client" sortKey="name" sort={tmSort} onSort={toggleTm} />
-                      <PsTh label="Milestone" sortKey="milestone" sort={tmSort} onSort={toggleTm} />
-                      <PsTh label="Format" sortKey="format" sort={tmSort} onSort={toggleTm} />
-                      <PsTh label="Requested" sortKey="requested" sort={tmSort} onSort={toggleTm} />
-                      <PsTh label="Consent" sortKey="consent" sort={tmSort} onSort={toggleTm} />
-                      <PsTh label="Status" sortKey="status" sort={tmSort} onSort={toggleTm} />
-                      <PsTh label="Usage" sortKey="usage" sort={tmSort} onSort={toggleTm} />
-                      <PsTh label="" sortKey="action" unsortable />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedTestimonials.map((r) => (
-                      <tr key={r.code} className="border-b border-black/6 last:border-0">
-                        <ClientCell name={r.name} code={r.code} />
-                        <Td>{r.milestone}</Td>
-                        <Td>{r.format}</Td>
-                        <Td>{r.requested}</Td>
-                        <Td>{r.consent}</Td>
-                        <Td>
-                          <StatusPill tone={KIND_TO_TONE[r.kind]}>{r.status}</StatusPill>
-                        </Td>
-                        <Td>{r.usage}</Td>
-                        <RowAction label={r.action} onClick={() => genericAction(r.name, r.action)} />
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
-              {tab === "review" && (
-                <table className="w-full min-w-[960px] border-collapse">
-                  <thead>
-                    <tr className="border-b border-black/8">
-                      <PsTh label="Client" sortKey="name" sort={rvSort} onSort={toggleRv} />
-                      <PsTh label="Sent on" sortKey="sent" sort={rvSort} onSort={toggleRv} />
-                      <PsTh label="Channel" sortKey="channel" sort={rvSort} onSort={toggleRv} />
-                      <PsTh label="Reminders" sortKey="reminders" sort={rvSort} onSort={toggleRv} />
-                      <PsTh label="Posted" sortKey="posted" sort={rvSort} onSort={toggleRv} />
-                      <PsTh label="Rating" sortKey="rating" sort={rvSort} onSort={toggleRv} />
-                      <PsTh label="Status" sortKey="status" sort={rvSort} onSort={toggleRv} />
-                      <PsTh label="" sortKey="action" unsortable />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedReviews.map((r) => (
-                      <tr key={r.code} className="border-b border-black/6 last:border-0">
-                        <ClientCell name={r.name} code={r.code} />
-                        <Td>{r.sent}</Td>
-                        <Td>{r.channel}</Td>
-                        <Td>{r.reminders}</Td>
-                        <Td>{r.posted}</Td>
-                        <Td strong>{r.rating}</Td>
-                        <Td>
-                          <StatusPill tone={KIND_TO_TONE[r.kind]}>{r.status}</StatusPill>
-                        </Td>
-                        <RowAction label={r.action} onClick={() => genericAction(r.name, r.action)} />
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
-              {tab === "cross" && (
-                <table className="w-full min-w-[1040px] border-collapse">
-                  <thead>
-                    <tr className="border-b border-black/8">
-                      <PsTh label="Client" sortKey="name" sort={crSort} onSort={toggleCr} />
-                      <PsTh label="Service" sortKey="service" sort={crSort} onSort={toggleCr} />
-                      <PsTh label="Partner" sortKey="partner" sort={crSort} onSort={toggleCr} />
-                      <PsTh label="Order value" sortKey="value" sort={crSort} onSort={toggleCr} />
-                      <PsTh label="Commission" sortKey="commission" sort={crSort} onSort={toggleCr} />
-                      <PsTh label="Status" sortKey="status" sort={crSort} onSort={toggleCr} />
-                      <PsTh label="Next step" sortKey="next" sort={crSort} onSort={toggleCr} />
-                      <PsTh label="" sortKey="action" unsortable />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedCross.map((r) => (
-                      <tr key={r.code} className="border-b border-black/6 last:border-0">
-                        <ClientCell name={r.name} code={r.code} />
-                        <Td>{r.service}</Td>
-                        <Td>{r.partner}</Td>
-                        <Td strong>{r.value}</Td>
-                        <Td>
-                          <span className="font-semibold text-[#16A34A]">{r.commission}</span>
-                        </Td>
-                        <Td>
-                          <StatusPill tone={KIND_TO_TONE[r.kind]}>{r.status}</StatusPill>
-                        </Td>
-                        <Td>{r.next}</Td>
-                        <RowAction label={r.action} onClick={() => genericAction(r.name, r.action)} />
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
-              {tab === "upsell" && (
-                <table className="w-full min-w-[960px] border-collapse">
-                  <thead>
-                    <tr className="border-b border-black/8">
-                      <PsTh label="Client" sortKey="name" sort={upSort} onSort={toggleUp} />
-                      <PsTh label="Current" sortKey="current" sort={upSort} onSort={toggleUp} />
-                      <PsTh label="Suggested" sortKey="suggested" sort={upSort} onSort={toggleUp} />
-                      <PsTh label="Upgrade value" sortKey="value" sort={upSort} onSort={toggleUp} />
-                      <PsTh label="Why now" sortKey="why" sort={upSort} onSort={toggleUp} />
-                      <PsTh label="Status" sortKey="status" sort={upSort} onSort={toggleUp} />
-                      <PsTh label="" sortKey="action" unsortable />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedUpsell.map((r) => (
-                      <tr key={r.code} className="border-b border-black/6 last:border-0">
-                        <ClientCell name={r.name} code={r.code} />
-                        <Td>{r.current}</Td>
-                        <Td strong>{r.suggested}</Td>
-                        <Td strong>{r.value}</Td>
-                        <Td>{r.why}</Td>
-                        <Td>
-                          <StatusPill tone={KIND_TO_TONE[r.kind]}>{r.status}</StatusPill>
-                        </Td>
-                        <RowAction label={r.action} onClick={() => genericAction(r.name, r.action)} />
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <NativeSelect
+                value={tmFormat}
+                onChange={setTmFormat}
+                options={[
+                  { value: "all", label: "Format: All" },
+                  { value: "video", label: "Format: Video" },
+                  { value: "written", label: "Format: Written" },
+                ]}
+              />
+              <NativeSelect
+                value={tmStage}
+                onChange={setTmStage}
+                options={[
+                  { value: "all", label: "Stage: All" },
+                  { value: "pending", label: "Stage: Pending consent" },
+                  { value: "collected", label: "Stage: Collected" },
+                  { value: "published", label: "Stage: Published" },
+                ]}
+              />
+              <NativeSelect
+                value={tmOwner}
+                onChange={setTmOwner}
+                options={[
+                  { value: "me", label: "Owner: Me" },
+                  { value: "all", label: "Owner: All" },
+                ]}
+              />
             </div>
-          </Panel>
+            <p className="text-[13px] font-semibold text-[#9CA3AF]">{pack.count}</p>
+          </div>
+
+          <section className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+              <div>
+                <h2 className="text-[15px] font-bold text-[#111]">{pack.title}</h2>
+                <p className="text-[12px] text-[#9CA3AF] mt-0.5">{pack.sub}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => toast.info("Opening consent form…")}
+                className="text-[13px] font-semibold text-[#7A0A17] hover:underline shrink-0"
+              >
+                Consent form
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1040px] border-collapse">
+                <thead>
+                  <tr className="border-y border-black/8">
+                    <PsTh label="Client" sortKey="name" sort={tmSort} onSort={toggleTm} />
+                    <PsTh label="Milestone" sortKey="milestone" sort={tmSort} onSort={toggleTm} />
+                    <PsTh label="Format" sortKey="format" sort={tmSort} onSort={toggleTm} />
+                    <PsTh label="Requested" sortKey="requested" sort={tmSort} onSort={toggleTm} />
+                    <PsTh label="Consent" sortKey="consent" sort={tmSort} onSort={toggleTm} />
+                    <PsTh label="Status" sortKey="status" sort={tmSort} onSort={toggleTm} />
+                    <PsTh label="Usage" sortKey="usage" sort={tmSort} onSort={toggleTm} />
+                    <PsTh label="" sortKey="action" unsortable />
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedTestimonials.map((r) => (
+                    <tr key={r.code} className="border-b border-black/6 last:border-0">
+                      <ClientCell name={r.name} code={r.code} />
+                      <Td>{r.milestone}</Td>
+                      <Td>{r.format}</Td>
+                      <Td>{r.requested}</Td>
+                      <Td>{r.consent}</Td>
+                      <Td>
+                        <StatusPill tone={KIND_TO_TONE[r.kind]}>{r.status}</StatusPill>
+                      </Td>
+                      <Td>{r.usage}</Td>
+                      <RowAction label={r.action} onClick={() => genericAction(r.name, r.action)} />
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
+              <p className="text-[12px] text-[#9CA3AF] font-medium">{pack.footer}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="size-8 rounded-lg grid place-items-center text-[13px] font-bold bg-[#7A0A17] text-white">1</span>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Page 2")}
+                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+                >
+                  2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Next page")}
+                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <Playbook title={pack.playbook.title} sub={pack.playbook.sub} items={pack.playbook.items} titleClass="text-[#7A0A17]" />
+        </>
+      )}
+
+      {tab === "review" && pack && (
+        <>
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            {pack.stats.map((s) => (
+              <MetricCard
+                key={s.label}
+                compact
+                className="shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+                label={s.label}
+                value={s.value}
+                note={s.note}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <NativeSelect
+                value={rvStatus}
+                onChange={setRvStatus}
+                options={[
+                  { value: "all", label: "Status: All" },
+                  { value: "posted", label: "Status: Posted" },
+                  { value: "pending", label: "Status: Not sent" },
+                  { value: "awaiting", label: "Status: Awaiting" },
+                ]}
+              />
+              <NativeSelect
+                value={rvRating}
+                onChange={setRvRating}
+                options={[
+                  { value: "all", label: "Rating: All" },
+                  { value: "5", label: "Rating: 5 ★" },
+                  { value: "4", label: "Rating: 4 ★" },
+                  { value: "low", label: "Rating: Below 4" },
+                ]}
+              />
+              <NativeSelect
+                value={rvOwner}
+                onChange={setRvOwner}
+                options={[
+                  { value: "me", label: "Owner: Me" },
+                  { value: "all", label: "Owner: All" },
+                ]}
+              />
+            </div>
+            <p className="text-[13px] font-semibold text-[#9CA3AF]">{pack.count}</p>
+          </div>
+
+          <section className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+              <div>
+                <h2 className="text-[15px] font-bold text-[#111]">{pack.title}</h2>
+                <p className="text-[12px] text-[#9CA3AF] mt-0.5">{pack.sub}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => toast.info("Review link copied.")}
+                className="text-[13px] font-semibold text-[#7A0A17] hover:underline shrink-0"
+              >
+                Copy review link
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[960px] border-collapse">
+                <thead>
+                  <tr className="border-y border-black/8">
+                    <PsTh label="Client" sortKey="name" sort={rvSort} onSort={toggleRv} />
+                    <PsTh label="Sent on" sortKey="sent" sort={rvSort} onSort={toggleRv} />
+                    <PsTh label="Channel" sortKey="channel" sort={rvSort} onSort={toggleRv} />
+                    <PsTh label="Reminders" sortKey="reminders" sort={rvSort} onSort={toggleRv} />
+                    <PsTh label="Posted" sortKey="posted" sort={rvSort} onSort={toggleRv} />
+                    <PsTh label="Rating" sortKey="rating" sort={rvSort} onSort={toggleRv} />
+                    <PsTh label="Status" sortKey="status" sort={rvSort} onSort={toggleRv} />
+                    <PsTh label="" sortKey="action" unsortable />
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedReviews.map((r) => (
+                    <tr key={r.code} className="border-b border-black/6 last:border-0">
+                      <ClientCell name={r.name} code={r.code} />
+                      <Td>{r.sent}</Td>
+                      <Td>{r.channel}</Td>
+                      <Td>{r.reminders}</Td>
+                      <Td>{r.posted}</Td>
+                      <Td strong>{r.rating}</Td>
+                      <Td>
+                        <StatusPill tone={KIND_TO_TONE[r.kind]}>{r.status}</StatusPill>
+                      </Td>
+                      <RowAction label={r.action} onClick={() => genericAction(r.name, r.action)} />
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
+              <p className="text-[12px] text-[#9CA3AF] font-medium">{pack.footer}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="size-8 rounded-lg grid place-items-center text-[13px] font-bold bg-[#7A0A17] text-white">1</span>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Page 2")}
+                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+                >
+                  2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Next page")}
+                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <Playbook title={pack.playbook.title} sub={pack.playbook.sub} items={pack.playbook.items} />
+        </>
+      )}
+
+      {tab === "cross" && pack && (
+        <>
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            {pack.stats.map((s) => (
+              <MetricCard
+                key={s.label}
+                compact
+                className="shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+                label={s.label}
+                value={s.value}
+                note={s.note}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <NativeSelect
+                value={crService}
+                onChange={setCrService}
+                options={[
+                  { value: "all", label: "Service: All" },
+                  { value: "decor", label: "Service: Decor" },
+                  { value: "photo", label: "Service: Photography" },
+                  { value: "venue", label: "Service: Venue" },
+                ]}
+              />
+              <NativeSelect
+                value={crPartner}
+                onChange={setCrPartner}
+                options={[
+                  { value: "all", label: "Partner: All" },
+                  { value: "kalyan", label: "Partner: Kalyan Studios" },
+                  { value: "aashirwad", label: "Partner: Aashirwad Decor" },
+                ]}
+              />
+              <NativeSelect
+                value={crStatus}
+                onChange={setCrStatus}
+                options={[
+                  { value: "all", label: "Status: All" },
+                  { value: "confirmed", label: "Status: Order confirmed" },
+                  { value: "quote", label: "Status: Quote shared" },
+                  { value: "hold", label: "Status: On hold" },
+                ]}
+              />
+            </div>
+            <p className="text-[13px] font-semibold text-[#9CA3AF]">{pack.count}</p>
+          </div>
+
+          <section className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+              <div>
+                <h2 className="text-[15px] font-bold text-[#111]">{pack.title}</h2>
+                <p className="text-[12px] text-[#9CA3AF] mt-0.5">{pack.sub}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => toast.info("Opening partner catalogue…")}
+                className="text-[13px] font-semibold text-[#7A0A17] hover:underline shrink-0"
+              >
+                Partner catalogue
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1040px] border-collapse">
+                <thead>
+                  <tr className="border-y border-black/8">
+                    <PsTh label="Client" sortKey="name" sort={crSort} onSort={toggleCr} />
+                    <PsTh label="Service" sortKey="service" sort={crSort} onSort={toggleCr} />
+                    <PsTh label="Partner" sortKey="partner" sort={crSort} onSort={toggleCr} />
+                    <PsTh label="Order value" sortKey="value" sort={crSort} onSort={toggleCr} />
+                    <PsTh label="Commission" sortKey="commission" sort={crSort} onSort={toggleCr} />
+                    <PsTh label="Status" sortKey="status" sort={crSort} onSort={toggleCr} />
+                    <PsTh label="Next step" sortKey="next" sort={crSort} onSort={toggleCr} />
+                    <PsTh label="" sortKey="action" unsortable />
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedCross.map((r) => (
+                    <tr key={r.code} className="border-b border-black/6 last:border-0">
+                      <ClientCell name={r.name} code={r.code} />
+                      <Td>{r.service}</Td>
+                      <Td>{r.partner}</Td>
+                      <Td strong>{r.value}</Td>
+                      <Td>
+                        <span className="font-semibold text-[#16A34A]">{r.commission}</span>
+                      </Td>
+                      <Td>
+                        <StatusPill tone={KIND_TO_TONE[r.kind]}>{r.status}</StatusPill>
+                      </Td>
+                      <Td>{r.next}</Td>
+                      <RowAction label={r.action} onClick={() => genericAction(r.name, r.action)} />
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
+              <p className="text-[12px] text-[#9CA3AF] font-medium">{pack.footer}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="size-8 rounded-lg grid place-items-center text-[13px] font-bold bg-[#7A0A17] text-white">1</span>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Page 2")}
+                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+                >
+                  2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Next page")}
+                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <div id="cross-guardrails">
+            <Playbook title={pack.playbook.title} sub={pack.playbook.sub} items={pack.playbook.items} />
+          </div>
+        </>
+      )}
+
+      {tab === "upsell" && pack && (
+        <>
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            {pack.stats.map((s) => (
+              <MetricCard
+                key={s.label}
+                compact
+                className="shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+                label={s.label}
+                value={s.value}
+                note={s.note}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <NativeSelect
+                value={upReason}
+                onChange={setUpReason}
+                options={[
+                  { value: "all", label: "Reason: All" },
+                  { value: "traction", label: "Reason: Low traction" },
+                  { value: "expiry", label: "Reason: Expiry" },
+                  { value: "addon", label: "Reason: Add-on" },
+                ]}
+              />
+              <NativeSelect
+                value={upPackage}
+                onChange={setUpPackage}
+                options={[
+                  { value: "all", label: "Package: All" },
+                  { value: "classic", label: "Package: Classic" },
+                  { value: "premium", label: "Package: Premium" },
+                  { value: "exclusive", label: "Package: Exclusive" },
+                ]}
+              />
+              <NativeSelect
+                value={upStatus}
+                onChange={setUpStatus}
+                options={[
+                  { value: "all", label: "Status: All" },
+                  { value: "quote", label: "Status: Quote sent" },
+                  { value: "interested", label: "Status: Interested" },
+                  { value: "renewal", label: "Status: Renewal due" },
+                ]}
+              />
+            </div>
+            <p className="text-[13px] font-semibold text-[#9CA3AF]">{pack.count}</p>
+          </div>
+
+          <section className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+              <div>
+                <h2 className="text-[15px] font-bold text-[#111]">{pack.title}</h2>
+                <p className="text-[12px] text-[#9CA3AF] mt-0.5">{pack.sub}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => toast.info("Opening upgrade pricing…")}
+                className="text-[13px] font-semibold text-[#7A0A17] hover:underline shrink-0"
+              >
+                Upgrade pricing
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1040px] border-collapse">
+                <thead>
+                  <tr className="border-y border-black/8">
+                    <PsTh label="Client" sortKey="name" sort={upSort} onSort={toggleUp} />
+                    <PsTh label="Current" sortKey="current" sort={upSort} onSort={toggleUp} />
+                    <PsTh label="Suggested" sortKey="suggested" sort={upSort} onSort={toggleUp} />
+                    <PsTh label="Upgrade value" sortKey="value" sort={upSort} onSort={toggleUp} />
+                    <PsTh label="Why now" sortKey="why" sort={upSort} onSort={toggleUp} />
+                    <PsTh label="Status" sortKey="status" sort={upSort} onSort={toggleUp} />
+                    <PsTh label="" sortKey="action" unsortable />
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedUpsell.map((r) => (
+                    <tr key={r.code} className="border-b border-black/6 last:border-0">
+                      <ClientCell name={r.name} code={r.code} />
+                      <Td>{r.current}</Td>
+                      <Td strong>{r.suggested}</Td>
+                      <Td strong>{r.value}</Td>
+                      <Td>{r.why}</Td>
+                      <Td>
+                        <StatusPill tone={KIND_TO_TONE[r.kind]}>{r.status}</StatusPill>
+                      </Td>
+                      <RowAction label={r.action} onClick={() => genericAction(r.name, r.action)} />
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
+              <p className="text-[12px] text-[#9CA3AF] font-medium">{pack.footer}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="size-8 rounded-lg grid place-items-center text-[13px] font-bold bg-[#7A0A17] text-white">1</span>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Page 2")}
+                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+                >
+                  2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Next page")}
+                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          </section>
 
           <Playbook title={pack.playbook.title} sub={pack.playbook.sub} items={pack.playbook.items} />
         </>

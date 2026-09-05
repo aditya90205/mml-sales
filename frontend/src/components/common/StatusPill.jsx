@@ -4,6 +4,7 @@ const TONES = {
   red:   { color: "#E8395B", bg: "#FDECEE" },
   blue:  { color: "#3B82F6", bg: "#E8F2FE" },
   gray:  { color: "#9CA3AF", bg: "#F1F2F4" },
+  peach: { color: "#C2410C", bg: "#FFE8D6" },
 };
 
 /** Small colored status/summary badge reused across deal-detail tables. */
