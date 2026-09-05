@@ -560,6 +560,8 @@ function DetailField({ icon: Icon, label, children, full = false }) {
   );
 }
 
+const HRMS_TH = "px-4 py-3";
+
 function HrmsSortHead({ cols, sort, onSort }) {
   return (
     <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">

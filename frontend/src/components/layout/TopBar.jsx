@@ -323,7 +323,6 @@ export default function TopBar({ page = "Dashboard" }) {
     clients: "Client Database",
     "create-group": "Create Group",
     "win-loss": "Win / Loss Analysis",
-    incentives: "My Incentive Statement",
     "cold-pool": "Cold & Common Pool",
     "post-sales": "Post Sales",
     sales: "Sales",

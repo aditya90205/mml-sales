@@ -16,7 +16,6 @@ import ClientDatabasePage from "./pages/ClientDatabasePage";
 import CreateGroupPage from "./pages/CreateGroupPage";
 import WinLossAnalysisPage from "./pages/WinLossAnalysisPage";
 import PackagesPlansPage from "./pages/PackagesPlansPage";
-import IncentiveStatementPage from "./pages/IncentiveStatementPage";
 import ColdCommonPoolPage from "./pages/ColdCommonPoolPage";
 import PostSalesPage from "./pages/PostSalesPage";
 import ProfileSettings from "./pages/ProfileSettings";
@@ -106,10 +105,6 @@ export default function App() {
         <Route
           path="/packages"
           element={<LayoutRoute><PackagesPlansPage /></LayoutRoute>}
-        />
-        <Route
-          path="/incentives"
-          element={<LayoutRoute><IncentiveStatementPage /></LayoutRoute>}
         />
         <Route
           path="/cold-pool"
