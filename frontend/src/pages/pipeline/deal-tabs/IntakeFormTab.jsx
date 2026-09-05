@@ -25,7 +25,6 @@ const SECTIONS_META = [
 
 // Static fill % for sections that aren't built out yet.
 const PLACEHOLDER_PROGRESS = {
-  communication: 0,
   casesheet: 90,
 };
 
@@ -568,6 +567,50 @@ const DECLARATION_BLOCKS = [
   },
 ];
 
+const VISIBILITY_OPTIONS = ["Hidden", "RM only", "Shortlisted only", "All viewers"];
+
+const COMMUNICATION_BLOCKS = [
+  {
+    title: "How to reach the client",
+    fields: [
+      { key: "preferredChannel", label: "Preferred channel", type: "pill", options: ["WhatsApp", "Phone call", "E-mail", "SMS", "In-app"] },
+      { key: "callBetweenFrom", label: "Call between — from", type: "text" },
+      { key: "callBetweenTo", label: "Call between — to", type: "text" },
+      { key: "preferredLanguage", label: "Preferred language", type: "pill", options: ["Hindi", "English", "Punjabi", "Other"] },
+      { key: "doNotDisturb", label: "Do not disturb", type: "pill", options: ["On", "Off"] },
+      { key: "smsOptIn", label: "SMS opt-in", type: "pill", options: ["Yes", "No"] },
+      { key: "emailOptIn", label: "E-mail opt-in", type: "pill", options: ["Yes", "No"] },
+    ],
+  },
+  {
+    title: "Consent & sign-off",
+    fields: [
+      { key: "dataPrivacyConsent", label: "Data privacy consent", required: true, type: "pill", options: ["Taken", "Pending"] },
+      { key: "consentTakenOn", label: "Consent taken on", type: "text" },
+      { key: "otpSignOff", label: "OTP sign-off", type: "pill", options: ["Done", "Pending"] },
+    ],
+  },
+  {
+    title: "What the client allows us to show",
+    fields: [
+      { key: "showPhoneNumber", label: "Phone number", type: "pill", options: VISIBILITY_OPTIONS },
+      { key: "showAddress", label: "Address", type: "pill", options: VISIBILITY_OPTIONS },
+      { key: "showPhotographs", label: "Photographs", type: "pill", options: VISIBILITY_OPTIONS },
+      { key: "showIncome", label: "Income", type: "pill", options: VISIBILITY_OPTIONS },
+      { key: "showKundli", label: "Kundli", type: "pill", options: VISIBILITY_OPTIONS },
+      { key: "contactChangeNeedsApproval", label: "Contact or address change needs RM approval", type: "pill", options: ["Yes", "No"] },
+    ],
+  },
+  {
+    title: "Media on file",
+    fields: [
+      { key: "photographsOnFile", label: "Photographs on file", type: "pill", options: ["Profile", "Full length", "Family", "Casual", "Formal"] },
+      { key: "introductionVideo", label: "Introduction video", type: "pill", options: ["Recorded", "Pending", "Declined"] },
+      { key: "photoVisibilityManagedBy", label: "Photo visibility managed by", type: "text" },
+    ],
+  },
+];
+
 const SECTION_BLOCKS = {
   personal: PERSONAL_DETAILS_BLOCKS,
   education: EDUCATION_BLOCKS,
@@ -578,6 +621,7 @@ const SECTION_BLOCKS = {
   essential: ESSENTIAL_BLOCKS,
   medical: MEDICAL_BLOCKS,
   declaration: DECLARATION_BLOCKS,
+  communication: COMMUNICATION_BLOCKS,
 };
 
 const DEMO_PERSONAL_VALUES = {
