@@ -5,8 +5,9 @@ import { toast } from "react-toastify";
 /**
  * Client Intake Form — a multi-section booklet. The right rail lists all
  * booklet sections with a fill percentage each; the left renders whichever
- * section is selected. Only "Personal details" (section 1) has real fields
- * for now — the rest are placeholders until their fields are defined.
+ * section is selected. "Personal details" and "Education & career" have
+ * real fields for now — the rest are placeholders until their fields are
+ * defined.
  */
 const SECTIONS_META = [
   { key: "personal", label: "Personal details" },
@@ -24,7 +25,6 @@ const SECTIONS_META = [
 
 // Static fill % for sections that aren't built out yet.
 const PLACEHOLDER_PROGRESS = {
-  education: 39,
   residency: 6,
   family: 47,
   siblings: 92,
@@ -128,6 +128,101 @@ const PERSONAL_DETAILS_BLOCKS = [
   },
 ];
 
+const QUALIFICATION_ROW_FIELDS = [
+  { key: "level", label: "Level" },
+  { key: "course", label: "Course (with duration)" },
+  { key: "stream", label: "Stream" },
+  { key: "institution", label: "Institution" },
+  { key: "year", label: "Year of passing" },
+  { key: "pct", label: "% / CGPA" },
+];
+
+const EDUCATION_BLOCKS = [
+  {
+    title: "Education",
+    fields: [
+      { key: "hobbies", label: "Hobbies you pursue", type: "text" },
+      { key: "languagesKnown", label: "Languages known", type: "text" },
+      { key: "board", label: "Board", type: "pill", options: ["CBSE", "ICSE", "State board", "IB", "IGCSE", "Other"] },
+      { key: "top10Institution", label: "Top-10 institution", type: "pill", options: ["Yes", "No"] },
+      { key: "foreignEducation", label: "Foreign education", type: "pill", options: ["Yes", "No"] },
+      { key: "ivyLeague", label: "Ivy League / IIM", type: "pill", options: ["Yes", "No"] },
+      { key: "studyAbroadCountry", label: "Country (if studied abroad)", type: "text" },
+      {
+        key: "courses",
+        label: "Courses (most recent first)",
+        type: "qualifications",
+        fullWidth: true,
+        rowCount: 4,
+        rowFields: QUALIFICATION_ROW_FIELDS,
+      },
+      { key: "distinctAchievements", label: "Distinct achievements", type: "textarea" },
+    ],
+  },
+  {
+    title: "Work",
+    fields: [
+      {
+        key: "occupation",
+        label: "Occupation",
+        type: "pill",
+        options: ["Independent", "Business (joint / nuclear)", "Professional", "Self employed", "Industrialist", "Bureaucrat", "Private sector", "Student"],
+      },
+      {
+        key: "occupationCategory",
+        label: "Occupation category",
+        type: "pill",
+        options: ["Doctor", "Engineer", "Lawyer", "CA / CS", "Banker", "Civil services", "Academia", "Media", "Architect / designer", "Defence", "Merchant navy", "Businessman", "Other"],
+      },
+      { key: "subSpeciality", label: "Sub-speciality", type: "text" },
+      { key: "designation", label: "Designation", type: "text" },
+      { key: "workingSince", label: "Working since", type: "text" },
+      { key: "workingUntil", label: "Working until (if a past role)", type: "text" },
+      { key: "personalAnnualIncome", label: "Personal annual income", required: true, type: "text" },
+      { key: "salary", label: "Salary (p.a.)", type: "text" },
+      { key: "organisationSpec", label: "Organisation & specification", type: "textarea" },
+    ],
+  },
+  {
+    title: "Where you live",
+    fields: [
+      { key: "currentlyReside", label: "Currently you reside in", type: "pill", options: ["Parental house", "Rented accommodation", "Company accommodation", "Own house"] },
+      { key: "residentialStatus", label: "Residential status", type: "pill", options: ["Joint house", "Nuclear house"] },
+      { key: "stayingSince", label: "Staying since", type: "text" },
+      { key: "previousAddress", label: "Previous address", type: "text" },
+      { key: "shiftingToNewAddress", label: "Shifting to new address", type: "text" },
+      { key: "residenceContact", label: "Contact", type: "text" },
+      { key: "residenceEmail", label: "E-mail", type: "text" },
+      { key: "currentAddress", label: "Current address", required: true, type: "textarea" },
+    ],
+  },
+  {
+    title: "Lifestyle & affiliations",
+    fields: [
+      { key: "politicalAffiliation", label: "Political affiliation", type: "pill", options: ["BJP", "AAP", "INC", "None", "Other"] },
+      { key: "spiritualFollowing", label: "Spiritual following / guru", type: "text" },
+      { key: "clubMemberships", label: "Club memberships", type: "text" },
+      { key: "languageProficiency", label: "Language proficiency", type: "text" },
+      { key: "socialActivities", label: "Social activities & organisations", type: "textarea" },
+    ],
+  },
+  {
+    title: "Online presence",
+    fields: [
+      { key: "linkedin", label: "LinkedIn", type: "text" },
+      { key: "instagram", label: "Instagram", type: "text" },
+      { key: "facebook", label: "Facebook", type: "text" },
+      { key: "twitter", label: "X / Twitter", type: "text" },
+      { key: "otherProfile", label: "Other profile", type: "text" },
+    ],
+  },
+];
+
+const SECTION_BLOCKS = {
+  personal: PERSONAL_DETAILS_BLOCKS,
+  education: EDUCATION_BLOCKS,
+};
+
 const DEMO_PERSONAL_VALUES = {
   gender: "Female",
   firstName: "Priya",
@@ -165,12 +260,55 @@ const DEMO_PERSONAL_VALUES = {
   eating: "Vegetarian",
 };
 
+const DEMO_EDUCATION_VALUES = {
+  hobbies: "Classical music, trekking, baking",
+  languagesKnown: "Hindi, English, Punjabi",
+  distinctAchievements: "AIR 41 in CA finals",
+  courses: [
+    { level: "Professional", course: "CA — 4 yrs", stream: "Audit & taxation", institution: "ICAI", year: "2019", pct: "AIR 214" },
+    { level: "Graduation", course: "B.Com (H) — 3 yrs", stream: "Commerce", institution: "SRCC, Delhi University", year: "2016", pct: "8.4 CGPA" },
+    { level: "12th", course: "Class XII", stream: "Commerce", institution: "DPS R.K. Puram", year: "2013", pct: "94.2%" },
+    {},
+  ],
+  occupation: "Professional",
+  designation: "Manager — Audit",
+  workingSince: "Jul 2019",
+  personalAnnualIncome: "₹18–24L p.a.",
+  organisationSpec: "Sharma & Associates, Gurugram — statutory audit, mid-size firm",
+  currentlyReside: "Parental house",
+  residentialStatus: "Joint house",
+  stayingSince: "2011",
+  residenceContact: "98••• ••164",
+  currentAddress: "House 214, Sector 43, Gurugram, Haryana 122009",
+};
+
+const SECTION_DEMO_VALUES = {
+  ...DEMO_PERSONAL_VALUES,
+  ...DEMO_EDUCATION_VALUES,
+};
+
 const INPUT =
   "w-full h-11 border border-black/12 rounded-xl px-3.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17] bg-white";
 
 function isFilled(value) {
   if (Array.isArray(value)) return value.length > 0;
   return Boolean(value && String(value).trim());
+}
+
+function isQualificationsFilled(rows) {
+  return Array.isArray(rows) && rows.some((r) => Object.values(r || {}).some((v) => v && String(v).trim()));
+}
+
+function isFieldFilled(field, values, chipValues) {
+  if (field.chipsKey) return (chipValues?.[field.chipsKey]?.length || 0) > 0;
+  if (field.type === "qualifications") return isQualificationsFilled(values[field.key]);
+  return isFilled(values[field.key]);
+}
+
+function computeSectionPercent(blocks, values, chipValues) {
+  const total = blocks.reduce((sum, b) => sum + b.fields.length, 0);
+  const filled = blocks.reduce((sum, b) => sum + b.fields.filter((f) => isFieldFilled(f, values, chipValues)).length, 0);
+  return total ? Math.round((filled / total) * 100) : 0;
 }
 
 function FieldLabel({ label, required }) {
@@ -193,6 +331,40 @@ function Pill({ selected, onClick, children }) {
     >
       {children}
     </button>
+  );
+}
+
+function QualificationsField({ def, value, onChange }) {
+  const rows = value && value.length ? value : Array.from({ length: def.rowCount }, () => ({}));
+
+  const updateRow = (i, rowKey, val) => {
+    const next = rows.map((r, idx) => (idx === i ? { ...r, [rowKey]: val } : r));
+    onChange(next);
+  };
+
+  return (
+    <div>
+      <FieldLabel label={def.label} />
+      <div className="flex flex-col gap-3">
+        {rows.map((row, i) => (
+          <div key={i} className="border border-black/8 rounded-xl p-3.5">
+            <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wide mb-2.5">Qualification {i + 1}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {def.rowFields.map((rf) => (
+                <div key={rf.key}>
+                  <label className="block text-[11px] text-[#9CA3AF] mb-1">{rf.label}</label>
+                  <input
+                    value={row[rf.key] || ""}
+                    onChange={(e) => updateRow(i, rf.key, e.target.value)}
+                    className="w-full h-9 border border-black/12 rounded-lg px-2.5 text-[12.5px] text-[#111] outline-none focus:border-[#7A0A17] bg-white"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -225,6 +397,10 @@ function IntakeField({ def, value, chips, onChange, onRemoveChip }) {
         />
       </div>
     );
+  }
+
+  if (def.type === "qualifications") {
+    return <QualificationsField def={def} value={value} onChange={onChange} />;
   }
 
   if (def.type === "upload") {
@@ -270,7 +446,7 @@ function IntakeField({ def, value, chips, onChange, onRemoveChip }) {
 }
 
 function FormBlock({ block, values, chipValues, onFieldChange, onRemoveChip }) {
-  const filled = block.fields.filter((f) => isFilled(values[f.key])).length;
+  const filled = block.fields.filter((f) => isFieldFilled(f, values, chipValues)).length;
   const total = block.fields.length;
   const colClass = block.columns === 1 ? "" : block.columns === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3";
 
@@ -284,14 +460,15 @@ function FormBlock({ block, values, chipValues, onFieldChange, onRemoveChip }) {
       </div>
       <div className={`grid grid-cols-1 ${colClass} gap-x-6 gap-y-4`}>
         {block.fields.map((f) => (
-          <IntakeField
-            key={f.key}
-            def={f}
-            value={values[f.key]}
-            chips={f.chipsKey ? chipValues[f.chipsKey] : undefined}
-            onChange={(v) => onFieldChange(f.key, v)}
-            onRemoveChip={f.chipsKey ? (chip) => onRemoveChip(f.chipsKey, chip) : undefined}
-          />
+          <div key={f.key} className={f.type === "textarea" || f.type === "qualifications" || f.fullWidth ? "sm:col-span-full" : ""}>
+            <IntakeField
+              def={f}
+              value={values[f.key]}
+              chips={f.chipsKey ? chipValues[f.chipsKey] : undefined}
+              onChange={(v) => onFieldChange(f.key, v)}
+              onRemoveChip={f.chipsKey ? (chip) => onRemoveChip(f.chipsKey, chip) : undefined}
+            />
+          </div>
         ))}
       </div>
     </div>
@@ -348,7 +525,7 @@ function SectionsSidebar({ sections, activeKey, onSelect }) {
 
 export default function IntakeFormTab({ empty = false }) {
   const [activeKey, setActiveKey] = useState("personal");
-  const [values, setValues] = useState(empty ? {} : DEMO_PERSONAL_VALUES);
+  const [values, setValues] = useState(empty ? {} : SECTION_DEMO_VALUES);
   const [chips, setChips] = useState({ aadhaarFiles: empty ? [] : DEMO_PERSONAL_VALUES.aadhaarFiles });
 
   const setField = (key, value) => setValues((prev) => ({ ...prev, [key]: value }));
@@ -356,19 +533,13 @@ export default function IntakeFormTab({ empty = false }) {
     setChips((prev) => ({ ...prev, [chipsKey]: (prev[chipsKey] || []).filter((c) => c !== chip) }));
 
   const activeIndex = SECTIONS_META.findIndex((s) => s.key === activeKey);
+  const activeBlocks = SECTION_BLOCKS[activeKey];
 
-  const personalTotal = PERSONAL_DETAILS_BLOCKS.reduce((sum, b) => sum + b.fields.length, 0);
-  const personalFilled = PERSONAL_DETAILS_BLOCKS.reduce(
-    (sum, b) => sum + b.fields.filter((f) => (f.chipsKey ? chips[f.chipsKey]?.length : isFilled(values[f.key]))).length,
-    0
-  );
-  const personalPercent = personalTotal ? Math.round((personalFilled / personalTotal) * 100) : 0;
-
-  const sections = SECTIONS_META.map((s) =>
-    s.key === "personal"
-      ? { ...s, percent: personalPercent }
-      : { ...s, percent: empty ? 0 : PLACEHOLDER_PROGRESS[s.key] ?? 0 }
-  );
+  const sections = SECTIONS_META.map((s) => {
+    const blocks = SECTION_BLOCKS[s.key];
+    const percent = empty ? 0 : blocks ? computeSectionPercent(blocks, values, chips) : PLACEHOLDER_PROGRESS[s.key] ?? 0;
+    return { ...s, percent };
+  });
 
   const overallPercent = empty ? 0 : Math.round((OVERALL_FILLED_FIELDS / OVERALL_TOTAL_FIELDS) * 100);
 
@@ -394,8 +565,8 @@ export default function IntakeFormTab({ empty = false }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
       <div className="flex flex-col gap-5 min-w-0">
-        {activeKey === "personal" ? (
-          PERSONAL_DETAILS_BLOCKS.map((block) => (
+        {activeBlocks ? (
+          activeBlocks.map((block) => (
             <FormBlock
               key={block.title}
               block={block}
