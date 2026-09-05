@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Check, Minus, Pencil, Plus, TrendingUp, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { AppPage, MetricCard, OutlineBtn, Panel, PrimaryBtn, Td } from "../components/common/AppPage.jsx";
-import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import StatusPill from "../components/common/StatusPill";
 
 const STATS = [
@@ -78,30 +77,6 @@ const COMPARISON_ROWS = [
   { label: "Priority matchmaking queue", basic: false, premium: false, exclusive: true },
 ];
 
-const ADDONS = [
-  { item: "Kundli / horoscope service", note: "Redeemable against wallet credits", price: "₹2,500", availableOn: "All packages" },
-  { item: "Photo reshoot (studio)", note: "Professional shoot at branch studio", price: "₹3,500", availableOn: "All packages" },
-  { item: "Verified Profile Report", note: "Background + document verification", price: "₹0", availableOn: "Included in Premium & Exclusive" },
-  { item: "Priority matchmaking boost", note: "7-day featured placement", price: "₹6,000", availableOn: "Premium & Exclusive" },
-  { item: "Additional city search", note: "Per extra city beyond home branch", price: "₹4,000", availableOn: "All packages" },
-];
-
-const PLAN_CHANGES = [
-  { client: "Ritu Malhotra", from: "Basic", to: "Premium", date: "01 Sep 2026", rm: "Aman Verma", uplift: "₹26,000" },
-  { client: "Karan Bhatia", from: "Premium", to: "Exclusive", date: "29 Aug 2026", rm: "Sneha Rao", uplift: "₹74,000" },
-  { client: "Divya Nair", from: "Basic", to: "Premium", date: "27 Aug 2026", rm: "Aman Verma", uplift: "₹26,000" },
-  { client: "Yash Kapoor", from: "Premium", to: "Exclusive", date: "22 Aug 2026", rm: "Ritika Shah", uplift: "₹74,000" },
-];
-
-const PLAN_CHANGE_COLS = [
-  { label: "Client", key: "client" },
-  { label: "From", key: "from" },
-  { label: "To", key: "to" },
-  { label: "Date", key: "date" },
-  { label: "RM", key: "rm" },
-  { label: "Revenue uplift", key: "uplift" },
-];
-
 function PackageCard({ pkg, currency, onEdit }) {
   const price = currency === "usd" ? pkg.priceUsd : pkg.price;
   return (
@@ -155,12 +130,11 @@ function ComparisonCell({ value }) {
 
 export default function PackagesPlansPage() {
   const [currency, setCurrency] = useState("inr");
-  const { sorted, sort, toggle } = useTableSort(PLAN_CHANGES, { defaultKey: null });
 
   return (
     <AppPage
       title="Packages & Plans"
-      subtitle="Manage the package catalogue, add-on pricing and upgrade activity across all branches."
+      subtitle="Manage the package catalogue across all branches."
       actions={
         <>
           <OutlineBtn onClick={() => setCurrency((c) => (c === "inr" ? "usd" : "inr"))}>
@@ -228,60 +202,6 @@ export default function PackagesPlansPage() {
           </table>
         </div>
       </Panel>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start">
-        <Panel
-          title="Add-on services"
-          subtitle="Priced separately from the base package"
-          action={<OutlineBtn onClick={() => toast.info("Add-on creation coming soon.")}>+ New add-on</OutlineBtn>}
-        >
-          <div className="flex flex-col gap-3">
-            {ADDONS.map((a) => (
-              <div key={a.item} className="flex items-center justify-between gap-3 py-2.5 border-b border-black/6 last:border-0">
-                <div className="min-w-0">
-                  <p className="text-[12.5px] font-semibold text-[#111]">{a.item}</p>
-                  <p className="text-[11px] text-[#9CA3AF] mt-0.5">{a.note}</p>
-                  <StatusPill tone="gray">{a.availableOn}</StatusPill>
-                </div>
-                <span className="shrink-0 text-[13px] font-bold text-[#111]">{a.price}</span>
-              </div>
-            ))}
-          </div>
-        </Panel>
-
-        <Panel title="Recent plan upgrades" subtitle="Package changes across all branches, most recent first">
-          <div className="overflow-x-auto -mx-1">
-            <table className="w-full text-left border-collapse min-w-[520px]">
-              <thead>
-                <tr className="border-b border-black/8 bg-[#FAFAFB]">
-                  {PLAN_CHANGE_COLS.map((col) => (
-                    <SortableTh
-                      key={col.key}
-                      label={col.label}
-                      sortKey={col.key}
-                      sort={sort}
-                      onSort={toggle}
-                      className="px-4 py-3 text-[10px] font-extrabold text-[#9CA3AF] uppercase tracking-wide whitespace-nowrap"
-                    />
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((row) => (
-                  <tr key={`${row.client}-${row.date}`} className="border-b border-black/6 last:border-0 hover:bg-[#FAFAFB]">
-                    <Td strong>{row.client}</Td>
-                    <Td muted>{row.from}</Td>
-                    <Td>{row.to}</Td>
-                    <Td muted>{row.date}</Td>
-                    <Td>{row.rm}</Td>
-                    <Td strong>{row.uplift}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Panel>
-      </div>
     </AppPage>
   );
 }
