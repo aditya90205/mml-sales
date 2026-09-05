@@ -1,40 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  UserRound,
-  Lock,
-  Eye,
-  EyeOff,
-  Heart,
-  ShieldCheck,
-  HeartHandshake,
-  Headset,
-  UserCheck,
-  Users,
-  UsersRound,
-  MapPin,
-  Globe,
-} from "lucide-react";
+import { UserRound, Lock, Eye, EyeOff, Heart } from "lucide-react";
 import { toast } from "react-toastify";
 import Input from "../components/ui/Input";
-import mmlLogo from "../assets/mml-logo.png";
-import loginLeftImage from "../assets/login-left-image.png";
-import loginInsideFormImage from "../assets/login-inside-form-image.png";
-import loginFloral from "../assets/login-top-left.png";
+import mmlLoginBg from "../assets/mml-login-page.png";
 
-const FEATURES = [
-  { icon: UserCheck, label: "Verified\nProfiles" },
-  { icon: ShieldCheck, label: "Secure &\nTrusted" },
-  { icon: HeartHandshake, label: "Personalized\nMatchmaking" },
-  { icon: Headset, label: "Dedicated\nSupport" },
-];
+// Percentages are measured against the 5760x3112 mml-login-page.png artwork
+// so overlaid content lands exactly on the blank slots baked into the image.
+const STAT_VALUES = ["17+", "1000+", "4+", "Global Reach"];
+const STAT_X = [5.6, 16.7, 27.8, 38.9]; // column centers, % of image width
+const STAT_Y = 93.2; // row center, % of image height
 
-const STATS = [
-  { icon: Users, value: "17+", label: "Years of Experience" },
-  { icon: UsersRound, value: "1000+", label: "Successful Matches" },
-  { icon: MapPin, value: "4+", label: "Locations in India & Overseas" },
-  { icon: Globe, value: "Global Reach", label: "Indian & NRI Families" },
-];
+const FORM_BOX = { top: 46, left: 64.2, width: 20, height: 34.5 }; // % of image
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -58,125 +35,38 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative h-[100vh] w-full flex overflow-hidden bg-[#fcf4ec]">
-      {/* ── Left: brand / info panel ── */}
-      <div className="hidden lg:flex lg:w-[50%] xl:w-[48%] h-full relative flex-col overflow-hidden bg-[#fcf4ec]">
+    <div className="relative h-[100vh] w-full flex items-center justify-center bg-[#1a0a08] overflow-hidden">
+      <div className="relative h-full aspect-[5760/3112] max-w-full">
         <img
-          src={loginFloral}
-          alt=""
-          className="absolute -top-10 -left-16 w-[420px] xl:w-[480px] h-auto pointer-events-none select-none mix-blend-multiply opacity-90"
-          aria-hidden
-        />
-        <img
-          src={loginFloral}
-          alt=""
-          className="absolute -bottom-6 -left-20 w-[300px] xl:w-[340px] h-auto pointer-events-none select-none mix-blend-multiply opacity-70 scale-y-[-1] origin-bottom"
-          aria-hidden
+          src={mmlLoginBg}
+          alt="Make My Lagan Matrimonials"
+          className="absolute inset-0 w-full h-full object-fill select-none pointer-events-none"
+          draggable={false}
         />
 
-        <div className="relative z-10 flex flex-col flex-1 px-6 xl:px-10 pt-7 pb-0 min-h-0">
-          <div className="flex justify-center shrink-0">
-            <img
-              src={mmlLogo}
-              alt="Make My Lagan Matrimonials"
-              className="h-[80px] xl:h-[88px] w-auto object-contain"
-            />
+        {/* ── Stat numbers baked-blank in the maroon bar ── */}
+        {STAT_VALUES.map((value, i) => (
+          <div
+            key={value}
+            className="absolute -translate-x-1/2 -translate-y-1/2 font-bold text-white leading-none whitespace-nowrap"
+            style={{ left: `${STAT_X[i]}%`, top: `${STAT_Y}%`, fontSize: "clamp(11px, 1.9vh, 22px)" }}
+          >
+            {value}
           </div>
+        ))}
 
-          <div className="text-center mt-4 shrink-0">
-            <h1 className="font-display text-[24px] xl:text-[30px] leading-[1.25] text-[#68101E] font-semibold">
-              Bringing Hearts Together,
-              <br />
-              Building Beautiful Futures.
-            </h1>
-            <div className="flex items-center justify-center gap-3 mt-3">
-              <span className="h-px w-12 bg-[#68101E]/30" />
-              <Heart size={13} className="text-[#68101E]" fill="currentColor" />
-              <span className="h-px w-12 bg-[#68101E]/30" />
-            </div>
-          </div>
-
-          <div className="flex items-start justify-center gap-8 xl:gap-12 mt-6 shrink-0 px-4">
-            {FEATURES.map((f) => (
-              <div key={f.label} className="flex flex-col items-center gap-2.5 w-[100px] px-1">
-                <span className="size-[52px] xl:size-14 rounded-full bg-[#68101E] text-white grid place-items-center shadow-[0_6px_16px_rgba(104,16,30,0.22)]">
-                  <f.icon size={22} strokeWidth={1.7} />
-                </span>
-                <p className="text-[12px] xl:text-[12.5px] font-semibold text-[#3A3230] text-center leading-snug whitespace-pre-line">
-                  {f.label}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="relative flex-1 min-h-[200px] mt-2 mb-[-24px] z-[5]">
-            <img
-              src={loginLeftImage}
-              alt=""
-              className="absolute inset-0 w-full h-full object-contain object-center mix-blend-multiply pointer-events-none select-none"
-              aria-hidden
-            />
-          </div>
-        </div>
-
-        <div className="relative z-10 grid grid-cols-4 h-[110px] shrink-0 bg-[#68101E]">
-          {STATS.map((s, i) => (
-            <div
-              key={s.label}
-              className={`flex flex-col items-center justify-center gap-1.5 text-center px-3 xl:px-4 ${
-                i === 0 ? "" : "border-l border-white/15"
-              }`}
-            >
-              <s.icon size={16} className="text-white/90" strokeWidth={1.8} />
-              <span className="text-[15px] xl:text-[17px] font-bold text-white leading-none">
-                {s.value}
-              </span>
-              <span className="text-[10px] xl:text-[11px] text-white/80 leading-tight max-w-[118px]">
-                {s.label}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Right: sign-in panel (photo wraps around the stats-bar curve) ── */}
-      <div className="relative z-0 flex-1 h-full flex items-center justify-center p-5 sm:p-8 lg:p-10 overflow-hidden lg:rounded-tl-[64px]">
-        <img
-          src={loginInsideFormImage}
-          alt=""
-          className="absolute inset-0 z-0 w-full h-full object-cover object-center"
-          aria-hidden
-        />
-        <div className="absolute inset-0 z-0 bg-[#1a0a08]/35" aria-hidden />
-
-        {/* Maroon curve lives INSIDE the photo — desk shows in the rounded cutout */}
-        <div
-          className="hidden lg:block absolute bottom-0 left-0 z-[1] h-[110px] w-[110px] bg-[#68101E] rounded-tr-[110px]"
-          aria-hidden
-        />
-
+        {/* ── Sign-in form, overlaid on the blank card area ── */}
         <form
           onSubmit={handleSubmit}
-          className="relative z-10 w-full max-w-[400px] bg-[#fcf4ec] rounded-[28px] shadow-[0_24px_70px_rgba(0,0,0,0.38)] px-7 py-8 sm:px-9 sm:py-9 flex flex-col"
+          className="absolute flex flex-col justify-between"
+          style={{
+            top: `${FORM_BOX.top}%`,
+            left: `${FORM_BOX.left}%`,
+            width: `${FORM_BOX.width}%`,
+            height: `${FORM_BOX.height}%`,
+          }}
         >
-          <div className="flex justify-center mb-4">
-            <img
-              src={mmlLogo}
-              alt="Make My Lagan Matrimonials"
-              className="h-[72px] lg:h-[68px] w-auto object-contain"
-            />
-          </div>
-
-          <div className="text-center">
-            <h2 className="font-display text-[24px] sm:text-[26px] font-semibold text-[#68101E] leading-tight">
-              Welcome Back, Team MML!
-            </h2>
-            <p className="text-[12.5px] text-[#6B6058] mt-2">
-              Sign in to access your CRM dashboard.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-4 mt-7">
+          <div className="flex flex-col" style={{ gap: "1.6vh" }}>
             <Input
               label="Username"
               type="text"
@@ -185,8 +75,9 @@ export default function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               leftIcon={<UserRound size={16} />}
-              wrapperClassName="gap-1.5"
-              className="h-11 bg-white"
+              wrapperClassName="gap-1"
+              className="bg-white"
+              style={{ height: "4.2vh", fontSize: "clamp(10px, 1.3vh, 15px)" }}
             />
 
             <Input
@@ -197,7 +88,9 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               leftIcon={<Lock size={16} />}
-              className="h-11 bg-white"
+              wrapperClassName="gap-1"
+              className="bg-white"
+              style={{ height: "4.2vh", fontSize: "clamp(10px, 1.3vh, 15px)" }}
               rightIcon={
                 <button
                   type="button"
@@ -210,34 +103,37 @@ export default function LoginPage() {
               }
             />
 
-            <div className="flex justify-end -mt-1.5">
+            <div className="flex justify-end -mt-1">
               <button
                 type="button"
                 onClick={() => toast.info("Please contact your admin to reset your password.")}
-                className="text-[12.5px] font-medium text-[#68101E] hover:underline underline-offset-2"
+                className="font-medium text-[#68101E] hover:underline underline-offset-2"
+                style={{ fontSize: "clamp(9px, 1.15vh, 13px)" }}
               >
                 Forgot Password?
               </button>
             </div>
+          </div>
 
+          <div className="flex flex-col items-center" style={{ gap: "1.4vh" }}>
             <button
               type="submit"
               disabled={submitting}
-              className="h-12 mt-2 w-[calc(100%-48px)] mx-auto rounded-xl bg-[#68101E] text-white text-[14px] font-semibold tracking-[0.12em] px-10 hover:bg-[#520d18] active:bg-[#430b14] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              className="w-full rounded-xl bg-[#68101E] text-white font-semibold tracking-[0.12em] hover:bg-[#520d18] active:bg-[#430b14] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              style={{ height: "5vh", fontSize: "clamp(10px, 1.4vh, 16px)" }}
             >
               {submitting ? "Signing in…" : "SIGN IN"}
             </button>
-          </div>
 
-          <div className="mt-7 text-center">
-            <p className="text-[11.5px] text-[#8a7f77]">
-              Together, let&apos;s create beautiful matches
-            </p>
-            <Heart size={14} className="text-[#68101E] mx-auto mt-2.5" fill="currentColor" />
+            <div className="text-center">
+              <p className="text-[#8a7f77]" style={{ fontSize: "clamp(8px, 1.05vh, 12px)" }}>
+                Together, let&apos;s create beautiful matches
+              </p>
+              <Heart size={12} className="text-[#68101E] mx-auto mt-1" fill="currentColor" />
+            </div>
           </div>
         </form>
       </div>
-
     </div>
   );
 }
