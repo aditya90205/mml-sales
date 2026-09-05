@@ -20,14 +20,14 @@ const NAV_ITEMS = [
   { label: "Calendar",        icon: CalendarDays,    to: "/calendar" },
   { label: "Tasks",           icon: CheckSquare,     to: "/tasks" },
   { label: "Bulk Upload",     icon: Upload,          to: "/bulk-upload" },
-  { label: "Pipeline Board",  icon: KanbanSquare,    to: "/pipeline" },
+  { label: "Sales Pipeline (P0-P6)",  icon: KanbanSquare,    to: "/pipeline" },
   { label: "Campaign",        icon: Megaphone,       to: "/campaign/management" },
   { label: "Client Database", icon: Database,        to: "/clients" },
   { label: "Packages & Plans", icon: PackageSearch,  to: "/packages" },
   { label: "Win / Loss",      icon: BarChart3,       to: "/win-loss" },
   { label: "Post Sales",      icon: Handshake,       to: "/post-sales" },
   { label: "HRMS",            icon: Users,           to: "/hrms" },
-  { label: "Leaderboard",     icon: Trophy,          to: "/leaderboard" },
+  { label: "Leaderboard & Contest",     icon: Trophy,          to: "/leaderboard" },
 ];
 
 export default function Sidebar() {
