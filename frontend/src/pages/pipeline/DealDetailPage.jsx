@@ -91,8 +91,8 @@ function initials(name = "") {
  * Deal detail opened by clicking any pipeline card (P0–P6).
  * Tab data fills in by stage. Payments and P6 Checklist stay blurred until P5.
  */
-export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAdvance }) {
-  const [activeTab, setActiveTab] = useState("overview");
+export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAdvance, initialTab = "overview" }) {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const lateTabsUnlocked = atLeast(currentStage, "P5");
   const nextStage = NEXT_STAGE[currentStage];
   const tabs = BASE_TABS.map((tab) =>

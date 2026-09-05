@@ -115,9 +115,12 @@ const PRIORITY_ITEMS = [
   },
   {
     parts: [
-      { text: "₹18,400 in " },
-      { text: "discount", to: "/pipeline/discount-requests" },
-      { text: " approvals pending across 3 requests" },
+      { text: "₹18,400 in discount approvals pending for " },
+      { text: "Vivek Sharma", to: "/pipeline?openLead=p4-1&tab=discounts" },
+      { text: ", " },
+      { text: "Rohit Sharma", to: "/pipeline?openLead=p5-1&tab=discounts" },
+      { text: " and " },
+      { text: "Virat Sharma", to: "/pipeline?openLead=p6-1&tab=discounts" },
     ],
   },
   {

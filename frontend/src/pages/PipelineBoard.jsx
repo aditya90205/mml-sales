@@ -750,6 +750,7 @@ function findLeadById(leadId) {
 export default function PipelineBoard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const deepLinkedLead = useMemo(() => findLeadById(searchParams.get("openLead")), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const deepLinkedTab = useMemo(() => searchParams.get("tab") || "overview", []); // eslint-disable-line react-hooks/exhaustive-deps
   const [search, setSearch]             = useState("");
   const [perPage, setPerPage]           = useState(10);
   const [view,   setView]               = useState("table"); // "board" | "table"
@@ -760,12 +761,14 @@ export default function PipelineBoard() {
   const [subView, setSubView]           = useState(deepLinkedLead ? "deal-detail" : null); // null | "add-p0" | "move-p1" | "move-p2" | "deal-detail"
   const [activeLead, setActiveLead]     = useState(deepLinkedLead?.lead ?? null);
   const [dealTargetStage, setDealTargetStage] = useState(deepLinkedLead?.stageId ?? "P5");
+  const [dealInitialTab, setDealInitialTab] = useState(deepLinkedLead ? deepLinkedTab : "overview");
 
   useEffect(() => {
     if (!deepLinkedLead) return;
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.delete("openLead");
+      next.delete("tab");
       return next;
     }, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -851,6 +854,7 @@ export default function PipelineBoard() {
   const handleOpenDeal = (lead, stageKey) => {
     setActiveLead(lead);
     setDealTargetStage(stageKey);
+    setDealInitialTab("overview");
     setSubView("deal-detail");
   };
 
@@ -939,8 +943,10 @@ export default function PipelineBoard() {
   if (subView === "deal-detail") {
     return (
       <DealDetailPage
+        key={activeLead?.id}
         lead={activeLead}
         currentStage={dealTargetStage}
+        initialTab={dealInitialTab}
         onBack={() => { setSubView(null); setActiveLead(null); }}
         onAdvance={handleMoveStage}
       />
