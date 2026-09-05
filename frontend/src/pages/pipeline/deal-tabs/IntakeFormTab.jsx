@@ -25,7 +25,6 @@ const SECTIONS_META = [
 
 // Static fill % for sections that aren't built out yet.
 const PLACEHOLDER_PROGRESS = {
-  match: 55,
   essential: 74,
   medical: 62,
   declaration: 93,
@@ -387,12 +386,69 @@ const SIBLINGS_BLOCKS = [
   },
 ];
 
+const MATCH_BLOCKS = [
+  {
+    title: "Basics",
+    fields: [
+      { key: "preferenceGivenBy", label: "Preference given by", required: true, type: "pill", options: ["Candidate", "Parent", "RM"] },
+      { key: "desiredAgeFrom", label: "Desired age — from", required: true, type: "text" },
+      { key: "desiredAgeTo", label: "Desired age — to", required: true, type: "text" },
+      { key: "matchHeightFrom", label: "Height — from", required: true, type: "text" },
+      { key: "matchHeightTo", label: "Height — to", required: true, type: "text" },
+      { key: "preferredSectCaste", label: "Preferred sect / caste options", type: "text" },
+      { key: "preferredMaritalStatus", label: "Preferred marital status", type: "pill", options: ["Single", "Divorced", "Widow / Widower", "Doesn't matter"] },
+      { key: "childrenAcceptable", label: "Children acceptable", type: "pill", options: ["Without children only", "With children", "Doesn't matter"] },
+      { key: "minimumEducation", label: "Minimum education", type: "pill", options: ["Under graduate", "Graduate", "Post graduate", "Doctorate", "Doesn't matter"] },
+      { key: "preferredReligion", label: "Preferred religion", type: "text" },
+      { key: "preferredOccupation", label: "Preferred occupation", type: "text" },
+      { key: "occupationPreferenceNote", label: "Occupation preference — note", type: "text" },
+      { key: "minPersonalIncome", label: "Min personal income per month", type: "text" },
+    ],
+  },
+  {
+    title: "Habits & astrology",
+    fields: [
+      { key: "matchDrinking", label: "Drinking habits", type: "pill", options: ["Teetotaller", "Occasional drinker", "Regular drinker", "Doesn't matter"] },
+      { key: "matchSmoking", label: "Smoking acceptable", type: "pill", options: ["Non smoker", "Occasional smoker", "Regular smoker", "Doesn't matter"] },
+      { key: "matchEating", label: "Eating habits", type: "pill", options: ["Vegetarian", "Eggetarian", "Non vegetarian", "Doesn't matter"] },
+      { key: "matchManglik", label: "Astrologically the match should be", type: "pill", options: ["Non manglik", "Manglik only", "Slightly manglik", "Doesn't matter"] },
+    ],
+  },
+  {
+    title: "Location & expectations",
+    fields: [
+      { key: "openOutOfIndia", label: "Open for out of India", type: "pill", options: ["Yes", "No"] },
+      { key: "outOfIndiaSpecify", label: "Out of India — specify", type: "text" },
+      { key: "openOutOfCity", label: "Open for out of city", type: "pill", options: ["Yes", "No"] },
+      { key: "outOfCitySpecify", label: "Out of city — specify", type: "text" },
+      { key: "partnerExpectations", label: "Expectations from your life partner / family", type: "textarea" },
+    ],
+  },
+  {
+    title: "Zone, visa & other criteria",
+    fields: [
+      { key: "matchPreferredZone", label: "Preferred zone", type: "pill", options: ["Delhi NCR", "Gurgaon", "Punjab", "Haryana", "Rajasthan", "Maharashtra", "Doesn't matter"] },
+      { key: "matchPreferredCountry", label: "Preferred country", type: "text" },
+      { key: "matchPreferredState", label: "Preferred state", type: "text" },
+      { key: "matchPreferredCity", label: "Preferred city", type: "text" },
+      { key: "matchResidentialPreference", label: "Residential preference", type: "pill", options: ["Indian citizen", "Temporarily abroad", "NRI", "Foreigner", "Doesn't matter"] },
+      { key: "visaStatusExpected", label: "Visa status expected", type: "text" },
+      { key: "appearancePreference", label: "Appearance preference", type: "text" },
+      { key: "marriageBudgetFromPartner", label: "Marriage budget expected from partner side", type: "text" },
+      { key: "preferencesRelaxedAfterRejection", label: "Preferences relaxed after a rejection", type: "pill", options: ["Yes", "No"] },
+      { key: "rmCustomInsights", label: "RM custom insights (comma separated)", type: "textarea" },
+      { key: "whatWasRelaxed", label: "What was relaxed, and why", type: "textarea" },
+    ],
+  },
+];
+
 const SECTION_BLOCKS = {
   personal: PERSONAL_DETAILS_BLOCKS,
   education: EDUCATION_BLOCKS,
   residency: RESIDENCY_BLOCKS,
   family: FAMILY_BLOCKS,
   siblings: SIBLINGS_BLOCKS,
+  match: MATCH_BLOCKS,
 };
 
 const DEMO_PERSONAL_VALUES = {
@@ -505,12 +561,34 @@ const DEMO_SIBLINGS_VALUES = {
   yourLifestyle: "Owned 500 sq yd house in Sector 43, understated, travels twice a year",
 };
 
+const DEMO_MATCH_VALUES = {
+  desiredAgeFrom: "30",
+  desiredAgeTo: "35",
+  matchHeightFrom: "5 ft 8 in",
+  matchHeightTo: "6 ft 1 in",
+  preferredSectCaste: "Agarwal, Bansal, Goyal, Mittal",
+  preferredMaritalStatus: "Single",
+  childrenAcceptable: "Without children only",
+  minimumEducation: "Post graduate",
+  preferredOccupation: "CA, doctor, senior corporate",
+  minPersonalIncome: "₹2L",
+  matchDrinking: "Occasional drinker",
+  matchSmoking: "Non smoker",
+  matchEating: "Vegetarian",
+  matchManglik: "Doesn't matter",
+  openOutOfIndia: "No",
+  openOutOfCity: "Yes",
+  outOfCitySpecify: "Delhi NCR, Mumbai",
+  partnerExpectations: "Settled, travels, no rigid roles at home. A joint household of more than four is a deal-breaker.",
+};
+
 const SECTION_DEMO_VALUES = {
   ...DEMO_PERSONAL_VALUES,
   ...DEMO_EDUCATION_VALUES,
   ...DEMO_RESIDENCY_VALUES,
   ...DEMO_FAMILY_VALUES,
   ...DEMO_SIBLINGS_VALUES,
+  ...DEMO_MATCH_VALUES,
 };
 
 const INPUT =
