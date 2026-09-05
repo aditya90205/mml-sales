@@ -13,7 +13,6 @@ import {
   LayoutGrid,
   LayoutList,
   Link2,
-  Mail,
   MapPin,
   MessageSquare,
   MoreVertical,
@@ -26,6 +25,7 @@ import {
   Video,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 // TopBar is now provided by Layout
 import eyeIcon from "../assets/eye.png";
 import peopleIcon from "../assets/people.png";
@@ -711,12 +711,10 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                         <button type="button" className="p-1 rounded-lg text-[#F59E0B] hover:bg-[#FFF3E4] transition-colors" title="Message">
                           <MessageSquare size={14} />
                         </button>
-                        <button type="button" className="relative p-1 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] transition-colors" title="Email">
-                          <Mail size={14} />
-                          {idx % 2 === 0 && (
-                            <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-[#DC2626]" />
-                          )}
-                        </button>
+                        <EmailActivityButton
+                          className="relative p-1 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] transition-colors"
+                          hasUnread={idx % 2 === 0}
+                        />
                         <button type="button" className="p-1 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] transition-colors" title="Schedule">
                           <Calendar size={14} />
                         </button>

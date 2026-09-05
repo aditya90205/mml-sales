@@ -27,7 +27,6 @@ import {
   Phone,
   PhoneOff,
   MessageSquare,
-  Mail,
   Calendar,
   Clock,
   MoreVertical,
@@ -44,6 +43,7 @@ import {
 } from "lucide-react";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
+import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import DealDetailPage from "./pipeline/DealDetailPage";
 import MoveToP1Page from "./pipeline/MoveToP1Page";
@@ -1686,12 +1686,10 @@ function MyLeadsCard({ onOpenDeal, onMoveStage }) {
                       <button type="button" className="p-1.5 text-[#F59E0B] hover:bg-black/4 rounded-lg transition-colors" title="Message" aria-label="Message">
                         <MessageSquare size={14} />
                       </button>
-                      <button type="button" className="relative p-1.5 text-[#3B82F6] hover:bg-black/4 rounded-lg transition-colors" title="Email" aria-label="Email">
-                        <Mail size={14} />
-                        {i % 2 === 0 && (
-                          <span className="absolute top-1 right-1 size-1.5 rounded-full bg-[#DC2626]" />
-                        )}
-                      </button>
+                      <EmailActivityButton
+                        className="relative p-1.5 text-[#3B82F6] hover:bg-black/4 rounded-lg transition-colors"
+                        hasUnread={i % 2 === 0}
+                      />
                       <button type="button" className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors" title="Schedule" aria-label="Schedule">
                         <Calendar size={14} />
                       </button>
