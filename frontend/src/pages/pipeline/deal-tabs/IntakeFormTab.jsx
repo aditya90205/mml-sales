@@ -25,7 +25,6 @@ const SECTIONS_META = [
 
 // Static fill % for sections that aren't built out yet.
 const PLACEHOLDER_PROGRESS = {
-  family: 47,
   siblings: 92,
   match: 55,
   essential: 74,
@@ -279,10 +278,77 @@ const RESIDENCY_BLOCKS = [
   },
 ];
 
+const FAMILY_BLOCKS = [
+  {
+    title: "Father",
+    fields: [
+      { key: "fatherName", label: "Father's name", required: true, type: "text" },
+      { key: "fatherAge", label: "Age", type: "text" },
+      { key: "fatherEducation", label: "Education", type: "text" },
+      { key: "fatherPanNo", label: "PAN No", type: "upload", note: "Card image optional — front and back" },
+      { key: "fatherAadhaarNo", label: "Aadhaar No", type: "upload", note: "Card image optional — front and back" },
+      {
+        key: "fatherOccupation",
+        label: "Occupation",
+        type: "pill",
+        options: ["Independent", "Business (joint / nuclear)", "Professional", "Self employed", "Industrialist", "Bureaucrat", "Private sector"],
+      },
+      { key: "paternalBrothers", label: "Paternal brothers", type: "text" },
+      { key: "paternalSisters", label: "Paternal sisters", type: "text" },
+      { key: "fatherOriginallyBelongsTo", label: "Originally belongs to", type: "text" },
+      { key: "fatherLiving", label: "Living", type: "pill", options: ["Jointly", "Nuclear"] },
+      { key: "fatherPhone", label: "Phone", type: "text" },
+      { key: "fatherEmail", label: "E-mail", type: "text" },
+      { key: "fatherBusinessDetails", label: "Business details", type: "textarea" },
+      { key: "fatherCompanyAddress", label: "Company name & address", type: "textarea" },
+    ],
+  },
+  {
+    title: "Mother",
+    fields: [
+      { key: "motherName", label: "Mother's name", required: true, type: "text" },
+      { key: "motherMaidenName", label: "Maiden name", type: "text" },
+      { key: "motherAge", label: "Age", type: "text" },
+      { key: "motherEducation", label: "Education", type: "text" },
+      { key: "motherPanNo", label: "PAN No", type: "upload", note: "Card image optional — front and back" },
+      { key: "motherAadhaarNo", label: "Aadhaar No", type: "upload", note: "Card image optional — front and back" },
+      {
+        key: "motherOccupation",
+        label: "Occupation",
+        type: "pill",
+        options: ["Independent", "Business (joint / nuclear)", "Professional", "Self employed", "Industrialist", "Bureaucrat", "Private sector", "House wife"],
+      },
+      { key: "maternalBrothers", label: "Maternal brothers", type: "text" },
+      { key: "maternalSisters", label: "Maternal sisters", type: "text" },
+      { key: "motherOriginallyBelongsTo", label: "Originally belongs to", type: "text" },
+      { key: "motherPhone", label: "Phone", type: "text" },
+      { key: "motherEmail", label: "E-mail", type: "text" },
+      { key: "motherBusinessDetails", label: "Business details", type: "textarea" },
+      { key: "motherCompanyAddress", label: "Company name & address", type: "textarea" },
+    ],
+  },
+  {
+    title: "Grandparents & family standing",
+    fields: [
+      { key: "grandfatherName", label: "Grandfather's name", type: "text" },
+      { key: "grandmotherName", label: "Grandmother's name", type: "text" },
+      { key: "familyType", label: "Family type", type: "pill", options: ["Joint", "Nuclear", "Extended"] },
+      { key: "familyStatus", label: "Family status", type: "text" },
+      { key: "nativeLocation", label: "Native location", type: "text" },
+      { key: "roleInFamily", label: "Role in family", type: "pill", options: ["Eldest", "Middle", "Youngest", "Only child"] },
+      { key: "grandfatherDetails", label: "Grandfather's details", type: "textarea" },
+      { key: "grandmotherDetails", label: "Grandmother's details", type: "textarea" },
+      { key: "familyHistory", label: "Family history", type: "textarea" },
+      { key: "familyExpectations", label: "Family expectations from the match", type: "textarea" },
+    ],
+  },
+];
+
 const SECTION_BLOCKS = {
   personal: PERSONAL_DETAILS_BLOCKS,
   education: EDUCATION_BLOCKS,
   residency: RESIDENCY_BLOCKS,
+  family: FAMILY_BLOCKS,
 };
 
 const DEMO_PERSONAL_VALUES = {
@@ -348,10 +414,32 @@ const DEMO_RESIDENCY_VALUES = {
   residentialStatus: "Indian",
 };
 
+const DEMO_FAMILY_VALUES = {
+  fatherName: "Rajesh Raheja",
+  fatherAge: "62",
+  fatherEducation: "B.Com",
+  fatherOccupation: "Business (joint / nuclear)",
+  paternalBrothers: "2",
+  paternalSisters: "1",
+  fatherOriginallyBelongsTo: "Hisar, Haryana",
+  fatherLiving: "Jointly",
+  fatherPhone: "98••• ••771",
+  fatherBusinessDetails: "Raheja Textiles — textile trading, 28 years",
+  fatherCompanyAddress: "Raheja Textiles, 41 Katra Neel, Chandni Chowk, Delhi",
+  motherName: "Sunita Raheja",
+  motherMaidenName: "Sunita Bansal",
+  motherAge: "57",
+  motherEducation: "B.A.",
+  motherOccupation: "House wife",
+  motherOriginallyBelongsTo: "Delhi",
+  motherPhone: "98••• ••902",
+};
+
 const SECTION_DEMO_VALUES = {
   ...DEMO_PERSONAL_VALUES,
   ...DEMO_EDUCATION_VALUES,
   ...DEMO_RESIDENCY_VALUES,
+  ...DEMO_FAMILY_VALUES,
 };
 
 const INPUT =
