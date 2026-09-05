@@ -171,16 +171,25 @@ function OversightCard() {
 
 /* ───────────────────────── Pipeline stage strip ───────────────────────── */
 
-function PipelineStageStrip({ leadsData }) {
+function PipelineStageStrip({ leadsData, activeStageId, onToggleStage }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
       {PIPELINE_STAGES.map((stage) => {
         const count = leadsData[stage.id]?.length ?? 0;
+        const active = stage.id === activeStageId;
         return (
-          <div
+          <button
             key={stage.id}
-            className="flex items-center justify-between gap-2 bg-white border border-black/8 rounded-xl border-l-4 px-3.5 py-2.5 min-w-0"
-            style={{ borderLeftColor: stage.color }}
+            type="button"
+            onClick={() => onToggleStage(stage.id)}
+            className="flex items-center justify-between gap-2 bg-white border rounded-xl border-l-4 px-3.5 py-2.5 min-w-0 text-left transition-shadow"
+            style={{
+              borderLeftColor: stage.color,
+              borderTopColor: active ? stage.color : "rgba(0,0,0,0.08)",
+              borderRightColor: active ? stage.color : "rgba(0,0,0,0.08)",
+              borderBottomColor: active ? stage.color : "rgba(0,0,0,0.08)",
+              boxShadow: active ? `0 0 0 1px ${stage.color}` : "none",
+            }}
           >
             <div className="min-w-0">
               <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#9CA3AF]">{stage.id}</p>
@@ -192,7 +201,7 @@ function PipelineStageStrip({ leadsData }) {
             >
               {count}
             </span>
-          </div>
+          </button>
         );
       })}
     </div>
@@ -699,6 +708,7 @@ export default function PipelineBoard() {
   const [search, setSearch]             = useState("");
   const [perPage, setPerPage]           = useState(10);
   const [view,   setView]               = useState("table"); // "board" | "table"
+  const [stageFilter, setStageFilter]   = useState(null); // stage id, or null for all stages (table view)
   const [selectedScoreLead, setSelectedScoreLead] = useState(null);
 
   // Dynamic state for pipeline lead items
@@ -845,14 +855,14 @@ export default function PipelineBoard() {
   // Flat list for table view
   const flatLeads = useMemo(
     () =>
-      PIPELINE_STAGES.flatMap((stage) => {
+      PIPELINE_STAGES.filter((stage) => !stageFilter || stage.id === stageFilter).flatMap((stage) => {
         const all = leadsData[stage.id] || [];
         const filtered = search
           ? all.filter((l) => l.name.toLowerCase().includes(search.toLowerCase()))
           : all;
         return filtered.slice(0, perPage).map((lead) => ({ lead, stage }));
       }),
-    [search, perPage, leadsData]
+    [search, perPage, leadsData, stageFilter]
   );
 
   // Sub-page view rendering
@@ -940,7 +950,13 @@ export default function PipelineBoard() {
           perPage={perPage} onPerPageChange={setPerPage}
           view={view} onViewChange={setView}
         />
-        {view === "table" && <PipelineStageStrip leadsData={leadsData} />}
+        {view === "table" && (
+          <PipelineStageStrip
+            leadsData={leadsData}
+            activeStageId={stageFilter}
+            onToggleStage={(stageId) => setStageFilter((prev) => (prev === stageId ? null : stageId))}
+          />
+        )}
 
         {view === "board" ? (
           /* Board – break out of px-5 so scroll area is edge-to-edge */
