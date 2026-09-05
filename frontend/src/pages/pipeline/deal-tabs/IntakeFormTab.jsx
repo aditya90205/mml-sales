@@ -4,10 +4,8 @@ import { toast } from "react-toastify";
 
 /**
  * Client Intake Form — a multi-section booklet. The right rail lists all
- * booklet sections with a fill percentage each; the left renders whichever
- * section is selected. "Personal details" and "Education & career" have
- * real fields for now — the rest are placeholders until their fields are
- * defined.
+ * booklet sections with a fill percentage each, computed from each
+ * section's actual fields; the left renders whichever section is selected.
  */
 const SECTIONS_META = [
   { key: "personal", label: "Personal details" },
@@ -22,11 +20,6 @@ const SECTIONS_META = [
   { key: "communication", label: "Communication, consent & privacy" },
   { key: "casesheet", label: "Case sheet — for official use" },
 ];
-
-// Static fill % for sections that aren't built out yet.
-const PLACEHOLDER_PROGRESS = {
-  casesheet: 90,
-};
 
 const OVERALL_TOTAL_FIELDS = 270;
 const OVERALL_FILLED_FIELDS = 145;
@@ -611,6 +604,81 @@ const COMMUNICATION_BLOCKS = [
   },
 ];
 
+const PAYMENT_ROW_FIELDS = [
+  { key: "amount", label: "Amount" },
+  { key: "mode", label: "Mode" },
+  { key: "details", label: "Details" },
+  { key: "invoiceNo", label: "Invoice no." },
+  { key: "date", label: "Date" },
+  { key: "creBd", label: "C.R.E./BD" },
+  { key: "balance", label: "Balance" },
+];
+
+const CASE_MATURITY_ROW_FIELDS = [
+  { key: "amount", label: "Amount" },
+  { key: "mode", label: "Mode" },
+  { key: "details", label: "Details" },
+  { key: "recNo", label: "Rec. no." },
+  { key: "date", label: "Date" },
+  { key: "creBd", label: "C.R.E./BD" },
+  { key: "balance", label: "Balance" },
+];
+
+const CASESHEET_BLOCKS = [
+  {
+    title: "Case sheet",
+    fields: [
+      { key: "caseSheetDate", label: "Date", type: "text" },
+      { key: "registrationNo", label: "Registration no.", required: true, type: "text" },
+      { key: "visitedBy", label: "Visited by", type: "text" },
+      { key: "casePlace", label: "Place", type: "text" },
+      { key: "caseReference", label: "Reference", type: "text" },
+      { key: "caseCreBd", label: "C.R.E. / BD", type: "text" },
+      { key: "caseInvoiceNo", label: "Invoice no.", type: "text" },
+    ],
+  },
+  {
+    title: "Payment details",
+    fields: [
+      {
+        key: "paymentDetails",
+        label: "Payment details",
+        type: "rows",
+        rowLabel: "Entry",
+        fullWidth: true,
+        rowCount: 3,
+        rowFields: PAYMENT_ROW_FIELDS,
+      },
+    ],
+  },
+  {
+    title: "Case maturity charges",
+    fields: [
+      {
+        key: "caseMaturityCharges",
+        label: "Case maturity charges",
+        type: "rows",
+        rowLabel: "Entry",
+        fullWidth: true,
+        rowCount: 3,
+        rowFields: CASE_MATURITY_ROW_FIELDS,
+      },
+    ],
+  },
+  {
+    title: "Service availed",
+    fields: [
+      {
+        key: "servicePackage",
+        label: "Package",
+        required: true,
+        type: "pill",
+        options: ["Classic Services", "Economic Package", "Confidential Package", "Involvement Package", "Exclusive Package", "Customized Package (Ultra Premium)"],
+      },
+    ],
+  },
+];
+
 const SECTION_BLOCKS = {
   personal: PERSONAL_DETAILS_BLOCKS,
   education: EDUCATION_BLOCKS,
@@ -622,6 +690,7 @@ const SECTION_BLOCKS = {
   medical: MEDICAL_BLOCKS,
   declaration: DECLARATION_BLOCKS,
   communication: COMMUNICATION_BLOCKS,
+  casesheet: CASESHEET_BLOCKS,
 };
 
 const DEMO_PERSONAL_VALUES = {
@@ -804,6 +873,30 @@ const DEMO_DECLARATION_VALUES = {
   documentsCollected: ["Format complete", "Proof of date of birth", "Proof of I.D.", "Photograph"],
 };
 
+const DEMO_CASESHEET_VALUES = {
+  caseSheetDate: "02 Aug 2026",
+  registrationNo: "SE/26/0631",
+  visitedBy: "Neha Sharma",
+  casePlace: "Gurugram",
+  caseReference: "Existing client MML-C-0388",
+  caseCreBd: "Neha Sharma / Komal Mehra",
+  caseInvoiceNo: "MML/26-27/0412",
+  paymentDetails: [
+    {
+      amount: "₹31,860",
+      mode: "UPI",
+      details: "Registration — part 1",
+      invoiceNo: "MML/26-27/0412",
+      date: "02 Aug 2026",
+      creBd: "Neha Sharma",
+      balance: "₹21,240",
+    },
+    {},
+    {},
+  ],
+  servicePackage: "Exclusive Package",
+};
+
 const SECTION_DEMO_VALUES = {
   ...DEMO_PERSONAL_VALUES,
   ...DEMO_EDUCATION_VALUES,
@@ -814,6 +907,7 @@ const SECTION_DEMO_VALUES = {
   ...DEMO_ESSENTIAL_VALUES,
   ...DEMO_MEDICAL_VALUES,
   ...DEMO_DECLARATION_VALUES,
+  ...DEMO_CASESHEET_VALUES,
 };
 
 const INPUT =
@@ -1120,11 +1214,10 @@ export default function IntakeFormTab({ empty = false }) {
   const activeIndex = SECTIONS_META.findIndex((s) => s.key === activeKey);
   const activeBlocks = SECTION_BLOCKS[activeKey];
 
-  const sections = SECTIONS_META.map((s) => {
-    const blocks = SECTION_BLOCKS[s.key];
-    const percent = empty ? 0 : blocks ? computeSectionPercent(blocks, values, chips) : PLACEHOLDER_PROGRESS[s.key] ?? 0;
-    return { ...s, percent };
-  });
+  const sections = SECTIONS_META.map((s) => ({
+    ...s,
+    percent: empty ? 0 : computeSectionPercent(SECTION_BLOCKS[s.key], values, chips),
+  }));
 
   const overallPercent = empty ? 0 : Math.round((OVERALL_FILLED_FIELDS / OVERALL_TOTAL_FIELDS) * 100);
 
@@ -1145,7 +1238,7 @@ export default function IntakeFormTab({ empty = false }) {
   const nextLabel =
     activeIndex < SECTIONS_META.length - 1
       ? `Save and continue to ${SECTIONS_META[activeIndex + 1].label}`
-      : "Save intake form";
+      : "Finish and open the client record";
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
