@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import StatusPill from "../components/common/StatusPill";
+import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import {
   AppPage,
   MetricCard,
@@ -9,7 +10,6 @@ import {
   Panel,
   PrimaryBtn,
   Td,
-  Th,
 } from "../components/common/AppPage.jsx";
 import Modal from "../components/ui/Modal.jsx";
 
@@ -114,8 +114,8 @@ const UPSELL_ROWS = [
 
 const TAB_META = {
   overview: ["Post-Sales Desk", "Everything owed after the match is confirmed — balance payments, testimonials, reviews, cross-sell and upsell. (BRD S7)"],
-  payment: ["Payment Collection", "Instalments and balance amounts due after matchmaking begins. Receipts post to Finance automatically."],
-  followup: ["Final Payment Follow-up", "Reminder cadence for overdue balances, with escalation to Branch Head after the third attempt."],
+  payment: ["Payment Collection", "Instalments and balance amounts due after matchmaking begins. Receipts post to Finance automatically. (BRD S7.1)"],
+  followup: ["Final Payment Follow-up", "Reminder cadence for overdue balances, with escalation to Branch Head after the third attempt. (BRD S7.2)"],
   testimonial: ["Testimonial Collection", "Written and video testimonials requested after engagement or marriage confirmation. Consent required before publishing."],
   review: ["Google Reviews", "Review requests sent by WhatsApp and SMS, tracked to the posted review."],
   cross: ["Cross-sell", "Partner services offered to matched clients — photography, decor, venue, jewellery, travel. Commission tracked per deal."],
@@ -133,6 +133,21 @@ const TAB_ACTIONS = {
   upsell: ["Upgrade pricing", "Create upgrade quote"],
   referral: ["Referral rules", "Log referral"],
 };
+
+const PS_TH = "px-4 py-3 text-left text-[10px] font-extrabold text-[#B0A3A2] uppercase tracking-wide align-bottom";
+
+function PsTh({ label, sortKey, sort, onSort, unsortable }) {
+  return (
+    <SortableTh
+      label={label}
+      sortKey={sortKey}
+      sort={sort}
+      onSort={onSort}
+      unsortable={unsortable}
+      className={PS_TH}
+    />
+  );
+}
 
 function Chip({ label, on, onClick }) {
   return (
@@ -159,6 +174,7 @@ function ClientCell({ name, code }) {
 
 function RowAction({ label, onClick }) {
   const solid = ["Record", "Remind", "Escalate", "Call", "Schedule", "Send", "Quote", "Renew", "Invoice", "Confirm", "Chase"].includes(label);
+  const maroonOutline = label === "Follow up";
   return (
     <Td className="text-right">
       <button
@@ -167,7 +183,9 @@ function RowAction({ label, onClick }) {
         className={`h-8 px-3 rounded-lg text-[12px] font-semibold border transition-colors ${
           solid
             ? "bg-[#7A0A17] text-white border-[#7A0A17] hover:bg-[#640712]"
-            : "bg-white text-[#4B5563] border-black/10 hover:bg-[#FAFAFB]"
+            : maroonOutline
+              ? "bg-white text-[#7A0A17] border-[#7A0A17]/50 hover:bg-[#FCF5F6]"
+              : "bg-white text-[#4B5563] border-black/10 hover:bg-[#FAFAFB]"
         }`}
       >
         {label}
@@ -178,10 +196,14 @@ function RowAction({ label, onClick }) {
 
 function Playbook({ title, sub, items }) {
   return (
-    <Panel title={title} subtitle={sub}>
+    <section className="bg-white border border-black/8 rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      <div className="flex items-baseline gap-2 mb-4">
+        <h2 className="text-[15px] font-bold text-[#111]">{title}</h2>
+        <p className="text-[12px] text-[#9CA3AF] font-medium">{sub}</p>
+      </div>
       <div className="grid gap-3 md:grid-cols-3">
         {items.map((item) => (
-          <div key={item.title} className="rounded-xl border border-black/8 p-4 bg-[#FAFAFB]">
+          <div key={item.title} className="rounded-xl bg-[#F7F5F4] p-4">
             <div className="flex items-center justify-between gap-2 mb-2">
               <span className="text-[10px] font-extrabold tracking-wide" style={{ color: item.tagColor }}>
                 {item.tag}
@@ -193,7 +215,7 @@ function Playbook({ title, sub, items }) {
           </div>
         ))}
       </div>
-    </Panel>
+    </section>
   );
 }
 
@@ -205,6 +227,12 @@ export default function PostSalesPage() {
   const [lbl, setLbl] = useState({});
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
+  const [payStatus, setPayStatus] = useState("all");
+  const [payOwner, setPayOwner] = useState("me");
+  const [payDue, setPayDue] = useState("month");
+  const [fuAge, setFuAge] = useState("all");
+  const [fuAttempt, setFuAttempt] = useState("all");
+  const [fuOwner, setFuOwner] = useState("me");
 
   const head = role === "head";
   const [pageTitle, pageSub] = TAB_META[tab];
@@ -226,6 +254,30 @@ export default function PostSalesPage() {
       }),
     [rec]
   );
+
+  const getPayValue = useCallback((r, key) => {
+    if (key === "owner") return head ? r.owner : "Me";
+    return r[key];
+  }, [head]);
+  const { sorted: sortedPayments, sort: paySort, toggle: togglePay } = useTableSort(payments, { getValue: getPayValue });
+
+  const followupRows = useMemo(
+    () =>
+      FOLLOWUP_ROWS.map((r) => {
+        const sent = fu[r.code] || 0;
+        return {
+          ...r,
+          lastShown: sent ? `4 Sep · ${form.channel || "WhatsApp"}` : r.last,
+          attemptShown: Math.min(r.attempt + sent, 3),
+        };
+      }),
+    [fu, form.channel]
+  );
+  const { sorted: sortedFollowup, sort: fuSort, toggle: toggleFu } = useTableSort(followupRows);
+  const { sorted: sortedTestimonials, sort: tmSort, toggle: toggleTm } = useTableSort(TESTIMONIAL_ROWS);
+  const { sorted: sortedReviews, sort: rvSort, toggle: toggleRv } = useTableSort(REVIEW_ROWS);
+  const { sorted: sortedCross, sort: crSort, toggle: toggleCr } = useTableSort(CROSS_ROWS);
+  const { sorted: sortedUpsell, sort: upSort, toggle: toggleUp } = useTableSort(UPSELL_ROWS);
 
   const openRecord = (cl) => {
     setModal({ kind: "record", cl });
@@ -324,7 +376,7 @@ export default function PostSalesPage() {
         { label: "Testimonials", value: "9", note: "4 awaiting consent", noteTone: "amber", detail: "12 video · 9 written" },
         { label: "Google reviews", value: "11", note: "4.6 average rating", noteTone: "green", detail: "7 requests sent, not posted" },
         { label: "Cross-sell & upsell", value: "₹3.4L", note: "₹68,400 commission", noteTone: "green", detail: "19 offers open this quarter" },
-        { label: "Referral", value: "6", note: "3 converted to deals", noteTone: "green", detail: "From matched clients" },
+        { label: "Referral", value: "6", note: "To get more refferals", noteTone: "green", detail: "From matched clients" },
       ];
 
   const tasks = [
@@ -521,7 +573,12 @@ export default function PostSalesPage() {
               { value: "head", label: "Branch Head" },
             ]}
           />
-          <OutlineBtn onClick={() => toast.info(`${outlineLabel}…`)}>{outlineLabel}</OutlineBtn>
+          <OutlineBtn
+            className={tab === "payment" || tab === "followup" ? "border-[#7A0A17]/45 text-[#7A0A17]" : ""}
+            onClick={() => toast.info(`${outlineLabel}…`)}
+          >
+            {outlineLabel}
+          </OutlineBtn>
           <PrimaryBtn onClick={onPrimary}>{primaryLabel}</PrimaryBtn>
         </>
       }
@@ -562,7 +619,13 @@ export default function PostSalesPage() {
         </p>
         <button
           type="button"
-          className="font-semibold underline underline-offset-2 shrink-0"
+          className={
+            banner.cta === "View overdue"
+              ? "h-8 px-3 rounded-lg bg-white border border-[#7A0A17]/40 text-[12px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] shrink-0"
+              : banner.cta === "Escalate"
+                ? "h-8 px-3 rounded-lg bg-white border border-[#D97706]/45 text-[12px] font-semibold text-[#B45309] hover:bg-[#FFF8EE] shrink-0"
+                : "font-semibold underline underline-offset-2 shrink-0"
+          }
           onClick={() => {
             if (banner.cta === "Open referral desk") setTab("referral");
             else toast.info(banner.cta);
@@ -736,7 +799,249 @@ export default function PostSalesPage() {
         </Panel>
       )}
 
-      {tab !== "overview" && pack && (
+      {tab === "payment" && pack && (
+        <>
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            {pack.stats.map((s) => (
+              <MetricCard
+                key={s.label}
+                compact
+                className="shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+                label={s.label}
+                value={s.value}
+                note={s.note}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <NativeSelect
+                value={payStatus}
+                onChange={setPayStatus}
+                options={[
+                  { value: "all", label: "Status: All" },
+                  { value: "due", label: "Status: Due" },
+                  { value: "overdue", label: "Status: Overdue" },
+                  { value: "paid", label: "Status: Fully paid" },
+                ]}
+              />
+              <NativeSelect
+                value={payOwner}
+                onChange={setPayOwner}
+                options={[
+                  { value: "me", label: "Owner: Me" },
+                  { value: "all", label: "Owner: All" },
+                ]}
+              />
+              <NativeSelect
+                value={payDue}
+                onChange={setPayDue}
+                options={[
+                  { value: "month", label: "Due: This month" },
+                  { value: "overdue", label: "Due: Overdue" },
+                  { value: "all", label: "Due: All" },
+                ]}
+              />
+            </div>
+            <p className="text-[13px] font-semibold text-[#9CA3AF]">{pack.count}</p>
+          </div>
+
+          <section className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+              <div>
+                <h2 className="text-[15px] font-bold text-[#111]">{pack.title}</h2>
+                <p className="text-[12px] text-[#9CA3AF] mt-0.5">{pack.sub}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => toast.info("Opening Finance…")}
+                className="text-[13px] font-semibold text-[#7A0A17] hover:underline shrink-0"
+              >
+                Open in Finance
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[960px] border-collapse">
+                <thead>
+                  <tr className="border-y border-black/8">
+                    <PsTh label="Client" sortKey="name" sort={paySort} onSort={togglePay} />
+                    <PsTh label="Package" sortKey="pkg" sort={paySort} onSort={togglePay} />
+                    <PsTh label="Contract value" sortKey="contract" sort={paySort} onSort={togglePay} />
+                    <PsTh label="Collected" sortKey="collectedNum" sort={paySort} onSort={togglePay} />
+                    <PsTh label="Balance" sortKey="balanceNum" sort={paySort} onSort={togglePay} />
+                    <PsTh label="Due date" sortKey="due" sort={paySort} onSort={togglePay} />
+                    <PsTh label="Status" sortKey="status" sort={paySort} onSort={togglePay} />
+                    <PsTh label="Owner" sortKey="owner" sort={paySort} onSort={togglePay} />
+                    <PsTh label="" sortKey="action" unsortable />
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedPayments.map((r) => (
+                    <tr key={r.code} className="border-b border-black/6 last:border-0">
+                      <ClientCell name={r.name} code={r.code} />
+                      <Td>{r.pkg}</Td>
+                      <Td strong>{r.contract}</Td>
+                      <Td>{inr(r.collectedNum)}</Td>
+                      <Td strong>{inr(r.balanceNum)}</Td>
+                      <Td>{r.due}</Td>
+                      <Td>
+                        <StatusPill tone={KIND_TO_TONE[r.kind]}>{r.status}</StatusPill>
+                      </Td>
+                      <Td muted>{head ? r.owner : "Me"}</Td>
+                      <RowAction label={lbl[`payment:${r.code}`] || r.action} onClick={() => paymentAction(r)} />
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
+              <p className="text-[12px] text-[#9CA3AF] font-medium">{pack.footer}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="size-8 rounded-lg grid place-items-center text-[13px] font-bold bg-[#7A0A17] text-white">1</span>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Page 2")}
+                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+                >
+                  2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Next page")}
+                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <Playbook title={pack.playbook.title} sub={pack.playbook.sub} items={pack.playbook.items} />
+        </>
+      )}
+
+      {tab === "followup" && pack && (
+        <>
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            {pack.stats.map((s) => (
+              <MetricCard
+                key={s.label}
+                compact
+                className="shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+                label={s.label}
+                value={s.value}
+                note={s.note}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <NativeSelect
+                value={fuAge}
+                onChange={setFuAge}
+                options={[
+                  { value: "all", label: "Age: All" },
+                  { value: "7", label: "Age: 7+ days" },
+                  { value: "21", label: "Age: 21+ days" },
+                ]}
+              />
+              <NativeSelect
+                value={fuAttempt}
+                onChange={setFuAttempt}
+                options={[
+                  { value: "all", label: "Attempt: All" },
+                  { value: "1", label: "Attempt: 1 of 3" },
+                  { value: "2", label: "Attempt: 2 of 3" },
+                  { value: "3", label: "Attempt: 3 of 3" },
+                ]}
+              />
+              <NativeSelect
+                value={fuOwner}
+                onChange={setFuOwner}
+                options={[
+                  { value: "me", label: "Owner: Me" },
+                  { value: "all", label: "Owner: All" },
+                ]}
+              />
+            </div>
+            <p className="text-[13px] font-semibold text-[#9CA3AF]">{pack.count}</p>
+          </div>
+
+          <section className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+              <div>
+                <h2 className="text-[15px] font-bold text-[#111]">{pack.title}</h2>
+                <p className="text-[12px] text-[#9CA3AF] mt-0.5">{pack.sub}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => toast.info("Opening reminder templates…")}
+                className="text-[13px] font-semibold text-[#7A0A17] hover:underline shrink-0"
+              >
+                Reminder templates
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1040px] border-collapse">
+                <thead>
+                  <tr className="border-y border-black/8">
+                    <PsTh label="Client" sortKey="name" sort={fuSort} onSort={toggleFu} />
+                    <PsTh label="Balance" sortKey="balance" sort={fuSort} onSort={toggleFu} />
+                    <PsTh label="Overdue" sortKey="overdue" sort={fuSort} onSort={toggleFu} />
+                    <PsTh label="Last contact" sortKey="lastShown" sort={fuSort} onSort={toggleFu} />
+                    <PsTh label="Attempt" sortKey="attemptShown" sort={fuSort} onSort={toggleFu} />
+                    <PsTh label="Client response" sortKey="response" sort={fuSort} onSort={toggleFu} />
+                    <PsTh label="Next step" sortKey="next" sort={fuSort} onSort={toggleFu} />
+                    <PsTh label="" sortKey="action" unsortable />
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedFollowup.map((r) => (
+                    <tr key={r.code} className="border-b border-black/6 last:border-0">
+                      <ClientCell name={r.name} code={r.code} />
+                      <Td strong>{r.balance}</Td>
+                      <Td>
+                        <StatusPill tone={KIND_TO_TONE[r.kind]}>{r.overdue}</StatusPill>
+                      </Td>
+                      <Td>{r.lastShown}</Td>
+                      <Td>{r.attemptShown} of 3</Td>
+                      <Td>{r.response}</Td>
+                      <Td>{r.next}</Td>
+                      <RowAction label={lbl[`followup:${r.code}`] || r.action} onClick={() => followupAction(r)} />
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
+              <p className="text-[12px] text-[#9CA3AF] font-medium">{pack.footer}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="size-8 rounded-lg grid place-items-center text-[13px] font-bold bg-[#7A0A17] text-white">1</span>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Page 2")}
+                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+                >
+                  2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Next page")}
+                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <Playbook title={pack.playbook.title} sub={pack.playbook.sub} items={pack.playbook.items} />
+        </>
+      )}
+
+      {tab !== "overview" && tab !== "payment" && tab !== "followup" && pack && (
         <>
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             {pack.stats.map((s) => (
@@ -751,94 +1056,22 @@ export default function PostSalesPage() {
             footnote={pack.footer}
           >
             <div className="overflow-x-auto -mx-5">
-              {tab === "payment" && (
-                <table className="w-full min-w-[960px] border-collapse">
-                  <thead>
-                    <tr className="border-b border-black/8">
-                      <Th>Client</Th>
-                      <Th>Package</Th>
-                      <Th>Contract value</Th>
-                      <Th>Collected</Th>
-                      <Th>Balance</Th>
-                      <Th>Due date</Th>
-                      <Th>Status</Th>
-                      <Th>Owner</Th>
-                      <Th />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {payments.map((r) => (
-                      <tr key={r.code} className="border-b border-black/6 last:border-0">
-                        <ClientCell name={r.name} code={r.code} />
-                        <Td>{r.pkg}</Td>
-                        <Td strong>{r.contract}</Td>
-                        <Td>{inr(r.collectedNum)}</Td>
-                        <Td strong>{inr(r.balanceNum)}</Td>
-                        <Td>{r.due}</Td>
-                        <Td>
-                          <StatusPill tone={KIND_TO_TONE[r.kind]}>{r.status}</StatusPill>
-                        </Td>
-                        <Td muted>{head ? r.owner : "Me"}</Td>
-                        <RowAction label={lbl[`payment:${r.code}`] || r.action} onClick={() => paymentAction(r)} />
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
-              {tab === "followup" && (
-                <table className="w-full min-w-[1040px] border-collapse">
-                  <thead>
-                    <tr className="border-b border-black/8">
-                      <Th>Client</Th>
-                      <Th>Balance</Th>
-                      <Th>Overdue</Th>
-                      <Th>Last contact</Th>
-                      <Th>Attempt</Th>
-                      <Th>Client response</Th>
-                      <Th>Next step</Th>
-                      <Th />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {FOLLOWUP_ROWS.map((r) => {
-                      const sent = fu[r.code] || 0;
-                      const attempt = Math.min(r.attempt + sent, 3);
-                      return (
-                        <tr key={r.code} className="border-b border-black/6 last:border-0">
-                          <ClientCell name={r.name} code={r.code} />
-                          <Td strong>{r.balance}</Td>
-                          <Td>
-                            <StatusPill tone={KIND_TO_TONE[r.kind]}>{r.overdue}</StatusPill>
-                          </Td>
-                          <Td>{sent ? `4 Sep · ${form.channel || "WhatsApp"}` : r.last}</Td>
-                          <Td>{attempt} of 3</Td>
-                          <Td>{r.response}</Td>
-                          <Td>{r.next}</Td>
-                          <RowAction label={lbl[`followup:${r.code}`] || r.action} onClick={() => followupAction(r)} />
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-
               {tab === "testimonial" && (
                 <table className="w-full min-w-[1040px] border-collapse">
                   <thead>
                     <tr className="border-b border-black/8">
-                      <Th>Client</Th>
-                      <Th>Milestone</Th>
-                      <Th>Format</Th>
-                      <Th>Requested</Th>
-                      <Th>Consent</Th>
-                      <Th>Status</Th>
-                      <Th>Usage</Th>
-                      <Th />
+                      <PsTh label="Client" sortKey="name" sort={tmSort} onSort={toggleTm} />
+                      <PsTh label="Milestone" sortKey="milestone" sort={tmSort} onSort={toggleTm} />
+                      <PsTh label="Format" sortKey="format" sort={tmSort} onSort={toggleTm} />
+                      <PsTh label="Requested" sortKey="requested" sort={tmSort} onSort={toggleTm} />
+                      <PsTh label="Consent" sortKey="consent" sort={tmSort} onSort={toggleTm} />
+                      <PsTh label="Status" sortKey="status" sort={tmSort} onSort={toggleTm} />
+                      <PsTh label="Usage" sortKey="usage" sort={tmSort} onSort={toggleTm} />
+                      <PsTh label="" sortKey="action" unsortable />
                     </tr>
                   </thead>
                   <tbody>
-                    {TESTIMONIAL_ROWS.map((r) => (
+                    {sortedTestimonials.map((r) => (
                       <tr key={r.code} className="border-b border-black/6 last:border-0">
                         <ClientCell name={r.name} code={r.code} />
                         <Td>{r.milestone}</Td>
@@ -860,18 +1093,18 @@ export default function PostSalesPage() {
                 <table className="w-full min-w-[960px] border-collapse">
                   <thead>
                     <tr className="border-b border-black/8">
-                      <Th>Client</Th>
-                      <Th>Sent on</Th>
-                      <Th>Channel</Th>
-                      <Th>Reminders</Th>
-                      <Th>Posted</Th>
-                      <Th>Rating</Th>
-                      <Th>Status</Th>
-                      <Th />
+                      <PsTh label="Client" sortKey="name" sort={rvSort} onSort={toggleRv} />
+                      <PsTh label="Sent on" sortKey="sent" sort={rvSort} onSort={toggleRv} />
+                      <PsTh label="Channel" sortKey="channel" sort={rvSort} onSort={toggleRv} />
+                      <PsTh label="Reminders" sortKey="reminders" sort={rvSort} onSort={toggleRv} />
+                      <PsTh label="Posted" sortKey="posted" sort={rvSort} onSort={toggleRv} />
+                      <PsTh label="Rating" sortKey="rating" sort={rvSort} onSort={toggleRv} />
+                      <PsTh label="Status" sortKey="status" sort={rvSort} onSort={toggleRv} />
+                      <PsTh label="" sortKey="action" unsortable />
                     </tr>
                   </thead>
                   <tbody>
-                    {REVIEW_ROWS.map((r) => (
+                    {sortedReviews.map((r) => (
                       <tr key={r.code} className="border-b border-black/6 last:border-0">
                         <ClientCell name={r.name} code={r.code} />
                         <Td>{r.sent}</Td>
@@ -893,18 +1126,18 @@ export default function PostSalesPage() {
                 <table className="w-full min-w-[1040px] border-collapse">
                   <thead>
                     <tr className="border-b border-black/8">
-                      <Th>Client</Th>
-                      <Th>Service</Th>
-                      <Th>Partner</Th>
-                      <Th>Order value</Th>
-                      <Th>Commission</Th>
-                      <Th>Status</Th>
-                      <Th>Next step</Th>
-                      <Th />
+                      <PsTh label="Client" sortKey="name" sort={crSort} onSort={toggleCr} />
+                      <PsTh label="Service" sortKey="service" sort={crSort} onSort={toggleCr} />
+                      <PsTh label="Partner" sortKey="partner" sort={crSort} onSort={toggleCr} />
+                      <PsTh label="Order value" sortKey="value" sort={crSort} onSort={toggleCr} />
+                      <PsTh label="Commission" sortKey="commission" sort={crSort} onSort={toggleCr} />
+                      <PsTh label="Status" sortKey="status" sort={crSort} onSort={toggleCr} />
+                      <PsTh label="Next step" sortKey="next" sort={crSort} onSort={toggleCr} />
+                      <PsTh label="" sortKey="action" unsortable />
                     </tr>
                   </thead>
                   <tbody>
-                    {CROSS_ROWS.map((r) => (
+                    {sortedCross.map((r) => (
                       <tr key={r.code} className="border-b border-black/6 last:border-0">
                         <ClientCell name={r.name} code={r.code} />
                         <Td>{r.service}</Td>
@@ -928,17 +1161,17 @@ export default function PostSalesPage() {
                 <table className="w-full min-w-[960px] border-collapse">
                   <thead>
                     <tr className="border-b border-black/8">
-                      <Th>Client</Th>
-                      <Th>Current</Th>
-                      <Th>Suggested</Th>
-                      <Th>Upgrade value</Th>
-                      <Th>Why now</Th>
-                      <Th>Status</Th>
-                      <Th />
+                      <PsTh label="Client" sortKey="name" sort={upSort} onSort={toggleUp} />
+                      <PsTh label="Current" sortKey="current" sort={upSort} onSort={toggleUp} />
+                      <PsTh label="Suggested" sortKey="suggested" sort={upSort} onSort={toggleUp} />
+                      <PsTh label="Upgrade value" sortKey="value" sort={upSort} onSort={toggleUp} />
+                      <PsTh label="Why now" sortKey="why" sort={upSort} onSort={toggleUp} />
+                      <PsTh label="Status" sortKey="status" sort={upSort} onSort={toggleUp} />
+                      <PsTh label="" sortKey="action" unsortable />
                     </tr>
                   </thead>
                   <tbody>
-                    {UPSELL_ROWS.map((r) => (
+                    {sortedUpsell.map((r) => (
                       <tr key={r.code} className="border-b border-black/6 last:border-0">
                         <ClientCell name={r.name} code={r.code} />
                         <Td>{r.current}</Td>
