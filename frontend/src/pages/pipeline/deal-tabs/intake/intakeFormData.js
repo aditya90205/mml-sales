@@ -166,7 +166,7 @@ const EDUCATION_BLOCKS = [
     title: "Where you live",
     fields: [
       { key: "currentlyReside", label: "Currently you reside in", type: "pill", options: ["Parental house", "Rented accommodation", "Company accommodation", "Own house"] },
-      { key: "residentialStatus", label: "Residential status", type: "pill", options: ["Joint house", "Nuclear house"] },
+      { key: "householdType", label: "Residential status", type: "pill", options: ["Joint house", "Nuclear house"] },
       { key: "stayingSince", label: "Staying since", type: "text" },
       { key: "previousAddress", label: "Previous address", type: "text" },
       { key: "shiftingToNewAddress", label: "Shifting to new address", type: "text" },
@@ -739,7 +739,7 @@ const DEMO_EDUCATION_VALUES = {
   personalAnnualIncome: "₹18–24L p.a.",
   organisationSpec: "Sharma & Associates, Gurugram — statutory audit, mid-size firm",
   currentlyReside: "Parental house",
-  residentialStatus: "Joint house",
+  householdType: "Joint house",
   stayingSince: "2011",
   residenceContact: "98••• ••164",
   currentAddress: "House 214, Sector 43, Gurugram, Haryana 122009",
@@ -747,8 +747,6 @@ const DEMO_EDUCATION_VALUES = {
 
 const DEMO_RESIDENCY_VALUES = {
   residentialStatus: "Indian",
-  nriSummary: "Not applicable — resident client",
-  previousMarriageSummary: "Not applicable — first marriage",
 };
 
 const DEMO_FAMILY_VALUES = {
@@ -781,9 +779,9 @@ const DEMO_SIBLINGS_VALUES = {
       name: "Ankita Raheja",
       relation: "Sister",
       age: "34",
-      personalDetails: "Architect, own practice",
+      personalDetails: "Architect, own practice in Delhi",
       maritalStatus: "Married",
-      spouseDetails: "Doctor — orthopaedic, Apollo Hospital",
+      spouseDetails: "Doctor — orthopaedic, Sir Ganga Ram",
     },
     {},
     {},
@@ -918,11 +916,28 @@ export function isRowsFilled(rows) {
 }
 
 export function isFieldFilled(field, values, chipValues) {
-  if (field.chipsKey) return (chipValues?.[field.chipsKey]?.length || 0) > 0;
   if (field.type === "rows") return isRowsFilled(values[field.key]);
   if (field.type === "checklist") return Array.isArray(values[field.key]) && values[field.key].length > 0;
+  if (field.chipsKey) {
+    if (isFilled(values[field.key])) return true;
+    return (chipValues?.[field.chipsKey]?.length || 0) > 0;
+  }
   return isFilled(values[field.key]);
 }
+
+/** Filled row objects for client-record detail tables. */
+export function getFilledRows(rows) {
+  if (!Array.isArray(rows)) return [];
+  return rows.filter((r) => Object.values(r || {}).some((v) => v && String(v).trim()));
+}
+
+/** Detail tables shown below section summary cards on Client record. */
+export const RECORD_DETAIL_TABLES = [
+  { key: "paymentDetails", title: "Payment details", columns: PAYMENT_ROW_FIELDS },
+  { key: "caseMaturityCharges", title: "Case maturity charges", columns: CASE_MATURITY_ROW_FIELDS },
+  { key: "courses", title: "Educational qualifications", columns: QUALIFICATION_ROW_FIELDS, asTable: true },
+  { key: "siblingDetails", title: "Sibling detail", columns: SIBLING_ROW_FIELDS },
+];
 
 export function computeSectionPercent(blocks, values, chipValues) {
   const total = blocks.reduce((sum, b) => sum + b.fields.length, 0);
