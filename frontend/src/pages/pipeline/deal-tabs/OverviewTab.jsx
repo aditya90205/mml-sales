@@ -353,7 +353,6 @@ export default function OverviewTab({ deal }) {
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 items-start">
       <div className="flex flex-col gap-5 min-w-0">
         <DealDetailsCard deal={deal} />
-        <AskAICard />
         <StageHistoryCard rows={deal.stageHistory} footnote={deal.fieldsFilledNote} />
       </div>
 
