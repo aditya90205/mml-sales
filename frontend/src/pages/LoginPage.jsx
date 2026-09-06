@@ -116,8 +116,8 @@ export default function LoginPage() {
                   className="w-32 h-auto mb-2 select-none"
                   draggable={false}
                 />
-                <h2 className="text-xl font-semibold text-[#5d151b]">Welcome Back,</h2>
-                <p className="text-lg font-bold text-[#5d151b] -mt-1">Team MML!</p>
+                <h2 className="text-lg font-normal text-[#1a1a1a]">Welcome Back,</h2>
+                <p className="text-2xl font-bold text-[#5d151b] -mt-1">Team MML!</p>
                 <p className="text-xs text-[#7a6d66] mt-1">Sign in to access your CRM dashboard.</p>
               </div>
 
