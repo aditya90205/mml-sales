@@ -714,7 +714,8 @@ function RecordDetailCard({ title, columns, rows, asTable }) {
           {filled.map((row, rowIndex) => (
             <div
               key={rowIndex}
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-x-5 gap-y-3 px-5 py-4"
+              className="grid gap-x-5 gap-y-3 px-5 py-4"
+              style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}
             >
               {columns.map((col) => (
                 <div key={col.key} className="min-w-0">
