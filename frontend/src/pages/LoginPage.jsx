@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { UserRound, Lock, Eye, EyeOff, Heart } from "lucide-react";
 import { toast } from "react-toastify";
 import Input from "../components/ui/Input";
-import mmlLoginBg from "../assets/mml-login-page-new.png";
-import loginFormLogo from "../assets/login-form-logo.png";
+import mmlLoginBg from "../assets/mml-login-background.png";
+import loginFormLogo from "../assets/form-logo.png";
 import { DUMMY_CREDENTIALS, isAuthenticated, login as loginUser } from "../utils/auth";
 
 // The artwork is 5760x3112. The background always fills the full viewport
@@ -17,15 +17,18 @@ import { DUMMY_CREDENTIALS, isAuthenticated, login as loginUser } from "../utils
 // whole overlay uniformly to match however large the frame actually renders.
 const BASE_WIDTH = 1440;
 const CARD_WIDTH = 400; // px, at BASE_WIDTH
+// Approx. unscaled card height — used so width-based scaling never
+// stretches the form taller than the viewport (Figma floating card).
+const CARD_HEIGHT = 520;
 
 // Positions of the blank number slots baked into the stats bar (the
 // "Global Reach" label already has its number-slot filled in the artwork,
 // so only the first three columns need an overlay).
-const STATS = [
-  { value: "17+", left: "5.7%" },
-  { value: "1000+", left: "17.2%" },
-  { value: "4+", left: "28.2%" },
-];
+// const STATS = [
+//   { value: "17+", left: "5.7%" },
+//   { value: "1000+", left: "17.2%" },
+//   { value: "4+", left: "28.2%" },
+// ];
 const STATS_TOP = "91.9%";
 
 export default function LoginPage() {
@@ -57,7 +60,10 @@ export default function LoginPage() {
     }
   }, [navigate]);
 
-  const scale = viewport.width / BASE_WIDTH;
+  const scale =
+    viewport.width && viewport.height
+      ? Math.min(viewport.width / BASE_WIDTH, (viewport.height * 0.82) / CARD_HEIGHT)
+      : 1;
   const pointAt = (leftPct, topPct) => ({
     left: (parseFloat(leftPct) / 100) * viewport.width,
     top: (parseFloat(topPct) / 100) * viewport.height,
@@ -98,7 +104,7 @@ export default function LoginPage() {
       />
 
       {/* Stat numbers overlaid onto the blank slots baked into the artwork */}
-      {STATS.map((stat) => (
+      {/* {STATS.map((stat) => (
         <div
           key={stat.value}
           className="absolute font-bold text-white leading-none"
@@ -110,7 +116,7 @@ export default function LoginPage() {
         >
           {stat.value}
         </div>
-      ))}
+      ))} */}
 
       {/* Login card, uniformly scaled to match the background image */}
       <div
@@ -124,22 +130,19 @@ export default function LoginPage() {
       >
         <form onSubmit={handleSubmit}>
             <div
-              className="rounded-3xl p-6"
-              style={{ background: "rgba(248, 241, 236, 0.96)", boxShadow: "0 14px 40px rgba(0,0,0,0.18)" }}
+              className="rounded-[24px] px-7 pt-5 pb-5"
+              style={{ background: "#FDF3EB", boxShadow: "0 14px 40px rgba(0,0,0,0.18)" }}
             >
               <div className="flex flex-col items-center text-center mb-3">
                 <img
                   src={loginFormLogo}
                   alt="Make My Lagan Matrimonials"
-                  className="w-32 h-auto mb-2 select-none"
+                  className="w-[200px] h-auto select-none"
                   draggable={false}
                 />
-                <h2 className="text-lg font-normal text-[#1a1a1a]">Welcome Back,</h2>
-                <p className="text-2xl font-bold text-[#5d151b] -mt-1">Team MML!</p>
-                <p className="text-xs text-[#7a6d66] mt-1">Sign in to access your CRM dashboard.</p>
               </div>
 
-              <div className="flex flex-col" style={{ gap: "0.85rem" }}>
+              <div className="flex flex-col" style={{ gap: "0.75rem" }}>
                 <Input
                   label="Username"
                   type="text"
@@ -148,7 +151,7 @@ export default function LoginPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   leftIcon={<UserRound size={16} />}
-                  wrapperClassName="gap-1.5"
+                  wrapperClassName="gap-1"
                   className="bg-white border-black/12 shadow-sm rounded-xl"
                   style={{ height: "42px", fontSize: "13px" }}
                 />
@@ -161,7 +164,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   leftIcon={<Lock size={16} />}
-                  wrapperClassName="gap-1.5"
+                  wrapperClassName="gap-1"
                   className="bg-white border-black/12 shadow-sm rounded-xl"
                   style={{ height: "42px", fontSize: "13px" }}
                   rightIcon={
@@ -176,12 +179,12 @@ export default function LoginPage() {
                   }
                 />
 
-                <div className="flex justify-end">
+                <div className="flex justify-end -mt-0.5">
                   <button
                     type="button"
                     onClick={() => toast.info("Please contact your admin to reset your password.")}
                     className="font-medium text-[#68101E] hover:underline underline-offset-2"
-                    style={{ fontSize: "13px" }}
+                    style={{ fontSize: "12px" }}
                   >
                     Forgot Password?
                   </button>
@@ -191,22 +194,20 @@ export default function LoginPage() {
                   type="submit"
                   disabled={submitting}
                   className="w-full rounded-xl bg-[#68101E] text-white font-semibold tracking-[0.14em] shadow-[0_8px_20px_rgba(104,16,30,0.35)] hover:bg-[#520d18] active:bg-[#430b14] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                  style={{ height: "46px", fontSize: "13px" }}
+                  style={{ height: "44px", fontSize: "13px" }}
                 >
                   {submitting ? "Signing in…" : "SIGN IN"}
                 </button>
 
-                <div className="flex items-center justify-center gap-2.5 w-full mt-2">
-                  <span className="h-px flex-1 max-w-[20%] bg-[#68101E]/25" />
-                  <p className="text-[#8a7f77] whitespace-nowrap" style={{ fontSize: "12px" }}>
+                <div className="flex flex-col items-center gap-2 w-full mt-1">
+                  <p className="text-[#8a7f77] text-center" style={{ fontSize: "11px" }}>
                     Together, let&apos;s create beautiful matches
                   </p>
-                  <span className="h-px flex-1 max-w-[20%] bg-[#68101E]/25" />
-                </div>
-                <div className="flex items-center justify-center gap-2.5 w-full">
-                  <span className="h-px flex-1 max-w-[28%] bg-[#68101E]/25" />
-                  <Heart size={12} className="text-[#68101E] shrink-0" fill="currentColor" />
-                  <span className="h-px flex-1 max-w-[28%] bg-[#68101E]/25" />
+                  <div className="flex items-center justify-center gap-3 w-full">
+                    <span className="h-px flex-1 bg-[#68101E]/25" />
+                    <Heart size={12} className="text-[#68101E] shrink-0" fill="currentColor" />
+                    <span className="h-px flex-1 bg-[#68101E]/25" />
+                  </div>
                 </div>
               </div>
             </div>
