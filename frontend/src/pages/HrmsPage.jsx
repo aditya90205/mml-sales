@@ -1177,7 +1177,7 @@ export default function HrmsPage() {
       {/* TopBar is rendered by Layout; removed per global header update */}
 
       {/* ── Page Content Container ───────────────────────────────────────── */}
-      <div className="p-4 sm:p-6 flex flex-col gap-5 max-w-[1550px] w-full mx-auto">
+      <div className="p-4 sm:p-5 lg:p-6 flex flex-col gap-5 w-full max-w-none">
         
         {/* ── Section Header: Breadcrumb & Title & Selectors ───────────── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
