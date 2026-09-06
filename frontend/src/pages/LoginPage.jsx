@@ -140,7 +140,7 @@ export default function LoginPage() {
         className="absolute select-none pointer-events-none"
         style={{
           ...pointAt("25.3%", "12%"),
-          width: `${Math.round((viewport.height || 900) * 0.23)}px`,
+          width: `${Math.round((viewport.height || 900) * 0.27)}px`,
           height: "auto",
           transform: "translate(-50%, -50%)",
         }}
