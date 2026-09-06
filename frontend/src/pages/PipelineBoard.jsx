@@ -172,6 +172,33 @@ function OversightCard() {
 
 /* ───────────────────────── Pipeline stage strip ───────────────────────── */
 
+function StageCardHeader({ stage, count, as: Comp = "div", className = "", style, ...props }) {
+  return (
+    <Comp
+      className={`flex items-center justify-between gap-2 bg-white border rounded-xl border-l-4 px-3.5 py-2.5 min-w-0 text-left ${className}`}
+      style={{
+        borderLeftColor: stage.color,
+        borderTopColor: "rgba(0,0,0,0.08)",
+        borderRightColor: "rgba(0,0,0,0.08)",
+        borderBottomColor: "rgba(0,0,0,0.08)",
+        ...style,
+      }}
+      {...props}
+    >
+      <div className="min-w-0">
+        <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#9CA3AF]">{stage.id}</p>
+        <p className="text-[13px] font-bold text-[#111] leading-tight truncate">{stage.label}</p>
+      </div>
+      <span
+        className="shrink-0 text-[12px] font-bold rounded-lg px-2 py-1"
+        style={{ color: stage.color, backgroundColor: `${stage.color}1A` }}
+      >
+        {count}
+      </span>
+    </Comp>
+  );
+}
+
 function PipelineStageStrip({ leadsData, activeStageId, onToggleStage }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
@@ -179,30 +206,25 @@ function PipelineStageStrip({ leadsData, activeStageId, onToggleStage }) {
         const count = leadsData[stage.id]?.length ?? 0;
         const active = stage.id === activeStageId;
         return (
-          <button
+          <StageCardHeader
             key={stage.id}
+            as="button"
             type="button"
+            stage={stage}
+            count={count}
             onClick={() => onToggleStage(stage.id)}
-            className="flex items-center justify-between gap-2 bg-white border rounded-xl border-l-4 px-3.5 py-2.5 min-w-0 text-left transition-shadow"
-            style={{
-              borderLeftColor: stage.color,
-              borderTopColor: active ? stage.color : "rgba(0,0,0,0.08)",
-              borderRightColor: active ? stage.color : "rgba(0,0,0,0.08)",
-              borderBottomColor: active ? stage.color : "rgba(0,0,0,0.08)",
-              boxShadow: active ? `0 0 0 1px ${stage.color}` : "none",
-            }}
-          >
-            <div className="min-w-0">
-              <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#9CA3AF]">{stage.id}</p>
-              <p className="text-[13px] font-bold text-[#111] leading-tight truncate">{stage.label}</p>
-            </div>
-            <span
-              className="shrink-0 text-[12px] font-bold rounded-lg px-2 py-1"
-              style={{ color: stage.color, backgroundColor: `${stage.color}1A` }}
-            >
-              {count}
-            </span>
-          </button>
+            className="transition-shadow"
+            style={
+              active
+                ? {
+                    borderTopColor: stage.color,
+                    borderRightColor: stage.color,
+                    borderBottomColor: stage.color,
+                    boxShadow: `0 0 0 1px ${stage.color}`,
+                  }
+                : undefined
+            }
+          />
         );
       })}
     </div>
@@ -444,20 +466,13 @@ function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal
 
 function PipelineColumn({ stage, leads, nextStageId, onOpenScoreModal, onMoveStage, onOpenDeal }) {
   return (
-    <div className="flex flex-col w-[280px] shrink-0 bg-[#F7F8FA] border border-black/6 rounded-2xl overflow-hidden">
-      <div className="flex items-center justify-between gap-2 px-3.5 py-3 bg-white border-b border-black/8">
-        <span className="inline-flex items-center gap-2 min-w-0">
-          <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: stage.color }} />
-          <span className="text-[13px] font-bold text-[#111] truncate">
-            {stage.id} {stage.label}
-          </span>
-        </span>
-        <span className="text-[11px] font-semibold text-[#6B7280] bg-[#F1F2F4] rounded-lg px-2 py-0.5 shrink-0">
-          {leads.length}
-        </span>
-      </div>
+    <div className="flex flex-col w-[280px] shrink-0 gap-3">
+      <StageCardHeader stage={stage} count={leads.length} />
 
-      <div className="flex flex-col gap-3 p-3 overflow-y-auto scrollbar-thin" style={{ maxHeight: 640 }}>
+      <div
+        className="flex flex-col gap-3 p-3 bg-[#F7F8FA] border border-black/6 rounded-2xl overflow-y-auto scrollbar-thin"
+        style={{ maxHeight: 640 }}
+      >
         {leads.length === 0 ? (
           <p className="text-[12px] text-[#9CA3AF] text-center py-6">No leads in this stage</p>
         ) : (
