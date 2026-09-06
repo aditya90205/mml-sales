@@ -1,5 +1,19 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, Sparkles, Video } from "lucide-react";
+import { Link } from "react-router-dom";
+import {
+  Activity,
+  ArrowRight,
+  Copy,
+  Download,
+  History,
+  Mic,
+  Paperclip,
+  Plus,
+  RefreshCw,
+  Send,
+  Video,
+  X,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
@@ -24,6 +38,64 @@ const TEMPERATURE_TONES = {
   Cold: { color: "#3B82F6", bg: "#E8F2FE" },
   Lost: { color: "#7A0A17", bg: "#FCF5F6" },
 };
+
+const AI_ACTIONS = [
+  { label: "Create",   icon: Plus,      color: "#16A34A" },
+  { label: "Refresh",  icon: RefreshCw, color: "#3B82F6" },
+  { label: "History",  icon: History,   color: "#F59E0B" },
+  { label: "Activity", icon: Activity,  color: "#E8395B" },
+];
+
+const AI_TAGS = ["Summary of the month", "Tomorrow Meetings", "Yesterday Feedbacks"];
+
+/** Same priority bullets + hyperlinks as the dashboard personal assistant. */
+const PRIORITY_ITEMS = [
+  {
+    parts: [
+      { text: "5 high-value leads waiting for " },
+      { text: "follow-up", to: "/pipeline" },
+    ],
+  },
+  {
+    parts: [
+      { text: "₹18,400 in discount approvals pending for " },
+      { text: "Vivek Sharma", to: "/pipeline?openLead=p4-1&tab=discounts" },
+      { text: ", " },
+      { text: "Rohit Sharma", to: "/pipeline?openLead=p5-1&tab=discounts" },
+      { text: " and " },
+      { text: "Virat Sharma", to: "/pipeline?openLead=p6-1&tab=discounts" },
+    ],
+  },
+  {
+    parts: [
+      { text: "2 client profiles awaiting completion before their " },
+      { text: "meetings", to: "/calendar" },
+    ],
+  },
+  {
+    parts: [
+      { text: "You're at 74% of this month, and your " },
+      { text: "incentive", to: "/hrms?tab=Incentives" },
+      { text: " payout this month." },
+    ],
+  },
+  {
+    parts: [
+      { text: "1 urgent " },
+      { text: "complaint", to: "/reviews" },
+      { text: " flagged — needs a same-day response" },
+    ],
+  },
+  {
+    parts: [
+      { text: "AI recommends contacting " },
+      { text: "Vivek Sharma", to: "/pipeline?openLead=p4-1" },
+      { text: " and " },
+      { text: "Priya Raheja", to: "/pipeline?openLead=p4-2" },
+      { text: " today — both are close to closing" },
+    ],
+  },
+];
 
 function DetailField({ label, value }) {
   return (
@@ -173,36 +245,119 @@ function DealDetailsCard({ deal }) {
   );
 }
 
-function AskAICard() {
-  const [open, setOpen] = useState(false);
+function PersonalAssistantCard() {
+  const [message, setMessage] = useState("");
+  const [tags, setTags] = useState(AI_TAGS);
+
   return (
-    <div className="bg-white border border-black/8 rounded-2xl overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left"
-      >
-        <span className="flex items-center gap-3 min-w-0">
-          <span className="size-9 rounded-xl bg-[#FFF1F2] text-[#7A0A17] grid place-items-center shrink-0">
-            <Sparkles size={16} />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-[14px] font-bold text-[#111]">Ask AI</span>
-            <span className="block text-[12px] text-[#9CA3AF]">Get the summary of this client</span>
-          </span>
-        </span>
-        <ChevronDown
-          size={16}
-          className={`text-[#9CA3AF] shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-      {open && (
-        <div className="px-5 pb-5 pt-0 border-t border-black/6">
-          <p className="text-[12.5px] text-[#4B5563] leading-relaxed pt-4">
-            AI summary isn't wired up yet — this panel will surface a generated client summary here.
-          </p>
+    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col gap-3.5">
+      <h2 className="text-[17px] font-bold text-[#111] px-1">
+        Your personal assistant - Ask anything
+      </h2>
+
+      <div className="bg-[#FAFAFB] border border-black/6 rounded-xl p-3 flex flex-col gap-2.5">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-[13px] font-bold text-[#111]">Start a conversation</p>
+          <div className="flex items-center gap-3 flex-wrap">
+            {AI_ACTIONS.map(({ label, icon: Icon, color }) => (
+              <button
+                key={label}
+                type="button"
+                className="inline-flex items-center gap-1 text-[11px] text-[#4B5563] hover:text-[#111] transition-colors"
+              >
+                <Icon size={13} style={{ color }} /> {label}
+              </button>
+            ))}
+          </div>
         </div>
-      )}
+
+        <div className="flex flex-wrap items-center gap-2">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center gap-2 text-[11px] text-[#4B5563] bg-[#F1F2F4] rounded-lg px-2.5 py-1.5"
+            >
+              {tag}
+              <button
+                type="button"
+                onClick={() => setTags((t) => t.filter((x) => x !== tag))}
+                className="text-[#6B7280] hover:text-[#111]"
+                aria-label={`Remove ${tag}`}
+              >
+                <X size={11} />
+              </button>
+            </span>
+          ))}
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 text-[11px] text-[#4B5563] bg-[#F1F2F4] rounded-lg px-2.5 py-1.5 hover:bg-[#E9EAEC] transition-colors"
+          >
+            See All <ArrowRight size={11} />
+          </button>
+        </div>
+      </div>
+
+      <div className="border border-black/8 rounded-xl p-4 flex flex-col gap-3">
+        <h3 className="text-[15px] font-bold text-[#111]">Today&apos;s Priority</h3>
+
+        <ul className="flex flex-col gap-2">
+          {PRIORITY_ITEMS.map((item, i) => (
+            <li key={i} className="flex items-start gap-2.5 text-[13px] text-[#374151]">
+              <span className="size-[5px] rounded-full bg-[#C9CDD4] shrink-0 mt-[7px]" />
+              <span className="leading-relaxed">
+                {item.parts.map((part, j) =>
+                  part.to ? (
+                    <Link
+                      key={j}
+                      to={part.to}
+                      className="text-[#2563EB] underline underline-offset-2 decoration-current hover:text-[#1D4ED8]"
+                    >
+                      {part.text}
+                    </Link>
+                  ) : (
+                    <span key={j}>{part.text}</span>
+                  )
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="border border-black/10 rounded-xl p-3 mt-1">
+          <textarea
+            rows={3}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Ask MML anything..."
+            className="w-full resize-none bg-transparent text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none"
+          />
+          <div className="flex items-center justify-end gap-1">
+            {[Paperclip, Copy, Download, Mic].map((Icon, i) => (
+              <button
+                key={i}
+                type="button"
+                className="p-2 text-[#6B7280] hover:text-[#111] rounded-lg hover:bg-black/4 transition-colors"
+              >
+                <Icon size={15} strokeWidth={1.6} />
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                if (!message.trim()) {
+                  toast.info("Type a question for MML first.");
+                  return;
+                }
+                toast.success("Asked MML — response coming soon.");
+                setMessage("");
+              }}
+              className="inline-flex items-center gap-2 ml-1.5 px-4 h-9 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+            >
+              Ask anything <Send size={13} />
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -344,16 +499,15 @@ function RmFlagsCard({ flags }) {
 }
 
 /**
- * Overview tab for the deal detail screen — deal fields, AI summary,
- * stage history/SLA on the left; stage gate, weighted value and RM flags
- * on the right.
+ * Overview: deal details + dashboard AI form on the left;
+ * stage gate, weighted value, RM flags, and Stage History & SLA on the right.
  */
 export default function OverviewTab({ deal }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,65fr)_minmax(0,35fr)] gap-5 items-start">
       <div className="flex flex-col gap-5 min-w-0">
         <DealDetailsCard deal={deal} />
-        <StageHistoryCard rows={deal.stageHistory} footnote={deal.fieldsFilledNote} />
+        <PersonalAssistantCard />
       </div>
 
       <div className="flex flex-col gap-5 min-w-0">
@@ -364,6 +518,7 @@ export default function OverviewTab({ deal }) {
           note={deal.weightedValueNote}
         />
         <RmFlagsCard flags={deal.rmFlags} />
+        <StageHistoryCard rows={deal.stageHistory} footnote={deal.fieldsFilledNote} />
       </div>
     </div>
   );
