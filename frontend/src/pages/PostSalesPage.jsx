@@ -422,7 +422,7 @@ export default function PostSalesPage() {
 
   const tasks = [
     { time: "10:00", kind: "PAYMENT", tone: "red", title: "Dr. Arjun Nair — collect balance ₹40,000", sub: "Exclusive · due 2 Sep · UPI link opened twice", value: "₹40,000", cta: "Record", go: "payment" },
-    { time: "11:30", kind: "FOLLOW-UP", tone: "amber", title: "Shalini Kapoor — reminder attempt 3", sub: "₹1,25,000 pending 34 days · escalation available", value: "₹1,25,000", cta: "Call", go: "followup" },
+    { time: "11:30", kind: "PACK RENEWAL", tone: "amber", title: "Shalini Kapoor — reminder attempt 3", sub: "125000 pack renewal pending in 24 days", value: "₹1,25,000", cta: "Call", go: "followup" },
     { time: "01:00", kind: "TESTIMONIAL", tone: "blue", title: "Mehta family — record video testimonial", sub: "Engagement confirmed 24 Aug · consent signed", value: "—", cta: "Schedule", go: "testimonial" },
     { time: "03:00", kind: "CROSS-SELL", tone: "green", title: "Ritu Saxena — share photography partner quote", sub: "Kalyan Studios · ₹1,80,000 · 8% commission", value: "₹14,400", cta: "Send", go: "cross" },
     { time: "04:30", kind: "UPSELL", tone: "amber", title: "Aditya Verma — Premium to Exclusive upgrade", sub: "6 profiles shared, none shortlisted · senior RM pitch", value: "₹49,000", cta: "Quote", go: "upsell" },
