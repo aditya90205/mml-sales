@@ -935,6 +935,87 @@ function computeSectionPercent(blocks, values, chipValues) {
   return total ? Math.round((filled / total) * 100) : 0;
 }
 
+function countSectionFields(blocks, values, chipValues) {
+  if (!blocks?.length) return { filled: 0, total: 0 };
+  const total = blocks.reduce((sum, b) => sum + b.fields.length, 0);
+  const filled = blocks.reduce((sum, b) => sum + b.fields.filter((f) => isFieldFilled(f, values, chipValues)).length, 0);
+  return { filled, total };
+}
+
+const SECTION_TIPS = {
+  personal:
+    "Ask like this: Profile ID and date fill in on save. Read the name back to the client before moving on.",
+  education:
+    "Ask like this: Most recent qualification first. Income can be a band — write what the client actually says.",
+  residency:
+    "Ask like this: Confirm current city first, then previous addresses. Note any visa or NRI details clearly.",
+  family:
+    "Ask like this: Capture father and mother details separately. Note occupation and living status carefully.",
+  siblings:
+    "Ask like this: List siblings in birth order. Note marital status and whether they stay in the same city.",
+  match:
+    "Ask like this: Start with must-haves, then nice-to-haves. Confirm flexibility on caste, city and age.",
+  essential:
+    "Ask like this: These answers affect match quality — pause and confirm each one with the client.",
+  medical:
+    "Ask like this: Be sensitive. Record what the client discloses; do not probe beyond what they share.",
+  declaration:
+    "Ask like this: Read each checklist item aloud and tick only after the client confirms.",
+  communication:
+    "Ask like this: Confirm preferred contact channel and who can receive updates about this profile.",
+  casesheet:
+    "Ask like this: Official-use notes only. Keep them factual and dated.",
+};
+
+function SectionHeader({
+  index,
+  totalSections,
+  label,
+  filled,
+  total,
+  tip,
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wide">
+          Section {String(index + 1).padStart(2, "0")} of {String(totalSections).padStart(2, "0")}
+        </p>
+        <div className="flex items-end justify-between gap-3 flex-wrap mt-1">
+          <h2 className="text-[26px] font-bold text-[#111] tracking-tight leading-tight">{label}</h2>
+          <p className="text-[12.5px] text-[#9CA3AF] shrink-0 pb-1">
+            {filled} of {total} filled in this section
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2.5 flex-wrap">
+        <button
+          type="button"
+          onClick={() => toast.info("Voice note recording coming soon.")}
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#374151] hover:bg-[#FAFAFB] transition-colors"
+        >
+          <span className="size-2.5 rounded-full bg-[#E8395B] shrink-0" />
+          Record voice note for this section
+        </button>
+        <button
+          type="button"
+          onClick={() => toast.info("Attach photo or document coming soon.")}
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#374151] hover:bg-[#FAFAFB] transition-colors"
+        >
+          Attach photo or document
+        </button>
+      </div>
+
+      {tip && (
+        <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl px-4 py-3">
+          <p className="text-[12.5px] text-[#92400E] italic leading-relaxed">{tip}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FieldLabel({ label, required }) {
   return (
     <label className="block text-[13px] text-[#374151] mb-1.5">
@@ -1158,12 +1239,14 @@ function FormFilledCard({ percent, filled, total }) {
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-5">
       <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wide">Form filled</p>
-      <p className="text-[32px] font-extrabold text-[#7A0A17] mt-1 leading-none">{percent}%</p>
-      <p className="text-[11.5px] text-[#9CA3AF] mt-1.5">
-        {filled} of {total} fields
-      </p>
+      <div className="flex items-end gap-2.5 mt-1 flex-wrap">
+        <p className="text-[32px] font-extrabold text-[#7A0A17] leading-none">{percent}%</p>
+        <p className="text-[11.5px] text-[#9CA3AF] pb-1">
+          {filled} of {total} fields
+        </p>
+      </div>
       <div className="h-1.5 rounded-full bg-[#F1F2F4] overflow-hidden mt-3">
-        <div className="h-full rounded-full bg-[#7A0A17]" style={{ width: `${percent}%` }} />
+        <div className="h-full rounded-full bg-[#E8395B]/70" style={{ width: `${percent}%` }} />
       </div>
     </div>
   );
@@ -1213,6 +1296,9 @@ export default function IntakeFormTab({ empty = false }) {
 
   const activeIndex = SECTIONS_META.findIndex((s) => s.key === activeKey);
   const activeBlocks = SECTION_BLOCKS[activeKey];
+  const activeCounts = empty
+    ? { filled: 0, total: activeBlocks?.reduce((sum, b) => sum + b.fields.length, 0) || 0 }
+    : countSectionFields(activeBlocks, values, chips);
 
   const sections = SECTIONS_META.map((s) => ({
     ...s,
@@ -1241,8 +1327,17 @@ export default function IntakeFormTab({ empty = false }) {
       : "Finish and open the client record";
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,65fr)_minmax(0,35fr)] gap-5 items-start">
       <div className="flex flex-col gap-5 min-w-0">
+        <SectionHeader
+          index={activeIndex}
+          totalSections={SECTIONS_META.length}
+          label={SECTIONS_META[activeIndex].label}
+          filled={activeCounts.filled}
+          total={activeCounts.total}
+          tip={SECTION_TIPS[activeKey]}
+        />
+
         {activeBlocks ? (
           activeBlocks.map((block) => (
             <FormBlock
