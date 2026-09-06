@@ -784,7 +784,7 @@ export default function ClientRecordView({ values, chips, empty, onOpenSection }
         formTotal={OVERALL_TOTAL_FIELDS}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,65fr)_minmax(0,35fr)] gap-5 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,80fr)_minmax(0,20fr)] gap-5 items-start">
         <div className="flex flex-col gap-4 min-w-0">
           <ClientServiceAgreementCard />
 
