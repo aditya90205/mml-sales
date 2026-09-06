@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserRound, Lock, Eye, EyeOff, Heart } from "lucide-react";
 import { toast } from "react-toastify";
@@ -6,10 +6,10 @@ import Input from "../components/ui/Input";
 import mmlLoginBg from "../assets/mml-login-page-new.png";
 import loginFormLogo from "../assets/login-form-logo.png";
 
-// The artwork is 5760x3112. We lock the on-screen frame to this exact
-// aspect ratio (letterboxing instead of cropping) so the full illustration,
-// stats bar and photo are always visible, never cut off. All overlay
-// positions below are percentages measured against that canvas.
+// The artwork is 5760x3112. The background fills the entire viewport
+// (like CSS object-fit: cover), cropping only the minimum needed on one
+// axis so there's never empty space around it. All overlay positions
+// below are percentages measured against that canvas.
 const IMG_W = 5760;
 const IMG_H = 3112;
 
@@ -35,19 +35,43 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const frameRef = useRef(null);
-  const [scale, setScale] = useState(BASE_WIDTH > 0 ? 1 : 1);
+  // Geometry of the background image rendered as a full-bleed "cover" fill:
+  // the image is scaled up until it fills the whole viewport on both axes,
+  // then centered, cropping only the excess on one axis. We compute this
+  // ourselves (instead of relying on CSS object-fit) so the overlays below
+  // can be positioned in exact alignment with the image content.
+  const [geo, setGeo] = useState({ width: 0, height: 0, offsetX: 0, offsetY: 0 });
 
   useEffect(() => {
-    const el = frameRef.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect?.width;
-      if (width) setScale(width / BASE_WIDTH);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
+    function updateGeo() {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const imageAspect = IMG_W / IMG_H;
+      const viewportAspect = vw / vh;
+      let width, height, offsetX, offsetY;
+      if (viewportAspect > imageAspect) {
+        width = vw;
+        height = vw / imageAspect;
+        offsetX = 0;
+        offsetY = (vh - height) / 2;
+      } else {
+        height = vh;
+        width = vh * imageAspect;
+        offsetY = 0;
+        offsetX = (vw - width) / 2;
+      }
+      setGeo({ width, height, offsetX, offsetY });
+    }
+    updateGeo();
+    window.addEventListener("resize", updateGeo);
+    return () => window.removeEventListener("resize", updateGeo);
   }, []);
+
+  const scale = geo.width / BASE_WIDTH;
+  const pointAt = (leftPct, topPct) => ({
+    left: geo.offsetX + (parseFloat(leftPct) / 100) * geo.width,
+    top: geo.offsetY + (parseFloat(topPct) / 100) * geo.height,
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -64,52 +88,41 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-screen h-screen bg-[#2b1410] flex items-center justify-center overflow-hidden">
-      <div
-        ref={frameRef}
-        className="relative"
-        style={{
-          width: "100vw",
-          height: "100vh",
-          maxWidth: `calc(100vh * ${IMG_W / IMG_H})`,
-          maxHeight: `calc(100vw * ${IMG_H / IMG_W})`,
-        }}
-      >
-        <img
-          src={mmlLoginBg}
-          alt="Make My Lagan Matrimonials"
-          className="absolute inset-0 w-full h-full object-contain select-none"
-          draggable={false}
-        />
+    <div className="relative w-screen h-screen bg-[#2b1410] overflow-hidden">
+      <img
+        src={mmlLoginBg}
+        alt="Make My Lagan Matrimonials"
+        className="absolute select-none"
+        style={{ left: geo.offsetX, top: geo.offsetY, width: geo.width, height: geo.height }}
+        draggable={false}
+      />
 
-        {/* Stat numbers overlaid onto the blank slots baked into the artwork */}
-        {STATS.map((stat) => (
-          <div
-            key={stat.value}
-            className="absolute font-bold text-white leading-none"
-            style={{
-              left: stat.left,
-              top: STATS_TOP,
-              transform: "translate(-50%, -50%)",
-              fontSize: `${14 * scale}px`,
-            }}
-          >
-            {stat.value}
-          </div>
-        ))}
-
-        {/* Login card, uniformly scaled to match the frame size */}
+      {/* Stat numbers overlaid onto the blank slots baked into the artwork */}
+      {STATS.map((stat) => (
         <div
-          className="absolute"
+          key={stat.value}
+          className="absolute font-bold text-white leading-none"
           style={{
-            left: "72%",
-            top: "46%",
-            width: `${CARD_WIDTH}px`,
-            transform: `translate(-50%, -50%) scale(${scale})`,
-            transformOrigin: "center center",
+            ...pointAt(stat.left, STATS_TOP),
+            transform: "translate(-50%, -50%)",
+            fontSize: `${14 * scale}px`,
           }}
         >
-          <form onSubmit={handleSubmit}>
+          {stat.value}
+        </div>
+      ))}
+
+      {/* Login card, uniformly scaled to match the background image */}
+      <div
+        className="absolute"
+        style={{
+          ...pointAt("72%", "46%"),
+          width: `${CARD_WIDTH}px`,
+          transform: `translate(-50%, -50%) scale(${scale})`,
+          transformOrigin: "center center",
+        }}
+      >
+        <form onSubmit={handleSubmit}>
             <div
               className="rounded-3xl p-8"
               style={{ background: "rgba(248, 241, 236, 0.96)", boxShadow: "0 14px 40px rgba(0,0,0,0.18)" }}
@@ -195,8 +208,7 @@ export default function LoginPage() {
                 </div>
               </div>
             </div>
-          </form>
-        </div>
+        </form>
       </div>
     </div>
   );
