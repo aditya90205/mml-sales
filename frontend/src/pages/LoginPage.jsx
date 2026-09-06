@@ -16,7 +16,9 @@ import { DUMMY_CREDENTIALS, isAuthenticated, login as loginUser } from "../utils
 // The card/form was designed against a 1440px-wide frame; we scale the
 // whole overlay uniformly to match however large the frame actually renders.
 const BASE_WIDTH = 1440;
-const CARD_WIDTH = 400; // px, at BASE_WIDTH
+// Figma: card is ~19.2% of the frame (~277px at 1440) and sits in the
+// middle of the right-hand photo, not stretched across it.
+const CARD_WIDTH = 280;
 // Approx. unscaled card height — used so width-based scaling never
 // stretches the form taller than the viewport (Figma floating card).
 const CARD_HEIGHT = 520;
@@ -122,7 +124,7 @@ export default function LoginPage() {
       <div
         className="absolute"
         style={{
-          ...pointAt("72%", "52%"),
+          ...pointAt("75.6%", "51%"),
           width: `${CARD_WIDTH}px`,
           transform: `translate(-50%, -50%) scale(${scale})`,
           transformOrigin: "center center",
