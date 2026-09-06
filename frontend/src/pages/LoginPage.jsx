@@ -7,11 +7,10 @@ import mmlLoginBg from "../assets/mml-login-background.png";
 import loginFormLogo from "../assets/form-logo.png";
 import { DUMMY_CREDENTIALS, isAuthenticated, login as loginUser } from "../utils/auth";
 
-// The artwork is 5760x3112. The background always fills the full viewport
-// height exactly, so the logo at the top and the stats bar at the bottom
-// are always fully visible and never cropped — only the width stretches
-// (or compresses) to fill the screen. All overlay positions below are
-// percentages measured against the viewport itself.
+// Artwork is 6164x3112 (~1.98:1). We still cover the viewport so the
+// login card overlay does not move, but we only apply part of the
+// left/right stretch so baked-in logos and circular icons look closer
+// to their real proportions (a little remaining stretch keeps edges filled).
 
 // The card/form was designed against a 1440px-wide frame; we scale the
 // whole overlay uniformly to match however large the frame actually renders.
@@ -21,7 +20,7 @@ const BASE_WIDTH = 1440;
 const CARD_WIDTH = 280;
 // Approx. unscaled card height — used so width-based scaling never
 // stretches the form taller than the viewport (Figma floating card).
-const CARD_HEIGHT = 470;
+const CARD_HEIGHT = 520;
 
 // Positions of the blank number slots baked into the stats bar (the
 // "Global Reach" label already has its number-slot filled in the artwork,
@@ -32,6 +31,11 @@ const CARD_HEIGHT = 470;
 //   { value: "4+", left: "28.2%" },
 // ];
 const STATS_TOP = "91.9%";
+const ART_WIDTH = 6164;
+const ART_HEIGHT = 3112;
+const ART_ASPECT = ART_WIDTH / ART_HEIGHT;
+// 0 = old full stretch (object-fit: fill), 1 = no stretch (cover).
+const STRETCH_EASE = 0.45;
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -40,10 +44,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // The image fills the viewport exactly: height always matches 100vh (so
-  // top/bottom content is never cropped or shifted) and width always
-  // matches 100vw (stretching only left/right as needed). No offsets, so
-  // overlay positions map directly to percentages of the viewport.
+  // Overlay positions stay viewport percentages (layout unchanged).
+  // The photo is sized between a full stretch and a uniform cover.
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
@@ -64,12 +66,44 @@ export default function LoginPage() {
 
   const scale =
     viewport.width && viewport.height
-      ? Math.min(viewport.width / BASE_WIDTH, (viewport.height * 0.82) / CARD_HEIGHT)
+      ? Math.min(viewport.width / BASE_WIDTH, (viewport.height * 0.76) / CARD_HEIGHT)
       : 1;
   const pointAt = (leftPct, topPct) => ({
     left: (parseFloat(leftPct) / 100) * viewport.width,
     top: (parseFloat(topPct) / 100) * viewport.height,
   });
+
+  const bgStyle = (() => {
+    const { width: vw, height: vh } = viewport;
+    if (!vw || !vh) {
+      return { inset: 0, width: "100%", height: "100%", objectFit: "fill" };
+    }
+    const viewAspect = vw / vh;
+    let coverW;
+    let coverH;
+    if (viewAspect > ART_ASPECT) {
+      coverW = vw;
+      coverH = vw / ART_ASPECT;
+    } else {
+      coverH = vh;
+      coverW = vh * ART_ASPECT;
+    }
+    const w = vw + (coverW - vw) * STRETCH_EASE;
+    // Fill the window height so the top logo stays on-screen, then shift
+    // the artwork up a little so the stats bar isn't clipped at the bottom
+    // (the PNG has almost no padding under that text).
+    const h = vh;
+    const maxTopCrop = h * 0.035; // logo sits ~4.8% down; florals can lose a sliver
+    const lift = Math.min(Math.round(vh * 0.032), maxTopCrop);
+    return {
+      width: w,
+      height: h,
+      left: (vw - w) / 2,
+      top: -lift,
+      objectFit: "fill",
+      objectPosition: "center top",
+    };
+  })();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -100,8 +134,8 @@ export default function LoginPage() {
       <img
         src={mmlLoginBg}
         alt="Make My Lagan Matrimonials"
-        className="absolute inset-0 w-full h-full select-none"
-        style={{ objectFit: "fill" }}
+        className="absolute max-w-none select-none"
+        style={bgStyle}
         draggable={false}
       />
 
@@ -132,7 +166,7 @@ export default function LoginPage() {
       >
         <form onSubmit={handleSubmit}>
             <div
-              className="rounded-[24px] px-7 pt-3 pb-3"
+              className="rounded-[24px] px-7 pt-3 pb-5"
               style={{ background: "#FDF3EB", boxShadow: "0 14px 40px rgba(0,0,0,0.18)" }}
             >
               <div className="flex flex-col items-center text-center mb-1.5">
