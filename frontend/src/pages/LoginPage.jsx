@@ -6,12 +6,11 @@ import Input from "../components/ui/Input";
 import mmlLoginBg from "../assets/mml-login-page-new.png";
 import loginFormLogo from "../assets/login-form-logo.png";
 
-// The artwork is 5760x3112. The background fills the entire viewport
-// (like CSS object-fit: cover), cropping only the minimum needed on one
-// axis so there's never empty space around it. All overlay positions
-// below are percentages measured against that canvas.
-const IMG_W = 5760;
-const IMG_H = 3112;
+// The artwork is 5760x3112. The background always fills the full viewport
+// height exactly, so the logo at the top and the stats bar at the bottom
+// are always fully visible and never cropped — only the width stretches
+// (or compresses) to fill the screen. All overlay positions below are
+// percentages measured against the viewport itself.
 
 // The card/form was designed against a 1440px-wide frame; we scale the
 // whole overlay uniformly to match however large the frame actually renders.
@@ -35,42 +34,25 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Geometry of the background image rendered as a full-bleed "cover" fill:
-  // the image is scaled up until it fills the whole viewport on both axes,
-  // then centered, cropping only the excess on one axis. We compute this
-  // ourselves (instead of relying on CSS object-fit) so the overlays below
-  // can be positioned in exact alignment with the image content.
-  const [geo, setGeo] = useState({ width: 0, height: 0, offsetX: 0, offsetY: 0 });
+  // The image fills the viewport exactly: height always matches 100vh (so
+  // top/bottom content is never cropped or shifted) and width always
+  // matches 100vw (stretching only left/right as needed). No offsets, so
+  // overlay positions map directly to percentages of the viewport.
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
-    function updateGeo() {
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const imageAspect = IMG_W / IMG_H;
-      const viewportAspect = vw / vh;
-      let width, height, offsetX, offsetY;
-      if (viewportAspect > imageAspect) {
-        width = vw;
-        height = vw / imageAspect;
-        offsetX = 0;
-        offsetY = (vh - height) / 2;
-      } else {
-        height = vh;
-        width = vh * imageAspect;
-        offsetY = 0;
-        offsetX = (vw - width) / 2;
-      }
-      setGeo({ width, height, offsetX, offsetY });
+    function updateViewport() {
+      setViewport({ width: window.innerWidth, height: window.innerHeight });
     }
-    updateGeo();
-    window.addEventListener("resize", updateGeo);
-    return () => window.removeEventListener("resize", updateGeo);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
   }, []);
 
-  const scale = geo.width / BASE_WIDTH;
+  const scale = viewport.width / BASE_WIDTH;
   const pointAt = (leftPct, topPct) => ({
-    left: geo.offsetX + (parseFloat(leftPct) / 100) * geo.width,
-    top: geo.offsetY + (parseFloat(topPct) / 100) * geo.height,
+    left: (parseFloat(leftPct) / 100) * viewport.width,
+    top: (parseFloat(topPct) / 100) * viewport.height,
   });
 
   const handleSubmit = (e) => {
@@ -92,8 +74,8 @@ export default function LoginPage() {
       <img
         src={mmlLoginBg}
         alt="Make My Lagan Matrimonials"
-        className="absolute select-none"
-        style={{ left: geo.offsetX, top: geo.offsetY, width: geo.width, height: geo.height }}
+        className="absolute inset-0 w-full h-full select-none"
+        style={{ objectFit: "fill" }}
         draggable={false}
       />
 
