@@ -41,6 +41,7 @@ import {
   Hand,
   CalendarCheck,
   CalendarPlus,
+  LogOut,
 } from "lucide-react";
 import { USER } from "../components/layout/TopBar";
 import Modal from "../components/ui/Modal";
@@ -93,7 +94,72 @@ const HRMS_TABS = [
   "Goals & Reviews",
   "Documents",
   "Asset",
-  "Awards & Contest"
+  "Awards & Contest",
+  "Exit",
+  "Complaint & Warning",
+];
+
+const INITIAL_EXIT_RECORDS = [
+  {
+    id: 1,
+    type: "Resignation",
+    raisedOn: "12 Jul 2026",
+    lastWorkingDay: "11 Aug 2026",
+    status: "In progress",
+    clearedBy: "HR · Komal Mehra",
+    note: "Notice period serving. Asset return pending for laptop.",
+  },
+  {
+    id: 2,
+    type: "Exit interview",
+    raisedOn: "18 Jul 2026",
+    lastWorkingDay: "11 Aug 2026",
+    status: "Scheduled",
+    clearedBy: "People Ops",
+    note: "Interview slotted for 05 Aug 2026 · 3:00 PM.",
+  },
+  {
+    id: 3,
+    type: "Clearance checklist",
+    raisedOn: "12 Jul 2026",
+    lastWorkingDay: "11 Aug 2026",
+    status: "3 of 8 done",
+    clearedBy: "IT · Finance · Admin",
+    note: "Email access, ID card and final settlement still open.",
+  },
+];
+
+const INITIAL_COMPLAINTS_WARNINGS = [
+  {
+    id: 1,
+    kind: "Warning",
+    title: "Late arrivals — April 2025",
+    raisedOn: "28 Apr 2025",
+    raisedBy: "Reporting manager",
+    status: "Open",
+    severity: "Medium",
+    detail: "Late arrivals flagged twice this month. Official warning notice issued.",
+  },
+  {
+    id: 2,
+    kind: "Complaint",
+    title: "Workplace conduct — desk dispute",
+    raisedOn: "04 Mar 2025",
+    raisedBy: "Self",
+    status: "Closed",
+    severity: "Low",
+    detail: "Logged and mediated by HR. No further action required.",
+  },
+  {
+    id: 3,
+    kind: "Warning",
+    title: "Missed client follow-up SLA",
+    raisedOn: "19 Jan 2025",
+    raisedBy: "Quality desk",
+    status: "Acknowledged",
+    severity: "High",
+    detail: "Written warning acknowledged on 21 Jan 2025.",
+  },
 ];
 
 const INITIAL_EXPENSES = [
@@ -1258,14 +1324,14 @@ export default function HrmsPage() {
                 <div className="flex items-center justify-between mt-4">
                   <button
                     type="button"
-                    onClick={() => setNoticeModalOpen(true)}
+                    onClick={() => setActiveTab("Complaint & Warning")}
                     className="border border-[#7A0A17] text-[#7A0A17] hover:bg-[#7A0A17] hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs"
                   >
                     View Notice
                   </button>
                   <button
                     type="button"
-                    onClick={() => setNoticeModalOpen(true)}
+                    onClick={() => setActiveTab("Complaint & Warning")}
                     className="size-8 rounded-xl bg-white border border-black/10 hover:bg-[#7A0A17] hover:text-white text-[#4B5563] grid place-items-center transition-all shadow-2xs"
                   >
                     <ChevronRight size={16} />
@@ -2530,8 +2596,178 @@ export default function HrmsPage() {
           </div>
         )}
 
+        {/* EXIT TAB */}
+        {activeTab === "Exit" && (
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { label: "Exit status", value: "In progress", sub: "Notice period active" },
+                { label: "Last working day", value: "11 Aug 2026", sub: "As per resignation" },
+                { label: "Clearance", value: "3 of 8", sub: "Checklist items done" },
+              ].map((card) => (
+                <div key={card.label} className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+                  <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">{card.label}</p>
+                  <p className="text-xl font-extrabold text-[#111827] mt-1.5">{card.value}</p>
+                  <p className="text-[12.5px] text-[#6B7280] mt-1">{card.sub}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-2.5">
+                  <span className="size-9 rounded-full bg-[#FCF5F6] text-[#7A0A17] grid place-items-center">
+                    <LogOut size={16} />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-[#111827]">Exit process</h3>
+                    <p className="text-[12.5px] text-[#6B7280]">Resignation, interview and clearance tracker</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toast.info("Exit request form opens here.")}
+                  className="h-9 px-3.5 rounded-xl bg-[#7A0A17] text-white text-xs font-bold hover:bg-[#600712] transition-colors"
+                >
+                  Raise exit request
+                </button>
+              </div>
+
+              <div className="overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-[#FAFAFB] border-b border-black/8">
+                      {["#", "Type", "Raised on", "Last working day", "Status", "Owner", "Note"].map((h) => (
+                        <th key={h} className="px-4 py-3 text-[11px] font-bold text-[#6B7280] whitespace-nowrap">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {INITIAL_EXIT_RECORDS.map((row) => (
+                      <tr key={row.id} className="border-b border-black/5 last:border-b-0">
+                        <td className="px-4 py-3 text-[#6B7280]">{row.id}</td>
+                        <td className="px-4 py-3 font-bold text-[#111827] whitespace-nowrap">{row.type}</td>
+                        <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{row.raisedOn}</td>
+                        <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{row.lastWorkingDay}</td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FEF3C7] text-[#D97706] border border-[#D97706]/20">
+                            {row.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-[#374151] whitespace-nowrap">{row.clearedBy}</td>
+                        <td className="px-4 py-3 text-[#6B7280] min-w-[220px]">{row.note}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* COMPLAINT & WARNING TAB */}
+        {activeTab === "Complaint & Warning" && (
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { label: "Open warnings", value: "1", sub: "Needs acknowledgement" },
+                { label: "Complaints filed", value: "1", sub: "Closed this year" },
+                { label: "Total on record", value: "3", sub: "Warnings + complaints" },
+              ].map((card) => (
+                <div key={card.label} className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+                  <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">{card.label}</p>
+                  <p className="text-xl font-extrabold text-[#111827] mt-1.5">{card.value}</p>
+                  <p className="text-[12.5px] text-[#6B7280] mt-1">{card.sub}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <span className="size-9 rounded-full bg-[#FCF5F6] text-[#7A0A17] grid place-items-center">
+                    <AlertTriangle size={16} />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-[#111827]">Complaints &amp; warnings</h3>
+                    <p className="text-[12.5px] text-[#6B7280]">Official notices and HR-logged issues</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNoticeModalOpen(true)}
+                    className="h-9 px-3.5 rounded-xl border border-[#7A0A17] text-[#7A0A17] text-xs font-bold hover:bg-[#7A0A17] hover:text-white transition-colors"
+                  >
+                    View notice
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toast.info("Complaint form opens here.")}
+                    className="h-9 px-3.5 rounded-xl bg-[#7A0A17] text-white text-xs font-bold hover:bg-[#600712] transition-colors"
+                  >
+                    Raise complaint
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-[#FAFAFB] border-b border-black/8">
+                      {["#", "Type", "Title", "Raised on", "Raised by", "Severity", "Status", "Detail"].map((h) => (
+                        <th key={h} className="px-4 py-3 text-[11px] font-bold text-[#6B7280] whitespace-nowrap">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {INITIAL_COMPLAINTS_WARNINGS.map((row) => (
+                      <tr key={row.id} className="border-b border-black/5 last:border-b-0">
+                        <td className="px-4 py-3 text-[#6B7280]">{row.id}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                              row.kind === "Warning"
+                                ? "bg-[#FEE2E2] text-[#DC2626] border-[#DC2626]/20"
+                                : "bg-[#DBEAFE] text-[#2563EB] border-[#2563EB]/20"
+                            }`}
+                          >
+                            {row.kind}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 font-bold text-[#111827] whitespace-nowrap">{row.title}</td>
+                        <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{row.raisedOn}</td>
+                        <td className="px-4 py-3 text-[#374151] whitespace-nowrap">{row.raisedBy}</td>
+                        <td className="px-4 py-3 text-[#374151]">{row.severity}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                              row.status === "Open"
+                                ? "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
+                                : row.status === "Closed"
+                                  ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                                  : "bg-[#F3F4F6] text-[#4B5563] border-black/10"
+                            }`}
+                          >
+                            {row.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-[#6B7280] min-w-[220px]">{row.detail}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Placeholder View for remaining tabs */}
-        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset"].includes(activeTab) && (
+        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset", "Exit", "Complaint & Warning"].includes(activeTab) && (
           <div className="bg-white border border-black/8 rounded-2xl p-12 text-center my-6 shadow-sm">
             <div className="size-16 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
               <FileText size={28} />
