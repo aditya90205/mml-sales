@@ -15,7 +15,7 @@ import loginFormLogo from "../assets/login-form-logo.png";
 // The card/form was designed against a 1440px-wide frame; we scale the
 // whole overlay uniformly to match however large the frame actually renders.
 const BASE_WIDTH = 1440;
-const CARD_WIDTH = 448; // px, at BASE_WIDTH
+const CARD_WIDTH = 400; // px, at BASE_WIDTH
 
 // Positions of the blank number slots baked into the stats bar (the
 // "Global Reach" label already has its number-slot filled in the artwork,
@@ -98,7 +98,7 @@ export default function LoginPage() {
       <div
         className="absolute"
         style={{
-          ...pointAt("72%", "46%"),
+          ...pointAt("72%", "52%"),
           width: `${CARD_WIDTH}px`,
           transform: `translate(-50%, -50%) scale(${scale})`,
           transformOrigin: "center center",
@@ -106,22 +106,22 @@ export default function LoginPage() {
       >
         <form onSubmit={handleSubmit}>
             <div
-              className="rounded-3xl p-8"
+              className="rounded-3xl p-6"
               style={{ background: "rgba(248, 241, 236, 0.96)", boxShadow: "0 14px 40px rgba(0,0,0,0.18)" }}
             >
-              <div className="flex flex-col items-center text-center mb-4">
+              <div className="flex flex-col items-center text-center mb-3">
                 <img
                   src={loginFormLogo}
                   alt="Make My Lagan Matrimonials"
-                  className="w-44 h-auto mb-3 select-none"
+                  className="w-32 h-auto mb-2 select-none"
                   draggable={false}
                 />
-                <h2 className="text-2xl font-semibold text-[#5d151b]">Welcome Back,</h2>
-                <p className="text-xl font-bold text-[#5d151b] -mt-1">Team MML!</p>
-                <p className="text-sm text-[#7a6d66] mt-1">Sign in to access your CRM dashboard.</p>
+                <h2 className="text-xl font-semibold text-[#5d151b]">Welcome Back,</h2>
+                <p className="text-lg font-bold text-[#5d151b] -mt-1">Team MML!</p>
+                <p className="text-xs text-[#7a6d66] mt-1">Sign in to access your CRM dashboard.</p>
               </div>
 
-              <div className="flex flex-col" style={{ gap: "1rem" }}>
+              <div className="flex flex-col" style={{ gap: "0.85rem" }}>
                 <Input
                   label="Username"
                   type="text"
@@ -132,7 +132,7 @@ export default function LoginPage() {
                   leftIcon={<UserRound size={16} />}
                   wrapperClassName="gap-1.5"
                   className="bg-white border-black/12 shadow-sm rounded-xl"
-                  style={{ height: "48px", fontSize: "14px" }}
+                  style={{ height: "42px", fontSize: "13px" }}
                 />
 
                 <Input
@@ -145,7 +145,7 @@ export default function LoginPage() {
                   leftIcon={<Lock size={16} />}
                   wrapperClassName="gap-1.5"
                   className="bg-white border-black/12 shadow-sm rounded-xl"
-                  style={{ height: "48px", fontSize: "14px" }}
+                  style={{ height: "42px", fontSize: "13px" }}
                   rightIcon={
                     <button
                       type="button"
@@ -173,7 +173,7 @@ export default function LoginPage() {
                   type="submit"
                   disabled={submitting}
                   className="w-full rounded-xl bg-[#68101E] text-white font-semibold tracking-[0.14em] shadow-[0_8px_20px_rgba(104,16,30,0.35)] hover:bg-[#520d18] active:bg-[#430b14] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                  style={{ height: "52px", fontSize: "14px" }}
+                  style={{ height: "46px", fontSize: "13px" }}
                 >
                   {submitting ? "Signing in…" : "SIGN IN"}
                 </button>
