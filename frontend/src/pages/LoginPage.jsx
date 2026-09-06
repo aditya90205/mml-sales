@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import Input from "../components/ui/Input";
 import mmlLoginBg from "../assets/mml-login-page-new.png";
 import loginFormLogo from "../assets/login-form-logo.png";
+import { DUMMY_CREDENTIALS, isAuthenticated, login as loginUser } from "../utils/auth";
 
 // The artwork is 5760x3112. The background always fills the full viewport
 // height exactly, so the logo at the top and the stats bar at the bottom
@@ -49,6 +50,13 @@ export default function LoginPage() {
     return () => window.removeEventListener("resize", updateViewport);
   }, []);
 
+  // Already signed in (e.g. a page refresh) — skip straight to the dashboard.
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
+
   const scale = viewport.width / BASE_WIDTH;
   const pointAt = (leftPct, topPct) => ({
     left: (parseFloat(leftPct) / 100) * viewport.width,
@@ -64,6 +72,16 @@ export default function LoginPage() {
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
+      const isValid =
+        username.trim().toLowerCase() === DUMMY_CREDENTIALS.username &&
+        password === DUMMY_CREDENTIALS.password;
+
+      if (!isValid) {
+        toast.error("Invalid username or password. Please try again.");
+        return;
+      }
+
+      loginUser();
       toast.success("Welcome back!");
       navigate("/dashboard");
     }, 700);
