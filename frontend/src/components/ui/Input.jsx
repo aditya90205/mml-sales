@@ -1,13 +1,13 @@
 import { forwardRef } from "react";
 
 const Input = forwardRef(function Input(
-  { label, error, hint, leftIcon, rightIcon, className = "", wrapperClassName = "", ...props },
+  { label, error, hint, leftIcon, rightIcon, className = "", wrapperClassName = "", labelClassName, ...props },
   ref
 ) {
   return (
     <div className={`flex flex-col gap-1.5 ${wrapperClassName}`}>
       {label && (
-        <label className="text-sm font-medium text-[#1a1a1a]">{label}</label>
+        <label className={labelClassName || "text-sm font-medium text-[#1a1a1a]"}>{label}</label>
       )}
       <div className="relative flex items-center">
         {leftIcon && (

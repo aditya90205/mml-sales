@@ -154,6 +154,7 @@ export default function LoginPage() {
                   onChange={(e) => setUsername(e.target.value)}
                   leftIcon={<UserRound size={16} />}
                   wrapperClassName="gap-1"
+                  labelClassName="text-[12px] font-medium text-[#8a7f77]"
                   className="bg-white border-black/12 shadow-sm rounded-xl"
                   style={{ height: "40px", fontSize: "13px" }}
                 />
@@ -167,6 +168,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   leftIcon={<Lock size={16} />}
                   wrapperClassName="gap-1"
+                  labelClassName="text-[12px] font-medium text-[#8a7f77]"
                   className="bg-white border-black/12 shadow-sm rounded-xl"
                   style={{ height: "40px", fontSize: "13px" }}
                   rightIcon={
