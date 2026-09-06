@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { UserRound, Lock, Eye, EyeOff, Heart } from "lucide-react";
 import { toast } from "react-toastify";
 import Input from "../components/ui/Input";
-import mmlLoginBg from "../assets/mml-login-background.png";
+import mmlLoginBg from "../assets/mml-login-background1.png";
+import leftLogo from "../assets/MML_Logo.png";
 import loginFormLogo from "../assets/form-logo.png";
 import { DUMMY_CREDENTIALS, isAuthenticated, login as loginUser } from "../utils/auth";
 
@@ -129,6 +130,20 @@ export default function LoginPage() {
         alt="Make My Lagan Matrimonials"
         className="absolute max-w-none select-none"
         style={bgStyle}
+        draggable={false}
+      />
+
+      {/* Left-panel brand mark — overlaid so it is never stretched with the artwork */}
+      <img
+        src={leftLogo}
+        alt="Make My Lagan Matrimonials"
+        className="absolute select-none pointer-events-none"
+        style={{
+          ...pointAt("25.3%", "12%"),
+          width: `${Math.round((viewport.height || 900) * 0.23)}px`,
+          height: "auto",
+          transform: "translate(-50%, -50%)",
+        }}
         draggable={false}
       />
 
