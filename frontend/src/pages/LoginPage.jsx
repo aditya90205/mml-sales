@@ -89,19 +89,12 @@ export default function LoginPage() {
       coverW = vh * ART_ASPECT;
     }
     const w = vw + (coverW - vw) * STRETCH_EASE;
-    // Fill the window height so the top logo stays on-screen, then shift
-    // the artwork up a little so the stats bar isn't clipped at the bottom
-    // (the PNG has almost no padding under that text).
-    const h = vh;
-    const maxTopCrop = h * 0.035; // logo sits ~4.8% down; florals can lose a sliver
-    const lift = Math.min(Math.round(vh * 0.032), maxTopCrop);
     return {
       width: w,
-      height: h,
+      height: vh,
       left: (vw - w) / 2,
-      top: -lift,
+      top: 0,
       objectFit: "fill",
-      objectPosition: "center top",
     };
   })();
 
