@@ -436,7 +436,7 @@ function ClientServiceAgreementCard() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_260px] gap-4 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,1fr)] gap-4 items-start">
         <div className="border border-black/8 rounded-xl overflow-hidden min-w-0">
           <div className="px-5 py-4 border-b border-black/6">
             <h3 className="text-[15px] font-bold text-[#111]">{current.heading}</h3>
