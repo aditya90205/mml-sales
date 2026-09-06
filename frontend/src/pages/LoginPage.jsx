@@ -109,11 +109,11 @@ export default function LoginPage() {
               className="rounded-3xl p-8"
               style={{ background: "rgba(248, 241, 236, 0.96)", boxShadow: "0 14px 40px rgba(0,0,0,0.18)" }}
             >
-              <div className="flex flex-col items-start mb-4">
+              <div className="flex flex-col items-center text-center mb-4">
                 <img
                   src={loginFormLogo}
-                  alt="Make My Lagan"
-                  className="h-12 w-auto mb-2 select-none"
+                  alt="Make My Lagan Matrimonials"
+                  className="w-44 h-auto mb-3 select-none"
                   draggable={false}
                 />
                 <h2 className="text-2xl font-semibold text-[#5d151b]">Welcome Back,</h2>
@@ -185,8 +185,10 @@ export default function LoginPage() {
                   </p>
                   <span className="h-px flex-1 max-w-[20%] bg-[#68101E]/25" />
                 </div>
-                <div className="flex justify-center w-full">
-                  <Heart size={12} className="text-[#68101E] mt-1" fill="currentColor" />
+                <div className="flex items-center justify-center gap-2.5 w-full">
+                  <span className="h-px flex-1 max-w-[28%] bg-[#68101E]/25" />
+                  <Heart size={12} className="text-[#68101E] shrink-0" fill="currentColor" />
+                  <span className="h-px flex-1 max-w-[28%] bg-[#68101E]/25" />
                 </div>
               </div>
             </div>
