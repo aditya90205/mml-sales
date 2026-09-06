@@ -124,7 +124,7 @@ export default function LoginPage() {
       <div
         className="absolute"
         style={{
-          ...pointAt("75.6%", "51%"),
+          ...pointAt("76%", "51%"),
           width: `${CARD_WIDTH}px`,
           transform: `translate(-50%, -50%) scale(${scale})`,
           transformOrigin: "center center",
