@@ -23,20 +23,112 @@ const CARD_WIDTH = 280;
 // stretches the form taller than the viewport (Figma floating card).
 const CARD_HEIGHT = 520;
 
-// Positions of the blank number slots baked into the stats bar (the
-// "Global Reach" label already has its number-slot filled in the artwork,
-// so only the first three columns need an overlay).
-// const STATS = [
-//   { value: "17+", left: "5.7%" },
-//   { value: "1000+", left: "17.2%" },
-//   { value: "4+", left: "28.2%" },
-// ];
-const STATS_TOP = "91.9%";
 const ART_WIDTH = 6164;
 const ART_HEIGHT = 3112;
 const ART_ASPECT = ART_WIDTH / ART_HEIGHT;
 // 0 = old full stretch (object-fit: fill), 1 = no stretch (cover).
 const STRETCH_EASE = 0.45;
+
+function LoginForm({
+  username,
+  password,
+  showPassword,
+  submitting,
+  onUsernameChange,
+  onPasswordChange,
+  onTogglePassword,
+  onForgotPassword,
+  onSubmit,
+}) {
+  return (
+    <form onSubmit={onSubmit}>
+      <div
+        className="rounded-[24px] px-7 pt-3 pb-5"
+        style={{ background: "#FDF3EB", boxShadow: "0 14px 40px rgba(0,0,0,0.18)" }}
+      >
+        <div className="flex flex-col items-center text-center mb-1.5">
+          <img
+            src={loginFormLogo}
+            alt="Make My Lagan Matrimonials"
+            className="w-[176px] h-auto select-none"
+            draggable={false}
+          />
+        </div>
+
+        <div className="flex flex-col" style={{ gap: "0.5rem" }}>
+          <Input
+            label="Username"
+            type="text"
+            autoComplete="username"
+            placeholder="Enter your username"
+            value={username}
+            onChange={onUsernameChange}
+            leftIcon={<UserRound size={16} />}
+            wrapperClassName="gap-1"
+            labelClassName="text-[12px] font-medium text-[#8a7f77]"
+            className="bg-white border-black/12 shadow-sm rounded-xl"
+            style={{ height: "40px", fontSize: "13px" }}
+          />
+
+          <Input
+            label="Password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={onPasswordChange}
+            leftIcon={<Lock size={16} />}
+            wrapperClassName="gap-1"
+            labelClassName="text-[12px] font-medium text-[#8a7f77]"
+            className="bg-white border-black/12 shadow-sm rounded-xl"
+            style={{ height: "40px", fontSize: "13px" }}
+            rightIcon={
+              <button
+                type="button"
+                onClick={onTogglePassword}
+                className="pointer-events-auto text-[#8f95a5] hover:text-[#3A3230] transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            }
+          />
+
+          <div className="flex justify-end -mt-0.5">
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              className="font-medium text-[#68101E] hover:underline underline-offset-2"
+              style={{ fontSize: "12px" }}
+            >
+              Forgot Password?
+            </button>
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full rounded-xl bg-[#68101E] text-white font-semibold tracking-[0.14em] shadow-[0_8px_20px_rgba(104,16,30,0.35)] hover:bg-[#520d18] active:bg-[#430b14] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            style={{ height: "40px", fontSize: "13px" }}
+          >
+            {submitting ? "Signing in…" : "SIGN IN"}
+          </button>
+
+          <div className="flex flex-col items-center gap-1.5 w-full">
+            <p className="text-[#8a7f77] text-center" style={{ fontSize: "11px" }}>
+              Together, let&apos;s create beautiful matches
+            </p>
+            <div className="flex items-center justify-center gap-3 w-full">
+              <span className="h-px flex-1 bg-[#68101E]/25" />
+              <Heart size={12} className="text-[#68101E] shrink-0" fill="currentColor" />
+              <span className="h-px flex-1 bg-[#68101E]/25" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  );
+}
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -81,12 +173,9 @@ export default function LoginPage() {
     }
     const viewAspect = vw / vh;
     let coverW;
-    let coverH;
     if (viewAspect > ART_ASPECT) {
       coverW = vw;
-      coverH = vw / ART_ASPECT;
     } else {
-      coverH = vh;
       coverW = vh * ART_ASPECT;
     }
     const w = vw + (coverW - vw) * STRETCH_EASE;
@@ -123,142 +212,62 @@ export default function LoginPage() {
     }, 700);
   };
 
+  const formProps = {
+    username,
+    password,
+    showPassword,
+    submitting,
+    onUsernameChange: (e) => setUsername(e.target.value),
+    onPasswordChange: (e) => setPassword(e.target.value),
+    onTogglePassword: () => setShowPassword((v) => !v),
+    onForgotPassword: () => toast.info("Please contact your admin to reset your password."),
+    onSubmit: handleSubmit,
+  };
+
   return (
-    <div className="relative w-screen h-screen bg-[#2b1410] overflow-hidden">
-      <img
-        src={mmlLoginBg}
-        alt="Make My Lagan Matrimonials"
-        className="absolute max-w-none select-none"
-        style={bgStyle}
-        draggable={false}
-      />
+    <>
+      {/* Small screens: form only, no split artwork */}
+      <div className="md:hidden min-h-screen flex items-center justify-center bg-[#F6EDE4] px-5 py-8">
+        <div className="w-full max-w-[360px]">
+          <LoginForm {...formProps} />
+        </div>
+      </div>
 
-      {/* Left-panel brand mark — overlaid so it is never stretched with the artwork */}
-      <img
-        src={leftLogo}
-        alt="Make My Lagan Matrimonials"
-        className="absolute select-none pointer-events-none"
-        style={{
-          ...pointAt("25.3%", "12%"),
-          width: `${Math.round((viewport.height || 900) * 0.27)}px`,
-          height: "auto",
-          transform: "translate(-50%, -50%)",
-        }}
-        draggable={false}
-      />
+      {/* Desktop / large screens: full artwork + overlaid form */}
+      <div className="hidden md:block relative w-screen h-screen bg-[#2b1410] overflow-hidden">
+        <img
+          src={mmlLoginBg}
+          alt="Make My Lagan Matrimonials"
+          className="absolute max-w-none select-none"
+          style={bgStyle}
+          draggable={false}
+        />
 
-      {/* Stat numbers overlaid onto the blank slots baked into the artwork */}
-      {/* {STATS.map((stat) => (
-        <div
-          key={stat.value}
-          className="absolute font-bold text-white leading-none"
+        <img
+          src={leftLogo}
+          alt="Make My Lagan Matrimonials"
+          className="absolute select-none pointer-events-none"
           style={{
-            ...pointAt(stat.left, STATS_TOP),
+            ...pointAt("25.3%", "12%"),
+            width: `${Math.round((viewport.height || 900) * 0.27)}px`,
+            height: "auto",
             transform: "translate(-50%, -50%)",
-            fontSize: `${16 * scale}px`,
+          }}
+          draggable={false}
+        />
+
+        <div
+          className="absolute"
+          style={{
+            ...pointAt("76%", "51%"),
+            width: `${CARD_WIDTH}px`,
+            transform: `translate(-50%, -50%) scale(${scale})`,
+            transformOrigin: "center center",
           }}
         >
-          {stat.value}
+          <LoginForm {...formProps} />
         </div>
-      ))} */}
-
-      {/* Login card, uniformly scaled to match the background image */}
-      <div
-        className="absolute"
-        style={{
-          ...pointAt("76%", "51%"),
-          width: `${CARD_WIDTH}px`,
-          transform: `translate(-50%, -50%) scale(${scale})`,
-          transformOrigin: "center center",
-        }}
-      >
-        <form onSubmit={handleSubmit}>
-            <div
-              className="rounded-[24px] px-7 pt-3 pb-5"
-              style={{ background: "#FDF3EB", boxShadow: "0 14px 40px rgba(0,0,0,0.18)" }}
-            >
-              <div className="flex flex-col items-center text-center mb-1.5">
-                <img
-                  src={loginFormLogo}
-                  alt="Make My Lagan Matrimonials"
-                  className="w-[176px] h-auto select-none"
-                  draggable={false}
-                />
-              </div>
-
-              <div className="flex flex-col" style={{ gap: "0.5rem" }}>
-                <Input
-                  label="Username"
-                  type="text"
-                  autoComplete="username"
-                  placeholder="Enter your username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  leftIcon={<UserRound size={16} />}
-                  wrapperClassName="gap-1"
-                  labelClassName="text-[12px] font-medium text-[#8a7f77]"
-                  className="bg-white border-black/12 shadow-sm rounded-xl"
-                  style={{ height: "40px", fontSize: "13px" }}
-                />
-
-                <Input
-                  label="Password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  leftIcon={<Lock size={16} />}
-                  wrapperClassName="gap-1"
-                  labelClassName="text-[12px] font-medium text-[#8a7f77]"
-                  className="bg-white border-black/12 shadow-sm rounded-xl"
-                  style={{ height: "40px", fontSize: "13px" }}
-                  rightIcon={
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="pointer-events-auto text-[#8f95a5] hover:text-[#3A3230] transition-colors"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  }
-                />
-
-                <div className="flex justify-end -mt-0.5">
-                  <button
-                    type="button"
-                    onClick={() => toast.info("Please contact your admin to reset your password.")}
-                    className="font-medium text-[#68101E] hover:underline underline-offset-2"
-                    style={{ fontSize: "12px" }}
-                  >
-                    Forgot Password?
-                  </button>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full rounded-xl bg-[#68101E] text-white font-semibold tracking-[0.14em] shadow-[0_8px_20px_rgba(104,16,30,0.35)] hover:bg-[#520d18] active:bg-[#430b14] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                  style={{ height: "40px", fontSize: "13px" }}
-                >
-                  {submitting ? "Signing in…" : "SIGN IN"}
-                </button>
-
-                <div className="flex flex-col items-center gap-1.5 w-full">
-                  <p className="text-[#8a7f77] text-center" style={{ fontSize: "11px" }}>
-                    Together, let&apos;s create beautiful matches
-                  </p>
-                  <div className="flex items-center justify-center gap-3 w-full">
-                    <span className="h-px flex-1 bg-[#68101E]/25" />
-                    <Heart size={12} className="text-[#68101E] shrink-0" fill="currentColor" />
-                    <span className="h-px flex-1 bg-[#68101E]/25" />
-                  </div>
-                </div>
-              </div>
-            </div>
-        </form>
       </div>
-    </div>
+    </>
   );
 }
