@@ -25,7 +25,7 @@ const STATS = [
   { value: "1000+", left: "17.2%" },
   { value: "4+", left: "28.2%" },
 ];
-const STATS_TOP = "91.6%";
+const STATS_TOP = "91.9%";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -87,7 +87,7 @@ export default function LoginPage() {
           style={{
             ...pointAt(stat.left, STATS_TOP),
             transform: "translate(-50%, -50%)",
-            fontSize: `${14 * scale}px`,
+            fontSize: `${16 * scale}px`,
           }}
         >
           {stat.value}
