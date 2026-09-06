@@ -21,7 +21,7 @@ const BASE_WIDTH = 1440;
 const CARD_WIDTH = 280;
 // Approx. unscaled card height — used so width-based scaling never
 // stretches the form taller than the viewport (Figma floating card).
-const CARD_HEIGHT = 520;
+const CARD_HEIGHT = 470;
 
 // Positions of the blank number slots baked into the stats bar (the
 // "Global Reach" label already has its number-slot filled in the artwork,
@@ -132,19 +132,19 @@ export default function LoginPage() {
       >
         <form onSubmit={handleSubmit}>
             <div
-              className="rounded-[24px] px-7 pt-5 pb-5"
+              className="rounded-[24px] px-7 pt-3 pb-3"
               style={{ background: "#FDF3EB", boxShadow: "0 14px 40px rgba(0,0,0,0.18)" }}
             >
-              <div className="flex flex-col items-center text-center mb-3">
+              <div className="flex flex-col items-center text-center mb-1.5">
                 <img
                   src={loginFormLogo}
                   alt="Make My Lagan Matrimonials"
-                  className="w-[200px] h-auto select-none"
+                  className="w-[176px] h-auto select-none"
                   draggable={false}
                 />
               </div>
 
-              <div className="flex flex-col" style={{ gap: "0.75rem" }}>
+              <div className="flex flex-col" style={{ gap: "0.5rem" }}>
                 <Input
                   label="Username"
                   type="text"
@@ -155,7 +155,7 @@ export default function LoginPage() {
                   leftIcon={<UserRound size={16} />}
                   wrapperClassName="gap-1"
                   className="bg-white border-black/12 shadow-sm rounded-xl"
-                  style={{ height: "42px", fontSize: "13px" }}
+                  style={{ height: "40px", fontSize: "13px" }}
                 />
 
                 <Input
@@ -168,7 +168,7 @@ export default function LoginPage() {
                   leftIcon={<Lock size={16} />}
                   wrapperClassName="gap-1"
                   className="bg-white border-black/12 shadow-sm rounded-xl"
-                  style={{ height: "42px", fontSize: "13px" }}
+                  style={{ height: "40px", fontSize: "13px" }}
                   rightIcon={
                     <button
                       type="button"
@@ -196,12 +196,12 @@ export default function LoginPage() {
                   type="submit"
                   disabled={submitting}
                   className="w-full rounded-xl bg-[#68101E] text-white font-semibold tracking-[0.14em] shadow-[0_8px_20px_rgba(104,16,30,0.35)] hover:bg-[#520d18] active:bg-[#430b14] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                  style={{ height: "44px", fontSize: "13px" }}
+                  style={{ height: "40px", fontSize: "13px" }}
                 >
                   {submitting ? "Signing in…" : "SIGN IN"}
                 </button>
 
-                <div className="flex flex-col items-center gap-2 w-full mt-1">
+                <div className="flex flex-col items-center gap-1.5 w-full">
                   <p className="text-[#8a7f77] text-center" style={{ fontSize: "11px" }}>
                     Together, let&apos;s create beautiful matches
                   </p>
