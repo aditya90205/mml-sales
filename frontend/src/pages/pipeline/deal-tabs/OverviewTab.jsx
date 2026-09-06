@@ -22,6 +22,7 @@ const TEMPERATURE_TONES = {
   Hot:  { color: "#E8395B", bg: "#FDECEE" },
   Warm: { color: "#F59E0B", bg: "#FFF3E4" },
   Cold: { color: "#3B82F6", bg: "#E8F2FE" },
+  Lost: { color: "#7A0A17", bg: "#FCF5F6" },
 };
 
 function DetailField({ label, value }) {

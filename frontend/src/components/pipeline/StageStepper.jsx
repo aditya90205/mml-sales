@@ -1,41 +1,52 @@
 const STAGES = [
-  { id: "P0", name: "Prospect" },
-  { id: "P1", name: "Qualified" },
-  { id: "P2", name: "Data Collection" },
-  { id: "P3", name: "Visit / Video" },
-  { id: "P4", name: "Negotiation" },
-  { id: "P5", name: "Payment" },
-  { id: "P6", name: "Handover" },
+  { id: "P0", name: "New",                    color: "#E8395B" },
+  { id: "P1", name: "Qualified",               color: "#F59E0B" },
+  { id: "P2", name: "Profile Creation",        color: "#8B5CF6" },
+  { id: "P3", name: "Video Call/Visit",        color: "#7C3AED" },
+  { id: "P4", name: "Negotiation",             color: "#6366F1" },
+  { id: "P5", name: "Closed - Payment Done",   color: "#16A34A" },
+  { id: "P6", name: "Handover/Onboarding",     color: "#EAB308" },
 ];
 
-const STATUS_STYLES = {
-  done:    { box: "bg-[#E7F8EF] border-l-[#16A34A]", name: "text-[#16A34A]" },
-  current: { box: "bg-[#FDECEE] border-l-[#E8395B]", name: "text-[#E8395B]" },
-  locked:  { box: "bg-[#FAF3F2] border-l-[#EADEDD]", name: "text-[#A59695]" },
+// Name text only — left accent keeps each stage's pipeline color.
+const STATUS_TEXT = {
+  done: "text-[#16A34A]",
+  current: "text-[#E8395B]",
+  locked: "text-[#9CA3AF]",
 };
 
 /**
- * Full P0–P6 pipeline stage strip shared by the Move-to-Pn forms and the
- * deal detail screen. Stages before `activeStageId` render as "done"
- * (green), the current stage is highlighted (red), stages after it
- * render as "locked" (muted red) — each with a darker left-border accent
- * in the same hue, and stretched to fill the row's full width.
+ * Full P0–P6 pipeline stage strip shared by Move-to-Pn forms and deal detail.
+ * Same card chrome as the pipeline board stage cards; only the stage name
+ * color changes: green (done), red (current), grey (next).
  */
 export default function StageStepper({ activeStageId = "P0" }) {
   const activeIndex = STAGES.findIndex((s) => s.id === activeStageId);
 
   return (
-    <div className="grid grid-cols-7 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
       {STAGES.map((stage, i) => {
         const status = i < activeIndex ? "done" : i === activeIndex ? "current" : "locked";
-        const style = STATUS_STYLES[status];
+        const nameColor = STATUS_TEXT[status];
         return (
           <div
             key={stage.id}
-            className={`flex flex-col justify-center rounded-lg border-l-4 px-3.5 py-2.5 min-w-0 transition-colors ${style.box}`}
+            className="flex items-center justify-between gap-2 bg-white border rounded-xl border-l-4 px-3.5 py-2.5 min-w-0"
+            style={{
+              borderLeftColor: stage.color,
+              borderTopColor: "rgba(0,0,0,0.08)",
+              borderRightColor: "rgba(0,0,0,0.08)",
+              borderBottomColor: "rgba(0,0,0,0.08)",
+            }}
           >
-            <span className="text-[10.5px] font-bold uppercase tracking-wide text-[#6B7280]">{stage.id}</span>
-            <span className={`text-[13px] font-bold leading-tight truncate ${style.name}`}>{stage.name}</span>
+            <div className="min-w-0">
+              <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#9CA3AF]">
+                {stage.id}
+              </p>
+              <p className={`text-[13px] font-bold leading-tight truncate ${nameColor}`}>
+                {stage.name}
+              </p>
+            </div>
           </div>
         );
       })}
