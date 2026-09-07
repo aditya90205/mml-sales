@@ -847,6 +847,20 @@ export default function PipelineBoard() {
     setSubView("deal-detail");
   };
 
+  const handlePremiumChange = (premium) => {
+    if (!activeLead) return;
+    setActiveLead((prev) => (prev ? { ...prev, starred: premium } : prev));
+    setLeadsData((prev) => {
+      const next = { ...prev };
+      for (const stageId of Object.keys(next)) {
+        next[stageId] = (next[stageId] || []).map((l) =>
+          l.id === activeLead.id ? { ...l, starred: premium } : l
+        );
+      }
+      return next;
+    });
+  };
+
   const handleMoveStage = (lead, stageKey) => {
     if (stageKey === "P0") {
       setActiveLead(lead);
@@ -938,6 +952,7 @@ export default function PipelineBoard() {
         initialTab={dealInitialTab}
         onBack={() => { setSubView(null); setActiveLead(null); }}
         onAdvance={handleMoveStage}
+        onPremiumChange={handlePremiumChange}
       />
     );
   }

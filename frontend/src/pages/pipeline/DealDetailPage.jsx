@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlarmClock, ArrowLeft, ArrowRight, ChevronDown, Flag, MessageCircle, Minus, Phone, Plus } from "lucide-react";
+import { AlarmClock, ArrowLeft, ArrowRight, ChevronDown, Flag, MessageCircle, Minus, Phone, Plus, Star } from "lucide-react";
 import { toast } from "react-toastify";
 // TopBar is provided by Layout
 import StageStepper from "../../components/pipeline/StageStepper";
@@ -100,15 +100,25 @@ function initials(name = "") {
  * Deal detail opened by clicking any pipeline card (P0–P6).
  * Tab data fills in by stage. Payments and P6 Checklist stay blurred until P5.
  */
-export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAdvance, initialTab = "overview" }) {
+export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAdvance, initialTab = "overview", onPremiumChange }) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [winLossModal, setWinLossModal] = useState({ open: false, mode: "lost" });
   const [winLossOverride, setWinLossOverride] = useState(null);
+  const [isPremium, setIsPremium] = useState(() => Boolean(lead?.starred));
   const lateTabsUnlocked = atLeast(currentStage, "P5");
   const nextStage = NEXT_STAGE[currentStage];
   const tabs = BASE_TABS.map((tab) =>
     tab.key === "payments" || tab.key === "p6" ? { ...tab, locked: !lateTabsUnlocked } : tab
   );
+
+  useEffect(() => {
+    setIsPremium(Boolean(lead?.starred));
+  }, [lead?.id, lead?.starred]);
+
+  const handlePremiumChange = (premium) => {
+    setIsPremium(premium);
+    onPremiumChange?.(premium);
+  };
 
   const deal = useMemo(() => {
     const dealCode = (lead?.mmlId || "MML - D - 10471").replace(/\s*-\s*/g, "-");
@@ -119,6 +129,7 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
       dealCode,
       stageLabel: STAGE_LABELS[currentStage] || STAGE_LABELS.P4,
       name: lead?.name || "Ananya Gupta",
+      premium: isPremium,
       dealValue: currentStage === "P0" ? "₹25,000" : DEAL_DEFAULTS.dealValue,
       packageInterest: maybeDash(detailsFilled, DEAL_DEFAULTS.packageInterest),
       leadScore: maybeDash(detailsFilled, DEAL_DEFAULTS.leadScore),
@@ -146,7 +157,7 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
       weightedValue: maybeDash(detailsFilled, DEAL_DEFAULTS.weightedValue),
       weightedValueNote: maybeDash(detailsFilled, DEAL_DEFAULTS.weightedValueNote),
     };
-  }, [lead, currentStage, winLossOverride]);
+  }, [lead, currentStage, winLossOverride, isPremium]);
 
   const openWinLossModal = (mode) => setWinLossModal({ open: true, mode });
 
@@ -173,7 +184,7 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
   const renderTab = () => {
     switch (activeTab) {
       case "overview":
-        return <OverviewTab deal={deal} />;
+        return <OverviewTab deal={deal} onPremiumChange={handlePremiumChange} />;
       case "intake":
         return <IntakeFormTab empty={currentStage === "P0"} />;
       case "visits":
@@ -322,6 +333,9 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-[16px] font-bold text-[#111] truncate">{deal.name}</h1>
+                  {isPremium && (
+                    <Star size={14} className="text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={0} />
+                  )}
                   <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold px-2 py-0.5 rounded-md text-[#F59E0B] bg-[#FFF3E4]">
                     <Minus size={10} /> interest
                   </span>

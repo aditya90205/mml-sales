@@ -1483,13 +1483,13 @@ function stageKeyFromLead(lead) {
   return match ? match[0] : "P0";
 }
 
-function MyLeadsCard({ onOpenDeal, onMoveStage, onAddProspect }) {
+function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
   const [period, setPeriod] = useState("this_month");
   const [leadsView, setLeadsView] = useState("team");
   const [leadsViewOpen, setLeadsViewOpen] = useState(false);
   const [scoreLead, setScoreLead] = useState(null);
   const leadsViewRef = useRef(null);
-  const { sorted, sort, toggle } = useTableSort(MY_LEADS, { defaultKey: "name" });
+  const { sorted, sort, toggle } = useTableSort(leads, { defaultKey: "name" });
 
   useEffect(() => {
     const h = (e) => {
@@ -1743,6 +1743,7 @@ export default function Dashboard() {
   const [dealLead, setDealLead] = useState(null);
   const [moveLead, setMoveLead] = useState(null);
   const [showAddProspect, setShowAddProspect] = useState(false);
+  const [myLeads, setMyLeads] = useState(MY_LEADS);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
@@ -1791,9 +1792,15 @@ export default function Dashboard() {
   if (dealLead) {
     return (
       <DealDetailPage
-        lead={{ name: dealLead.name, mmlId: dealLead.id }}
+        lead={{ name: dealLead.name, mmlId: dealLead.id, starred: dealLead.starred }}
         currentStage={stageKeyFromLead(dealLead)}
         onBack={() => setDealLead(null)}
+        onPremiumChange={(premium) => {
+          setDealLead((prev) => (prev ? { ...prev, starred: premium } : prev));
+          setMyLeads((prev) =>
+            prev.map((l) => (l.name === dealLead.name && l.id === dealLead.id ? { ...l, starred: premium } : l))
+          );
+        }}
       />
     );
   }
@@ -1845,6 +1852,7 @@ export default function Dashboard() {
         </div>
 
         <MyLeadsCard
+          leads={myLeads}
           onOpenDeal={setDealLead}
           onMoveStage={(lead) => setMoveLead(lead)}
           onAddProspect={() => setShowAddProspect(true)}

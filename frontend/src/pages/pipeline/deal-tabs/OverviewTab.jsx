@@ -12,6 +12,7 @@ import {
   Plus,
   RefreshCw,
   Send,
+  Star,
   Video,
   X,
 } from "lucide-react";
@@ -166,6 +167,7 @@ const EDIT_FIELDS = [
   { key: "dealCode", label: "Deal code" },
   { key: "stageLabel", label: "Stage" },
   { key: "packageInterest", label: "Package interest" },
+  { key: "premium", label: "Premium client", type: "select", options: ["Yes", "No"] },
   { key: "dealValue", label: "Deal value" },
   { key: "leadSource", label: "Lead source" },
   { key: "leadScore", label: "Lead score" },
@@ -189,6 +191,7 @@ function detailsFromDeal(deal) {
     dealCode: deal.dealCode || "",
     stageLabel: deal.stageLabel || "",
     packageInterest: deal.packageInterest || "",
+    premium: deal.premium ? "Yes" : "No",
     dealValue: deal.dealValue || "",
     leadSource: deal.leadSource || "",
     leadScore: deal.leadScore || "",
@@ -208,7 +211,7 @@ function detailsFromDeal(deal) {
   };
 }
 
-function DealDetailsCard({ deal }) {
+function DealDetailsCard({ deal, onPremiumChange }) {
   const [open, setOpen] = useState(false);
   const [details, setDetails] = useState(() => detailsFromDeal(deal));
   const [draft, setDraft] = useState(() => detailsFromDeal(deal));
@@ -231,6 +234,7 @@ function DealDetailsCard({ deal }) {
   const handleSave = (e) => {
     e.preventDefault();
     setDetails(draft);
+    onPremiumChange?.(draft.premium === "Yes");
     toast.success("Deal details updated.");
     setOpen(false);
   };
@@ -303,6 +307,16 @@ function DealDetailsCard({ deal }) {
         <DetailField label="Deal code" value={details.dealCode} />
         <DetailField label="Stage" value={details.stageLabel} />
         <DetailField label="Package interest" value={details.packageInterest} />
+        <div>
+          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Premium client</p>
+          <div className="mt-1 flex items-center gap-1.5 min-h-[20px]">
+            {details.premium === "Yes" ? (
+              <Star size={14} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />
+            ) : (
+              <p className="text-[13px] font-semibold text-[#111]">-</p>
+            )}
+          </div>
+        </div>
         <DetailField label="Deal value" value={details.dealValue} />
         <DetailField label="Lead source" value={details.leadSource} />
         <DetailField label="Lead score" value={details.leadScore} />
@@ -647,11 +661,11 @@ function RmFlagsCard({ flags }) {
  * Overview: deal details + dashboard AI form on the left;
  * stage gate, weighted value, RM flags, and Stage History & SLA on the right.
  */
-export default function OverviewTab({ deal }) {
+export default function OverviewTab({ deal, onPremiumChange }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,65fr)_minmax(0,35fr)] gap-5 items-start">
       <div className="flex flex-col gap-5 min-w-0">
-        <DealDetailsCard deal={deal} />
+        <DealDetailsCard deal={deal} onPremiumChange={onPremiumChange} />
         <PersonalAssistantCard />
       </div>
 
