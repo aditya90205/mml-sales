@@ -4,6 +4,7 @@ import { ArrowLeft, Bell, Mail, MessageSquare, Paperclip, Plus } from "lucide-re
 import { toast } from "react-toastify";
 import ChannelTemplateModal from "../components/campaign/ChannelTemplateModal.jsx";
 import CreateGroupModal from "../components/campaign/CreateGroupModal.jsx";
+import { addCampaign } from "../utils/campaignsStore.js";
 import { readSavedGroups } from "../utils/clientGroups.js";
 
 const CHANNELS = [
@@ -77,7 +78,20 @@ export default function CreateCampaignPage() {
       toast.error("Please enter a campaign name.");
       return;
     }
-    toast.success(`Campaign "${name}" saved.`);
+    const created = addCampaign({
+      name: name.trim(),
+      description: description.trim(),
+      tag: description.trim() || "New campaign",
+      group,
+      target: group || "Common Pool",
+      selectedChannels,
+      startMode,
+      stopMode,
+      country,
+      maxRetry,
+      status: startMode === "Time based" ? "Scheduled" : "Not Started",
+    });
+    toast.success(`Campaign "${created.name}" saved.`);
     navigate("/campaign/management");
   };
 

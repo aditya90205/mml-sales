@@ -22,75 +22,7 @@ import biStopCircle from "../assets/bi_stop-circle.png";
 import hugeiconsSent from "../assets/hugeicons_sent.png";
 import charmTickDouble from "../assets/charm_tick-double.png";
 import biEnvelopeOpen from "../assets/bi_envelope-open.png";
-
-const INITIAL_CAMPAIGNS = [
-  {
-    id: 1,
-    name: "Search for Matrimony",
-    tag: "UTM: gads_delhi_intent",
-    target: "Common Pool",
-    channel: "SMS",
-    start: "Manual",
-    end: "Manual",
-    owner: "Nikhil Bansal",
-    status: "Not Started",
-  },
-  {
-    id: 2,
-    name: "South Ex Hoarding · Cycle 4",
-    tag: "Ring Road site",
-    target: "Jalandhar",
-    channel: "WhatsApp",
-    start: "01 Aug 21 - 09:32 PM",
-    end: "01 Aug 21 - 09:32 PM",
-    owner: "Pooja Sharma",
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "30% Offer",
-    tag: "dsp",
-    target: "Doctors",
-    channel: "Email, SMS",
-    start: "01 Aug 21 - 09:32 PM",
-    end: "01 Aug 21 - 09:32 PM",
-    owner: "Vinti Malhotra",
-    status: "Completed",
-  },
-  {
-    id: 4,
-    name: "Community sabha · Rohini",
-    tag: "On-ground stall",
-    target: "IIT, IIM",
-    channel: "Push",
-    start: "01 Aug 21 - 09:32 PM",
-    end: "01 Aug 21 - 09:32 PM",
-    owner: "Nikhil Bansal",
-    status: "Active",
-  },
-  {
-    id: 5,
-    name: "Jul-26 Monsoon Offer",
-    tag: "UTM: ig_jul26_monsoon",
-    target: "P3 Pipeline",
-    channel: "SMS",
-    start: "01 Aug 21 - 09:32 PM",
-    end: "01 Aug 21 - 09:32 PM",
-    owner: "Vinti Malhotra",
-    status: "Scheduled",
-  },
-  {
-    id: 6,
-    name: "Sep-26 NRI Dubai teaser",
-    tag: "Muslim matrimony pilot",
-    target: "New Opportunity",
-    channel: "WhatsApp, Push",
-    start: "01 Aug 21 - 09:32 PM",
-    end: "01 Aug 21 - 09:32 PM",
-    owner: "Nikhil Bansal",
-    status: "Stop Manually",
-  },
-];
+import { readCampaigns, removeCampaign, saveCampaigns } from "../utils/campaignsStore.js";
 
 const LEADS_BY_CHANNEL = [
   { label: "SMS", value: 142, color: "#7A0A17" },
@@ -252,11 +184,16 @@ function usePagedTable(rows, searchKeys) {
 }
 
 export default function CampaignManagementPage() {
-  const [rows, setRows] = useState(INITIAL_CAMPAIGNS);
+  const [rows, setRows] = useState(() => readCampaigns());
   const [channelModalOpen, setChannelModalOpen] = useState(false);
   const [viewCampaign, setViewCampaign] = useState(null);
   const [editCampaign, setEditCampaign] = useState(null);
   const table = usePagedTable(rows, ["name", "tag", "target", "channel", "owner", "status"]);
+
+  const persistRows = (next) => {
+    setRows(next);
+    saveCampaigns(next);
+  };
 
   const handleEditCampaign = (campaign) => {
     setViewCampaign(null);
@@ -264,7 +201,7 @@ export default function CampaignManagementPage() {
   };
 
   const handleSaveEdit = (updated) => {
-    setRows((prev) => prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)));
+    persistRows(rows.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)));
     setEditCampaign(null);
     setViewCampaign(updated);
     toast.success(`Campaign "${updated.name}" updated.`);
@@ -273,21 +210,19 @@ export default function CampaignManagementPage() {
   const toggleStatus = (id) => {
     const row = rows.find((r) => r.id === id);
     if (!row) return;
-    const next = row.status === "Active" ? "Stop Manually" : "Active";
-    setRows((prev) => prev.map((r) => (r.id !== id ? r : { ...r, status: next })));
-    toast.success(`${row.name} ${next === "Active" ? "started" : "stopped"}.`);
+    const nextStatus = row.status === "Active" ? "Stop Manually" : "Active";
+    persistRows(rows.map((r) => (r.id !== id ? r : { ...r, status: nextStatus })));
+    toast.success(`${row.name} ${nextStatus === "Active" ? "started" : "stopped"}.`);
   };
 
   const duplicateRow = (row) => {
-    setRows((prev) => {
-      const id = Math.max(...prev.map((r) => r.id)) + 1;
-      return [...prev, { ...row, id, name: `${row.name} (Copy)`, status: "Not Started" }];
-    });
+    const id = Math.max(0, ...rows.map((r) => Number(r.id) || 0)) + 1;
+    persistRows([...rows, { ...row, id, name: `${row.name} (Copy)`, status: "Not Started" }]);
     toast.info(`${row.name} duplicated.`);
   };
 
   const deleteRow = (row) => {
-    setRows((prev) => prev.filter((r) => r.id !== row.id));
+    persistRows(removeCampaign(row.id));
     toast.error(`${row.name} deleted.`);
   };
 
