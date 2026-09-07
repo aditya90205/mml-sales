@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -8,9 +8,7 @@ import {
   Sparkles,
   CheckSquare,
   Users2,
-  Clock,
-  MapPin,
-  Video,
+  Pencil,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../components/ui/Modal";
@@ -18,10 +16,10 @@ import Modal from "../components/ui/Modal";
 /* ───────────────────────── Categories ───────────────────────── */
 
 const CATEGORIES = {
-  event: { label: "Event", dot: "#D97706", bg: "#FDECEE", text: "#B0223A" },
-  task: { label: "Task", dot: "#8B5CF6", bg: "#F1EEFE", text: "#6D3FD6" },
-  meeting: { label: "Meetings & Appointments", dot: "#16A34A", bg: "#E7F8EF", text: "#15803D" },
-  other: { label: "Others", dot: "#3B82F6", bg: "#E8F2FE", text: "#1D4ED8" },
+  event: { label: "Event", dot: "#A02868", bg: "#FDECF3", text: "#A02868", border: "#BB8D5833" },
+  task: { label: "Task", dot: "#7C6CB0", bg: "#F5EFFC", text: "#7C6CB0", border: "#7C6CB033" },
+  meeting: { label: "Meetings & Appointments", dot: "#41703D", bg: "#F6FFF5", text: "#41703D", border: "#41703D33" },
+  other: { label: "Others", dot: "#6F7886", bg: "#EEEEE", text: "#6F7886", border: "#6F788633"},
 };
 
 /* ───────────────────────── Date helpers ───────────────────────── */
@@ -60,49 +58,209 @@ function fmtTime(h, m = 0) {
   const hour12 = h % 12 === 0 ? 12 : h % 12;
   return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
 }
+function fmtDate(d) {
+  if (!d) return "—";
+  const date = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(date.getTime())) return "—";
+  return `${String(date.getDate()).padStart(2, "0")}-${String(date.getMonth() + 1).padStart(2, "0")}-${date.getFullYear()}`;
+}
+function toDateInput(d) {
+  const date = d instanceof Date ? d : new Date(d);
+  return date.toISOString().slice(0, 10);
+}
+
+const PRIORITY_OPTIONS = ["Critical", "High", "Medium", "Low"];
+const STAGE_OPTIONS = ["New", "In Progress", "Review", "Blocked", "Done"];
+const PRIORITY_STYLES = {
+  Critical: { color: "#E8395B" },
+  High: { color: "#F59E0B" },
+  Medium: { color: "#3B82F6" },
+  Low: { color: "#16A34A" },
+};
 
 /* ───────────────────────── Mock data ───────────────────────── */
 
 const TODAY = new Date();
 const ANCHOR = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
 
-function mk(dayOffset, startH, endH, title, category, meta) {
+function mk(dayOffset, startH, endH, title, category, meta = {}) {
+  const date = addDays(startOfWeek(ANCHOR), dayOffset);
   return {
     id: `${dayOffset}-${startH}-${title}`,
-    date: addDays(startOfWeek(ANCHOR), dayOffset),
+    date,
     startH,
     endH,
     title,
     category,
-    meta,
+    meta: {
+      priority: "Medium",
+      clientRelated: false,
+      client: "",
+      assignees: ["Priya Sharma"],
+      stage: "New",
+      dueDate: addDays(date, 3),
+      stars: 10,
+      description: "",
+      ...meta,
+    },
   };
 }
 
 const INITIAL_EVENTS = [
-  mk(0, 13, 15, "Client Meeting with ABC Pvt. Ltd", "meeting", { link: "Join on Google Meet" }),
-  mk(0, 15, 16, "Team Follow-up Call", "task"),
-  mk(0, 17, 18, "Send Proposal to Client", "other"),
-  mk(1, 9, 10, "Review Sales Dashboard", "other"),
-  mk(1, 10, 11, "Share Invoice with Client", "other"),
-  mk(1, 11, 12, "Prepare Client Report", "task"),
-  mk(1, 14, 16, "Product Launch Event", "event", { location: "Main Hall" }),
-  mk(2, 9, 11, "Project Update Meeting", "meeting", { link: "Join on Google Meet" }),
-  mk(2, 11, 12, "Follow up on Payment", "task"),
-  mk(2, 14, 16, "Project Update Meeting", "meeting", { link: "Join on Google Meet" }),
-  mk(2, 16, 17, "Team Follow-up Call", "task"),
-  mk(3, 9, 10, "Prepare Client Report", "task"),
-  mk(3, 10, 12, "Strategy Meeting with Marketing Team", "meeting", { link: "Join on Google Meet" }),
-  mk(3, 12, 13, "Prepare Monthly Report", "task"),
-  mk(4, 9, 10, "Prepare Client Report", "task"),
-  mk(4, 11, 13, "Product Launch Event", "event", { location: "Main Hall" }),
-  mk(4, 13, 15, "Client Meeting with ABC Pvt. Ltd", "meeting", { link: "Join on Google Meet" }),
-  mk(4, 17, 18, "Update Meeting Notes", "other"),
-  mk(5, 9, 10, "Check Client Feedback", "other"),
-  mk(5, 11, 13, "Strategy Meeting with Marketing Team", "meeting", { link: "Join on Google Meet" }),
-  mk(5, 15, 16, "Send Event Invites to Clients", "other"),
-  mk(6, 9, 10, "Prepare Pricing Proposal", "task"),
-  mk(6, 11, 12, "Call Back Pending Leads", "other"),
-  mk(6, 16, 17, "Prepare Client Report", "task"),
+  mk(0, 13, 15, "Client Meeting with ABC Pvt. Ltd", "meeting", {
+    link: "Join on Google Meet",
+    clientRelated: true,
+    client: "ABC Pvt. Ltd",
+    assignees: ["Aditya Sharma"],
+    priority: "High",
+    stage: "In Progress",
+    stars: 20,
+    description: "Discuss package options and next steps with ABC Pvt. Ltd.",
+  }),
+  mk(0, 15, 16, "Team Follow-up Call", "task", {
+    assignees: ["Rahul Verma"],
+    stage: "In Progress",
+    description: "Align on open follow-ups from yesterday’s client calls.",
+  }),
+  mk(0, 17, 18, "Send Proposal to Client", "other", {
+    clientRelated: true,
+    client: "Sethi Family",
+    assignees: ["Sana Iqbal"],
+    priority: "High",
+    stars: 15,
+    description: "Email the revised pricing proposal and wait for confirmation.",
+  }),
+  mk(1, 9, 10, "Review Sales Dashboard", "task", {
+    assignees: ["Priya Sharma"],
+    priority: "Medium",
+    stage: "New",
+    stars: 12,
+    description: "Review yesterday’s pipeline metrics and flag any stuck deals.",
+  }),
+  mk(1, 10, 11, "Share Invoice with Client", "task", {
+    clientRelated: true,
+    client: "Agarwal Contract",
+    assignees: ["Dev Malhotra"],
+    priority: "Critical",
+    stars: 18,
+    description: "Send the pending invoice and confirm receipt.",
+  }),
+  mk(1, 11, 12, "Prepare Client Report", "task", {
+    clientRelated: true,
+    client: "Malhotra Family",
+    assignees: ["Neha Kapoor"],
+    description: "Compile weekly activity summary for the client review.",
+  }),
+  mk(1, 14, 16, "Product Launch Event", "event", {
+    location: "Main Hall",
+    assignees: ["Ishaan Roy", "Priya Sharma"],
+    priority: "High",
+    stage: "In Progress",
+    stars: 25,
+    description: "Host the product launch session in the main hall.",
+  }),
+  mk(2, 9, 11, "Project Update Meeting", "meeting", {
+    link: "Join on Google Meet",
+    assignees: ["Aditya Sharma"],
+    stage: "Review",
+    description: "Weekly project status sync with the sales leads.",
+  }),
+  mk(2, 11, 12, "Follow up on Payment", "task", {
+    clientRelated: true,
+    client: "Kapoor Family",
+    assignees: ["Rahul Verma"],
+    priority: "Critical",
+    stars: 22,
+    description: "Follow up on the outstanding payment and share payment link.",
+  }),
+  mk(2, 14, 16, "Project Update Meeting", "meeting", {
+    link: "Join on Google Meet",
+    assignees: ["Sana Iqbal"],
+    description: "Afternoon sync on pipeline blockers.",
+  }),
+  mk(2, 16, 17, "Team Follow-up Call", "task", {
+    assignees: ["Priya Sharma"],
+    description: "Wrap up remaining action items from morning standup.",
+  }),
+  mk(3, 9, 10, "Prepare Client Report", "task", {
+    clientRelated: true,
+    client: "Bansal Family",
+    assignees: ["Neha Kapoor"],
+  }),
+  mk(3, 10, 12, "Strategy Meeting with Marketing Team", "meeting", {
+    link: "Join on Google Meet",
+    assignees: ["Aditya Sharma", "Sana Iqbal"],
+    priority: "High",
+    stage: "In Progress",
+    stars: 20,
+    description: "Align campaign calendar with sales follow-up capacity.",
+  }),
+  mk(3, 12, 13, "Prepare Monthly Report", "task", {
+    assignees: ["Dev Malhotra"],
+    stage: "Review",
+    stars: 16,
+    description: "Draft the monthly sales performance report.",
+  }),
+  mk(4, 9, 10, "Prepare Client Report", "task", {
+    clientRelated: true,
+    client: "Gupta Family",
+    assignees: ["Neha Kapoor"],
+  }),
+  mk(4, 11, 13, "Product Launch Event", "event", {
+    location: "Main Hall",
+    assignees: ["Ishaan Roy"],
+    priority: "High",
+    stars: 25,
+  }),
+  mk(4, 13, 15, "Client Meeting with ABC Pvt. Ltd", "meeting", {
+    link: "Join on Google Meet",
+    clientRelated: true,
+    client: "ABC Pvt. Ltd",
+    assignees: ["Aditya Sharma"],
+    priority: "High",
+  }),
+  mk(4, 17, 18, "Update Meeting Notes", "other", {
+    assignees: ["Priya Sharma"],
+    description: "Capture and share notes from today’s client meetings.",
+  }),
+  mk(5, 9, 10, "Check Client Feedback", "task", {
+    clientRelated: true,
+    client: "Sethi Family",
+    assignees: ["Rahul Verma"],
+    stage: "In Progress",
+    description: "Review feedback forms submitted this week.",
+  }),
+  mk(5, 11, 13, "Strategy Meeting with Marketing Team", "meeting", {
+    link: "Join on Google Meet",
+    assignees: ["Sana Iqbal"],
+    priority: "High",
+  }),
+  mk(5, 15, 16, "Send Event Invites to Clients", "other", {
+    clientRelated: true,
+    client: "Multiple",
+    assignees: ["Neha Kapoor"],
+    stars: 14,
+    description: "Send invites for next week’s community event.",
+  }),
+  mk(6, 9, 10, "Prepare Pricing Proposal", "task", {
+    clientRelated: true,
+    client: "Agarwal Contract",
+    assignees: ["Dev Malhotra"],
+    priority: "Critical",
+    stars: 18,
+    description: "Finalize slab pricing options for Agarwal Contract.",
+  }),
+  mk(6, 11, 12, "Call Back Pending Leads", "task", {
+    assignees: ["Priya Sharma"],
+    priority: "High",
+    stars: 15,
+    description: "Return calls to leads marked pending from Friday.",
+  }),
+  mk(6, 16, 17, "Prepare Client Report", "task", {
+    clientRelated: true,
+    client: "Malhotra Family",
+    assignees: ["Neha Kapoor"],
+  }),
 ];
 
 const INITIAL_UNSCHEDULED = [
@@ -134,24 +292,25 @@ function CategoryChip({ id, checked, onToggle, count }) {
 }
 
 function EventBlock({ ev, onClick, dense }) {
+  const cat = CATEGORIES[ev.category] || CATEGORIES.other;
   return (
     <button
       type="button"
       onClick={() => onClick(ev)}
       className="w-full text-left rounded-lg px-2.5 py-2 hover:brightness-[0.97] transition-[filter] shrink-0"
-      style={{ backgroundColor: "#EFF6FF", border: "1px solid #386FB833" }}
+      style={{ backgroundColor: cat.bg, border: `1px solid ${cat.border}` }}
     >
       {!dense && (
-        <p className="text-[11px] font-semibold text-[#386FB8]">
+        <p className="text-[11px] font-semibold" style={{ color: cat.text }}>
           {fmtTime(ev.startH)} - {fmtTime(ev.endH)}
         </p>
       )}
-      <p className="text-[12.5px] font-bold text-[#41703D] leading-snug mt-0.5">{ev.title}</p>
+      <p className="text-[12.5px] font-bold leading-snug mt-0.5" style={{ color: cat.text }}>{ev.title}</p>
       {!dense && ev.meta?.location && (
         <p className="text-[11px] text-[#6B7280] mt-0.5">({ev.meta.location})</p>
       )}
       {!dense && ev.meta?.link && (
-        <p className="text-[11px] font-semibold text-[#386FB8] mt-1">
+        <p className="text-[11px] font-semibold mt-1" style={{ color: cat.text }}>
           {ev.meta.link}
         </p>
       )}
@@ -159,48 +318,316 @@ function EventBlock({ ev, onClick, dense }) {
   );
 }
 
-function EventDetailModal({ event, onClose }) {
-  if (!event) return null;
-  const cat = CATEGORIES[event.category];
+function DetailField({ label, children }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{label}</p>
+      <div className="text-[13px] font-semibold text-[#111] mt-1.5 break-words">{children}</div>
+    </div>
+  );
+}
+
+const INPUT =
+  "w-full h-9 px-3 rounded-xl bg-white border border-black/10 text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/40 transition-colors";
+
+function buildFormFromEvent(event) {
+  const meta = event.meta || {};
+  return {
+    title: event.title || "",
+    priority: meta.priority || "Medium",
+    clientRelated: Boolean(meta.clientRelated),
+    client: meta.client || "",
+    assignees: Array.isArray(meta.assignees) ? meta.assignees.join(", ") : meta.assignees || "",
+    stage: meta.stage || "New",
+    startDate: toDateInput(event.date),
+    dueDate: toDateInput(meta.dueDate || addDays(event.date, 3)),
+    stars: meta.stars ?? 10,
+    startH: event.startH,
+    endH: event.endH,
+    description: meta.description || "",
+    location: meta.location || "",
+    link: meta.link || "",
+  };
+}
+
+function EventDetailModal({ event, onClose, onSave }) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState(null);
+
+  useEffect(() => {
+    if (!event) return;
+    setEditing(false);
+    setForm(buildFormFromEvent(event));
+  }, [event]);
+
+  if (!event || !form) return null;
+
+  const cat = CATEGORIES[event.category] || CATEGORIES.other;
+  const meta = event.meta || {};
+  const assignees = Array.isArray(meta.assignees) ? meta.assignees : meta.assignees ? [meta.assignees] : [];
+  const priorityStyle = PRIORITY_STYLES[meta.priority] || PRIORITY_STYLES.Medium;
+
+  const set = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleClose = () => {
+    setEditing(false);
+    onClose();
+  };
+
+  const handleSave = () => {
+    if (!form.title.trim()) {
+      toast.error("Please enter a title.");
+      return;
+    }
+    if (Number(form.endH) <= Number(form.startH)) {
+      toast.error("End time must be after start time.");
+      return;
+    }
+    const assigneeList = form.assignees
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    onSave({
+      ...event,
+      title: form.title.trim(),
+      date: new Date(`${form.startDate}T00:00:00`),
+      startH: Number(form.startH),
+      endH: Number(form.endH),
+      meta: {
+        ...meta,
+        priority: form.priority,
+        clientRelated: form.clientRelated,
+        client: form.clientRelated ? form.client.trim() : "",
+        assignees: assigneeList,
+        stage: form.stage,
+        dueDate: new Date(`${form.dueDate}T00:00:00`),
+        stars: Number(form.stars) || 0,
+        description: form.description.trim(),
+        location: form.location.trim(),
+        link: form.link.trim(),
+      },
+    });
+    setEditing(false);
+    toast.success("Details updated.");
+  };
+
   return (
     <Modal
       open={!!event}
-      onClose={onClose}
-      title={event.title}
-      subtitle={cat.label}
-      icon={<Clock size={16} />}
-      iconBg={cat.bg}
-      iconColor={cat.text}
+      onClose={handleClose}
+      title="Task Details"
+      subtitle={editing ? form.title || event.title : event.title}
+      width="max-w-2xl"
       footer={
-        <button
-          type="button"
-          onClick={onClose}
-          className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-        >
-          Close
-        </button>
+        editing ? (
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setForm(buildFormFromEvent(event));
+                setEditing(false);
+              }}
+              className="h-9 px-4 rounded-xl border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+            >
+              Save
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="h-9 px-4 rounded-xl border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors inline-flex items-center gap-1.5"
+            >
+              <Pencil size={13} /> Edit
+            </button>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+            >
+              Close
+            </button>
+          </>
+        )
       }
     >
-      <div className="flex flex-col gap-3 text-sm">
-        <div className="flex items-center gap-2.5 text-[#374151]">
-          <Clock size={15} className="text-[#9CA3AF] shrink-0" />
-          {event.date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
-          {" · "}
-          {fmtTime(event.startH)} - {fmtTime(event.endH)}
+      {editing ? (
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+            <div>
+              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Title</label>
+              <input value={form.title} onChange={(e) => set("title", e.target.value)} className={INPUT} />
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Priority</label>
+              <select value={form.priority} onChange={(e) => set("priority", e.target.value)} className={INPUT}>
+                {PRIORITY_OPTIONS.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Client Related</label>
+              <select
+                value={form.clientRelated ? "Yes" : "No"}
+                onChange={(e) => set("clientRelated", e.target.value === "Yes")}
+                className={INPUT}
+              >
+                <option>No</option>
+                <option>Yes</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Client</label>
+              <input
+                value={form.client}
+                onChange={(e) => set("client", e.target.value)}
+                disabled={!form.clientRelated}
+                placeholder={form.clientRelated ? "Client name" : "—"}
+                className={`${INPUT} disabled:bg-[#F7F8FA] disabled:text-[#9CA3AF]`}
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Assignees</label>
+              <input
+                value={form.assignees}
+                onChange={(e) => set("assignees", e.target.value)}
+                placeholder="Comma-separated names"
+                className={INPUT}
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Stage</label>
+              <select value={form.stage} onChange={(e) => set("stage", e.target.value)} className={INPUT}>
+                {STAGE_OPTIONS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Start Date</label>
+              <input type="date" value={form.startDate} onChange={(e) => set("startDate", e.target.value)} className={INPUT} />
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Due Date</label>
+              <input type="date" value={form.dueDate} onChange={(e) => set("dueDate", e.target.value)} className={INPUT} />
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Stars (XP)</label>
+              <input
+                type="number"
+                min={0}
+                value={form.stars}
+                onChange={(e) => set("stars", e.target.value)}
+                className={INPUT}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Start</label>
+                <select value={form.startH} onChange={(e) => set("startH", Number(e.target.value))} className={INPUT}>
+                  {HOURS.map((h) => (
+                    <option key={h} value={h}>{fmtHour(h)}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">End</label>
+                <select value={form.endH} onChange={(e) => set("endH", Number(e.target.value))} className={INPUT}>
+                  {HOURS.concat(19).map((h) => (
+                    <option key={h} value={h}>{fmtHour(h)}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+          {(event.category === "event" || event.category === "meeting") && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {event.category === "event" && (
+                <div>
+                  <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Location</label>
+                  <input value={form.location} onChange={(e) => set("location", e.target.value)} className={INPUT} />
+                </div>
+              )}
+              {event.category === "meeting" && (
+                <div>
+                  <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Meeting Link</label>
+                  <input value={form.link} onChange={(e) => set("link", e.target.value)} className={INPUT} />
+                </div>
+              )}
+            </div>
+          )}
+          <div>
+            <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Description</label>
+            <textarea
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2.5 rounded-xl bg-white border border-black/10 text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/40 transition-colors resize-y min-h-[80px]"
+            />
+          </div>
         </div>
-        {event.meta?.location && (
-          <div className="flex items-center gap-2.5 text-[#374151]">
-            <MapPin size={15} className="text-[#9CA3AF] shrink-0" />
-            {event.meta.location}
+      ) : (
+        <div className="flex flex-col gap-5">
+          <div className="inline-flex items-center gap-1.5">
+            <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: cat.dot }} />
+            <span className="text-[13px] font-semibold" style={{ color: cat.text }}>{cat.label}</span>
           </div>
-        )}
-        {event.meta?.link && (
-          <div className="flex items-center gap-2.5 text-[#3B82F6] font-medium">
-            <Video size={15} className="text-[#9CA3AF] shrink-0" />
-            {event.meta.link}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
+            <DetailField label="Title">{event.title}</DetailField>
+            <DetailField label="Priority">
+              <span style={{ color: priorityStyle.color }}>{meta.priority || "Medium"}</span>
+            </DetailField>
+            <DetailField label="Client Related">{meta.clientRelated ? "Yes" : "No"}</DetailField>
+            <DetailField label="Client">{meta.clientRelated && meta.client ? meta.client : "—"}</DetailField>
+            <DetailField label="Assignees">
+              {assignees.length === 0 ? (
+                "—"
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {assignees.map((name) => (
+                    <span
+                      key={name}
+                      className="inline-flex items-center px-2.5 py-1 rounded-lg bg-[#F1F2F4] text-[12px] font-semibold text-[#374151]"
+                    >
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </DetailField>
+            <DetailField label="Stage">{meta.stage || "New"}</DetailField>
+            <DetailField label="Start Date">{fmtDate(event.date)}</DetailField>
+            <DetailField label="Due Date">{fmtDate(meta.dueDate || addDays(event.date, 3))}</DetailField>
+            <DetailField label="Stars (XP)">{meta.stars ?? 10}</DetailField>
+            <DetailField label="Scheduled Time">
+              {fmtTime(event.startH)} – {fmtTime(event.endH)}
+            </DetailField>
+            {meta.location && <DetailField label="Location">{meta.location}</DetailField>}
+            {meta.link && (
+              <DetailField label="Meeting Link">
+                <span className="text-[#3B82F6]">{meta.link}</span>
+              </DetailField>
+            )}
           </div>
-        )}
-      </div>
+
+          <DetailField label="Description">
+            <span className="font-medium text-[#374151]">
+              {meta.description || "No description added."}
+            </span>
+          </DetailField>
+        </div>
+      )}
     </Modal>
   );
 }
@@ -228,8 +655,8 @@ function CreateEventModal({ open, onClose, onCreate, defaultDate }) {
       title="Create event"
       subtitle="Add a new item to the calendar"
       icon={<Plus size={16} />}
-      iconBg="#FDECEE"
-      iconColor="#B0223A"
+      iconBg={CATEGORIES.event.bg}
+      iconColor={CATEGORIES.event.text}
       footer={
         <>
           <button
@@ -512,7 +939,16 @@ export default function CalendarPage() {
         endH: hour + 1,
         title: item.title,
         category: "task",
-        meta: {},
+        meta: {
+          priority: "Medium",
+          clientRelated: false,
+          client: "",
+          assignees: ["Priya Sharma"],
+          stage: "New",
+          dueDate: addDays(day, 3),
+          stars: 10,
+          description: `Scheduled from unscheduled: ${item.type} · ${item.duration}`,
+        },
       },
     ]);
     setUnscheduled((prev) => prev.filter((u) => u.id !== item.id));
@@ -709,13 +1145,37 @@ export default function CalendarPage() {
         )}
       </div>
 
-      <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+      <EventDetailModal
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        onSave={(updated) => {
+          setEvents((prev) => prev.map((ev) => (ev.id === updated.id ? updated : ev)));
+          setSelectedEvent(updated);
+        }}
+      />
       <CreateEventModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         defaultDate={anchorDate}
         onCreate={(ev) =>
-          setEvents((prev) => [...prev, { id: `new-${Date.now()}`, meta: {}, ...ev }])
+          setEvents((prev) => [
+            ...prev,
+            {
+              id: `new-${Date.now()}`,
+              ...ev,
+              meta: {
+                priority: "Medium",
+                clientRelated: false,
+                client: "",
+                assignees: ["Priya Sharma"],
+                stage: "New",
+                dueDate: addDays(ev.date, 3),
+                stars: 10,
+                description: "",
+                ...(ev.meta || {}),
+              },
+            },
+          ])
         }
       />
     </div>
@@ -760,12 +1220,18 @@ function WeekDayGrid({ days, eventsFor, onEventClick, dragOverCell, setDragOverC
             return (
               <div key={d.toISOString()} className="flex items-center justify-center gap-1.5 py-2 border-r border-black/8 last:border-r-0 flex-wrap px-1">
                 {taskCount > 0 && (
-                  <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[#6D3FD6] bg-[#F1EEFE] px-2 py-1 rounded-md">
+                  <span
+                    className="inline-flex items-center gap-1 text-[10.5px] font-semibold px-2 py-1 rounded-md"
+                    style={{ color: CATEGORIES.task.text, backgroundColor: CATEGORIES.task.bg }}
+                  >
                     <CheckSquare size={11} /> {taskCount} Tasks
                   </span>
                 )}
                 {meetingCount > 0 && (
-                  <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[#15803D] bg-[#E7F8EF] px-2 py-1 rounded-md">
+                  <span
+                    className="inline-flex items-center gap-1 text-[10.5px] font-semibold px-2 py-1 rounded-md"
+                    style={{ color: CATEGORIES.meeting.text, backgroundColor: CATEGORIES.meeting.bg }}
+                  >
                     <Users2 size={11} /> {meetingCount} Meeting{meetingCount > 1 ? "s" : ""}
                   </span>
                 )}
