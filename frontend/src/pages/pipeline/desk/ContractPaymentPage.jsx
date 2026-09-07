@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Download, Share2 } from "lucide-react";
 import { toast } from "react-toastify";
 import StatusPill from "../../../components/common/StatusPill";
 import { useTableSort } from "../../../components/common/useTableSort.jsx";
@@ -14,6 +15,7 @@ import {
   Td,
   TimelineItem,
 } from "../../../components/pipeline/deskUi";
+import fileIcon from "../../../assets/file.png";
 
 const CONSENTS = [
   { title: "Data privacy notification", note: "Accepted by the client on 29 Jun, 4:02 PM. Copy filed to the deal.", status: "Accepted", tone: "green", done: true },
@@ -22,9 +24,36 @@ const CONSENTS = [
 ];
 
 const PAYMENTS = [
-  { date: "29 Jun 2026", mode: "UPI", reference: "MML-R-88213", amount: "₹15,000", collectedBy: "Payment link", status: "Received", tone: "green" },
-  { date: "12 Jul 2026", mode: "Cheque", reference: "MML-R-88407", amount: "₹20,000", collectedBy: "Rohit Khanna", status: "Cleared", tone: "green" },
-  { date: "Due 02 Aug", mode: "Payment link", reference: "MML-R-88512", amount: "₹18,100", collectedBy: "—", status: "Awaiting", tone: "amber" },
+  {
+    date: "29 Jun 2026",
+    mode: "UPI",
+    reference: "MML-R-88213",
+    amount: "₹15,000",
+    collectedBy: "Payment link",
+    status: "Received",
+    tone: "green",
+    invoice: { name: "Invoice-MML-R-88213.pdf", shared: true, sharedNote: "Sent by Rohit K. · 29 Jun, 4:18 PM" },
+  },
+  {
+    date: "12 Jul 2026",
+    mode: "Cheque",
+    reference: "MML-R-88407",
+    amount: "₹20,000",
+    collectedBy: "Rohit Khanna",
+    status: "Cleared",
+    tone: "green",
+    invoice: { name: "Invoice-MML-R-88407.pdf", shared: true, sharedNote: "Shared on WhatsApp · 12 Jul, 11:05 AM" },
+  },
+  {
+    date: "Due 02 Aug",
+    mode: "Payment link",
+    reference: "MML-R-88512",
+    amount: "₹18,100",
+    collectedBy: "—",
+    status: "Awaiting",
+    tone: "amber",
+    invoice: { name: "Invoice-MML-R-88512.pdf", shared: false, sharedNote: "Not shared yet" },
+  },
 ];
 
 const COLUMNS = [
@@ -34,6 +63,7 @@ const COLUMNS = [
   { label: "Amount", key: "amount" },
   { label: "Collected by", key: "collectedBy" },
   { label: "Status", key: "status" },
+  { label: "Invoice", key: "invoice", unsortable: true },
 ];
 
 const CONTRACT_TIMELINE = [
@@ -43,10 +73,52 @@ const CONTRACT_TIMELINE = [
   { tone: "green", title: "Contract generated from quote v2", note: "Premium package — ₹53,100 after approved discount and GST.", time: "29 Jun 2026, 5:40 PM — you" },
 ];
 
+function InvoiceCell({ invoice, onShared }) {
+  if (!invoice) return <span className="text-[#9CA3AF]">—</span>;
+
+  return (
+    <div className="flex flex-col gap-1.5 min-w-[180px]">
+      <div className="inline-flex items-center gap-1.5 min-w-0">
+        <img src={fileIcon} alt="" className="size-4 shrink-0 object-contain" />
+        <span className="text-[12px] font-semibold text-[#111] truncate" title={invoice.name}>
+          {invoice.name}
+        </span>
+      </div>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => toast.success(`Downloading ${invoice.name}...`)}
+          className="inline-flex items-center gap-1 h-7 px-2 rounded-lg border border-black/10 text-[11px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+          title="Download invoice PDF"
+        >
+          <Download size={12} />
+          Download
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            onShared?.(invoice.name);
+            toast.success(invoice.shared ? `${invoice.name} re-shared with client.` : `${invoice.name} sent & shared with client.`);
+          }}
+          className="inline-flex items-center gap-1 h-7 px-2 rounded-lg border border-[#7A0A17]/25 text-[11px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors"
+          title="Send & share invoice PDF"
+        >
+          <Share2 size={12} />
+          {invoice.shared ? "Reshare" : "Send"}
+        </button>
+      </div>
+      <p className={`text-[10px] ${invoice.shared ? "text-[#16A34A]" : "text-[#9CA3AF]"}`}>
+        {invoice.sharedNote}
+      </p>
+    </div>
+  );
+}
+
 export default function ContractPaymentPage() {
   const [dealFilter, setDealFilter] = useState("deal");
   const [modeFilter, setModeFilter] = useState("all");
   const [consents, setConsents] = useState(CONSENTS);
+  const [payments, setPayments] = useState(PAYMENTS);
 
   const consentDone = consents.filter((i) => i.done).length;
   const consentTotal = consents.length;
@@ -61,9 +133,26 @@ export default function ContractPaymentPage() {
     );
   };
 
+  const markInvoiceShared = (fileName) => {
+    setPayments((prev) =>
+      prev.map((row) =>
+        row.invoice?.name === fileName
+          ? {
+              ...row,
+              invoice: {
+                ...row.invoice,
+                shared: true,
+                sharedNote: "Sent & shared by sales · just now",
+              },
+            }
+          : row
+      )
+    );
+  };
+
   const rows = useMemo(
-    () => PAYMENTS.filter((r) => modeFilter === "all" || r.mode === modeFilter),
-    [modeFilter]
+    () => payments.filter((r) => modeFilter === "all" || r.mode === modeFilter),
+    [modeFilter, payments]
   );
   const { sorted, sort, toggle } = useTableSort(rows, { defaultKey: "date" });
 
@@ -72,6 +161,10 @@ export default function ContractPaymentPage() {
       title="Contract, E-Signature & Payment"
       actions={
         <>
+          <OutlineButton onClick={() => toast.success("Downloading consolidated invoice PDF...")}>
+            <img src={fileIcon} alt="" className="size-3.5 object-contain" />
+            Invoice PDF
+          </OutlineButton>
           <OutlineButton onClick={() => toast.info("Opening payment history...")}>Payment history</OutlineButton>
           <PrimaryButton onClick={() => toast.info("P6 stays locked until the ₹18,100 balance clears.")}>
             Advance to P6
@@ -91,7 +184,7 @@ export default function ContractPaymentPage() {
 
       <SectionCard
         title="Payments"
-        subtitle="Part payment is allowed. P6 cannot open until the balance clears."
+        subtitle="Part payment is allowed. P6 cannot open until the balance clears. Invoice PDFs can be downloaded or sent & shared by sales."
         action={
           <>
             <FilterSelect
@@ -126,6 +219,9 @@ export default function ContractPaymentPage() {
               <Td>{row.collectedBy}</Td>
               <Td>
                 <StatusPill tone={row.tone}>{row.status}</StatusPill>
+              </Td>
+              <Td>
+                <InvoiceCell invoice={row.invoice} onShared={markInvoiceShared} />
               </Td>
             </tr>
           ))}
