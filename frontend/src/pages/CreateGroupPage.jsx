@@ -135,6 +135,12 @@ export default function CreateGroupPage() {
     toast.success(`${matched.length} matching client${matched.length === 1 ? "" : "s"} found.`);
   };
 
+  const runManualQuery = () => {
+    const matched = CLIENTS.filter((c) => matchesAll(c, conditions, matchMode));
+    setResults(matched);
+    toast.success(`${matched.length} matching client${matched.length === 1 ? "" : "s"} found.`);
+  };
+
   const handleSaveGroup = () => {
     if (!groupName.trim()) {
       toast.error("Please name this group.");
@@ -183,6 +189,13 @@ export default function CreateGroupPage() {
               className="h-12 px-6 rounded-lg bg-[#7A0A17] text-white text-[14px] font-bold hover:bg-[#640712] transition-colors shrink-0"
             >
               Build query
+            </button>
+            <button
+              type="button"
+              onClick={runManualQuery}
+              className="h-12 px-6 rounded-lg bg-white border border-[#7A0A17]/30 text-[#7A0A17] text-[14px] font-bold hover:bg-[#FCF5F6] transition-colors shrink-0"
+            >
+              Run manual query
             </button>
           </div>
         </div>
