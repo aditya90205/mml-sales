@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Edit, Eye, Trash2 } from "lucide-react";
+import { AlertTriangle, Edit, Eye, Star, Trash2 } from "lucide-react";
 import Modal from "../ui/Modal";
 
 const FIELD =
   "w-full border border-black/15 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] outline-none focus:border-[#7A0A17] bg-white";
+
+const TEXTAREA =
+  "w-full border border-black/15 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17] bg-white resize-y min-h-[88px]";
 
 function Field({ label, children, full = false }) {
   return (
@@ -29,6 +32,53 @@ function StatusBadge({ status }) {
       : "bg-[#F3F4F6] text-[#4B5563] border-black/10";
   return (
     <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-lg border ${tone}`}>{status || "—"}</span>
+  );
+}
+
+function RequiredLabel({ children }) {
+  return (
+    <p className="text-[13px] font-bold text-[#111]">
+      {children}
+      <span className="text-[#DC2626]"> *</span>
+    </p>
+  );
+}
+
+function StarRating({ value, onChange, size = 28 }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      {[1, 2, 3, 4, 5].map((n) => {
+        const filled = n <= value;
+        return (
+          <button
+            key={n}
+            type="button"
+            onClick={() => onChange?.(n)}
+            className="p-0.5 rounded-md hover:scale-105 transition-transform"
+            aria-label={`Rate ${n} star${n > 1 ? "s" : ""}`}
+          >
+            <Star
+              size={size}
+              className={filled ? "text-[#F5C542]" : "text-[#F5C542]/55"}
+              fill={filled ? "#F5C542" : "none"}
+              strokeWidth={1.6}
+            />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function RatingHeader({ title, value }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <h3 className="text-[14px] font-bold text-[#111]">{title}</h3>
+      <span className="inline-flex items-center gap-1 text-[14px] font-bold text-[#111]">
+        {value}
+        <Star size={14} className="text-[#F5C542]" fill="#F5C542" strokeWidth={0} />
+      </span>
+    </div>
   );
 }
 
@@ -390,7 +440,142 @@ export function GoalEditModal({ open, onClose, goal, onSave }) {
   );
 }
 
-/** Reserved for Goals graph action — implement when product defines the chart content. */
-export function GoalGraphPlaceholder() {
-  return null;
+/** Conduct review / appraisal modal opened from Goals & Reviews action column. */
+export function GoalConductReviewModal({ open, onClose, goal, onSave }) {
+  const [selfRating, setSelfRating] = useState(3);
+  const [selfComments, setSelfComments] = useState("");
+  const [managerRating, setManagerRating] = useState(3);
+  const [managerComments, setManagerComments] = useState("");
+  const [progress, setProgress] = useState("");
+  const [remarks, setRemarks] = useState("");
+
+  useEffect(() => {
+    if (!open || !goal) return;
+    setSelfRating(goal.selfRating || 3);
+    setSelfComments(goal.selfComments || "");
+    setManagerRating(goal.managerRating || 3);
+    setManagerComments(goal.managerComments || "");
+    setProgress(goal.progress != null ? String(goal.progress) : "");
+    setRemarks(goal.remarks || "");
+  }, [open, goal]);
+
+  if (!goal) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!selfComments.trim() || !managerComments.trim() || !String(progress).trim() || !remarks.trim()) {
+      return;
+    }
+    onSave?.({
+      ...goal,
+      progress: Math.min(100, Math.max(0, Number(progress) || 0)),
+      remarks: remarks.trim(),
+      selfRating,
+      selfComments: selfComments.trim(),
+      managerRating,
+      managerComments: managerComments.trim(),
+    });
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={`Name of the Goal - ${goal.title}`}
+      subtitle="Success rate in achieving individual and team objectives"
+      width="max-w-xl"
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-10 px-4 rounded-xl border border-black/10 text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="goal-conduct-review-form"
+            className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            Save
+          </button>
+        </>
+      }
+    >
+      <form id="goal-conduct-review-form" onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-center gap-2 -mt-1">
+          <span className="inline-flex items-center h-7 px-2.5 rounded-full border border-black/10 bg-[#F9FAFB] text-[11px] font-semibold text-[#4B5563]">
+            Measurement: Percentage
+          </span>
+          <span className="inline-flex items-center h-7 px-2.5 rounded-full border border-black/10 bg-[#F9FAFB] text-[11px] font-semibold text-[#4B5563]">
+            Target: 90%
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-2.5">
+          <RatingHeader title="Myself Appraisal Rating" value={selfRating} />
+          <StarRating value={selfRating} onChange={setSelfRating} />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <RequiredLabel>My Comments &amp; Description</RequiredLabel>
+          <textarea
+            required
+            rows={3}
+            className={TEXTAREA}
+            placeholder="Add specific feedback"
+            value={selfComments}
+            onChange={(e) => setSelfComments(e.target.value)}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2.5">
+          <RatingHeader title="Manager Final Rating" value={managerRating} />
+          <StarRating value={managerRating} onChange={setManagerRating} />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <RequiredLabel>Manager Comments &amp; Description</RequiredLabel>
+          <textarea
+            required
+            rows={3}
+            className={TEXTAREA}
+            placeholder="Add specific feedback"
+            value={managerComments}
+            onChange={(e) => setManagerComments(e.target.value)}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <h3 className="text-[14px] font-bold text-[#111]">Update Goal Progress</h3>
+          <div className="flex flex-col gap-1.5">
+            <RequiredLabel>Progress (%)</RequiredLabel>
+            <input
+              required
+              type="number"
+              min="0"
+              max="100"
+              className={FIELD}
+              placeholder="Add specific feedback"
+              value={progress}
+              onChange={(e) => setProgress(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <RequiredLabel>Remarks</RequiredLabel>
+          <textarea
+            required
+            rows={3}
+            className={TEXTAREA}
+            placeholder="e.g Give reason why goals aren't achieved"
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+          />
+        </div>
+      </form>
+    </Modal>
+  );
 }

@@ -49,11 +49,13 @@ import TimesheetDetailsModal from "../components/hrms/TimesheetDetailsModal";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import {
   ConfirmDeleteModal,
+  GoalConductReviewModal,
   GoalEditModal,
   GoalViewModal,
   TrainingEditModal,
   TrainingViewModal,
 } from "../components/hrms/HrmsEntityModals.jsx";
+import conductReviewIcon from "../assets/conduct-review.png";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import yellowLoopIcon from "../assets/yellow-loop.png";
 import redBackIcon from "../assets/red-back.png";
@@ -1027,7 +1029,7 @@ export default function HrmsPage() {
   const [trainings, setTrainings] = useState(INITIAL_TRAININGS);
   const [goals, setGoals] = useState(INITIAL_GOALS);
   const [trainingModal, setTrainingModal] = useState(null); // { mode: 'view'|'edit'|'delete', item }
-  const [goalModal, setGoalModal] = useState(null); // { mode: 'view'|'edit'|'delete', item }
+  const [goalModal, setGoalModal] = useState(null); // { mode: 'view'|'edit'|'review'|'delete', item }
   const [searchTraining, setSearchTraining] = useState("");
   const [trainingPage, setTrainingPage] = useState(1);
   const [searchGoal, setSearchGoal] = useState("");
@@ -1172,6 +1174,12 @@ export default function HrmsPage() {
     setGoals((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
     setGoalModal(null);
     toast.success("Goal updated successfully.");
+  };
+
+  const handleSaveGoalReview = (updated) => {
+    setGoals((prev) => prev.map((g) => (g.id === updated.id ? { ...g, ...updated } : g)));
+    setGoalModal(null);
+    toast.success("Goal review saved successfully.");
   };
 
   const handleDeleteGoal = () => {
@@ -2436,12 +2444,12 @@ export default function HrmsPage() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => toast.info(`Viewing progress history for ${g.title}`)}
-                                className="size-7 rounded-lg bg-[#EEF0FE] text-[#6366F1] hover:bg-[#DCE0FC] grid place-items-center"
-                                title="Progress graph"
-                                aria-label={`Progress graph for ${g.title}`}
+                                onClick={() => setGoalModal({ mode: "review", item: g })}
+                                className="size-7 rounded-lg bg-[#EEF0FE] hover:bg-[#DCE0FC] grid place-items-center transition-colors"
+                                title="Conduct review"
+                                aria-label={`Conduct review for ${g.title}`}
                               >
-                                <BarChart3 size={13} />
+                                <img src={conductReviewIcon} alt="" className="size-3.5 object-contain" />
                               </button>
                               <button
                                 type="button"
@@ -3175,6 +3183,12 @@ export default function HrmsPage() {
         goal={goalModal?.item}
         onClose={() => setGoalModal(null)}
         onSave={handleSaveGoal}
+      />
+      <GoalConductReviewModal
+        open={goalModal?.mode === "review"}
+        goal={goalModal?.item}
+        onClose={() => setGoalModal(null)}
+        onSave={handleSaveGoalReview}
       />
       <ConfirmDeleteModal
         open={goalModal?.mode === "delete"}
