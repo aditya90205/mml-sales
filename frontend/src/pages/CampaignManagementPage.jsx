@@ -91,13 +91,10 @@ const INITIAL_CAMPAIGNS = [
 ];
 
 const LEADS_BY_CHANNEL = [
-  { label: "Instagram Ads", value: 118, color: "#7A0A17" },
-  { label: "Google Ads", value: 91, color: "#D6A419" },
-  { label: "Website / SEO", value: 74, color: "#16A34A" },
-  { label: "Outdoor board", value: 41, color: "#2563EB" },
-  { label: "Newspaper", value: 24, color: "#8B5E3C" },
-  { label: "Events", value: 19, color: "#A16207" },
-  { label: "LinkedIn", value: 12, color: "#C08497" },
+  { label: "SMS", value: 142, color: "#7A0A17" },
+  { label: "WhatsApp", value: 118, color: "#16A34A" },
+  { label: "App Notifications", value: 86, color: "#2563EB" },
+  { label: "Email", value: 66, color: "#D6A419" },
 ];
 
 const STAT_CARDS = [
