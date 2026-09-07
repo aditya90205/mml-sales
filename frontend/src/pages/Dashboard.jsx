@@ -1579,6 +1579,17 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
 
       <div className="border border-black/8 rounded-xl overflow-hidden">
         <table className="w-full text-left border-collapse table-fixed">
+          <colgroup>
+            <col style={{ width: "14%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "11%" }} />
+          </colgroup>
           <thead>
             <tr className="border-b border-black/8">
               {[
@@ -1599,7 +1610,15 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
                   sort={sort}
                   onSort={toggle}
                   unsortable={h.unsortable}
-                  className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-2.5 py-2 align-bottom"
+                  className={`text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide py-2 align-bottom ${
+                    h.key === "name"
+                      ? "pl-2.5 pr-5"
+                      : h.key === "owner"
+                        ? "pl-4 pr-2.5"
+                        : h.key === "leadScore" || h.key === "profileCompletion" || h.key === "source"
+                          ? "px-2"
+                          : "px-2.5"
+                  }`}
                 />
               ))}
             </tr>
@@ -1613,7 +1632,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
                   onClick={() => onOpenDeal?.(lead)}
                   className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
                 >
-                  <td className="px-2.5 py-3">
+                  <td className="pl-2.5 pr-5 py-3">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: LEAD_DOT_COLORS[i % LEAD_DOT_COLORS.length] }} />
                       <div className="min-w-0">
@@ -1625,7 +1644,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
                       </div>
                     </div>
                   </td>
-                  <td className="px-2.5 py-3">
+                  <td className="pl-4 pr-2.5 py-3">
                     <p className="text-[12px] font-medium text-[#374151] leading-tight">{lead.owner}</p>
                     <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.ownerRole}</p>
                   </td>
@@ -1670,7 +1689,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
                       {lead.priority}
                     </span>
                   </td>
-                  <td className="px-2.5 py-3">
+                  <td className="px-2 py-3">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -1684,9 +1703,9 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
                       <Flag size={11} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} />
                     </button>
                   </td>
-                  <td className="px-2.5 py-3 text-[12px] text-[#6B7280]">{lead.profileCompletion}%</td>
-                  <td className="px-2.5 py-3 text-[12px] text-[#6B7280] leading-tight">{lead.source}</td>
-                  <td className="px-2.5 py-3" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-2 py-3 text-[12px] text-[#6B7280]">{lead.profileCompletion}%</td>
+                  <td className="px-2 py-3 text-[12px] text-[#6B7280] leading-tight">{lead.source}</td>
+                  <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
                     <FollowUpHoverCard
                       lastDiscussionAt={lead.lastDiscussion}
                       nextActionAt={lead.nextAction}
@@ -1700,7 +1719,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
                       <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.followUpNote}</p>
                     </FollowUpHoverCard>
                   </td>
-                  <td className="pl-1 pr-2.5 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-2.5 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-0 flex-nowrap">
                       {lead.lost ? (
                         <button type="button" className="p-1.5 text-[#E8395B] hover:bg-black/4 rounded-lg transition-colors" title="Dropped Call" aria-label="Dropped Call">
