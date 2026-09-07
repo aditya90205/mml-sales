@@ -49,6 +49,7 @@ import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import DealDetailPage from "./pipeline/DealDetailPage";
 import MoveToP1Page from "./pipeline/MoveToP1Page";
 import MoveToP2Page from "./pipeline/MoveToP2Page";
+import AddP0ProspectPage from "./pipeline/AddP0ProspectPage";
 import { toast } from "react-toastify";
 import {
   ResponsiveContainer,
@@ -1482,7 +1483,7 @@ function stageKeyFromLead(lead) {
   return match ? match[0] : "P0";
 }
 
-function MyLeadsCard({ onOpenDeal, onMoveStage }) {
+function MyLeadsCard({ onOpenDeal, onMoveStage, onAddProspect }) {
   const [period, setPeriod] = useState("this_month");
   const [leadsView, setLeadsView] = useState("team");
   const [leadsViewOpen, setLeadsViewOpen] = useState(false);
@@ -1567,6 +1568,7 @@ function MyLeadsCard({ onOpenDeal, onMoveStage }) {
 
           <button
             type="button"
+            onClick={() => onAddProspect?.()}
             className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
           >
             <Plus size={15} />
@@ -1740,6 +1742,7 @@ export default function Dashboard() {
   const [period, setPeriod] = useState("this_month");
   const [dealLead, setDealLead] = useState(null);
   const [moveLead, setMoveLead] = useState(null);
+  const [showAddProspect, setShowAddProspect] = useState(false);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
@@ -1747,6 +1750,17 @@ export default function Dashboard() {
     if (h < 17) return "Good Afternoon";
     return "Good Evening";
   }, []);
+
+  if (showAddProspect) {
+    return (
+      <AddP0ProspectPage
+        onBack={() => setShowAddProspect(false)}
+        onAddProspect={(newLead) => {
+          toast.success(`Prospect "${newLead.name}" created successfully in P0 Prospect!`);
+        }}
+      />
+    );
+  }
 
   if (moveLead && stageKeyFromLead(moveLead) === "P0") {
     return (
@@ -1798,6 +1812,7 @@ export default function Dashboard() {
 
           <button
             type="button"
+            onClick={() => setShowAddProspect(true)}
             className="inline-flex items-center gap-2 h-[38px] px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors"
           >
             <Plus size={15} />
@@ -1829,7 +1844,11 @@ export default function Dashboard() {
           <LeaderboardCard />
         </div>
 
-        <MyLeadsCard onOpenDeal={setDealLead} onMoveStage={(lead) => setMoveLead(lead)} />
+        <MyLeadsCard
+          onOpenDeal={setDealLead}
+          onMoveStage={(lead) => setMoveLead(lead)}
+          onAddProspect={() => setShowAddProspect(true)}
+        />
 
         <GoalsPerformanceCard />
 
