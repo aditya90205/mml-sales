@@ -61,7 +61,7 @@ export default function ClientDatabasePage() {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [savedGroups, setSavedGroups] = useState([]);
-  const [activeGroupId, setActiveGroupId] = useState(null);
+  const [activeGroupIds, setActiveGroupIds] = useState([]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [grouping, setGrouping] = useState("none");
   const [branchFilter, setBranchFilter] = useState("all");
@@ -102,13 +102,19 @@ export default function ClientDatabasePage() {
     if (marriedFilter === "married") rows = rows.filter((c) => c.married);
     if (marriedFilter === "unmarried") rows = rows.filter((c) => !c.married);
 
-    const activeGroup = savedGroups.find((g) => g.id === activeGroupId);
-    if (activeGroup) {
-      const { conditions, matchMode } = groupQuery(activeGroup);
-      rows = rows.filter((c) => matchesAll(c, conditions, matchMode));
+    if (activeGroupIds.length > 0) {
+      const activeGroups = savedGroups.filter((g) => activeGroupIds.includes(g.id));
+      if (activeGroups.length > 0) {
+        rows = rows.filter((c) =>
+          activeGroups.some((g) => {
+            const { conditions, matchMode } = groupQuery(g);
+            return matchesAll(c, conditions, matchMode);
+          })
+        );
+      }
     }
     return rows;
-  }, [query, statusFilter, branchFilter, genderFilter, probFilter, marriedFilter, activeGroupId, savedGroups]);
+  }, [query, statusFilter, branchFilter, genderFilter, probFilter, marriedFilter, activeGroupIds, savedGroups]);
 
   const { sorted, sort, toggle } = useTableSort(filtered, { defaultKey: null, defaultDir: "asc" });
 
@@ -125,9 +131,13 @@ export default function ClientDatabasePage() {
 
   const applySearch = () => setQuery(search);
 
+  const toggleGroup = (id) => {
+    setActiveGroupIds((prev) => (prev.includes(id) ? prev.filter((gid) => gid !== id) : [...prev, id]));
+  };
+
   const handleRemoveGroup = (id, name) => {
     setSavedGroups(removeSavedGroup(id));
-    if (activeGroupId === id) setActiveGroupId(null);
+    setActiveGroupIds((prev) => prev.filter((gid) => gid !== id));
     toast.error(`${name} group removed.`);
   };
 
@@ -320,35 +330,48 @@ export default function ClientDatabasePage() {
           {savedGroups.length === 0 ? (
             <p className="text-[13px] text-[#9CA3AF]">No saved groups yet — create one above.</p>
           ) : (
-            savedGroups.map((g) => {
-              const active = g.id === activeGroupId;
-              return (
-                <span
-                  key={g.id}
-                  className={`inline-flex items-center gap-1.5 pl-3.5 pr-1.5 py-1.5 rounded-full text-[13px] font-semibold border transition-colors ${
-                    active
-                      ? "bg-[#7A0A17] text-white border-[#7A0A17]"
-                      : "bg-[#FCF5F6] text-[#7A0A17] border-[#7A0A17]/20"
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setActiveGroupId(active ? null : g.id)}
-                    className="hover:opacity-80"
+            <>
+              {savedGroups.map((g) => {
+                const active = activeGroupIds.includes(g.id);
+                return (
+                  <span
+                    key={g.id}
+                    className={`inline-flex items-center gap-1.5 pl-3.5 pr-1.5 py-1.5 rounded-full text-[13px] font-semibold border transition-colors ${
+                      active
+                        ? "bg-[#7A0A17] text-white border-[#7A0A17]"
+                        : "bg-[#FCF5F6] text-[#7A0A17] border-[#7A0A17]/20"
+                    }`}
                   >
-                    {g.name}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveGroup(g.id, g.name)}
-                    aria-label={`Remove ${g.name}`}
-                    className={`grid place-items-center rounded-full size-5 ${active ? "hover:bg-white/20" : "hover:bg-[#7A0A17]/10"}`}
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              );
-            })
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(g.id)}
+                      className="hover:opacity-80"
+                    >
+                      {g.name}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveGroup(g.id, g.name)}
+                      aria-label={`Remove ${g.name}`}
+                      className={`grid place-items-center rounded-full size-5 ${active ? "hover:bg-white/20" : "hover:bg-[#7A0A17]/10"}`}
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveGroupIds(
+                    activeGroupIds.length === savedGroups.length ? [] : savedGroups.map((g) => g.id)
+                  )
+                }
+                className="ml-auto text-[13px] font-semibold text-[#7A0A17] hover:underline shrink-0"
+              >
+                {activeGroupIds.length === savedGroups.length ? "Unselect All" : "Select All"}
+              </button>
+            </>
           )}
         </div>
 

@@ -61,8 +61,8 @@ function writeSavedGroups(groups) {
   }
 }
 
-export function addSavedGroup({ name, conditions = [], matchMode = "ALL" }) {
-  const next = [...readSavedGroups(), { id: `g${Date.now()}`, name, conditions, matchMode }];
+export function addSavedGroup({ name, conditions = [], matchMode = "ALL", clientIds = [] }) {
+  const next = [...readSavedGroups(), { id: `g${Date.now()}`, name, conditions, matchMode, clientIds }];
   writeSavedGroups(next);
   return next;
 }

@@ -98,6 +98,7 @@ export default function CreateGroupPage() {
     { ...makeCondition(), field: "Education / College", operator: "contains", value: "IIM" },
   ]);
   const [results, setResults] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
   const [saveOpen, setSaveOpen] = useState(false);
   const [groupName, setGroupName] = useState("");
 
@@ -116,6 +117,7 @@ export default function CreateGroupPage() {
   const clearAll = () => {
     setConditions([makeCondition()]);
     setResults(null);
+    setSelectedIds(new Set());
     setDescription("");
   };
 
@@ -132,12 +134,35 @@ export default function CreateGroupPage() {
 
     const matched = CLIENTS.filter((c) => matchesAll(c, activeConditions, matchMode));
     setResults(matched);
+    setSelectedIds(new Set(matched.map((c) => c.id)));
     toast.success(`${matched.length} matching client${matched.length === 1 ? "" : "s"} found.`);
+  };
+
+  const toggleSelected = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    if (!results) return;
+    setSelectedIds(new Set(results.map((c) => c.id)));
+  };
+
+  const allSelected = results && results.length > 0 && selectedIds.size === results.length;
+
+  const toggleSelectAll = () => {
+    if (allSelected) setSelectedIds(new Set());
+    else selectAll();
   };
 
   const runManualQuery = () => {
     const matched = CLIENTS.filter((c) => matchesAll(c, conditions, matchMode));
     setResults(matched);
+    setSelectedIds(new Set(matched.map((c) => c.id)));
     toast.success(`${matched.length} matching client${matched.length === 1 ? "" : "s"} found.`);
   };
 
@@ -146,12 +171,17 @@ export default function CreateGroupPage() {
       toast.error("Please name this group.");
       return;
     }
+    if (selectedIds.size === 0) {
+      toast.error("Please select at least one client.");
+      return;
+    }
     addSavedGroup({
       name: groupName.trim(),
       conditions,
       matchMode,
+      clientIds: Array.from(selectedIds),
     });
-    toast.success(`"${groupName.trim()}" saved to your groups.`);
+    toast.success(`"${groupName.trim()}" saved with ${selectedIds.size} client${selectedIds.size === 1 ? "" : "s"}.`);
     setSaveOpen(false);
     navigate("/clients");
   };
@@ -256,22 +286,44 @@ export default function CreateGroupPage() {
           <div className="border-t border-black/8 pt-6 flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <h2 className="text-[18px] font-bold text-[#111]">
-                Matching Clients <span className="text-[#9CA3AF] font-medium">({results.length})</span>
+                Matching Clients{" "}
+                <span className="text-[#9CA3AF] font-medium">
+                  ({selectedIds.size} of {results.length} selected)
+                </span>
               </h2>
-              <button
-                type="button"
-                disabled={results.length === 0}
-                onClick={() => setSaveOpen(true)}
-                className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Save Group
-              </button>
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  disabled={results.length === 0}
+                  onClick={selectAll}
+                  className="inline-flex items-center h-10 px-4 rounded-xl bg-white border border-black/12 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  disabled={results.length === 0}
+                  onClick={() => setSaveOpen(true)}
+                  className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Save Group
+                </button>
+              </div>
             </div>
 
             <div className="overflow-x-auto border border-black/8 rounded-xl bg-white">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold tracking-wide">
+                    <th className="px-4 py-3 whitespace-nowrap w-10">
+                      <input
+                        type="checkbox"
+                        checked={allSelected}
+                        onChange={toggleSelectAll}
+                        aria-label="Select all clients"
+                        className="size-4 rounded border-black/25 accent-[#7A0A17] cursor-pointer"
+                      />
+                    </th>
                     <th className="px-4 py-3 whitespace-nowrap">Client Name</th>
                     <th className="px-4 py-3 whitespace-nowrap">Gender</th>
                     <th className="px-4 py-3 whitespace-nowrap">Area</th>
@@ -284,13 +336,27 @@ export default function CreateGroupPage() {
                 <tbody>
                   {results.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-10 text-center text-[13px] text-[#9CA3AF] font-medium">
+                      <td colSpan={8} className="px-4 py-10 text-center text-[13px] text-[#9CA3AF] font-medium">
                         No clients match these conditions.
                       </td>
                     </tr>
                   ) : (
                     results.map((c) => (
-                      <tr key={c.id} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
+                      <tr
+                        key={c.id}
+                        className={`border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors ${
+                          selectedIds.has(c.id) ? "bg-[#FCF5F6]" : ""
+                        }`}
+                      >
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(c.id)}
+                            onChange={() => toggleSelected(c.id)}
+                            aria-label={`Select ${c.name}`}
+                            className="size-4 rounded border-black/25 accent-[#7A0A17] cursor-pointer"
+                          />
+                        </td>
                         <td className="px-4 py-3 text-[13px] font-bold text-[#111] whitespace-nowrap">{c.name}</td>
                         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.gender}</td>
                         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.area}</td>
