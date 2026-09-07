@@ -352,14 +352,14 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
                 onClick={() => toast.info("Calling via masked number...")}
                 className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[12.5px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
               >
-                <Phone size={14} /> Call (masked)
+                <Phone size={14} /> Follow Up/Task
               </button>
               <button
                 type="button"
                 onClick={() => toast.info("Opening WhatsApp...")}
                 className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[12.5px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
               >
-                <MessageCircle size={14} /> WhatsApp
+                <MessageCircle size={14} /> Summary
               </button>
               <button
                 type="button"
