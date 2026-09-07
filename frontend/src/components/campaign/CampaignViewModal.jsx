@@ -1,4 +1,4 @@
-import { MousePointerClick } from "lucide-react";
+import { MousePointerClick, Pencil } from "lucide-react";
 import { toast } from "react-toastify";
 import { parseChannels } from "../../utils/campaignChannels.js";
 import hugeiconsSent from "../../assets/hugeicons_sent.png";
@@ -38,7 +38,7 @@ function OverviewField({ label, children }) {
   );
 }
 
-export default function CampaignViewModal({ open, onClose, campaign }) {
+export default function CampaignViewModal({ open, onClose, campaign, onEdit }) {
   if (!open || !campaign) return null;
 
   const channels = parseChannels(campaign.channel);
@@ -50,11 +50,21 @@ export default function CampaignViewModal({ open, onClose, campaign }) {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden />
 
       <div className="relative z-10 w-full max-w-3xl bg-white rounded-2xl shadow-xl flex flex-col max-h-[92vh] overflow-hidden">
-        <div className="px-6 pt-5 pb-4 border-b border-black/8">
-          <h2 className="text-xl font-bold text-[#111]">Campaign Settings &amp; KPI</h2>
-          <p className="text-[13px] text-[#9CA3AF] mt-1">
-            Scheduling and performance snapshot for <span className="font-semibold text-[#374151]">{campaign.name}</span>.
-          </p>
+        <div className="px-6 pt-5 pb-4 border-b border-black/8 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold text-[#111]">Campaign Settings &amp; KPI</h2>
+            <p className="text-[13px] text-[#9CA3AF] mt-1">
+              Scheduling and performance snapshot for <span className="font-semibold text-[#374151]">{campaign.name}</span>.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onEdit?.(campaign)}
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-[#7A0A17]/30 text-[13px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors shrink-0"
+          >
+            <Pencil size={14} />
+            Edit
+          </button>
         </div>
 
         <div className="overflow-y-auto flex-1 px-6 py-5 grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-5">

@@ -97,7 +97,6 @@ export default function CreateCampaignPage() {
         </div>
 
         <div className="bg-white border border-black/10 rounded-2xl p-6 flex flex-col gap-7 shadow-sm">
-          {/* Step 1 */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2.5">
               <StepBadge n={1} />
@@ -125,7 +124,6 @@ export default function CreateCampaignPage() {
             </div>
           </div>
 
-          {/* Step 2 */}
           <div className="flex flex-col gap-3 pt-1 border-t border-black/6">
             <div className="flex items-center gap-2.5 pt-4">
               <StepBadge n={2} />
@@ -187,7 +185,6 @@ export default function CreateCampaignPage() {
             </div>
           </div>
 
-          {/* Step 3 */}
           <div className="flex flex-col gap-3 pt-1 border-t border-black/6">
             <div className="flex items-center gap-2.5 pt-4">
               <StepBadge n={3} />
@@ -223,7 +220,6 @@ export default function CreateCampaignPage() {
             </p>
           </div>
 
-          {/* Step 4 */}
           <div className="flex flex-col gap-3 pt-1 border-t border-black/6">
             <div className="flex items-center gap-2.5 pt-4">
               <StepBadge n={4} />

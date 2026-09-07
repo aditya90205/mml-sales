@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import CampaignViewModal from "../components/campaign/CampaignViewModal.jsx";
+import CampaignEditModal from "../components/campaign/CampaignEditModal.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import biPlayCircle from "../assets/bi_play-circle.png";
 import biStopCircle from "../assets/bi_stop-circle.png";
@@ -254,7 +255,20 @@ export default function CampaignManagementPage() {
   const [rows, setRows] = useState(INITIAL_CAMPAIGNS);
   const [channelModalOpen, setChannelModalOpen] = useState(false);
   const [viewCampaign, setViewCampaign] = useState(null);
+  const [editCampaign, setEditCampaign] = useState(null);
   const table = usePagedTable(rows, ["name", "tag", "target", "channel", "owner", "status"]);
+
+  const handleEditCampaign = (campaign) => {
+    setViewCampaign(null);
+    setEditCampaign(campaign);
+  };
+
+  const handleSaveEdit = (updated) => {
+    setRows((prev) => prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)));
+    setEditCampaign(null);
+    setViewCampaign(updated);
+    toast.success(`Campaign "${updated.name}" updated.`);
+  };
 
   const toggleStatus = (id) => {
     const row = rows.find((r) => r.id === id);
@@ -446,7 +460,22 @@ export default function CampaignManagementPage() {
       </div>
 
       <LeadsByChannelModal open={channelModalOpen} onClose={() => setChannelModalOpen(false)} />
-      <CampaignViewModal open={Boolean(viewCampaign)} campaign={viewCampaign} onClose={() => setViewCampaign(null)} />
+      <CampaignViewModal
+        open={Boolean(viewCampaign)}
+        campaign={viewCampaign}
+        onClose={() => setViewCampaign(null)}
+        onEdit={handleEditCampaign}
+      />
+      <CampaignEditModal
+        open={Boolean(editCampaign)}
+        campaign={editCampaign}
+        onClose={() => setEditCampaign(null)}
+        onBack={() => {
+          setViewCampaign(editCampaign);
+          setEditCampaign(null);
+        }}
+        onSave={handleSaveEdit}
+      />
     </div>
   );
 }
