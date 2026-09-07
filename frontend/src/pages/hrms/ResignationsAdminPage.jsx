@@ -71,7 +71,7 @@ function DetailModal({ record, onClose, onChanged }) {
       return;
     }
     updateResignationStatus(record.id, { status, note, approvedLastDay });
-    toast.success(`${record.employeeName}'s resignation updated to "${status}".`);
+    toast.success(`${record.employeeName}'s exit updated to "${status}".`);
     setNote("");
     onChanged();
   };

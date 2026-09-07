@@ -104,7 +104,7 @@ const HRMS_TABS = [
   "Documents",
   "Asset",
   "Awards & Contest",
-  "Resignation",
+  "Exit",
   "Complaint & Warning",
 ];
 
@@ -2627,8 +2627,8 @@ export default function HrmsPage() {
           </div>
         )}
 
-        {/* EXIT / RESIGNATION TAB */}
-        {activeTab === "Resignation" && (
+        {/* EXIT TAB */}
+        {activeTab === "Exit" && (
           <ResignationSection
             employee={{
               name: USER.name,
@@ -2739,7 +2739,7 @@ export default function HrmsPage() {
         )}
 
         {/* Placeholder View for remaining tabs */}
-        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset", "Resignation", "Complaint & Warning"].includes(activeTab) && (
+        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset", "Exit", "Complaint & Warning"].includes(activeTab) && (
           <div className="bg-white border border-black/8 rounded-2xl p-12 text-center my-6 shadow-sm">
             <div className="size-16 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
               <FileText size={28} />
