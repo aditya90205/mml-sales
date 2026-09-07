@@ -455,15 +455,13 @@ function StageHistoryCard({ rows, footnote }) {
       <p className="text-[12px] text-[#9CA3AF] mt-0.5 mb-4">Every transition is timestamped and SLA-checked</p>
 
       <div className="overflow-x-auto -mx-1">
-        <table className="w-full border-collapse min-w-[560px]">
+        <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-black/8">
               {[
                 { label: "Stage", key: "stage" },
                 { label: "Entered", key: "entered" },
                 { label: "Exited", key: "exited" },
-                { label: "Duration", key: "duration" },
-                { label: "SLA", key: "sla" },
                 { label: "Status", key: "status" },
               ].map((h) => (
                 <SortableTh
@@ -485,8 +483,6 @@ function StageHistoryCard({ rows, footnote }) {
                   <td className="px-2.5 py-2.5 text-[12.5px] font-semibold text-[#111] whitespace-nowrap">{row.stage}</td>
                   <td className="px-2.5 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.entered}</td>
                   <td className="px-2.5 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.exited}</td>
-                  <td className="px-2.5 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.duration}</td>
-                  <td className="px-2.5 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.sla}</td>
                   <td className="px-2.5 py-2.5 whitespace-nowrap">
                     {status ? (
                       <span
