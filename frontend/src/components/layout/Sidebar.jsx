@@ -17,7 +17,7 @@ import logo from "../../assets/logo.png";
 
 const NAV_ITEMS = [
   { label: "Dashboard",       icon: LayoutDashboard, to: "/dashboard" },
-  { label: "Calendar",        icon: CalendarDays,    to: "/calendar" },
+  { label: "Calendar & Meetings",        icon: CalendarDays,    to: "/calendar" },
   { label: "Tasks",           icon: CheckSquare,     to: "/tasks" },
   { label: "Bulk Import / Add Lead (P0)",     icon: Upload,          to: "/bulk-upload" },
   { label: "Sales Pipeline (P0-P6)",  icon: KanbanSquare,    to: "/pipeline" },

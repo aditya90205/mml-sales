@@ -1,19 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   AlarmClock,
   ArrowLeft,
   ArrowRight,
   Calendar,
+  CheckSquare,
   ChevronDown,
   Flag,
-  MessageCircle,
+  FileText,
   MessageSquare,
   Minus,
   MoreVertical,
   Phone,
   PhoneOff,
-  Plus,
   Star,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -22,6 +22,7 @@ import StageStepper from "../../components/pipeline/StageStepper";
 import WinLossReasonsModal from "../../components/pipeline/WinLossReasonsModal";
 import DealTabs from "../../components/pipeline/DealTabs";
 import EmailActivityButton from "../../components/common/EmailActivityButton.jsx";
+import Modal from "../../components/ui/Modal.jsx";
 import OverviewTab from "./deal-tabs/OverviewTab";
 import IntakeFormTab from "./deal-tabs/IntakeFormTab";
 import VisitsMeetingsTab from "./deal-tabs/VisitsMeetingsTab";
@@ -117,12 +118,12 @@ function initials(name = "") {
  * Tab data fills in by stage. Payments and P6 Checklist stay blurred until P5.
  */
 export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAdvance, initialTab = "overview", onPremiumChange }) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [winLossModal, setWinLossModal] = useState({ open: false, mode: "lost" });
   const [winLossOverride, setWinLossOverride] = useState(null);
   const [isPremium, setIsPremium] = useState(() => Boolean(lead?.starred));
-  const [actionsOpen, setActionsOpen] = useState(false);
-  const actionsRef = useRef(null);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const lateTabsUnlocked = atLeast(currentStage, "P5");
   const nextStage = NEXT_STAGE[currentStage];
   const tabs = BASE_TABS.map((tab) =>
@@ -133,24 +134,6 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
   useEffect(() => {
     setIsPremium(Boolean(lead?.starred));
   }, [lead?.id, lead?.starred]);
-
-  useEffect(() => {
-    if (!actionsOpen) return;
-    const onPointerDown = (e) => {
-      if (actionsRef.current && !actionsRef.current.contains(e.target)) {
-        setActionsOpen(false);
-      }
-    };
-    const onKeyDown = (e) => {
-      if (e.key === "Escape") setActionsOpen(false);
-    };
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [actionsOpen]);
 
   const handlePremiumChange = (premium) => {
     setIsPremium(premium);
@@ -386,99 +369,77 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => toast.info("Calling via masked number...")}
+                onClick={() => navigate("/tasks")}
                 className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[12.5px] font-medium leading-none text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
               >
-                <Phone size={14} className="shrink-0 block" aria-hidden />
+                <CheckSquare size={14} className="shrink-0 block" aria-hidden />
                 <span className="leading-none">Follow Up/Task</span>
               </button>
               <button
                 type="button"
-                onClick={() => toast.info("Opening WhatsApp...")}
+                onClick={() => setSummaryOpen(true)}
                 className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[12.5px] font-medium leading-none text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
               >
-                <MessageCircle size={14} className="shrink-0 block" aria-hidden />
+                <FileText size={14} className="shrink-0 block" aria-hidden />
                 <span className="leading-none">Summary</span>
               </button>
-              <div className="relative" ref={actionsRef}>
+              <div
+                role="toolbar"
+                aria-label="Deal actions"
+                className="inline-flex items-center gap-1 h-9 rounded-xl border border-black/10 bg-white px-1.5"
+              >
+                {isLost ? (
+                  <button
+                    type="button"
+                    onClick={() => toast.info("Dropped call logged.")}
+                    className="p-1.5 rounded-lg text-[#DC2626] hover:bg-[#FEE2E2] transition-colors"
+                    title="Dropped Call"
+                    aria-label="Dropped Call"
+                  >
+                    <PhoneOff size={14} />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => toast.info("Calling via masked number...")}
+                    className="p-1.5 rounded-lg text-[#16A34A] hover:bg-[#E7F8EF] transition-colors"
+                    title="Call"
+                    aria-label="Call"
+                  >
+                    <Phone size={14} />
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => setActionsOpen((prev) => !prev)}
-                  aria-expanded={actionsOpen}
-                  aria-haspopup="menu"
-                  className={`inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border text-[12.5px] font-medium leading-none transition-colors ${
-                    actionsOpen
-                      ? "border-[#7A0A17]/30 text-[#7A0A17] bg-[#FDF2F3]"
-                      : "border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                  }`}
+                  onClick={() => toast.info("Opening message...")}
+                  className="p-1.5 rounded-lg text-[#F59E0B] hover:bg-[#FFF3E4] transition-colors"
+                  title="Message"
+                  aria-label="Message"
                 >
-                  <Plus size={14} className="shrink-0 block" aria-hidden />
-                  <span className="leading-none">Actions</span>
+                  <MessageSquare size={14} />
                 </button>
-                {actionsOpen && (
-                  <div
-                    role="menu"
-                    className="absolute right-0 top-[calc(100%+6px)] z-30 flex items-center gap-1 rounded-xl border border-black/10 bg-white p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
-                  >
-                    {isLost ? (
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => toast.info("Dropped call logged.")}
-                        className="p-1.5 rounded-lg text-[#DC2626] hover:bg-[#FEE2E2] transition-colors"
-                        title="Dropped Call"
-                        aria-label="Dropped Call"
-                      >
-                        <PhoneOff size={14} />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => toast.info("Calling via masked number...")}
-                        className="p-1.5 rounded-lg text-[#16A34A] hover:bg-[#E7F8EF] transition-colors"
-                        title="Call"
-                        aria-label="Call"
-                      >
-                        <Phone size={14} />
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => toast.info("Opening message...")}
-                      className="p-1.5 rounded-lg text-[#F59E0B] hover:bg-[#FFF3E4] transition-colors"
-                      title="Message"
-                      aria-label="Message"
-                    >
-                      <MessageSquare size={14} />
-                    </button>
-                    <EmailActivityButton
-                      className="relative p-1.5 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] transition-colors"
-                      hasUnread
-                    />
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => toast.info("Opening schedule...")}
-                      className="p-1.5 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] transition-colors"
-                      title="Schedule"
-                      aria-label="Schedule"
-                    >
-                      <Calendar size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => toast.info("More options coming soon.")}
-                      className="p-1.5 rounded-lg text-[#9CA3AF] hover:bg-black/5 transition-colors"
-                      title="More Options"
-                      aria-label="More Options"
-                    >
-                      <MoreVertical size={14} />
-                    </button>
-                  </div>
-                )}
+                <EmailActivityButton
+                  className="relative p-1.5 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] transition-colors"
+                  hasUnread
+                />
+                <button
+                  type="button"
+                  onClick={() => toast.info("Opening schedule...")}
+                  className="p-1.5 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] transition-colors"
+                  title="Schedule"
+                  aria-label="Schedule"
+                >
+                  <Calendar size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.info("More options coming soon.")}
+                  className="p-1.5 rounded-lg text-[#9CA3AF] hover:bg-black/5 transition-colors"
+                  title="More Options"
+                  aria-label="More Options"
+                >
+                  <MoreVertical size={14} />
+                </button>
               </div>
             </div>
           </div>
@@ -498,6 +459,70 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
         onClose={() => setWinLossModal((prev) => ({ ...prev, open: false }))}
         onSave={handleWinLossSave}
       />
+
+      <Modal
+        open={summaryOpen}
+        onClose={() => setSummaryOpen(false)}
+        title="Client Summary"
+        subtitle={deal.dealCode}
+        icon={<FileText size={18} />}
+        iconBg="#FDF2F3"
+        iconColor="#7A0A17"
+        width="max-w-md"
+        footer={
+          <button
+            type="button"
+            onClick={() => setSummaryOpen(false)}
+            className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#5F0812] transition-colors"
+          >
+            Close
+          </button>
+        }
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="size-11 rounded-full bg-[#7A0A17] text-white font-bold grid place-items-center shrink-0 text-[14px]">
+              {initials(deal.name)}
+            </span>
+            <div className="min-w-0">
+              <p className="text-[15px] font-bold text-[#111] truncate">{deal.name}</p>
+              <p className="text-[12px] text-[#6B7280] mt-0.5">Owner: Rohit K. · Source: {deal.leadSource}</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-black/8 bg-[#FAFAFB] px-3.5 py-3">
+            <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Current Stage</p>
+            <p className="text-[14px] font-bold text-[#7A0A17] mt-1">{deal.stageLabel}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="rounded-xl border border-black/8 px-3 py-2.5">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Deal Value</p>
+              <p className="text-[13px] font-semibold text-[#111] mt-1">{deal.dealValue}</p>
+            </div>
+            <div className="rounded-xl border border-black/8 px-3 py-2.5">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Package</p>
+              <p className="text-[13px] font-semibold text-[#111] mt-1">{deal.packageInterest}</p>
+            </div>
+            <div className="rounded-xl border border-black/8 px-3 py-2.5">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Lead Score</p>
+              <p className="text-[13px] font-semibold text-[#111] mt-1">{deal.leadScore}</p>
+            </div>
+            <div className="rounded-xl border border-black/8 px-3 py-2.5">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Looking For</p>
+              <p className="text-[13px] font-semibold text-[#111] mt-1">{deal.lookingFor}</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-black/8 px-3.5 py-3">
+            <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Next Action</p>
+            <p className="text-[13px] font-medium text-[#111] mt-1 leading-snug">{deal.nextAction}</p>
+            {deal.nextActionUrgency && (
+              <p className="text-[11.5px] font-semibold text-[#DC2626] mt-1.5">{deal.nextActionUrgency}</p>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

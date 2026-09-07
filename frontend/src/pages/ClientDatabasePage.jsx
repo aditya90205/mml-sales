@@ -1,6 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, Filter, Flag, Mail, MessageSquare, Phone, Plus, Search, X } from "lucide-react";
+import {
+  BarChart3,
+  ChevronDown,
+  Filter,
+  Flag,
+  LayoutList,
+  Mail,
+  MessageSquare,
+  Phone,
+  Plus,
+  Search,
+  X,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import ClientStatusBadge from "../components/common/ClientStatusBadge.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
@@ -124,14 +136,25 @@ export default function ClientDatabasePage() {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [perPageOpen, setPerPageOpen] = useState(false);
+  const [viewMode, setViewMode] = useState("list"); // "list" | "graph"
 
   useEffect(() => {
     const groups = readSavedGroups();
     setSavedGroups(groups);
 
     const selectId = location.state?.selectGroupId;
+    const openChart = Boolean(location.state?.showChart);
+    let cleared = false;
+
     if (selectId && groups.some((g) => g.id === selectId)) {
       setActiveGroupIds([selectId]);
+      cleared = true;
+    }
+    if (openChart) {
+      setViewMode("graph");
+      cleared = true;
+    }
+    if (cleared) {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, location.pathname, navigate]);
@@ -228,7 +251,8 @@ export default function ClientDatabasePage() {
         const { conditions, matchMode } = groupQuery(g);
         clients = CLIENTS.filter((c) => matchesAll(c, conditions, matchMode));
       }
-      return { group: g.name, ...statsFromClients(clients) };
+      // Pass clients so ClientGroupsChart can apply week/month period filters
+      return { group: g.name, clients, ...statsFromClients(clients) };
     });
   }, [chartGroups]);
 
@@ -419,43 +443,77 @@ export default function ClientDatabasePage() {
             ]}
           />
 
-          <div className="relative shrink-0" ref={perPageRef}>
+          <div className="flex items-center gap-2.5 ml-auto shrink-0 flex-wrap justify-end">
+            <div className="flex items-center h-10 rounded-xl border border-black/10 bg-white overflow-hidden shrink-0">
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                title="List view"
+                aria-pressed={viewMode === "list"}
+                aria-label="List view"
+                className={`h-full px-3 flex items-center transition-colors ${
+                  viewMode === "list"
+                    ? "bg-[#7A0A17] text-white"
+                    : "text-[#9CA3AF] hover:text-[#4B5563] hover:bg-[#FAFAFB]"
+                }`}
+              >
+                <LayoutList size={15} />
+              </button>
+              <span className="w-px h-5 bg-black/10" />
+              <button
+                type="button"
+                onClick={() => setViewMode("graph")}
+                title="Graph view"
+                aria-pressed={viewMode === "graph"}
+                aria-label="Graph view"
+                className={`h-full px-3 flex items-center transition-colors ${
+                  viewMode === "graph"
+                    ? "bg-[#7A0A17] text-white"
+                    : "text-[#9CA3AF] hover:text-[#4B5563] hover:bg-[#FAFAFB]"
+                }`}
+              >
+                <BarChart3 size={15} />
+              </button>
+            </div>
+
+            <div className="relative shrink-0" ref={perPageRef}>
+              <button
+                type="button"
+                onClick={() => setPerPageOpen((v) => !v)}
+                className="inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+              >
+                Per Page: {perPage}
+                <ChevronDown size={14} className={`text-[#9CA3AF] transition-transform ${perPageOpen ? "rotate-180" : ""}`} />
+              </button>
+              {perPageOpen && (
+                <div className="absolute right-0 top-[calc(100%+6px)] min-w-[100px] bg-white border border-black/8 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-30 py-1 overflow-hidden">
+                  {PER_PAGE_OPTIONS.map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => {
+                        setPerPage(n);
+                        setPerPageOpen(false);
+                      }}
+                      className={`w-full text-left px-3.5 py-2 text-[13px] transition-colors ${
+                        n === perPage ? "bg-[#FCF5F6] text-[#7A0A17] font-semibold" : "text-[#4B5563] hover:bg-[#FAFAFB]"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button
               type="button"
-              onClick={() => setPerPageOpen((v) => !v)}
-              className="inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+              onClick={() => navigate("/clients/create-group")}
+              className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors shrink-0"
             >
-              Per Page: {perPage}
-              <ChevronDown size={14} className={`text-[#9CA3AF] transition-transform ${perPageOpen ? "rotate-180" : ""}`} />
+              Create Client Groups
             </button>
-            {perPageOpen && (
-              <div className="absolute right-0 top-[calc(100%+6px)] min-w-[100px] bg-white border border-black/8 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-30 py-1 overflow-hidden">
-                {PER_PAGE_OPTIONS.map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => {
-                      setPerPage(n);
-                      setPerPageOpen(false);
-                    }}
-                    className={`w-full text-left px-3.5 py-2 text-[13px] transition-colors ${
-                      n === perPage ? "bg-[#FCF5F6] text-[#7A0A17] font-semibold" : "text-[#4B5563] hover:bg-[#FAFAFB]"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
-
-          <button
-            type="button"
-            onClick={() => navigate("/clients/create-group")}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors shrink-0 ml-auto"
-          >
-            Create Client Groups
-          </button>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
@@ -508,7 +566,7 @@ export default function ClientDatabasePage() {
           )}
         </div>
 
-        {chartData.length > 0 && (
+        {viewMode === "graph" ? (
           <ClientGroupsChart
             data={chartData}
             title={
@@ -517,60 +575,62 @@ export default function ClientDatabasePage() {
                 : "Saved Groups — Client Overview"
             }
           />
+        ) : (
+          <>
+            <div className="flex items-center gap-6 flex-wrap text-[13px] font-medium text-[#374151]">
+              {Object.entries(PROBABILITY_META).map(([key, meta]) => (
+                <span key={key} className="flex items-center gap-1.5">
+                  <Flag size={14} style={{ color: meta.color }} fill={meta.color} strokeWidth={0} />
+                  {meta.label}
+                </span>
+              ))}
+            </div>
+
+            <div className="border border-black/8 rounded-xl bg-white overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[980px]">
+                  <thead>
+                    <tr className="border-b border-black/8 bg-[#FAFAFB]">
+                      {COLUMNS.map((col) => (
+                        <SortableTh
+                          key={col.key}
+                          label={col.label}
+                          sortKey={col.key}
+                          sort={sort}
+                          onSort={toggle}
+                          unsortable={col.unsortable}
+                          className={`px-4 py-3 text-[10px] font-extrabold text-[#9CA3AF] uppercase tracking-wide whitespace-nowrap ${
+                            col.key === "status" ? "text-center" : ""
+                          }`}
+                        />
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paged.length === 0 ? (
+                      <tr>
+                        <td colSpan={10} className="px-4 py-12 text-center text-[13px] text-[#9CA3AF] font-medium">
+                          No clients found.
+                        </td>
+                      </tr>
+                    ) : (
+                      groups.map((group) => (
+                        <FragmentGroup key={group.key} label={group.label} rows={group.rows} renderRow={renderRow} />
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <TablePagination
+                page={safePage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                pageSize={perPage}
+                onChange={setPage}
+              />
+            </div>
+          </>
         )}
-
-        <div className="flex items-center gap-6 flex-wrap text-[13px] font-medium text-[#374151]">
-          {Object.entries(PROBABILITY_META).map(([key, meta]) => (
-            <span key={key} className="flex items-center gap-1.5">
-              <Flag size={14} style={{ color: meta.color }} fill={meta.color} strokeWidth={0} />
-              {meta.label}
-            </span>
-          ))}
-        </div>
-
-        <div className="border border-black/8 rounded-xl bg-white overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[980px]">
-              <thead>
-                <tr className="border-b border-black/8 bg-[#FAFAFB]">
-                  {COLUMNS.map((col) => (
-                    <SortableTh
-                      key={col.key}
-                      label={col.label}
-                      sortKey={col.key}
-                      sort={sort}
-                      onSort={toggle}
-                      unsortable={col.unsortable}
-                      className={`px-4 py-3 text-[10px] font-extrabold text-[#9CA3AF] uppercase tracking-wide whitespace-nowrap ${
-                        col.key === "status" ? "text-center" : ""
-                      }`}
-                    />
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {paged.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className="px-4 py-12 text-center text-[13px] text-[#9CA3AF] font-medium">
-                      No clients found.
-                    </td>
-                  </tr>
-                ) : (
-                  groups.map((group) => (
-                    <FragmentGroup key={group.key} label={group.label} rows={group.rows} renderRow={renderRow} />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-          <TablePagination
-            page={safePage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            pageSize={perPage}
-            onChange={setPage}
-          />
-        </div>
       </div>
 
       <SendMessageModal open={Boolean(messageFor)} onClose={() => setMessageFor(null)} />

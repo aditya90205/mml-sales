@@ -128,10 +128,25 @@ function DetailModal({ record, onClose, onChanged }) {
         </div>
 
         <div className="bg-[#FAFAFB] border border-black/8 rounded-xl px-4 py-3">
-          <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide mb-1">
-            Reason: {record.reason}
-          </p>
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">
+              Reason: {record.reason}
+            </p>
+            {record.exitType === "Termination" && (
+              <span className="text-[10px] font-bold uppercase tracking-wide text-[#B91C1C] bg-[#FEE2E2] px-1.5 py-0.5 rounded">
+                Termination
+              </span>
+            )}
+          </div>
           {record.reasonDetails && <p className="text-[13px] text-[#374151]">“{record.reasonDetails}”</p>}
+          {record.exitType === "Termination" && record.salespersonComment && (
+            <div className="mt-3 pt-3 border-t border-black/8">
+              <p className="text-[11px] font-bold text-[#7A0A17] uppercase tracking-wide mb-1">
+                Salesperson comment
+              </p>
+              <p className="text-[13px] text-[#374151] leading-relaxed">“{record.salespersonComment}”</p>
+            </div>
+          )}
         </div>
 
         <div>
@@ -314,7 +329,16 @@ export default function ResignationsAdminPage() {
                 ) : (
                   filtered.map((r) => (
                     <tr key={r.id} className="hover:bg-[#FAFAFB] transition-colors">
-                      <td className="px-4 py-3 text-[13px] font-bold text-[#111] whitespace-nowrap">{r.employeeName}</td>
+                      <td className="px-4 py-3 text-[13px] font-bold text-[#111] whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5">
+                          {r.employeeName}
+                          {r.exitType === "Termination" && (
+                            <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#B91C1C] bg-[#FEE2E2] px-1.5 py-0.5 rounded">
+                              Term
+                            </span>
+                          )}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-[12.5px] text-[#374151] whitespace-nowrap">{r.department}</td>
                       <td className="px-4 py-3 text-[12.5px] text-[#6B7280] whitespace-nowrap">{r.submittedOn}</td>
                       <td className="px-4 py-3 text-[12.5px] text-[#6B7280] whitespace-nowrap">{r.requestedLastDay}</td>

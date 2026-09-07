@@ -1,4 +1,5 @@
-const STORAGE_KEY = "mml_sales_exits_v3";
+const STORAGE_KEY = "mml_sales_exits_v6";
+const LEGACY_STORAGE_KEYS = ["mml_sales_exits_v3", "mml_sales_exits_v4", "mml_sales_exits_v5"];
 
 export const RESIGNATION_STAGES = [
   "Submitted",
@@ -10,6 +11,20 @@ export const RESIGNATION_STAGES = [
 ];
 
 export const CLOSED_STATUSES = ["Completed", "Withdrawn", "Rejected"];
+
+export const EXIT_TYPES = {
+  RESIGNATION: "Resignation",
+  TERMINATION: "Termination",
+};
+
+export const TERMINATION_CATEGORIES = [
+  "Performance",
+  "Policy violation",
+  "Misconduct",
+  "Role redundancy",
+  "Integrity / compliance",
+  "Other",
+];
 
 export const REASON_OPTIONS = [
   "Career growth / new opportunity",
@@ -47,21 +62,46 @@ const DEFAULT_RESIGNATIONS = [
     employeeId: "MML-E-1001",
     department: "Sales",
     designation: "Sales Manager",
-    submittedOn: "2026-08-10",
-    reason: "Health / personal reasons",
-    reasonDetails: "Need time to focus on personal health and family priorities. Happy to complete a full handover.",
-    requestedLastDay: "2026-09-09",
+    exitType: EXIT_TYPES.TERMINATION,
+    submittedOn: "2026-09-01",
+    reason: "Performance",
+    reasonDetails:
+      "Consistent underperformance against monthly and quarterly targets despite coaching and PIP support.",
+    salespersonComment:
+      "Ankur has strong product knowledge and client rapport, but pipeline discipline slipped over the last 3 quarters. Follow-ups were irregular, forecast accuracy stayed below 60%, and coaching milestones on the PIP were missed twice. Recommend a clean handover of active deals to Priya before last working day.",
+    terminatedBy: "Reporting Manager",
+    terminationCategory: "Performance",
+    requestedLastDay: "2026-10-01",
     noticePeriodDays: 30,
-    approvedLastDay: "2026-09-09",
-    status: "Clearance",
-    clearance: { manager: true, it: true, finance: false, admin: false },
-    hrNote: "Please complete Finance settlement and Admin handover before last working day.",
+    approvedLastDay: "2026-10-01",
+    status: "Notice Period",
+    clearance: { manager: false, it: false, finance: false, admin: false },
+    hrNote: "Complete client handover checklist and asset return before last working day.",
     timeline: [
-      { status: "Submitted", date: "2026-08-10", note: "Exit request submitted by employee." },
-      { status: "Under Review", date: "2026-08-11", note: "Reviewed by reporting manager. Handover plan discussed.", by: "Reporting Manager" },
-      { status: "Approved", date: "2026-08-13", note: "Exit approved. Notice period confirmed at 30 days.", by: "Reporting Manager" },
-      { status: "Notice Period", date: "2026-08-13", note: "Serving notice period. Knowledge transfer started with sales team.", by: "Reporting Manager" },
-      { status: "Clearance", date: "2026-09-02", note: "Clearance initiated. Manager & IT sign-off completed.", by: "Reporting Manager" },
+      {
+        status: "Submitted",
+        date: "2026-09-01",
+        note: "Termination initiated by management after PIP review.",
+        by: "Reporting Manager",
+      },
+      {
+        status: "Under Review",
+        date: "2026-09-02",
+        note: "Case reviewed with HR. Notice period confirmed at 30 days.",
+        by: "HR",
+      },
+      {
+        status: "Approved",
+        date: "2026-09-03",
+        note: "Termination approved. Last working day confirmed.",
+        by: "Reporting Manager",
+      },
+      {
+        status: "Notice Period",
+        date: "2026-09-03",
+        note: "Serving notice. Deal handover and client transition in progress.",
+        by: "Reporting Manager",
+      },
     ],
   },
   {
@@ -70,9 +110,13 @@ const DEFAULT_RESIGNATIONS = [
     employeeId: "MML-E-1042",
     department: "Sales",
     designation: "Relationship Manager",
+    exitType: EXIT_TYPES.RESIGNATION,
     submittedOn: "2026-07-12",
     reason: "Career growth / new opportunity",
     reasonDetails: "Accepted an offer at another firm; happy to help with a smooth handover.",
+    salespersonComment: "",
+    terminatedBy: null,
+    terminationCategory: null,
     requestedLastDay: "2026-08-11",
     noticePeriodDays: 30,
     approvedLastDay: "2026-08-11",
@@ -82,7 +126,12 @@ const DEFAULT_RESIGNATIONS = [
     timeline: [
       { status: "Submitted", date: "2026-07-12", note: "Exit request submitted by employee." },
       { status: "Under Review", date: "2026-07-13", note: "Reviewed by reporting manager." },
-      { status: "Approved", date: "2026-07-15", note: "Approved. Notice period confirmed at 30 days.", by: "Reporting Manager" },
+      {
+        status: "Approved",
+        date: "2026-07-15",
+        note: "Approved. Notice period confirmed at 30 days.",
+        by: "Reporting Manager",
+      },
       { status: "Notice Period", date: "2026-07-15", note: "Now serving notice period.", by: "Reporting Manager" },
     ],
   },
@@ -92,9 +141,13 @@ const DEFAULT_RESIGNATIONS = [
     employeeId: "MML-E-1108",
     department: "Sales",
     designation: "Senior Sales Executive",
+    exitType: EXIT_TYPES.RESIGNATION,
     submittedOn: "2026-06-02",
     reason: "Relocation",
     reasonDetails: "Relocating to another city for family reasons.",
+    salespersonComment: "",
+    terminatedBy: null,
+    terminationCategory: null,
     requestedLastDay: "2026-07-02",
     noticePeriodDays: 30,
     approvedLastDay: "2026-07-02",
@@ -107,7 +160,12 @@ const DEFAULT_RESIGNATIONS = [
       { status: "Approved", date: "2026-06-04", note: "Approved.", by: "Reporting Manager" },
       { status: "Notice Period", date: "2026-06-04", note: "Serving notice period.", by: "Reporting Manager" },
       { status: "Clearance", date: "2026-06-30", note: "All clearances completed.", by: "Reporting Manager" },
-      { status: "Completed", date: "2026-07-02", note: "Exit process completed. Full and final settlement done.", by: "Reporting Manager" },
+      {
+        status: "Completed",
+        date: "2026-07-02",
+        note: "Exit process completed. Full and final settlement done.",
+        by: "Reporting Manager",
+      },
     ],
   },
   {
@@ -116,23 +174,26 @@ const DEFAULT_RESIGNATIONS = [
     employeeId: "MML-E-1176",
     department: "Sales",
     designation: "Sales Executive",
+    exitType: EXIT_TYPES.RESIGNATION,
     submittedOn: "2026-08-20",
     reason: "Higher studies",
     reasonDetails: "Pursuing a full-time management program.",
+    salespersonComment: "",
+    terminatedBy: null,
+    terminationCategory: null,
     requestedLastDay: "2026-09-19",
     noticePeriodDays: 30,
     approvedLastDay: null,
     status: "Submitted",
     clearance: { manager: false, it: false, finance: false, admin: false },
     hrNote: "",
-    timeline: [
-      { status: "Submitted", date: "2026-08-20", note: "Exit request submitted by employee." },
-    ],
+    timeline: [{ status: "Submitted", date: "2026-08-20", note: "Exit request submitted by employee." }],
   },
 ];
 
 export function readResignations() {
   try {
+    LEGACY_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_RESIGNATIONS));
@@ -157,6 +218,10 @@ export function isOpenStatus(status) {
   return !CLOSED_STATUSES.includes(status);
 }
 
+export function isTermination(record) {
+  return record?.exitType === EXIT_TYPES.TERMINATION;
+}
+
 export function getActiveResignationFor(employeeName) {
   return readResignations().find((r) => r.employeeName === employeeName && isOpenStatus(r.status)) || null;
 }
@@ -171,7 +236,16 @@ export function suggestLastWorkingDay(noticePeriodDays) {
   return addDaysISO(noticePeriodDays);
 }
 
-export function submitResignation({ employeeName, employeeId, department, designation, requestedLastDay, noticePeriodDays, reason, reasonDetails }) {
+export function submitResignation({
+  employeeName,
+  employeeId,
+  department,
+  designation,
+  requestedLastDay,
+  noticePeriodDays,
+  reason,
+  reasonDetails,
+}) {
   const list = readResignations();
   const record = {
     id: `r${Date.now()}`,
@@ -179,9 +253,13 @@ export function submitResignation({ employeeName, employeeId, department, design
     employeeId,
     department,
     designation,
+    exitType: EXIT_TYPES.RESIGNATION,
     submittedOn: todayISO(),
     reason,
     reasonDetails: reasonDetails?.trim() || "",
+    salespersonComment: "",
+    terminatedBy: null,
+    terminationCategory: null,
     requestedLastDay,
     noticePeriodDays,
     approvedLastDay: null,
@@ -192,6 +270,20 @@ export function submitResignation({ employeeName, employeeId, department, design
   };
   writeResignations([record, ...list]);
   return record;
+}
+
+export function updateSalespersonComment(id, comment) {
+  const list = readResignations();
+  const next = list.map((r) =>
+    r.id === id
+      ? {
+          ...r,
+          salespersonComment: comment?.trim() || "",
+        }
+      : r
+  );
+  writeResignations(next);
+  return next.find((r) => r.id === id);
 }
 
 export function withdrawResignation(id) {

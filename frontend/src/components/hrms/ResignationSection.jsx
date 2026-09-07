@@ -1,23 +1,29 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   CheckCircle2,
   Circle,
   Clock3,
+  Eye,
   LogOut,
+  MessageSquareQuote,
   Shield,
   Undo2,
+  UserX,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
 import {
   CLEARANCE_ITEMS,
+  EXIT_TYPES,
   NOTICE_PERIOD_OPTIONS,
   REASON_OPTIONS,
   RESIGNATION_STAGES,
   getActiveResignationFor,
+  isTermination,
   submitResignation,
   suggestLastWorkingDay,
+  updateSalespersonComment,
   withdrawResignation,
 } from "../../utils/resignations";
 
@@ -220,8 +226,95 @@ function SubmitExitModal({ open, onClose, onSubmitted, employee }) {
   );
 }
 
+/** View termination reason + let sales personalize their comment. */
+function TerminationReasonModal({ open, onClose, record, onSaved }) {
+  const [comment, setComment] = useState(record?.salespersonComment || "");
+
+  useEffect(() => {
+    if (open && record) setComment(record.salespersonComment || "");
+  }, [open, record]);
+
+  if (!record) return null;
+
+  const handleSave = () => {
+    updateSalespersonComment(record.id, comment);
+    toast.success("Salesperson comment saved.");
+    onSaved?.();
+    onClose();
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Termination reason"
+      subtitle={`${record.employeeName} · ${record.terminationCategory || record.reason}`}
+      icon={<Eye size={16} />}
+      iconBg="#FEF3C7"
+      iconColor="#D97706"
+      width="max-w-xl"
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            Save comment
+          </button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <div className="bg-[#FAFAFB] border border-black/8 rounded-xl px-4 py-3">
+          <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide mb-1">
+            Reason: {record.reason}
+          </p>
+          {record.reasonDetails ? (
+            <p className="text-[13px] text-[#374151] leading-relaxed">“{record.reasonDetails}”</p>
+          ) : (
+            <p className="text-[13px] text-[#9CA3AF]">No additional reason details.</p>
+          )}
+          {(record.terminatedBy || record.submittedOn) && (
+            <p className="text-[11.5px] text-[#9CA3AF] mt-2.5 font-medium">
+              {record.terminatedBy || "Management"}
+              {record.submittedOn ? ` · ${record.submittedOn}` : ""}
+              {record.noticePeriodDays ? ` · ${record.noticePeriodDays}-day notice` : ""}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="flex items-center gap-1.5 text-[13px] font-bold text-[#111] mb-1.5">
+            <MessageSquareQuote size={14} className="text-[#7A0A17]" />
+            Salesperson comment
+          </label>
+          <p className="text-[12px] text-[#6B7280] mb-2 leading-snug">
+            Add or personalize your sales note on this termination — handover context, pipeline notes, or client risk.
+          </p>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={5}
+            placeholder="Write your personalized sales comment..."
+            className="w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40 resize-y min-h-[120px]"
+          />
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export default function ResignationSection({ employee }) {
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [reasonModalOpen, setReasonModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshKey forces a re-read from storage
@@ -268,7 +361,8 @@ export default function ResignationSection({ employee }) {
     );
   }
 
-  const canWithdraw = active.status !== "Completed";
+  const termination = isTermination(active);
+  const canWithdraw = !termination && active.status !== "Completed";
   const clearedCount = Object.values(active.clearance).filter(Boolean).length;
   const stageIndex = Math.max(0, RESIGNATION_STAGES.indexOf(active.status));
   const progressPct = Math.round(((stageIndex + 1) / RESIGNATION_STAGES.length) * 100);
@@ -284,10 +378,17 @@ export default function ResignationSection({ employee }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
           <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">Status</p>
-          <div className="mt-1.5">
+          <div className="mt-1.5 flex items-center gap-2 flex-wrap">
             <StatusPill status={active.status} />
+            {termination && (
+              <span className="inline-flex items-center text-[10.5px] font-bold px-2 py-1 rounded-md bg-[#FEE2E2] text-[#B91C1C] border border-[#DC2626]/15">
+                {EXIT_TYPES.TERMINATION}
+              </span>
+            )}
           </div>
-          <p className="text-[12.5px] text-[#6B7280] mt-2">Submitted on {active.submittedOn}</p>
+          <p className="text-[12.5px] text-[#6B7280] mt-2">
+            {termination ? `Initiated on ${active.submittedOn}` : `Submitted on ${active.submittedOn}`}
+          </p>
         </div>
 
         <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
@@ -302,35 +403,87 @@ export default function ResignationSection({ employee }) {
           </p>
         </div>
 
-        <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
-          <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide flex items-center gap-1.5">
-            <Shield size={12} /> Clearance
-          </p>
-          <p className="text-xl font-extrabold text-[#111827] mt-1.5">
-            {clearedCount} of {CLEARANCE_ITEMS.length}
-          </p>
-          <div className="mt-2 h-1.5 rounded-full bg-[#F3F4F6] overflow-hidden">
-            <div
-              className="h-full rounded-full bg-[#16A34A] transition-all"
-              style={{ width: `${(clearedCount / CLEARANCE_ITEMS.length) * 100}%` }}
-            />
+        {termination ? (
+          <div className="relative overflow-hidden bg-gradient-to-br from-[#7A0A17] to-[#4C0610] border border-[#7A0A17]/40 rounded-2xl p-4 shadow-sm text-white">
+            <div className="absolute -right-3 -top-3 size-16 rounded-full bg-white/10" />
+            <div className="absolute right-6 bottom-2 size-10 rounded-full bg-white/5" />
+            <div className="relative flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-white/70 uppercase tracking-wide flex items-center gap-1.5">
+                  <UserX size={12} /> Termination KPI
+                </p>
+                <p className="text-xl font-extrabold mt-1.5 truncate">
+                  {active.terminationCategory || active.reason || "Involuntary"}
+                </p>
+                <p className="text-[12.5px] text-white/75 mt-1">
+                  {active.terminatedBy ? `By ${active.terminatedBy}` : "Management initiated"}
+                  {active.noticePeriodDays ? ` · ${active.noticePeriodDays}-day notice` : ""}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReasonModalOpen(true)}
+                className="shrink-0 inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold transition-colors border border-white/20"
+              >
+                <Eye size={13} /> View
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+            <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide flex items-center gap-1.5">
+              <Shield size={12} /> Clearance
+            </p>
+            <p className="text-xl font-extrabold text-[#111827] mt-1.5">
+              {clearedCount} of {CLEARANCE_ITEMS.length}
+            </p>
+            <div className="mt-2 h-1.5 rounded-full bg-[#F3F4F6] overflow-hidden">
+              <div
+                className="h-full rounded-full bg-[#16A34A] transition-all"
+                style={{ width: `${(clearedCount / CLEARANCE_ITEMS.length) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
           <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide flex items-center gap-1.5">
-            <Clock3 size={12} /> Progress
+            {termination ? (
+              <>
+                <Shield size={12} /> Clearance
+              </>
+            ) : (
+              <>
+                <Clock3 size={12} /> Progress
+              </>
+            )}
           </p>
-          <p className="text-xl font-extrabold text-[#111827] mt-1.5">{progressPct}%</p>
-          <p className="text-[12.5px] text-[#6B7280] mt-1">
-            {daysLeft == null
-              ? "Track every exit step"
-              : daysLeft > 0
-                ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left in notice`
-                : daysLeft === 0
-                  ? "Last working day is today"
-                  : "Past last working day"}
-          </p>
+          {termination ? (
+            <>
+              <p className="text-xl font-extrabold text-[#111827] mt-1.5">
+                {clearedCount} of {CLEARANCE_ITEMS.length}
+              </p>
+              <div className="mt-2 h-1.5 rounded-full bg-[#F3F4F6] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[#16A34A] transition-all"
+                  style={{ width: `${(clearedCount / CLEARANCE_ITEMS.length) * 100}%` }}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-xl font-extrabold text-[#111827] mt-1.5">{progressPct}%</p>
+              <p className="text-[12.5px] text-[#6B7280] mt-1">
+                {daysLeft == null
+                  ? "Track every exit step"
+                  : daysLeft > 0
+                    ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left in notice`
+                    : daysLeft === 0
+                      ? "Last working day is today"
+                      : "Past last working day"}
+              </p>
+            </>
+          )}
         </div>
       </div>
 
@@ -338,10 +491,12 @@ export default function ResignationSection({ employee }) {
         <div className="px-5 pt-5 pb-4 flex items-center justify-between gap-3 flex-wrap border-b border-black/6 bg-gradient-to-r from-[#FCF5F6] to-white">
           <div className="flex items-center gap-2.5">
             <span className="size-10 rounded-xl bg-white border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center shadow-sm">
-              <LogOut size={17} />
+              {termination ? <UserX size={17} /> : <LogOut size={17} />}
             </span>
             <div>
-              <h3 className="text-sm font-extrabold text-[#111827]">Exit progress</h3>
+              <h3 className="text-sm font-extrabold text-[#111827]">
+                {termination ? "Termination progress" : "Exit progress"}
+              </h3>
               <p className="text-[12.5px] text-[#6B7280]">
                 {active.reason}
                 {active.noticePeriodDays ? ` · ${active.noticePeriodDays}-day notice` : ""}
@@ -374,7 +529,7 @@ export default function ResignationSection({ employee }) {
             </div>
           )}
 
-          {active.reasonDetails && (
+          {!termination && active.reasonDetails && (
             <p className="text-[12.5px] text-[#374151] bg-[#FAFAFB] border border-black/8 rounded-xl px-4 py-3 mb-5 leading-relaxed">
               “{active.reasonDetails}”
             </p>
@@ -430,48 +585,94 @@ export default function ResignationSection({ employee }) {
               )}
             </div>
 
-            <div>
-              <h4 className="text-[12px] font-extrabold text-[#111827] uppercase tracking-wide mb-3">
-                Activity timeline
-              </h4>
-              <div className="relative pl-1 max-h-[340px] overflow-y-auto scrollbar-thin pr-1">
-                {[...active.timeline].reverse().map((t, i, arr) => {
-                  const isLatest = i === 0;
-                  return (
-                    <div key={`${t.status}-${t.date}-${i}`} className="flex gap-3 relative pb-5 last:pb-0">
-                      {i < arr.length - 1 && (
-                        <span className="absolute left-[7px] top-4 bottom-0 w-px bg-black/10" />
-                      )}
-                      <span
-                        className={`relative z-[1] mt-1 size-[15px] rounded-full border-2 shrink-0 ${
-                          isLatest
-                            ? "bg-[#7A0A17] border-[#7A0A17] ring-4 ring-[#7A0A17]/12"
-                            : "bg-white border-[#7A0A17]/50"
-                        }`}
-                      />
-                      <div className="min-w-0 flex-1 -mt-0.5">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-[13px] font-bold text-[#111]">{t.status}</p>
-                          {isLatest && (
-                            <span className="text-[10px] font-bold uppercase tracking-wide text-[#7A0A17] bg-[#FCF5F6] px-1.5 py-0.5 rounded">
-                              Current
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[12.5px] text-[#6B7280] leading-snug mt-0.5">{t.note}</p>
-                        <p className="text-[11px] text-[#9CA3AF] mt-1 font-medium">
-                          {t.date}
-                          {t.by ? ` · ${t.by}` : ""}
-                        </p>
-                      </div>
+            <div className="flex flex-col gap-5">
+              {/* {termination && (
+                <div className="relative overflow-hidden rounded-xl border border-[#7A0A17]/15 bg-gradient-to-br from-[#FCF5F6] via-white to-[#FFF8F0]">
+                  <div className="absolute inset-y-0 left-0 w-1 bg-[#7A0A17]" />
+                  <div className="px-4 py-3.5">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="size-8 rounded-lg bg-white border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center shrink-0">
+                        <MessageSquareQuote size={14} />
+                      </span>
+                      <h4 className="text-[12px] font-extrabold text-[#111827] uppercase tracking-wide">
+                        Salesperson comment
+                      </h4>
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-[#B91C1C] bg-[#FEE2E2] border border-[#DC2626]/15 px-1.5 py-0.5 rounded">
+                        Termination
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setReasonModalOpen(true)}
+                        className="ml-auto inline-flex items-center gap-1 h-7 px-2.5 rounded-lg bg-white border border-black/10 text-[#7A0A17] text-[11px] font-bold hover:bg-[#FAFAFB] transition-colors"
+                      >
+                        <Eye size={12} /> View / Edit
+                      </button>
                     </div>
-                  );
-                })}
+                    <p className="text-[13px] text-[#374151] leading-relaxed line-clamp-4">
+                      “{active.salespersonComment || "No salesperson comment added yet. Click View to add one."}”
+                    </p>
+                    {(active.terminatedBy || active.submittedOn) && (
+                      <p className="text-[11px] text-[#9CA3AF] mt-2 font-medium">
+                        {active.terminatedBy || "Manager"}
+                        {active.submittedOn ? ` · ${active.submittedOn}` : ""}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )} */}
+
+              <div>
+                <h4 className="text-[12px] font-extrabold text-[#111827] uppercase tracking-wide mb-3">
+                  Activity timeline
+                </h4>
+                <div className="relative pl-1 max-h-[340px] overflow-y-auto scrollbar-thin pr-1">
+                  {[...active.timeline].reverse().map((t, i, arr) => {
+                    const isLatest = i === 0;
+                    return (
+                      <div key={`${t.status}-${t.date}-${i}`} className="flex gap-3 relative pb-5 last:pb-0">
+                        {i < arr.length - 1 && (
+                          <span className="absolute left-[7px] top-4 bottom-0 w-px bg-black/10" />
+                        )}
+                        <span
+                          className={`relative z-[1] mt-1 size-[15px] rounded-full border-2 shrink-0 ${
+                            isLatest
+                              ? "bg-[#7A0A17] border-[#7A0A17] ring-4 ring-[#7A0A17]/12"
+                              : "bg-white border-[#7A0A17]/50"
+                          }`}
+                        />
+                        <div className="min-w-0 flex-1 -mt-0.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-[13px] font-bold text-[#111]">{t.status}</p>
+                            {isLatest && (
+                              <span className="text-[10px] font-bold uppercase tracking-wide text-[#7A0A17] bg-[#FCF5F6] px-1.5 py-0.5 rounded">
+                                Current
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[12.5px] text-[#6B7280] leading-snug mt-0.5">{t.note}</p>
+                          <p className="text-[11px] text-[#9CA3AF] mt-1 font-medium">
+                            {t.date}
+                            {t.by ? ` · ${t.by}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {termination && (
+        <TerminationReasonModal
+          open={reasonModalOpen}
+          onClose={() => setReasonModalOpen(false)}
+          record={active}
+          onSaved={() => setRefreshKey((k) => k + 1)}
+        />
+      )}
     </div>
   );
 }
