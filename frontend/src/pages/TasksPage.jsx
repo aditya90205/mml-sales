@@ -4,7 +4,7 @@ import {
   Edit2,
   Eye,
   LayoutGrid,
-  List,
+  LayoutList,
   Plus,
   Search,
   SlidersHorizontal,
@@ -110,35 +110,6 @@ function StatBar() {
 
 /* ───────────────────────── Toolbar ───────────────────────── */
 
-function ViewToggle({ view, onViewChange }) {
-  return (
-    <div className="inline-flex items-center gap-0.5 h-10 p-1 rounded-xl bg-white border border-black/10 shrink-0">
-      <button
-        type="button"
-        onClick={() => onViewChange("grid")}
-        aria-pressed={view === "grid"}
-        aria-label="Grid view"
-        className={`inline-flex items-center gap-1.5 h-full px-3 rounded-lg text-[13px] font-medium transition-colors ${
-          view === "grid" ? "bg-[#7A0A17] text-white" : "text-[#4B5563] hover:bg-[#FAFAFB]"
-        }`}
-      >
-        <LayoutGrid size={14} /> Grid
-      </button>
-      <button
-        type="button"
-        onClick={() => onViewChange("list")}
-        aria-pressed={view === "list"}
-        aria-label="List view"
-        className={`inline-flex items-center gap-1.5 h-full px-3 rounded-lg text-[13px] font-medium transition-colors ${
-          view === "list" ? "bg-[#7A0A17] text-white" : "text-[#4B5563] hover:bg-[#FAFAFB]"
-        }`}
-      >
-        <List size={14} /> List
-      </button>
-    </div>
-  );
-}
-
 function TasksToolbar({ search, onSearchChange, perPage, onPerPageChange, view, onViewChange }) {
   const [perPageOpen, setPerPageOpen] = useState(false);
 
@@ -168,33 +139,62 @@ function TasksToolbar({ search, onSearchChange, perPage, onPerPageChange, view, 
         <SlidersHorizontal size={14} /> Filter
       </button>
 
-      <ViewToggle view={view} onViewChange={onViewChange} />
+      {/* Right side controls: View toggle & Per Page (same as Pipeline) */}
+      <div className="flex items-center gap-2.5 ml-auto shrink-0">
+        <div className="flex items-center h-10 rounded-xl border border-black/10 bg-white overflow-hidden shrink-0">
+          <button
+            type="button"
+            onClick={() => onViewChange("list")}
+            title="List view"
+            aria-pressed={view === "list"}
+            aria-label="List view"
+            className={`h-full px-3 flex items-center transition-colors ${
+              view === "list" ? "bg-[#7A0A17] text-white" : "text-[#9CA3AF] hover:text-[#4B5563] hover:bg-[#FAFAFB]"
+            }`}
+          >
+            <LayoutList size={15} />
+          </button>
+          <span className="w-px h-5 bg-black/10" />
+          <button
+            type="button"
+            onClick={() => onViewChange("grid")}
+            title="Grid view"
+            aria-pressed={view === "grid"}
+            aria-label="Grid view"
+            className={`h-full px-3 flex items-center transition-colors ${
+              view === "grid" ? "bg-[#7A0A17] text-white" : "text-[#9CA3AF] hover:text-[#4B5563] hover:bg-[#FAFAFB]"
+            }`}
+          >
+            <LayoutGrid size={15} />
+          </button>
+        </div>
 
-      <div className="relative shrink-0 ml-auto">
-        <button
-          type="button"
-          onClick={() => setPerPageOpen((v) => !v)}
-          className="inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-        >
-          Per Page: {perPage}
-          <ChevronDown size={14} className={`text-[#9CA3AF] transition-transform ${perPageOpen ? "rotate-180" : ""}`} />
-        </button>
-        {perPageOpen && (
-          <div className="absolute right-0 top-[calc(100%+6px)] min-w-[100px] bg-white border border-black/8 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-30 py-1 overflow-hidden">
-            {PER_PAGE_OPTIONS.map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => { onPerPageChange(n); setPerPageOpen(false); }}
-                className={`w-full text-left px-3.5 py-2 text-[13px] transition-colors ${
-                  n === perPage ? "bg-[#FCF5F6] text-[#7A0A17] font-semibold" : "text-[#4B5563] hover:bg-[#FAFAFB]"
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => setPerPageOpen((v) => !v)}
+            className="inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+          >
+            Per Page: {perPage}
+            <ChevronDown size={14} className={`text-[#9CA3AF] transition-transform ${perPageOpen ? "rotate-180" : ""}`} />
+          </button>
+          {perPageOpen && (
+            <div className="absolute right-0 top-[calc(100%+6px)] min-w-[100px] bg-white border border-black/8 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-30 py-1 overflow-hidden">
+              {PER_PAGE_OPTIONS.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => { onPerPageChange(n); setPerPageOpen(false); }}
+                  className={`w-full text-left px-3.5 py-2 text-[13px] transition-colors ${
+                    n === perPage ? "bg-[#FCF5F6] text-[#7A0A17] font-semibold" : "text-[#4B5563] hover:bg-[#FAFAFB]"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
