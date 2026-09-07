@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -11,9 +11,22 @@ import {
   Pencil,
   CalendarDays,
   CircleDot,
+  LayoutGrid,
+  LayoutList,
+  Eye,
+  Edit2,
+  Trash2,
+  ListTodo,
+  CalendarCheck2,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../components/ui/Modal";
+import CreateMeetingEventModal from "../components/calendar/CreateMeetingEventModal";
+import CreateTaskModal from "../components/calendar/CreateTaskModal";
+import CreateOtherModal from "../components/calendar/CreateOtherModal";
+import TaskDetailsModal, { calendarEventToTaskView } from "../components/calendar/TaskDetailsModal";
+import MeetingDetailsModal, { calendarEventToMeetingView } from "../components/calendar/MeetingDetailsModal";
+import OthersDetailsModal, { calendarEventToOtherView } from "../components/calendar/OthersDetailsModal";
 
 /* ───────────────────────── Categories ───────────────────────── */
 
@@ -21,7 +34,7 @@ const CATEGORIES = {
   event: { label: "Event", dot: "#A02868", bg: "#FDECF3", text: "#A02868", border: "#BB8D5833" },
   task: { label: "Task", dot: "#7C6CB0", bg: "#F5EFFC", text: "#7C6CB0", border: "#7C6CB033" },
   meeting: { label: "Meetings & Appointments", dot: "#41703D", bg: "#F6FFF5", text: "#41703D", border: "#41703D33" },
-  other: { label: "Others", dot: "#6F7886", bg: "#EEEEE", text: "#6F7886", border: "#6F788633"},
+  other: { label: "Others", dot: "#6F7886", bg: "#F3F4F6", text: "#6F7886", border: "#6F788633" },
 };
 
 /* ───────────────────────── Date helpers ───────────────────────── */
@@ -71,13 +84,11 @@ function toDateInput(d) {
   return date.toISOString().slice(0, 10);
 }
 
-const PRIORITY_OPTIONS = ["Critical", "High", "Medium", "Low"];
-const STAGE_OPTIONS = ["New", "In Progress", "Review", "Blocked", "Done"];
 const PRIORITY_STYLES = {
-  Critical: { color: "#E8395B" },
-  High: { color: "#F59E0B" },
-  Medium: { color: "#3B82F6" },
-  Low: { color: "#16A34A" },
+  Critical: { color: "#E8395B", bg: "#FDECEE" },
+  High: { color: "#F59E0B", bg: "#FFF3E4" },
+  Medium: { color: "#3B82F6", bg: "#E8F2FE" },
+  Low: { color: "#16A34A", bg: "#E7F8EF" },
 };
 
 /* ───────────────────────── Mock data ───────────────────────── */
@@ -109,20 +120,47 @@ function mk(dayOffset, startH, endH, title, category, meta = {}) {
 }
 
 const INITIAL_EVENTS = [
-  mk(0, 13, 15, "Client Meeting with ABC Pvt. Ltd", "meeting", {
-    link: "Join on Google Meet",
+  mk(0, 13, 15, "Logging Framework", "meeting", {
+    link: "https://zoom.us/j/123456789#success",
+    meetingLink: "https://zoom.us/j/123456789#success",
     clientRelated: true,
     client: "ABC Pvt. Ltd",
-    assignees: ["Aditya Sharma"],
+    assignees: ["Anjali Gupta"],
+    people: ["Anjali Gupta"],
+    inviteGroups: ["employees"],
+    attendeesList: "Problem Solving",
+    meetingKind: "Individual",
+    meetingTypes: ["video"],
+    emailIds: "anjali.gupta@mmlcompany.com;",
+    formDescription: "Logging Framework",
+    duration: "1 hour",
+    startTime: "10:00",
+    endTime: "11:00",
+    requirements: ["Meeting Notes"],
+    notesTo: ["All Participants"],
+    specialInstructions: "",
+    activationStatus: "Active",
     priority: "High",
     stage: "In Progress",
     stars: 20,
-    description: "Discuss package options and next steps with ABC Pvt. Ltd.",
+    description: "Logging Framework",
+    dueDate: addDays(startOfWeek(ANCHOR), 49),
   }),
   mk(0, 15, 16, "Team Follow-up Call", "task", {
     assignees: ["Rahul Verma"],
     stage: "In Progress",
+    project: "Sales Pipeline",
+    milestone: "Weekly Sync",
+    progress: 55,
     description: "Align on open follow-ups from yesterday’s client calls.",
+    comments: [
+      { author: "Priya Sharma", text: "Please cover Sethi Family follow-up first.", date: new Date().toISOString() },
+    ],
+    checklist: [
+      { text: "Review open tickets", done: true, assignee: "Rahul Verma", dueDate: addDays(ANCHOR, 1) },
+      { text: "Call pending leads", done: false, assignee: "Rahul Verma", dueDate: addDays(ANCHOR, 1) },
+    ],
+    attachments: [{ name: "followups.pdf", size: "240 KB" }],
   }),
   mk(0, 17, 18, "Send Proposal to Client", "other", {
     clientRelated: true,
@@ -137,7 +175,15 @@ const INITIAL_EVENTS = [
     priority: "Medium",
     stage: "New",
     stars: 12,
+    project: "Analytics",
+    milestone: "Planning",
+    progress: 20,
     description: "Review yesterday’s pipeline metrics and flag any stuck deals.",
+    comments: [],
+    checklist: [
+      { text: "Check P0/P1 stuck deals", done: false, assignee: "Priya Sharma", dueDate: addDays(ANCHOR, 2) },
+    ],
+    attachments: [],
   }),
   mk(1, 10, 11, "Share Invoice with Client", "task", {
     clientRelated: true,
@@ -145,21 +191,51 @@ const INITIAL_EVENTS = [
     assignees: ["Dev Malhotra"],
     priority: "Critical",
     stars: 18,
+    project: "Billing",
+    milestone: "Collections",
+    progress: 40,
+    stage: "In Progress",
     description: "Send the pending invoice and confirm receipt.",
+    comments: [],
+    checklist: [],
+    attachments: [{ name: "invoice-agarwal.pdf", size: "128 KB" }],
   }),
   mk(1, 11, 12, "Prepare Client Report", "task", {
     clientRelated: true,
     client: "Malhotra Family",
     assignees: ["Neha Kapoor"],
+    project: "Client Success",
+    milestone: "Reporting",
+    progress: 30,
+    stage: "New",
     description: "Compile weekly activity summary for the client review.",
+    comments: [],
+    checklist: [],
+    attachments: [],
   }),
-  mk(1, 14, 16, "Product Launch Event", "event", {
-    location: "Main Hall",
-    assignees: ["Ishaan Roy", "Priya Sharma"],
+  mk(1, 14, 16, "All Hand Meet - Ankur Mishra", "event", {
+    location: "",
+    venue: "",
+    assignees: ["Anjali Gupta", "Abhinav Pandey"],
+    people: ["Anjali Gupta", "Abhinav Pandey"],
+    inviteGroups: ["employees"],
+    attendeesList: "Anjali Gupta, Abhinav Pandey",
+    eventType: "Company Event",
+    formDescription: "Company Event",
+    meetingTypes: [],
+    emailIds: "ankur.mishra@mmlcompany.com;",
+    duration: "",
+    startTime: "14:00",
+    endTime: "17:00",
+    meetingLink: "",
+    link: "",
+    specialInstructions: "",
+    activationStatus: "Active",
     priority: "High",
     stage: "In Progress",
     stars: 25,
-    description: "Host the product launch session in the main hall.",
+    description: "Company-wide all-hands covering Q3 goals and updates.",
+    dueDate: addDays(startOfWeek(ANCHOR), 1),
   }),
   mk(2, 9, 11, "Project Update Meeting", "meeting", {
     link: "Join on Google Meet",
@@ -210,9 +286,24 @@ const INITIAL_EVENTS = [
   }),
   mk(4, 11, 13, "Product Launch Event", "event", {
     location: "Main Hall",
-    assignees: ["Ishaan Roy"],
+    venue: "Main Hall",
+    assignees: ["Ishaan Roy", "Priya Sharma"],
+    people: ["Ishaan Roy", "Priya Sharma"],
+    inviteGroups: ["employees"],
+    attendeesList: "Ishaan Roy, Priya Sharma",
+    eventType: "Company Event",
+    formDescription: "Company Event",
+    meetingTypes: ["face"],
+    emailIds: "events@mmlcompany.com;",
+    duration: "2 hours",
+    startTime: "11:00",
+    endTime: "13:00",
+    specialInstructions: "",
+    activationStatus: "Active",
     priority: "High",
+    stage: "In Progress",
     stars: 25,
+    description: "Host the product launch session in the main hall.",
   }),
   mk(4, 13, 15, "Client Meeting with ABC Pvt. Ltd", "meeting", {
     link: "Join on Google Meet",
@@ -331,434 +422,255 @@ function DetailField({ label, children }) {
   );
 }
 
-const INPUT =
-  "w-full h-9 px-3 rounded-xl bg-white border border-black/10 text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/40 transition-colors";
+function ChipList({ items }) {
+  if (!items?.length) return <span className="text-[#9CA3AF] font-medium">—</span>;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((item) => (
+        <span
+          key={item}
+          className="inline-flex items-center px-2.5 py-1 rounded-lg bg-[#F1F2F4] text-[12px] font-semibold text-[#374151]"
+        >
+          {item}
+        </span>
+      ))}
+    </div>
+  );
+}
 
-function buildFormFromEvent(event) {
-  const meta = event.meta || {};
+function hourToTimeStr(h) {
+  return `${String(h).padStart(2, "0")}:00`;
+}
+
+function eventToMeetingForm(ev) {
+  const m = ev.meta || {};
   return {
-    title: event.title || "",
-    priority: meta.priority || "Medium",
-    clientRelated: Boolean(meta.clientRelated),
-    client: meta.client || "",
-    assignees: Array.isArray(meta.assignees) ? meta.assignees.join(", ") : meta.assignees || "",
-    stage: meta.stage || "New",
-    startDate: toDateInput(event.date),
-    dueDate: toDateInput(meta.dueDate || addDays(event.date, 3)),
-    stars: meta.stars ?? 10,
-    startH: event.startH,
-    endH: event.endH,
-    description: meta.description || "",
-    location: meta.location || "",
-    link: meta.link || "",
+    title: ev.title || "",
+    inviteGroups: m.inviteGroups || (m.clientRelated ? ["client", "employees"] : ["employees"]),
+    people: Array.isArray(m.people) ? m.people : Array.isArray(m.assignees) ? m.assignees : [],
+    emailIds: m.emailIds || "team@mmlcompany.com;",
+    specialInstructions: m.specialInstructions || "",
+    notes: m.description && m.description !== (m.eventType || m.formDescription) ? m.description : "",
+    description: m.eventType || m.formDescription || "",
+    meetingTypes: m.meetingTypes?.length ? m.meetingTypes : ["video"],
+    meetingLink: m.meetingLink || m.link || "",
+    venue: m.venue || m.location || "",
+    startDate: toDateInput(ev.date),
+    endDate: toDateInput(m.dueDate || ev.date),
+    startTime: m.startTime || hourToTimeStr(ev.startH),
+    endTime: m.endTime || hourToTimeStr(ev.endH),
+    duration: m.duration || "",
+    attachment: m.attachment || "",
+    requirements: m.requirements?.length ? m.requirements : ["Transcripts"],
+    notesTo: m.notesTo || [],
   };
 }
 
-function EventDetailModal({ event, onClose, onSave }) {
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState(null);
-
-  useEffect(() => {
-    if (!event) return;
-    setEditing(false);
-    setForm(buildFormFromEvent(event));
-  }, [event]);
-
-  if (!event || !form) return null;
-
-  const cat = CATEGORIES[event.category] || CATEGORIES.other;
-  const meta = event.meta || {};
-  const assignees = Array.isArray(meta.assignees) ? meta.assignees : meta.assignees ? [meta.assignees] : [];
-  const priorityStyle = PRIORITY_STYLES[meta.priority] || PRIORITY_STYLES.Medium;
-
-  const set = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
-
-  const handleClose = () => {
-    setEditing(false);
-    onClose();
+function eventToTaskForm(ev) {
+  const m = ev.meta || {};
+  return {
+    title: ev.title || "",
+    description: m.description || "",
+    priority: m.priority || "Medium",
+    assignees: Array.isArray(m.assignees) ? m.assignees : [],
+    isClientRelated: Boolean(m.clientRelated),
+    client: m.client || "",
+    startDate: toDateInput(ev.date),
+    dueDate: toDateInput(m.dueDate || addDays(ev.date, 3)),
+    stars: m.stars ?? 7,
+    stage: m.stage || "New",
   };
+}
 
-  const handleSave = () => {
-    if (!form.title.trim()) {
-      toast.error("Please enter a title.");
-      return;
-    }
-    if (Number(form.endH) <= Number(form.startH)) {
-      toast.error("End time must be after start time.");
-      return;
-    }
-    const assigneeList = form.assignees
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
+function eventToOtherForm(ev) {
+  const m = ev.meta || {};
+  return {
+    title: ev.title || "",
+    description: m.description || "",
+    priority: m.priority || "Medium",
+    assignees: Array.isArray(m.assignees) ? m.assignees : [],
+    isClientRelated: Boolean(m.clientRelated),
+    client: m.client || "",
+    date: toDateInput(ev.date),
+    startTime: m.startTime || hourToTimeStr(ev.startH),
+    endTime: m.endTime || hourToTimeStr(ev.endH),
+    stars: m.stars ?? 7,
+  };
+}
 
-    onSave({
-      ...event,
-      title: form.title.trim(),
-      date: new Date(`${form.startDate}T00:00:00`),
-      startH: Number(form.startH),
-      endH: Number(form.endH),
-      meta: {
-        ...meta,
-        priority: form.priority,
-        clientRelated: form.clientRelated,
-        client: form.clientRelated ? form.client.trim() : "",
-        assignees: assigneeList,
-        stage: form.stage,
-        dueDate: new Date(`${form.dueDate}T00:00:00`),
-        stars: Number(form.stars) || 0,
-        description: form.description.trim(),
-        location: form.location.trim(),
-        link: form.link.trim(),
-      },
-    });
-    setEditing(false);
-    toast.success("Details updated.");
+const MEETING_TYPE_LABELS = { video: "Virtual/Video", telephonic: "Telephonic", face: "Face to Face" };
+const INVITE_GROUP_LABELS = { others: "Others/External", employees: "Employees", client: "Client" };
+
+function CalendarItemDetails({ item }) {
+  if (!item) return null;
+  const cat = CATEGORIES[item.category] || CATEGORIES.other;
+  const m = item.meta || {};
+  const assignees = Array.isArray(m.assignees) ? m.assignees : [];
+  const people = Array.isArray(m.people) ? m.people : assignees;
+  const inviteLabels = (m.inviteGroups || []).map((k) => INVITE_GROUP_LABELS[k] || k);
+  const meetingTypeLabels = (m.meetingTypes || []).map((t) => MEETING_TYPE_LABELS[t] || t);
+  const priorityStyle = PRIORITY_STYLES[m.priority] || PRIORITY_STYLES.Medium;
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="inline-flex items-center gap-1.5">
+        <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: cat.dot }} />
+        <span className="text-[13px] font-semibold" style={{ color: cat.text }}>{cat.label}</span>
+      </div>
+
+      {item.category === "event" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
+          <DetailField label="Title">{item.title}</DetailField>
+          <DetailField label="Event Type">{m.eventType || m.formDescription || item.title}</DetailField>
+          <DetailField label="Date">{fmtDate(item.date)}</DetailField>
+          <DetailField label="Time">{fmtTime(item.startH)} – {fmtTime(item.endH)}</DetailField>
+          <DetailField label="Invite"><ChipList items={inviteLabels} /></DetailField>
+          <DetailField label="People"><ChipList items={people} /></DetailField>
+          <div className="sm:col-span-2">
+            <DetailField label="Email Ids">{m.emailIds || "—"}</DetailField>
+          </div>
+          <DetailField label="Duration">{m.duration || "—"}</DetailField>
+          <DetailField label="Venue">{m.venue || m.location || "—"}</DetailField>
+          {m.link || m.meetingLink ? (
+            <div className="sm:col-span-2">
+              <DetailField label="Event Link">
+                <span className="text-[#3B82F6]">{m.meetingLink || m.link}</span>
+              </DetailField>
+            </div>
+          ) : null}
+          <div className="sm:col-span-2">
+            <DetailField label="Description">
+              <span className="font-medium text-[#374151]">{m.specialInstructions || m.description || "No description added."}</span>
+            </DetailField>
+          </div>
+        </div>
+      )}
+
+      {item.category === "meeting" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
+          <DetailField label="Title">{item.title}</DetailField>
+          <DetailField label="Description">{m.formDescription || m.description || item.title}</DetailField>
+          <DetailField label="Invite"><ChipList items={inviteLabels} /></DetailField>
+          <DetailField label="People"><ChipList items={people} /></DetailField>
+          <div className="sm:col-span-2">
+            <DetailField label="Email Ids">{m.emailIds || "—"}</DetailField>
+          </div>
+          <DetailField label="Meeting Type"><ChipList items={meetingTypeLabels} /></DetailField>
+          <DetailField label="Duration">{m.duration || "—"}</DetailField>
+          <DetailField label="Start Date">{fmtDate(item.date)}</DetailField>
+          <DetailField label="End Date">{fmtDate(m.dueDate || item.date)}</DetailField>
+          <DetailField label="Start Time">{fmtTime(item.startH)}</DetailField>
+          <DetailField label="End Time">{fmtTime(item.endH)}</DetailField>
+          {(m.meetingLink || m.link) && (
+            <div className="sm:col-span-2">
+              <DetailField label="Meeting Link">
+                <span className="text-[#3B82F6]">{m.meetingLink || m.link}</span>
+              </DetailField>
+            </div>
+          )}
+          {(m.venue || m.location) && <DetailField label="Venue">{m.venue || m.location}</DetailField>}
+          <DetailField label="Requirements"><ChipList items={m.requirements} /></DetailField>
+          <DetailField label="Notes To"><ChipList items={m.notesTo} /></DetailField>
+          <div className="sm:col-span-2">
+            <DetailField label="Special Instructions">
+              <span className="font-medium text-[#374151]">{m.specialInstructions || "—"}</span>
+            </DetailField>
+          </div>
+        </div>
+      )}
+
+      {item.category === "task" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
+          <DetailField label="Title">{item.title}</DetailField>
+          <DetailField label="Priority">
+            <span style={{ color: priorityStyle.color }}>{m.priority || "Medium"}</span>
+          </DetailField>
+          <DetailField label="Client Related">{m.clientRelated ? "Yes" : "No"}</DetailField>
+          <DetailField label="Client">{m.clientRelated && m.client ? m.client : "—"}</DetailField>
+          <DetailField label="Assignees"><ChipList items={assignees} /></DetailField>
+          <DetailField label="Stage">{m.stage || "New"}</DetailField>
+          <DetailField label="Start Date">{fmtDate(item.date)}</DetailField>
+          <DetailField label="Due Date">{fmtDate(m.dueDate || addDays(item.date, 3))}</DetailField>
+          <DetailField label="Stars (XP)">{m.stars ?? 10}</DetailField>
+          <DetailField label="Scheduled Time">
+            {fmtTime(item.startH)} – {fmtTime(item.endH)}
+          </DetailField>
+          <div className="sm:col-span-2">
+            <DetailField label="Description">
+              <span className="font-medium text-[#374151]">{m.description || "No description added."}</span>
+            </DetailField>
+          </div>
+        </div>
+      )}
+
+      {(item.category === "other" || !["event", "meeting", "task"].includes(item.category)) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
+          <DetailField label="Title">{item.title}</DetailField>
+          <DetailField label="Category">{cat.label}</DetailField>
+          <DetailField label="Date">{fmtDate(item.date)}</DetailField>
+          <DetailField label="Time">{fmtTime(item.startH)} – {fmtTime(item.endH)}</DetailField>
+          <DetailField label="Assignees"><ChipList items={assignees} /></DetailField>
+          <DetailField label="Priority">
+            <span style={{ color: priorityStyle.color }}>{m.priority || "Medium"}</span>
+          </DetailField>
+          <div className="sm:col-span-2">
+            <DetailField label="Description">
+              <span className="font-medium text-[#374151]">{m.description || "No description added."}</span>
+            </DetailField>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EventDetailModal({ event, onClose, onEdit }) {
+  if (!event) return null;
+  const cat = CATEGORIES[event.category] || CATEGORIES.other;
+  const titleMap = {
+    event: "Event Details",
+    meeting: "Meeting Details",
+    task: "Task Details",
+    other: "Others Details",
   };
 
   return (
     <Modal
       open={!!event}
-      onClose={handleClose}
-      title="Task Details"
-      subtitle={editing ? form.title || event.title : event.title}
+      onClose={onClose}
+      title={titleMap[event.category] || "Details"}
+      subtitle={event.title}
+      icon={
+        event.category === "task" ? <CheckSquare size={16} />
+          : event.category === "meeting" ? <Users2 size={16} />
+            : event.category === "event" ? <CalendarDays size={16} />
+              : <CircleDot size={16} />
+      }
+      iconBg={cat.bg}
+      iconColor={cat.text}
       width="max-w-2xl"
       footer={
-        editing ? (
-          <>
+        <>
+          {["event", "meeting", "task", "other"].includes(event.category) && (
             <button
               type="button"
-              onClick={() => {
-                setForm(buildFormFromEvent(event));
-                setEditing(false);
-              }}
-              className="h-9 px-4 rounded-xl border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-            >
-              Save
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
+              onClick={() => onEdit?.(event)}
               className="h-9 px-4 rounded-xl border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors inline-flex items-center gap-1.5"
             >
               <Pencil size={13} /> Edit
             </button>
-            <button
-              type="button"
-              onClick={handleClose}
-              className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-            >
-              Close
-            </button>
-          </>
-        )
-      }
-    >
-      {editing ? (
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-            <div>
-              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Title</label>
-              <input value={form.title} onChange={(e) => set("title", e.target.value)} className={INPUT} />
-            </div>
-            <div>
-              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Priority</label>
-              <select value={form.priority} onChange={(e) => set("priority", e.target.value)} className={INPUT}>
-                {PRIORITY_OPTIONS.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Client Related</label>
-              <select
-                value={form.clientRelated ? "Yes" : "No"}
-                onChange={(e) => set("clientRelated", e.target.value === "Yes")}
-                className={INPUT}
-              >
-                <option>No</option>
-                <option>Yes</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Client</label>
-              <input
-                value={form.client}
-                onChange={(e) => set("client", e.target.value)}
-                disabled={!form.clientRelated}
-                placeholder={form.clientRelated ? "Client name" : "—"}
-                className={`${INPUT} disabled:bg-[#F7F8FA] disabled:text-[#9CA3AF]`}
-              />
-            </div>
-            <div>
-              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Assignees</label>
-              <input
-                value={form.assignees}
-                onChange={(e) => set("assignees", e.target.value)}
-                placeholder="Comma-separated names"
-                className={INPUT}
-              />
-            </div>
-            <div>
-              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Stage</label>
-              <select value={form.stage} onChange={(e) => set("stage", e.target.value)} className={INPUT}>
-                {STAGE_OPTIONS.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Start Date</label>
-              <input type="date" value={form.startDate} onChange={(e) => set("startDate", e.target.value)} className={INPUT} />
-            </div>
-            <div>
-              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Due Date</label>
-              <input type="date" value={form.dueDate} onChange={(e) => set("dueDate", e.target.value)} className={INPUT} />
-            </div>
-            <div>
-              <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Stars (XP)</label>
-              <input
-                type="number"
-                min={0}
-                value={form.stars}
-                onChange={(e) => set("stars", e.target.value)}
-                className={INPUT}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Start</label>
-                <select value={form.startH} onChange={(e) => set("startH", Number(e.target.value))} className={INPUT}>
-                  {HOURS.map((h) => (
-                    <option key={h} value={h}>{fmtHour(h)}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">End</label>
-                <select value={form.endH} onChange={(e) => set("endH", Number(e.target.value))} className={INPUT}>
-                  {HOURS.concat(19).map((h) => (
-                    <option key={h} value={h}>{fmtHour(h)}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-          {(event.category === "event" || event.category === "meeting") && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {event.category === "event" && (
-                <div>
-                  <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Location</label>
-                  <input value={form.location} onChange={(e) => set("location", e.target.value)} className={INPUT} />
-                </div>
-              )}
-              {event.category === "meeting" && (
-                <div>
-                  <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Meeting Link</label>
-                  <input value={form.link} onChange={(e) => set("link", e.target.value)} className={INPUT} />
-                </div>
-              )}
-            </div>
           )}
-          <div>
-            <label className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5 block">Description</label>
-            <textarea
-              value={form.description}
-              onChange={(e) => set("description", e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2.5 rounded-xl bg-white border border-black/10 text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/40 transition-colors resize-y min-h-[80px]"
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-5">
-          <div className="inline-flex items-center gap-1.5">
-            <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: cat.dot }} />
-            <span className="text-[13px] font-semibold" style={{ color: cat.text }}>{cat.label}</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
-            <DetailField label="Title">{event.title}</DetailField>
-            <DetailField label="Priority">
-              <span style={{ color: priorityStyle.color }}>{meta.priority || "Medium"}</span>
-            </DetailField>
-            <DetailField label="Client Related">{meta.clientRelated ? "Yes" : "No"}</DetailField>
-            <DetailField label="Client">{meta.clientRelated && meta.client ? meta.client : "—"}</DetailField>
-            <DetailField label="Assignees">
-              {assignees.length === 0 ? (
-                "—"
-              ) : (
-                <div className="flex flex-wrap gap-1.5">
-                  {assignees.map((name) => (
-                    <span
-                      key={name}
-                      className="inline-flex items-center px-2.5 py-1 rounded-lg bg-[#F1F2F4] text-[12px] font-semibold text-[#374151]"
-                    >
-                      {name}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </DetailField>
-            <DetailField label="Stage">{meta.stage || "New"}</DetailField>
-            <DetailField label="Start Date">{fmtDate(event.date)}</DetailField>
-            <DetailField label="Due Date">{fmtDate(meta.dueDate || addDays(event.date, 3))}</DetailField>
-            <DetailField label="Stars (XP)">{meta.stars ?? 10}</DetailField>
-            <DetailField label="Scheduled Time">
-              {fmtTime(event.startH)} – {fmtTime(event.endH)}
-            </DetailField>
-            {meta.location && <DetailField label="Location">{meta.location}</DetailField>}
-            {meta.link && (
-              <DetailField label="Meeting Link">
-                <span className="text-[#3B82F6]">{meta.link}</span>
-              </DetailField>
-            )}
-          </div>
-
-          <DetailField label="Description">
-            <span className="font-medium text-[#374151]">
-              {meta.description || "No description added."}
-            </span>
-          </DetailField>
-        </div>
-      )}
-    </Modal>
-  );
-}
-
-/* ───────────────────────── Create event modal ───────────────────────── */
-
-function CreateEventModal({ open, onClose, onCreate, defaultDate }) {
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("event");
-  const [date, setDate] = useState(defaultDate);
-  const [startH, setStartH] = useState(10);
-  const [endH, setEndH] = useState(11);
-
-  const reset = () => {
-    setTitle("");
-    setCategory("event");
-    setStartH(10);
-    setEndH(11);
-  };
-
-  return (
-    <Modal
-      open={open}
-      onClose={() => { reset(); onClose(); }}
-      title="Create event"
-      subtitle="Add a new item to the calendar"
-      icon={<Plus size={16} />}
-      iconBg={CATEGORIES.event.bg}
-      iconColor={CATEGORIES.event.text}
-      footer={
-        <>
           <button
             type="button"
-            onClick={() => { reset(); onClose(); }}
-            className="h-9 px-4 rounded-xl border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (!title.trim()) {
-                toast.error("Please enter a title.");
-                return;
-              }
-              if (endH <= startH) {
-                toast.error("End time must be after start time.");
-                return;
-              }
-              onCreate({ title: title.trim(), category, date, startH: Number(startH), endH: Number(endH) });
-              reset();
-              onClose();
-            }}
+            onClick={onClose}
             className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
           >
-            Create
+            Close
           </button>
         </>
       }
     >
-      <div className="flex flex-col gap-4">
-        <div>
-          <label className="text-xs font-semibold text-[#6B7280] mb-1.5 block">Title</label>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Follow up with client"
-            className="w-full h-10 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40 transition-colors"
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-[#6B7280] mb-1.5 block">Category</label>
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(CATEGORIES).map(([id, cat]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setCategory(id)}
-                className={`inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
-                  category === id ? "border-transparent" : "border-black/10 text-[#6B7280] hover:bg-[#FAFAFB]"
-                }`}
-                style={category === id ? { backgroundColor: cat.bg, color: cat.text } : undefined}
-              >
-                <span className="size-1.5 rounded-full" style={{ backgroundColor: cat.dot }} />
-                {cat.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="text-xs font-semibold text-[#6B7280] mb-1.5 block">Date</label>
-            <input
-              type="date"
-              value={date.toISOString().slice(0, 10)}
-              onChange={(e) => setDate(new Date(e.target.value + "T00:00:00"))}
-              className="w-full h-10 px-3 rounded-xl bg-white border border-black/10 text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/40 transition-colors"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-[#6B7280] mb-1.5 block">Start</label>
-            <select
-              value={startH}
-              onChange={(e) => setStartH(Number(e.target.value))}
-              className="w-full h-10 px-3 rounded-xl bg-white border border-black/10 text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/40 transition-colors"
-            >
-              {HOURS.map((h) => (
-                <option key={h} value={h}>{fmtHour(h)}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-[#6B7280] mb-1.5 block">End</label>
-            <select
-              value={endH}
-              onChange={(e) => setEndH(Number(e.target.value))}
-              className="w-full h-10 px-3 rounded-xl bg-white border border-black/10 text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/40 transition-colors"
-            >
-              {HOURS.concat(19).map((h) => (
-                <option key={h} value={h}>{fmtHour(h)}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
+      <CalendarItemDetails item={event} />
     </Modal>
   );
 }
@@ -847,6 +759,7 @@ function MiniCalendar({ cursor, onCursorChange, selected, onSelect }) {
 export default function CalendarPage() {
   const [view, setView] = useState("Week");
   const [viewOpen, setViewOpen] = useState(false);
+  const [layout, setLayout] = useState("grid"); // "grid" | "list"
   const [anchorDate, setAnchorDate] = useState(ANCHOR);
   const [miniCursor, setMiniCursor] = useState(ANCHOR);
   const [activeCats, setActiveCats] = useState(new Set(Object.keys(CATEGORIES)));
@@ -855,7 +768,15 @@ export default function CalendarPage() {
   const [events, setEvents] = useState(INITIAL_EVENTS);
   const [unscheduled, setUnscheduled] = useState(INITIAL_UNSCHEDULED);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [selectedMeetingEvent, setSelectedMeetingEvent] = useState(null);
+  const [selectedTaskEvent, setSelectedTaskEvent] = useState(null);
+  const [selectedOtherEvent, setSelectedOtherEvent] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
+  const [createEventOpen, setCreateEventOpen] = useState(false);
+  const [createMeetingOpen, setCreateMeetingOpen] = useState(false);
+  const [createTaskOpen, setCreateTaskOpen] = useState(false);
+  const [createOtherOpen, setCreateOtherOpen] = useState(false);
   const [dragOverCell, setDragOverCell] = useState(null);
 
   const allChecked = activeCats.size === Object.keys(CATEGORIES).length;
@@ -962,17 +883,341 @@ export default function CalendarPage() {
 
   const eventsFor = (day) => visibleEvents.filter((ev) => sameDay(ev.date, day));
 
+  const parseTimeHour = (time, fallback = 10) => {
+    if (!time) return fallback;
+    const [h] = String(time).split(":").map(Number);
+    return Number.isFinite(h) ? h : fallback;
+  };
+
+  const parseIsoDate = (iso, fallback = anchorDate) => {
+    if (!iso) return fallback;
+    const [y, m, d] = iso.split("-").map(Number);
+    if (!y || !m || !d) return fallback;
+    return new Date(y, m - 1, d);
+  };
+
+  const addCalendarItem = (item) => {
+    setEvents((prev) => [...prev, item]);
+    jumpTo(item.date);
+  };
+
+  const upsertCalendarItem = (item) => {
+    setEvents((prev) => {
+      const exists = prev.some((ev) => ev.id === item.id);
+      return exists ? prev.map((ev) => (ev.id === item.id ? item : ev)) : [...prev, item];
+    });
+    jumpTo(item.date);
+  };
+
+  const buildMeetingOrEventItem = (form, category, existingId = null) => {
+    const date = parseIsoDate(form.startDate);
+    const startH = parseTimeHour(form.startTime, 10);
+    let endH = parseTimeHour(form.endTime, startH + 1);
+    if (endH <= startH) endH = Math.min(startH + 1, 18);
+    const client = form.inviteGroups?.includes("client")
+      ? form.people.find((p) => ["ABC Pvt. Ltd", "Sethi Family", "Agarwal Contract", "Malhotra Family", "Mehta & Co"].includes(p)) || ""
+      : "";
+    return {
+      id: existingId || `${category}-${Date.now()}`,
+      date,
+      startH,
+      endH,
+      title: form.title?.trim() || form.description || (category === "event" ? "New Event" : "New Meeting"),
+      category,
+      meta: {
+        priority: "Medium",
+        clientRelated: Boolean(client) || form.inviteGroups?.includes("client"),
+        client,
+        assignees: form.people?.length ? form.people : ["Priya Sharma"],
+        people: form.people || [],
+        inviteGroups: form.inviteGroups || [],
+        stage: "New",
+        dueDate: parseIsoDate(form.endDate || form.startDate, addDays(date, 1)),
+        stars: 10,
+        description:
+          category === "event"
+            ? form.notes || ""
+            : form.specialInstructions || form.description || "",
+        formDescription: form.description || "",
+        eventType: category === "event" ? form.description : undefined,
+        specialInstructions: form.specialInstructions || "",
+        location: form.venue || "",
+        venue: form.venue || "",
+        link: form.meetingLink || "",
+        meetingLink: form.meetingLink || "",
+        meetingTypes: form.meetingTypes || [],
+        emailIds: form.emailIds || "",
+        duration: form.duration || "",
+        requirements: form.requirements || [],
+        notesTo: form.notesTo || [],
+        attachment: form.attachment || "",
+        startTime: form.startTime || "",
+        endTime: form.endTime || "",
+        attendeesList: form.people?.length
+          ? form.people.join(", ")
+          : (form.inviteGroups || [])
+              .filter((k) => k !== "all")
+              .map((k) => ({ others: "Others/External", employees: "Employees", client: "Client", all: "All" })[k] || k)
+              .join(", "),
+        meetingKind: form.people?.length > 1 ? "Group" : "Individual",
+        activationStatus: "Active",
+      },
+    };
+  };
+
+  const handleCreateMeetingOrEvent = (form, category) => {
+    addCalendarItem(buildMeetingOrEventItem(form, category));
+  };
+
+  const handleUpdateMeetingOrEvent = (form, category) => {
+    if (!editingItem) return;
+    upsertCalendarItem(buildMeetingOrEventItem(form, category, editingItem.id));
+    setEditingItem(null);
+  };
+
+  const buildTaskItem = (form, existingId = null) => {
+    const date = parseIsoDate(form.startDate);
+    const existing = existingId ? events.find((e) => e.id === existingId) : null;
+    const prevMeta = existing?.meta || {};
+    return {
+      id: existingId || `task-${Date.now()}`,
+      date,
+      startH: existing ? existing.startH : 9,
+      endH: existing ? existing.endH : 10,
+      title: form.title,
+      category: "task",
+      meta: {
+        priority: form.priority || "Medium",
+        clientRelated: Boolean(form.isClientRelated),
+        client: form.client || "",
+        assignees: form.assignees?.length ? form.assignees : ["Priya Sharma"],
+        stage: form.stage || prevMeta.stage || "New",
+        dueDate: parseIsoDate(form.dueDate, addDays(date, 3)),
+        stars: form.stars ?? 7,
+        description: form.description || "",
+        project: prevMeta.project || "Sales Pipeline",
+        milestone: prevMeta.milestone || "Planning",
+        progress: prevMeta.progress ?? 20,
+        acknowledgedAt: prevMeta.acknowledgedAt || date,
+        assignedAt: prevMeta.assignedAt || date,
+        comments: prevMeta.comments || [],
+        checklist: prevMeta.checklist || [],
+        attachments: prevMeta.attachments || [],
+      },
+    };
+  };
+
+  const handleCreateTask = (form) => {
+    addCalendarItem(buildTaskItem(form));
+  };
+
+  const handleUpdateTask = (form) => {
+    if (!editingItem) return;
+    upsertCalendarItem(buildTaskItem(form, editingItem.id));
+    setEditingItem(null);
+  };
+
+  const buildOtherItem = (form, existingId = null) => {
+    const date = parseIsoDate(form.date);
+    const startH = parseTimeHour(form.startTime, 10);
+    let endH = parseTimeHour(form.endTime, startH + 1);
+    if (endH <= startH) endH = Math.min(startH + 1, 18);
+    return {
+      id: existingId || `other-${Date.now()}`,
+      date,
+      startH,
+      endH,
+      title: form.title?.trim() || "New Item",
+      category: "other",
+      meta: {
+        priority: form.priority || "Medium",
+        clientRelated: Boolean(form.isClientRelated),
+        client: form.client || "",
+        assignees: form.assignees?.length ? form.assignees : ["Priya Sharma"],
+        stage: "New",
+        dueDate: date,
+        stars: form.stars ?? 7,
+        description: form.description || "",
+        startTime: form.startTime || "",
+        endTime: form.endTime || "",
+      },
+    };
+  };
+
+  const handleCreateOther = (form) => {
+    addCalendarItem(buildOtherItem(form));
+  };
+
+  const handleUpdateOther = (form) => {
+    if (!editingItem) return;
+    upsertCalendarItem(buildOtherItem(form, editingItem.id));
+    setEditingItem(null);
+  };
+
+  const openCalendarItem = (ev) => {
+    if (ev?.category === "task") {
+      setSelectedEvent(null);
+      setSelectedMeetingEvent(null);
+      setSelectedOtherEvent(null);
+      setSelectedTaskEvent(ev);
+      return;
+    }
+    if (ev?.category === "meeting" || ev?.category === "event") {
+      setSelectedEvent(null);
+      setSelectedTaskEvent(null);
+      setSelectedOtherEvent(null);
+      setSelectedMeetingEvent(ev);
+      return;
+    }
+    setSelectedTaskEvent(null);
+    setSelectedMeetingEvent(null);
+    setSelectedEvent(null);
+    setSelectedOtherEvent(ev);
+  };
+
+  const openEditItem = (item) => {
+    setSelectedEvent(null);
+    setSelectedMeetingEvent(null);
+    setSelectedTaskEvent(null);
+    setSelectedOtherEvent(null);
+    setEditingItem(item);
+    if (item.category === "event") setCreateEventOpen(true);
+    else if (item.category === "meeting") setCreateMeetingOpen(true);
+    else if (item.category === "task") setCreateTaskOpen(true);
+    else setCreateOtherOpen(true);
+  };
+
+  const syncTaskViewToEvent = (taskView) => {
+    setEvents((prev) =>
+      prev.map((ev) => {
+        if (ev.id !== taskView.id) return ev;
+        return {
+          ...ev,
+          title: taskView.title,
+          meta: {
+            ...ev.meta,
+            description: taskView.description,
+            stage: taskView.stage,
+            priority: taskView.priority,
+            project: taskView.project,
+            milestone: taskView.milestone,
+            progress: taskView.progress,
+            assignees: taskView.assignees,
+            clientRelated: taskView.isClientRelated,
+            client: taskView.client,
+            dueDate: taskView.dueDate,
+            stars: taskView.stars,
+            acknowledgedAt: taskView.acknowledgedAt,
+            assignedAt: taskView.assignedAt,
+            comments: taskView.comments,
+            checklist: taskView.checklist,
+            attachments: taskView.attachments,
+          },
+        };
+      })
+    );
+    setSelectedTaskEvent((prev) =>
+      prev && prev.id === taskView.id
+        ? {
+            ...prev,
+            title: taskView.title,
+            meta: {
+              ...prev.meta,
+              description: taskView.description,
+              stage: taskView.stage,
+              priority: taskView.priority,
+              project: taskView.project,
+              milestone: taskView.milestone,
+              progress: taskView.progress,
+              assignees: taskView.assignees,
+              clientRelated: taskView.isClientRelated,
+              client: taskView.client,
+              dueDate: taskView.dueDate,
+              stars: taskView.stars,
+              acknowledgedAt: taskView.acknowledgedAt,
+              assignedAt: taskView.assignedAt,
+              comments: taskView.comments,
+              checklist: taskView.checklist,
+              attachments: taskView.attachments,
+            },
+          }
+        : prev
+    );
+  };
+
+  const closeEventModal = () => {
+    setCreateEventOpen(false);
+    setEditingItem((prev) => (prev?.category === "event" ? null : prev));
+  };
+
+  const closeMeetingModal = () => {
+    setCreateMeetingOpen(false);
+    setEditingItem((prev) => (prev?.category === "meeting" ? null : prev));
+  };
+
+  const closeTaskModal = () => {
+    setCreateTaskOpen(false);
+    setEditingItem((prev) => (prev?.category === "task" ? null : prev));
+  };
+
+  const closeOtherModal = () => {
+    setCreateOtherOpen(false);
+    setEditingItem((prev) => (prev?.category === "other" ? null : prev));
+  };
+
+  const listEvents = useMemo(() => {
+    const inRange = visibleEvents.filter((ev) => {
+      if (view === "Month") {
+        return (
+          ev.date.getFullYear() === anchorDate.getFullYear() &&
+          ev.date.getMonth() === anchorDate.getMonth()
+        );
+      }
+      return days.some((d) => sameDay(ev.date, d));
+    });
+    return [...inRange].sort((a, b) => {
+      const as = new Date(a.date); as.setHours(a.startH, 0, 0, 0);
+      const bs = new Date(b.date); bs.setHours(b.startH, 0, 0, 0);
+      return as - bs;
+    });
+  }, [visibleEvents, days, view, anchorDate]);
+
   return (
     <div className="flex flex-1 min-h-0" style={{ height: "calc(100vh - 56px)" }}>
       {/* ── Left utility rail (page-local, sits beside the app sidebar) ── */}
       <aside className="w-[236px] shrink-0 border-r border-black/8 bg-white flex flex-col gap-4 p-4 overflow-y-auto scrollbar-thin">
-        <button
-          type="button"
-          onClick={() => setCreateOpen(true)}
-          className="inline-flex items-center justify-center gap-2 h-11 rounded-xl bg-[#7A0A17] text-white text-[13.5px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors"
-        >
-          <Plus size={16} /> Create
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setCreateMenuOpen((v) => !v)}
+            className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl bg-[#7A0A17] text-white text-[13.5px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors"
+          >
+            <Plus size={16} /> Create <ChevronDown size={15} className={`transition-transform ${createMenuOpen ? "rotate-180" : ""}`} />
+          </button>
+          {createMenuOpen && (
+            <div className="absolute left-0 right-0 top-[calc(100%+6px)] bg-white border border-black/10 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-40 py-1 overflow-hidden">
+              {[
+                { label: "Event", icon: CalendarCheck2, color: "#A02868", onClick: () => { setEditingItem(null); setCreateEventOpen(true); } },
+                { label: "Task", icon: ListTodo, color: "#7C6CB0", onClick: () => { setEditingItem(null); setCreateTaskOpen(true); } },
+                { label: "Meeting", icon: Users2, color: "#41703D", onClick: () => { setEditingItem(null); setCreateMeetingOpen(true); } },
+                { label: "Others", icon: CircleDot, color: "#6F7886", onClick: () => { setEditingItem(null); setCreateOtherOpen(true); } },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => {
+                    setCreateMenuOpen(false);
+                    item.onClick();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium text-[#374151] hover:bg-[#FAFAFB] transition-colors"
+                >
+                  <item.icon size={15} style={{ color: item.color }} />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <button
           type="button"
@@ -1004,7 +1249,7 @@ export default function CalendarPage() {
               <p className="text-[13px] font-bold text-[#111] leading-snug">{upNext.title}</p>
               <button
                 type="button"
-                onClick={() => setSelectedEvent(upNext)}
+                onClick={() => openCalendarItem(upNext)}
                 className="text-[11.5px] font-semibold text-[#3B82F6] shrink-0 hover:underline"
               >
                 Details
@@ -1082,7 +1327,7 @@ export default function CalendarPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 ml-auto">
+          <div className="flex items-center gap-2.5 shrink-0 ml-auto">
             <div className="relative">
               <button
                 type="button"
@@ -1109,7 +1354,7 @@ export default function CalendarPage() {
               <button
                 type="button"
                 onClick={() => setViewOpen((v) => !v)}
-                className="inline-flex items-center gap-2 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#374151] hover:bg-[#FAFAFB] transition-colors"
+                className="inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#374151] hover:bg-[#FAFAFB] transition-colors"
               >
                 {view}
                 <ChevronDown size={14} className={`text-[#9CA3AF] transition-transform ${viewOpen ? "rotate-180" : ""}`} />
@@ -1131,17 +1376,55 @@ export default function CalendarPage() {
                 </div>
               )}
             </div>
+
+            {/* View toggle — same control as Pipeline */}
+            <div className="flex items-center h-10 rounded-xl border border-black/10 bg-white overflow-hidden shrink-0">
+              <button
+                type="button"
+                onClick={() => setLayout("list")}
+                title="List view"
+                aria-pressed={layout === "list"}
+                aria-label="List view"
+                className={`h-full px-3 flex items-center transition-colors ${
+                  layout === "list" ? "bg-[#7A0A17] text-white" : "text-[#9CA3AF] hover:text-[#4B5563] hover:bg-[#FAFAFB]"
+                }`}
+              >
+                <LayoutList size={15} />
+              </button>
+              <span className="w-px h-5 bg-black/10" />
+              <button
+                type="button"
+                onClick={() => setLayout("grid")}
+                title="Grid view"
+                aria-pressed={layout === "grid"}
+                aria-label="Grid view"
+                className={`h-full px-3 flex items-center transition-colors ${
+                  layout === "grid" ? "bg-[#7A0A17] text-white" : "text-[#9CA3AF] hover:text-[#4B5563] hover:bg-[#FAFAFB]"
+                }`}
+              >
+                <LayoutGrid size={15} />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Grid */}
-        {view === "Month" ? (
-          <MonthGrid days={days} anchorDate={anchorDate} eventsFor={eventsFor} onEventClick={setSelectedEvent} onDayClick={(d) => { jumpTo(d); setView("Day"); }} />
+        {layout === "list" ? (
+          <EventListView
+            events={listEvents}
+            onEventClick={openCalendarItem}
+            onEdit={openEditItem}
+            onDelete={(ev) => {
+              setEvents((prev) => prev.filter((e) => e.id !== ev.id));
+              toast.error(`"${ev.title}" deleted.`);
+            }}
+          />
+        ) : view === "Month" ? (
+          <MonthGrid days={days} anchorDate={anchorDate} eventsFor={eventsFor} onEventClick={openCalendarItem} onDayClick={(d) => { jumpTo(d); setView("Day"); }} />
         ) : (
           <WeekDayGrid
             days={days}
             eventsFor={eventsFor}
-            onEventClick={setSelectedEvent}
+            onEventClick={openCalendarItem}
             dragOverCell={dragOverCell}
             setDragOverCell={setDragOverCell}
             onDrop={handleDrop}
@@ -1152,36 +1435,243 @@ export default function CalendarPage() {
       <EventDetailModal
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
-        onSave={(updated) => {
-          setEvents((prev) => prev.map((ev) => (ev.id === updated.id ? updated : ev)));
-          setSelectedEvent(updated);
-        }}
+        onEdit={openEditItem}
       />
-      <CreateEventModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
+      <OthersDetailsModal
+        open={!!selectedOtherEvent}
+        item={calendarEventToOtherView(selectedOtherEvent)}
+        onClose={() => setSelectedOtherEvent(null)}
+        onEdit={() => selectedOtherEvent && openEditItem(selectedOtherEvent)}
+      />
+      <MeetingDetailsModal
+        open={!!selectedMeetingEvent}
+        meeting={calendarEventToMeetingView(selectedMeetingEvent)}
+        entityLabel={selectedMeetingEvent?.category === "event" ? "Event" : "Meeting"}
+        onClose={() => setSelectedMeetingEvent(null)}
+        onEdit={() => selectedMeetingEvent && openEditItem(selectedMeetingEvent)}
+      />
+      <TaskDetailsModal
+        open={!!selectedTaskEvent}
+        task={calendarEventToTaskView(selectedTaskEvent)}
+        onClose={() => setSelectedTaskEvent(null)}
+        onEdit={() => selectedTaskEvent && openEditItem(selectedTaskEvent)}
+        onUpdateTask={syncTaskViewToEvent}
+      />
+      <CreateMeetingEventModal
+        open={createEventOpen}
+        onClose={closeEventModal}
+        entityLabel="Event"
         defaultDate={anchorDate}
-        onCreate={(ev) =>
-          setEvents((prev) => [
-            ...prev,
-            {
-              id: `new-${Date.now()}`,
-              ...ev,
-              meta: {
-                priority: "Medium",
-                clientRelated: false,
-                client: "",
-                assignees: ["Priya Sharma"],
-                stage: "New",
-                dueDate: addDays(ev.date, 3),
-                stars: 10,
-                description: "",
-                ...(ev.meta || {}),
-              },
-            },
-          ])
+        mode={editingItem?.category === "event" ? "edit" : "create"}
+        initial={editingItem?.category === "event" ? eventToMeetingForm(editingItem) : null}
+        onSave={(form) =>
+          editingItem?.category === "event"
+            ? handleUpdateMeetingOrEvent(form, "event")
+            : handleCreateMeetingOrEvent(form, "event")
         }
       />
+      <CreateMeetingEventModal
+        open={createMeetingOpen}
+        onClose={closeMeetingModal}
+        entityLabel="Meeting"
+        defaultDate={anchorDate}
+        mode={editingItem?.category === "meeting" ? "edit" : "create"}
+        initial={editingItem?.category === "meeting" ? eventToMeetingForm(editingItem) : null}
+        onSave={(form) =>
+          editingItem?.category === "meeting"
+            ? handleUpdateMeetingOrEvent(form, "meeting")
+            : handleCreateMeetingOrEvent(form, "meeting")
+        }
+      />
+      <CreateTaskModal
+        open={createTaskOpen}
+        onClose={closeTaskModal}
+        defaultDate={anchorDate}
+        mode={editingItem?.category === "task" ? "edit" : "create"}
+        initial={editingItem?.category === "task" ? eventToTaskForm(editingItem) : null}
+        onSave={(form) => {
+          if (editingItem?.category === "task") {
+            handleUpdateTask(form);
+            setSelectedTaskEvent(null);
+          } else {
+            handleCreateTask(form);
+          }
+        }}
+      />
+      <CreateOtherModal
+        open={createOtherOpen}
+        onClose={closeOtherModal}
+        defaultDate={anchorDate}
+        mode={editingItem?.category === "other" ? "edit" : "create"}
+        initial={editingItem?.category === "other" ? eventToOtherForm(editingItem) : null}
+        onSave={(form) => {
+          if (editingItem?.category === "other") {
+            handleUpdateOther(form);
+            setSelectedOtherEvent(null);
+          } else {
+            handleCreateOther(form);
+          }
+        }}
+      />
+    </div>
+  );
+}
+
+/* ───────────────────────── List view ───────────────────────── */
+
+function InitialsAvatar({ name, size = 26 }) {
+  const initials = String(name || "?")
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  return (
+    <span
+      className="rounded-full bg-[#FCF5F6] text-[#7A0A17] font-bold grid place-items-center shrink-0"
+      style={{ width: size, height: size, fontSize: size * 0.38 }}
+    >
+      {initials}
+    </span>
+  );
+}
+
+function EventListView({ events, onEventClick, onEdit, onDelete }) {
+  if (events.length === 0) {
+    return (
+      <div className="flex-1 overflow-auto scrollbar-thin p-5">
+        <div className="bg-white border border-black/8 rounded-2xl py-16 text-center text-[13px] text-[#9CA3AF]">
+          No events in this range
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col p-5">
+      <div className="bg-white border border-black/8 rounded-2xl overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="overflow-auto scrollbar-thin flex-1 min-h-0">
+          <table className="w-full min-w-[980px] border-collapse">
+            <thead className="sticky top-0 z-10">
+              <tr className="border-b border-black/8 bg-[#FAFAFB]">
+                <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">Event</th>
+                <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">Category</th>
+                <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">Date</th>
+                <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">Time</th>
+                <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">Priority</th>
+                <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">Stage</th>
+                <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">Due Date</th>
+                <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">Assignee</th>
+                <th className="text-right text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-black/6">
+              {events.map((ev) => {
+                const cat = CATEGORIES[ev.category] || CATEGORIES.other;
+                const priority = ev.meta?.priority || "Medium";
+                const priorityStyle = PRIORITY_STYLES[priority] || PRIORITY_STYLES.Medium;
+                const assignees = Array.isArray(ev.meta?.assignees) ? ev.meta.assignees : [];
+                const isToday = sameDay(ev.date, TODAY);
+                return (
+                  <tr
+                    key={ev.id}
+                    onClick={() => onEventClick(ev)}
+                    className="hover:bg-[#FAFAFB] transition-colors cursor-pointer"
+                  >
+                    <td className="px-4 py-3 max-w-[280px]">
+                      <div className="flex items-start gap-2.5 min-w-0">
+                        <span className="size-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: cat.dot }} />
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-semibold text-[#111] line-clamp-2 leading-snug">{ev.title}</p>
+                          {ev.meta?.client ? (
+                            <p className="text-[11.5px] font-medium text-[#9CA3AF] mt-0.5 truncate">{ev.meta.client}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2 py-1 rounded-md whitespace-nowrap"
+                        style={{ color: cat.text, backgroundColor: cat.bg }}
+                      >
+                        {cat.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`text-[12px] ${isToday ? "text-[#7A0A17] font-semibold" : "text-[#374151]"}`}>
+                        {fmtDate(ev.date)}
+                        {isToday ? " · Today" : ""}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-[12px] text-[#6B7280] whitespace-nowrap">
+                      {fmtTime(ev.startH)} – {fmtTime(ev.endH)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className="inline-block text-[10px] font-semibold px-2 py-1 rounded-md whitespace-nowrap"
+                        style={{ color: priorityStyle.color, backgroundColor: priorityStyle.bg }}
+                      >
+                        {priority}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-[12px] text-[#374151] whitespace-nowrap">{ev.meta?.stage || "—"}</td>
+                    <td className="px-4 py-3 text-[12px] text-[#6B7280] whitespace-nowrap">{fmtDate(ev.meta?.dueDate)}</td>
+                    <td className="px-4 py-3">
+                      {assignees.length ? (
+                        <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                          <InitialsAvatar name={assignees[0]} size={22} />
+                          <span className="text-[12px] text-[#374151]">
+                            {assignees[0]}
+                            {assignees.length > 1 ? ` +${assignees.length - 1}` : ""}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-[12px] text-[#9CA3AF]">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => onEventClick(ev)}
+                          className="p-1 text-[#3B82F6] hover:bg-[#3B82F6]/10 rounded-md transition-colors"
+                          aria-label="View event"
+                        >
+                          <Eye size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (["event", "meeting", "task", "other"].includes(ev.category) && onEdit) onEdit(ev);
+                            else onEventClick(ev);
+                          }}
+                          className="p-1 text-[#F59E0B] hover:bg-[#F59E0B]/10 rounded-md transition-colors"
+                          aria-label="Edit event"
+                        >
+                          <Edit2 size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDelete?.(ev)}
+                          className="p-1 text-[#E8395B] hover:bg-[#E8395B]/10 rounded-md transition-colors"
+                          aria-label="Delete event"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-black/8 bg-white shrink-0">
+          <p className="text-[12px] text-[#9CA3AF] font-medium">
+            Showing {events.length} event{events.length === 1 ? "" : "s"}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

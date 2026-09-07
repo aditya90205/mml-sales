@@ -64,7 +64,7 @@ export default function Modal({
           </button>
         </div>
         {/* body */}
-        <div className="overflow-y-auto flex-1 px-6 py-5">{children}</div>
+        <div className="overflow-y-auto flex-1 px-6 py-5 scrollbar-thin scrollbar-modal">{children}</div>
         {/* footer */}
         {footer && <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-black/10 shrink-0">{footer}</div>}
       </div>

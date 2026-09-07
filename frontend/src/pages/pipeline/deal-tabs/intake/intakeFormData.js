@@ -356,14 +356,14 @@ const SIBLINGS_BLOCKS = [
   {
     title: "Other financial details of family",
     fields: [
-      { key: "turnover", label: "Turnover", type: "text" },
-      { key: "annualFamilyIncome", label: "Annual family income", type: "text" },
+      { key: "turnover", label: "Turnover", type: "text", sensitive: true },
+      { key: "annualFamilyIncome", label: "Annual family income", type: "text", sensitive: true },
       { key: "numberOfEmployees", label: "Number of employees", type: "text" },
       { key: "familyBudget", label: "Budget", type: "text" },
       { key: "vehicles", label: "Vehicles", type: "text" },
       { key: "countriesTravelled", label: "Countries travelled", type: "text" },
-      { key: "otherPropertyDetails", label: "Other property details", type: "textarea" },
-      { key: "yourLifestyle", label: "Your lifestyle", type: "textarea" },
+      { key: "otherPropertyDetails", label: "Other property details", type: "textarea", sensitive: true },
+      { key: "yourLifestyle", label: "Your lifestyle", type: "textarea", sensitive: true },
     ],
   },
 ];
@@ -685,6 +685,48 @@ export const SECTION_BLOCKS = {
   communication: COMMUNICATION_BLOCKS,
   casesheet: CASESHEET_BLOCKS,
 };
+
+/** Flat map of personal-detail field key → label (for change summary / OTP diffs). */
+export function getPersonalFieldLabels() {
+  const labels = {};
+  for (const block of PERSONAL_DETAILS_BLOCKS) {
+    for (const field of block.fields) {
+      labels[field.key] = field.label;
+    }
+  }
+  return labels;
+}
+
+/** Snapshot personal field values from a full values object. */
+export function snapshotPersonalValues(values = {}) {
+  const snap = {};
+  for (const block of PERSONAL_DETAILS_BLOCKS) {
+    for (const field of block.fields) {
+      snap[field.key] = values[field.key] ?? "";
+    }
+  }
+  return snap;
+}
+
+/** Diff personal values; returns [{ key, label, from, to }]. */
+export function diffPersonalValues(before = {}, after = {}) {
+  const labels = getPersonalFieldLabels();
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+  const changes = [];
+  for (const key of keys) {
+    if (!labels[key]) continue;
+    const from = before[key] == null ? "" : String(before[key]);
+    const to = after[key] == null ? "" : String(after[key]);
+    if (from.trim() === to.trim()) continue;
+    changes.push({
+      key,
+      label: labels[key],
+      from: from.trim() || "—",
+      to: to.trim() || "—",
+    });
+  }
+  return changes;
+}
 
 export const DEMO_PERSONAL_VALUES = {
   gender: "Female",

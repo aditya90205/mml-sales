@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
+import { toast } from "react-toastify";
 
 const REASONS = [
-  { id: "price", label: "Price / Budget / ROI", placeholder: "e.g. Target Price or discount" },
-  { id: "no_decision", label: "No decision / Think about it", placeholder: "Next Follow up date" },
+  { id: "price", label: "Price / Budget / ROI", action: "escalation" },
+  { id: "no_decision", label: "No decision / Think about it", inputType: "date", placeholder: "Next Follow up date" },
   { id: "competitor", label: "Competitor / Existing solution" },
-  { id: "timing", label: "Timing / priorities changed", placeholder: "Next Follow up date" },
+  { id: "timing", label: "Timing / priorities changed", inputType: "date", placeholder: "Next Follow up date" },
   { id: "trust", label: "Trust / Risk / Fit" },
   { id: "no_response", label: "No Response / delayed follow -up / Not interested now" },
   { id: "decision_maker", label: "Decision maker / internal dependency" },
@@ -31,6 +32,7 @@ function ReasonCheck({ checked }) {
 export default function WinLossReasonsModal({ open, onClose, onSave, mode = "lost" }) {
   const [selected, setSelected] = useState({});
   const [details, setDetails] = useState({});
+  const [priceEscalated, setPriceEscalated] = useState(false);
   const [others, setOthers] = useState("");
   const [briefNote, setBriefNote] = useState("");
   const [error, setError] = useState("");
@@ -39,6 +41,7 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
     if (!open) return;
     setSelected({});
     setDetails({});
+    setPriceEscalated(false);
     setOthers("");
     setBriefNote("");
     setError("");
@@ -57,6 +60,13 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
     setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const handleEscalation = (e) => {
+    e.stopPropagation();
+    setSelected((prev) => ({ ...prev, price: true }));
+    setPriceEscalated(true);
+    toast.success("Escalation message sent.");
+  };
+
   const handleSave = () => {
     const picked = REASONS.filter((r) => selected[r.id]);
     if (picked.length === 0 && !others.trim()) {
@@ -69,6 +79,9 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
     }
 
     const reasonParts = picked.map((r) => {
+      if (r.id === "price" && priceEscalated) {
+        return `${r.label} (Escalated)`;
+      }
       const extra = details[r.id]?.trim();
       return extra ? `${r.label} (${extra})` : r.label;
     });
@@ -112,16 +125,27 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
                     <ReasonCheck checked={checked} />
                     <span className="text-[13.5px] font-medium text-[#111]">{reason.label}</span>
                   </button>
-                  {reason.placeholder && (
+                  {reason.action === "escalation" && (
+                    <div className="pb-3 pl-8">
+                      <button
+                        type="button"
+                        onClick={handleEscalation}
+                        className="h-9 px-4 rounded-xl border border-[#7A0A17]/25 bg-[#F8EEF0] text-[12.5px] font-semibold text-[#7A0A17] hover:bg-[#F3E4E7] transition-colors"
+                      >
+                        {priceEscalated ? "Escalation sent" : "Escalation"}
+                      </button>
+                    </div>
+                  )}
+                  {reason.inputType === "date" && (
                     <div className="pb-3 pl-8">
                       <input
-                        type="text"
+                        type="date"
                         value={details[reason.id] || ""}
                         onChange={(e) =>
                           setDetails((prev) => ({ ...prev, [reason.id]: e.target.value }))
                         }
-                        placeholder={reason.placeholder}
-                        className="w-full h-10 px-3 rounded-xl border border-black/10 bg-white text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/35 focus:ring-2 focus:ring-[#7A0A17]/10"
+                        aria-label={reason.placeholder}
+                        className="w-full h-10 px-3 rounded-xl border border-black/10 bg-white text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/35 focus:ring-2 focus:ring-[#7A0A17]/10"
                       />
                     </div>
                   )}

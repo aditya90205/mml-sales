@@ -1,0 +1,495 @@
+import { useEffect, useState } from "react";
+import {
+  BarChart3,
+  CalendarClock,
+  CalendarDays,
+  Check,
+  CheckSquare,
+  ClipboardList,
+  Download,
+  FileText,
+  Flag,
+  Layers,
+  Paperclip,
+  Pencil,
+  Plus,
+  Send,
+  Star,
+  Trash2,
+  User,
+  UserCheck,
+} from "lucide-react";
+import Modal from "../ui/Modal";
+
+const PRIORITY_FILL = {
+  Low: "bg-[#E7F8EF] text-[#16A34A]",
+  Medium: "bg-[#FFF3E4] text-[#D97706]",
+  High: "bg-[#FDECEE] text-[#E8395B]",
+  Critical: "bg-[#F3E8FF] text-[#7C3AED]",
+};
+
+const STAGE_DOT = {
+  New: "#E8395B",
+  "In Progress": "#F59E0B",
+  Review: "#3B82F6",
+  Blocked: "#A855F7",
+  Done: "#16A34A",
+};
+
+function fmtDate(d) {
+  if (!d) return "—";
+  const date = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(date.getTime())) return "—";
+  return `${String(date.getDate()).padStart(2, "0")}-${String(date.getMonth() + 1).padStart(2, "0")}-${date.getFullYear()}`;
+}
+
+function fmtDateTime(d) {
+  if (!d) return "—";
+  const date = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(date.getTime())) return "—";
+  return `${fmtDate(date)} · ${date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
+}
+
+function DetailItem({ label, icon: Icon, children }) {
+  return (
+    <div className="min-w-0">
+      <p className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">
+        {Icon ? <Icon size={12} className="text-[#9CA3AF]" /> : null}
+        {label}
+      </p>
+      <div className="text-[13px] font-semibold text-[#111] mt-1.5 break-words">{children}</div>
+    </div>
+  );
+}
+
+function TabBar({ tabs, active, onChange }) {
+  return (
+    <div className="flex items-center gap-1 border-b border-black/8 mb-4 overflow-x-auto scrollbar-thin">
+      {tabs.map((t) => (
+        <button
+          key={t.key}
+          type="button"
+          onClick={() => onChange(t.key)}
+          className={`px-3.5 py-2.5 text-[12.5px] font-semibold whitespace-nowrap border-b-2 -mb-px transition-colors ${
+            active === t.key
+              ? "border-[#7A0A17] text-[#7A0A17]"
+              : "border-transparent text-[#9CA3AF] hover:text-[#4B5563]"
+          }`}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Normalize calendar event → task view model */
+export function calendarEventToTaskView(ev) {
+  if (!ev) return null;
+  const m = ev.meta || {};
+  return {
+    id: ev.id,
+    title: ev.title,
+    description: m.description || "",
+    stage: m.stage || "New",
+    priority: m.priority || "Medium",
+    project: m.project || "Sales Pipeline",
+    milestone: m.milestone || "Planning",
+    progress: m.progress ?? 20,
+    assignees: Array.isArray(m.assignees) ? m.assignees : [],
+    isClientRelated: Boolean(m.clientRelated),
+    client: m.client || "",
+    startDate: ev.date,
+    dueDate: m.dueDate || ev.date,
+    stars: m.stars ?? 7,
+    acknowledgedAt: m.acknowledgedAt || ev.date,
+    assignedAt: m.assignedAt || ev.date,
+    comments: Array.isArray(m.comments) ? m.comments : [],
+    checklist: Array.isArray(m.checklist) ? m.checklist : [],
+    attachments: Array.isArray(m.attachments) ? m.attachments : [],
+    startH: ev.startH,
+    endH: ev.endH,
+  };
+}
+
+export default function TaskDetailsModal({
+  open,
+  task,
+  onClose,
+  onEdit,
+  onUpdateTask,
+}) {
+  const [tab, setTab] = useState("details");
+  const [commentText, setCommentText] = useState("");
+  const [checklistText, setChecklistText] = useState("");
+  const [mediaText, setMediaText] = useState("");
+  const [editingChecklistIndex, setEditingChecklistIndex] = useState(null);
+  const [editingChecklistText, setEditingChecklistText] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setTab("details");
+      setCommentText("");
+      setChecklistText("");
+      setMediaText("");
+      setEditingChecklistIndex(null);
+    }
+  }, [open, task?.id]);
+
+  if (!open || !task) return null;
+
+  const comments = task.comments || [];
+  const checklist = task.checklist || [];
+  const attachments = task.attachments || [];
+  const doneCount = checklist.filter((i) => i.done).length;
+  const checklistPct = checklist.length ? Math.round((doneCount / checklist.length) * 100) : 0;
+
+  const patch = (updater) => {
+    const next = typeof updater === "function" ? updater(task) : { ...task, ...updater };
+    onUpdateTask?.(next);
+  };
+
+  const tabs = [
+    { key: "details", label: "Details" },
+    { key: "comments", label: `Comments (${comments.length})` },
+    { key: "checklist", label: `Checklist (${checklist.length})` },
+    { key: "attachments", label: "Attachments" },
+  ];
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={task.title}
+      subtitle="Task Details"
+      icon={<BarChart3 size={16} />}
+      iconBg="#E7F8EF"
+      iconColor="#16A34A"
+      width="max-w-[640px]"
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={() => onEdit?.(task)}
+            className="h-9 px-4 rounded-xl border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors inline-flex items-center gap-1.5"
+          >
+            <Pencil size={13} /> Edit
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            Close
+          </button>
+        </>
+      }
+    >
+      <TabBar tabs={tabs} active={tab} onChange={setTab} />
+
+      {tab === "details" && (
+        <div className="flex flex-col gap-5">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+            <DetailItem label="Stage" icon={Layers}>
+              <span className="inline-flex items-center gap-2">
+                <span className="size-2 rounded-full" style={{ backgroundColor: STAGE_DOT[task.stage] || "#9CA3AF" }} />
+                {task.stage}
+              </span>
+            </DetailItem>
+            <DetailItem label="Priority" icon={Flag}>
+              <span className={`inline-flex text-[11px] font-semibold px-2 py-1 rounded-md ${PRIORITY_FILL[task.priority] || PRIORITY_FILL.Medium}`}>
+                {task.priority}
+              </span>
+            </DetailItem>
+            <DetailItem label="Assignee" icon={UserCheck}>
+              {task.assignees?.length ? task.assignees.join(", ") : "Unassigned"}
+            </DetailItem>
+            <DetailItem label="Project" icon={ClipboardList}>{task.project || "—"}</DetailItem>
+            <DetailItem label="Client Related" icon={CheckSquare}>
+              {task.isClientRelated ? "Yes" : "No"}
+            </DetailItem>
+            <DetailItem label="Client" icon={User}>
+              {task.isClientRelated && task.client ? task.client : "—"}
+            </DetailItem>
+            <DetailItem label="Start Date" icon={CalendarDays}>{fmtDate(task.startDate)}</DetailItem>
+            <DetailItem label="Due Date" icon={CalendarDays}>{fmtDate(task.dueDate)}</DetailItem>
+            <DetailItem label="Acknowledged At" icon={CalendarClock}>{fmtDate(task.acknowledgedAt)}</DetailItem>
+            <DetailItem label="Assigned At" icon={CalendarClock}>{fmtDate(task.assignedAt)}</DetailItem>
+            <DetailItem label="Stars (XP)" icon={Star}>{task.stars ?? "—"}</DetailItem>
+            <DetailItem label="Milestone" icon={Star}>{task.milestone || "—"}</DetailItem>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Progress</p>
+            <div className="flex items-center gap-3">
+              <div className="h-2 flex-1 rounded-full bg-[#EDEEF1] overflow-hidden">
+                <div className="h-full rounded-full bg-[#16A34A]" style={{ width: `${task.progress || 0}%` }} />
+              </div>
+              <span className="text-[12.5px] font-semibold text-[#111]">{task.progress || 0}%</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <p className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">
+              <FileText size={12} /> Description
+            </p>
+            <p className="text-[13px] text-[#374151] leading-relaxed font-medium">
+              {task.description || "No description added."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {tab === "comments" && (
+        <div className="flex flex-col gap-4">
+          {comments.length === 0 && (
+            <p className="text-[13px] text-[#9CA3AF]">No comments yet. Be the first to add one.</p>
+          )}
+          {comments.map((c, i) => (
+            <div key={i} className="border border-black/8 rounded-xl p-3.5 flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-[13px] font-semibold text-[#111]">{c.author}</p>
+                  <p className="text-[11px] text-[#9CA3AF]">{fmtDateTime(c.date)}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    patch({
+                      ...task,
+                      comments: comments.filter((_, idx) => idx !== i),
+                    })
+                  }
+                  className="p-1 text-[#E8395B] hover:bg-[#FDECEE] rounded-md"
+                  aria-label="Delete comment"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+              <p className="text-[13px] text-[#374151]">{c.text}</p>
+            </div>
+          ))}
+
+          <p className="text-[13px] font-semibold text-[#111] mt-1">Post Comment</p>
+          <div className="relative">
+            <textarea
+              rows={3}
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder="Write the message here..."
+              className="w-full px-3.5 py-2.5 pr-14 rounded-xl bg-white border border-black/10 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40 resize-none"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (!commentText.trim()) return;
+                patch({
+                  ...task,
+                  comments: [
+                    ...comments,
+                    { author: "Priya Sharma", text: commentText.trim(), date: new Date().toISOString(), avatar: 0 },
+                  ],
+                });
+                setCommentText("");
+              }}
+              className="absolute bottom-3 right-3 size-8 rounded-full bg-[#0D9488] text-white grid place-items-center hover:bg-[#0F766E]"
+            >
+              <Send size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {tab === "checklist" && (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <p className="text-[13px] font-semibold text-[#111]">Progress</p>
+            <span className="text-[11px] font-medium text-[#6B7280] bg-[#F1F2F4] rounded-full px-2.5 py-1">
+              {doneCount}/{checklist.length} completed
+            </span>
+          </div>
+          <div className="h-2 rounded-full bg-[#EDEEF1] overflow-hidden">
+            <div className="h-full rounded-full bg-[#16A34A]" style={{ width: `${checklistPct}%` }} />
+          </div>
+
+          {checklist.length === 0 && (
+            <p className="text-[13px] text-[#9CA3AF]">No checklist items yet.</p>
+          )}
+          {checklist.map((item, i) => (
+            <div key={i} className="border border-black/8 rounded-xl p-3.5 flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <button
+                  type="button"
+                  onClick={() =>
+                    patch({
+                      ...task,
+                      checklist: checklist.map((it, idx) => (idx === i ? { ...it, done: !it.done } : it)),
+                    })
+                  }
+                  className={`size-5 rounded-md border shrink-0 mt-0.5 grid place-items-center ${
+                    item.done ? "bg-[#F97316] border-[#F97316]" : "border-black/20 bg-white"
+                  }`}
+                >
+                  {item.done && <Check size={12} className="text-white" strokeWidth={3} />}
+                </button>
+                <div className="min-w-0 flex-1">
+                  {editingChecklistIndex === i ? (
+                    <input
+                      autoFocus
+                      value={editingChecklistText}
+                      onChange={(e) => setEditingChecklistText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          const text = editingChecklistText.trim();
+                          if (text) {
+                            patch({
+                              ...task,
+                              checklist: checklist.map((it, idx) => (idx === i ? { ...it, text } : it)),
+                            });
+                          }
+                          setEditingChecklistIndex(null);
+                        }
+                      }}
+                      onBlur={() => {
+                        const text = editingChecklistText.trim();
+                        if (text) {
+                          patch({
+                            ...task,
+                            checklist: checklist.map((it, idx) => (idx === i ? { ...it, text } : it)),
+                          });
+                        }
+                        setEditingChecklistIndex(null);
+                      }}
+                      className="w-full h-9 px-3 rounded-lg border border-black/10 text-[13px] outline-none focus:border-[#7A0A17]/40"
+                    />
+                  ) : (
+                    <p className={`text-[13px] ${item.done ? "text-[#9CA3AF] line-through" : "text-[#111]"}`}>{item.text}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    {item.assignee && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-[#6B7280] bg-[#F1F2F4] rounded-md px-2 py-1">
+                        <User size={11} /> {item.assignee}
+                      </span>
+                    )}
+                    {item.dueDate && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-[#6B7280] bg-[#F1F2F4] rounded-md px-2 py-1">
+                        <CalendarDays size={11} /> {fmtDate(item.dueDate)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingChecklistIndex(i);
+                    setEditingChecklistText(item.text);
+                  }}
+                  className="p-1 text-[#3B82F6] hover:bg-[#E8F2FE] rounded-md"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    patch({
+                      ...task,
+                      checklist: checklist.filter((_, idx) => idx !== i),
+                    })
+                  }
+                  className="p-1 text-[#E8395B] hover:bg-[#FDECEE] rounded-md"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+
+          <p className="text-[13px] font-semibold text-[#111] mt-1">Add checklist item</p>
+          <div className="flex items-center gap-2">
+            <input
+              value={checklistText}
+              onChange={(e) => setChecklistText(e.target.value)}
+              placeholder="Add checklist item..."
+              className="flex-1 h-10 px-3.5 rounded-xl border border-black/10 text-[13px] outline-none focus:border-[#7A0A17]/40"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (!checklistText.trim()) return;
+                patch({
+                  ...task,
+                  checklist: [
+                    ...checklist,
+                    {
+                      text: checklistText.trim(),
+                      done: false,
+                      assignee: task.assignees?.[0] || "Priya Sharma",
+                      dueDate: task.dueDate,
+                    },
+                  ],
+                });
+                setChecklistText("");
+              }}
+              className="h-10 px-4 shrink-0 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold inline-flex items-center gap-1.5 hover:bg-[#640712]"
+            >
+              <Plus size={14} /> Add
+            </button>
+          </div>
+        </div>
+      )}
+
+      {tab === "attachments" && (
+        <div className="flex flex-col gap-4">
+          {attachments.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-8 text-center">
+              <Paperclip size={26} className="text-[#D1D5DB]" />
+              <p className="text-[13px] font-semibold text-[#111] mt-1">No attachments yet</p>
+              <p className="text-[12px] text-[#9CA3AF]">Upload files to share with your team!</p>
+            </div>
+          ) : (
+            attachments.map((a, i) => (
+              <div key={i} className="flex items-center justify-between border border-black/8 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Paperclip size={16} className="text-[#6B7280] shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium text-[#111] truncate">{a.name}</p>
+                    <p className="text-[11px] text-[#9CA3AF]">{a.size || "—"}</p>
+                  </div>
+                </div>
+                <button type="button" className="p-1 text-[#6B7280] hover:bg-[#FAFAFB] rounded-md" aria-label="Download">
+                  <Download size={16} />
+                </button>
+              </div>
+            ))
+          )}
+
+          <p className="text-[13px] font-semibold text-[#111] mt-1">Add Media</p>
+          <div className="flex items-center gap-2">
+            <input
+              value={mediaText}
+              onChange={(e) => setMediaText(e.target.value)}
+              placeholder="Add media..."
+              className="flex-1 h-10 px-3.5 rounded-xl border border-black/10 text-[13px] outline-none focus:border-[#7A0A17]/40"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (!mediaText.trim()) return;
+                patch({
+                  ...task,
+                  attachments: [...attachments, { name: mediaText.trim(), size: "—" }],
+                });
+                setMediaText("");
+              }}
+              className="h-10 px-4 shrink-0 rounded-xl border border-black/10 text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] inline-flex items-center gap-1.5"
+            >
+              <Plus size={14} /> Add
+            </button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}

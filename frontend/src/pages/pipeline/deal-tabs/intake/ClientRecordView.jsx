@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Download } from "lucide-react";
+import { Check, Download, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   SECTIONS_META,
@@ -10,6 +10,8 @@ import {
   countSectionFields,
   getFilledRows,
 } from "./intakeFormData";
+
+const MASKED_VALUE = "••••••••";
 
 function formatRecordValue(field, values, chipValues) {
   if (field.type === "rows") {
@@ -42,12 +44,17 @@ function getSectionRecordEntries(blocks, values, chipValues) {
     for (const field of block.fields) {
       const display = formatRecordValue(field, values, chipValues);
       if (display) {
-        entries.push({ label: field.label, value: display });
+        entries.push({
+          key: field.key,
+          label: field.label,
+          value: display,
+          sensitive: Boolean(field.sensitive),
+        });
         anyFilled = true;
       }
     }
     if (!anyFilled && block.badge) {
-      entries.push({ label: block.title, value: block.badge });
+      entries.push({ key: block.title, label: block.title, value: block.badge, sensitive: false });
     }
   }
   return entries;
@@ -320,6 +327,72 @@ function TermsOnFileCard() {
         commitment within 365 days of sharing, expiry or not. All payments are non-refundable. Disputes go
         to the Delhi courts.
       </p>
+    </div>
+  );
+}
+
+function ChangeSummaryCard({ changeLog = [] }) {
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl p-5">
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">Change summary</p>
+        {changeLog.length > 0 && (
+          <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-[#F3E8F0] text-[#7A0A17] text-[11px] font-bold">
+            {changeLog.length}
+          </span>
+        )}
+      </div>
+
+      {changeLog.length === 0 ? (
+        <p className="text-[12.5px] text-[#6B7280] leading-relaxed">
+          No personal-detail changes yet. Edits need OTP first; each verified change is listed here.
+        </p>
+      ) : (
+        <div className="relative flex flex-col">
+          {changeLog.map((item, index) => {
+            const isLast = index === changeLog.length - 1;
+            return (
+              <div key={item.id} className="relative flex gap-3">
+                <div className="flex flex-col items-center shrink-0 w-4 pt-1">
+                  <span className="size-2.5 rounded-full bg-[#7A0A17] ring-4 ring-[#F3E8F0] shrink-0" />
+                  {!isLast && <span className="w-px flex-1 min-h-4 bg-[#E8D5DA] mt-1.5" />}
+                </div>
+
+                <div className={`min-w-0 flex-1 ${isLast ? "pb-0" : "pb-4"}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-[13px] font-semibold text-[#111] leading-snug">{item.label}</p>
+                    <span className="inline-flex items-center gap-1 shrink-0 h-5 px-1.5 rounded-md bg-[#E7F8EF] text-[#166534] text-[10px] font-semibold">
+                      <ShieldCheck size={10} strokeWidth={2.5} />
+                      OTP
+                    </span>
+                  </div>
+
+                  <div className="mt-2 rounded-lg border border-black/6 bg-[#FAFAFB] px-2.5 py-2 space-y-1.5">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9CA3AF]">From</p>
+                      <p className="text-[12px] text-[#6B7280] line-through break-all leading-snug mt-0.5">
+                        {item.from}
+                      </p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9CA3AF]">To</p>
+                      <p className="text-[12.5px] font-semibold text-[#111] break-all leading-snug mt-0.5">
+                        {item.to}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-[#6B7280] mt-2 leading-snug">
+                    <span className="font-medium text-[#4B5563]">{item.at}</span>
+                    <span className="text-[#D1D5DB]"> · </span>
+                    {item.by}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -622,6 +695,29 @@ function ClientServiceAgreementCard() {
 }
 
 function ClientRecordSectionCard({ index, label, entries, captured, blankCount, onOpen }) {
+  const [revealed, setRevealed] = useState({});
+  const hasSensitive = entries.some((entry) => entry.sensitive);
+
+  const toggleReveal = (key) => {
+    setRevealed((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const revealAll = () => {
+    const next = {};
+    entries.forEach((entry) => {
+      if (entry.sensitive) next[entry.key] = true;
+    });
+    setRevealed(next);
+  };
+
+  const hideAll = () => {
+    setRevealed({});
+  };
+
+  const allRevealed =
+    hasSensitive &&
+    entries.filter((e) => e.sensitive).every((e) => revealed[e.key]);
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl overflow-hidden">
       <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-black/6">
@@ -632,6 +728,17 @@ function ClientRecordSectionCard({ index, label, entries, captured, blankCount, 
           <span className="truncate">{label}</span>
         </h3>
         <div className="flex items-center gap-3 shrink-0">
+          {hasSensitive && (
+            <button
+              type="button"
+              onClick={allRevealed ? hideAll : revealAll}
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-black/10 text-[12px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors"
+              aria-label={allRevealed ? "Hide sensitive fields" : "Show sensitive fields"}
+            >
+              {allRevealed ? <EyeOff size={13} /> : <Eye size={13} />}
+              {allRevealed ? "Hide" : "Show"}
+            </button>
+          )}
           <span className="text-[13px] text-[#6B7280]">{captured} captured</span>
           <button
             type="button"
@@ -645,12 +752,34 @@ function ClientRecordSectionCard({ index, label, entries, captured, blankCount, 
 
       {entries.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3.5 px-5 py-4">
-          {entries.map((entry, i) => (
-            <div key={`${entry.label}-${i}`}>
-              <p className="text-[12.5px] text-[#6B7280]">{entry.label}</p>
-              <p className="text-[13px] font-semibold text-[#111] mt-0.5 break-words">{entry.value}</p>
-            </div>
-          ))}
+          {entries.map((entry, i) => {
+            const isHidden = entry.sensitive && !revealed[entry.key];
+            return (
+              <div key={`${entry.key || entry.label}-${i}`}>
+                <p className="text-[12.5px] text-[#6B7280] flex items-center gap-1.5">
+                  {entry.label}
+                  {entry.sensitive && (
+                    <button
+                      type="button"
+                      onClick={() => toggleReveal(entry.key)}
+                      className="text-[#9CA3AF] hover:text-[#7A0A17] transition-colors"
+                      aria-label={isHidden ? `Show ${entry.label}` : `Hide ${entry.label}`}
+                      title={isHidden ? "Show" : "Hide"}
+                    >
+                      {isHidden ? <Eye size={12} /> : <EyeOff size={12} />}
+                    </button>
+                  )}
+                </p>
+                <p
+                  className={`text-[13px] font-semibold mt-0.5 break-words ${
+                    isHidden ? "text-[#9CA3AF] tracking-wider" : "text-[#111]"
+                  }`}
+                >
+                  {isHidden ? MASKED_VALUE : entry.value}
+                </p>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <p className="px-5 py-4 text-[13.5px] text-[#6B7280]">No fields captured in this section yet.</p>
@@ -757,7 +886,7 @@ function ClientRecordDetailTables({ values, empty }) {
   ));
 }
 
-export default function ClientRecordView({ values, chips, empty, onOpenSection }) {
+export default function ClientRecordView({ values, chips, empty, changeLog = [], onOpenSection }) {
   const sectionCards = SECTIONS_META.map((section, index) => {
     const blocks = SECTION_BLOCKS[section.key];
     if (!blocks) return null;
@@ -810,6 +939,7 @@ export default function ClientRecordView({ values, chips, empty, onOpenSection }
           <DocumentChecklistCard />
           <ServiceAvailedCard />
           <TermsOnFileCard />
+          <ChangeSummaryCard changeLog={changeLog} />
         </div>
       </div>
     </div>
