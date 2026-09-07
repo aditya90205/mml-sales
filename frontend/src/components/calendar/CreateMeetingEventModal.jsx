@@ -12,7 +12,7 @@ const EMPLOYEES = [
   "Neha Kapoor",
 ];
 
-const CLIENTS = ["ABC Pvt. Ltd", "Sethi Family", "Agarwal Contract", "Malhotra Family", "Mehta & Co"];
+const CLIENTS = ["Sethi Family", "Agarwal Family", "Malhotra Family", "Kapoor Family", "Mehta Family"];
 
 const OTHERS = [
   "Anjali Gupta",
@@ -31,13 +31,13 @@ const INVITE_GROUPS = [
 
 const GROUP_KEYS = ["others", "employees", "client"];
 
-const EVENT_TYPES = ["Company Event", "Training", "Celebration", "Holiday", "Workshop", "Other"];
+const EVENT_TYPES = ["Community Event", "Training", "Celebration", "Holiday", "Workshop", "Other"];
 const MEETING_DESCRIPTIONS = [
   "General Discussion",
-  "Client Meeting",
-  "Team Sync",
-  "Performance Review",
-  "Project Kickoff",
+  "Family Meeting",
+  "Home / Office Visit",
+  "Video Call / Profile Review",
+  "Package Negotiation",
   "Other",
 ];
 
@@ -241,7 +241,7 @@ export default function CreateMeetingEventModal({
             type="text"
             value={form.title}
             onChange={(e) => set("title")(e.target.value)}
-            placeholder={isEvent ? "e.g. All Hand Meet - Ankur Mishra" : "e.g. Logging Framework"}
+            placeholder={isEvent ? "e.g. Meet the Parents Evening" : "e.g. Home Visit — Kapoor Family"}
             className={INPUT}
           />
         </Field>
@@ -344,7 +344,7 @@ export default function CreateMeetingEventModal({
               rows={3}
               value={form.notes || ""}
               onChange={(e) => set("notes")(e.target.value)}
-              placeholder="e.g. Company-wide all-hands covering Q3 goals and updates."
+              placeholder="e.g. Walk family through shortlisted matches and confirm next visit."
               className={`${INPUT} h-auto py-2.5 resize-none`}
             />
           </Field>

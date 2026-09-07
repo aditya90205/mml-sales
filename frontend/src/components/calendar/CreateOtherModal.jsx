@@ -12,7 +12,7 @@ const EMPLOYEES = [
   "Neha Kapoor",
 ];
 
-const CLIENTS = ["ABC Pvt. Ltd", "Sethi Family", "Agarwal Contract", "Malhotra Family", "Mehta & Co"];
+const CLIENTS = ["Sethi Family", "Agarwal Family", "Malhotra Family", "Kapoor Family", "Mehta Family"];
 const PRIORITIES = ["Critical", "High", "Medium", "Low"];
 
 const INPUT =

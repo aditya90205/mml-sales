@@ -120,22 +120,22 @@ function mk(dayOffset, startH, endH, title, category, meta = {}) {
 }
 
 const INITIAL_EVENTS = [
-  mk(0, 13, 15, "Logging Framework", "meeting", {
-    link: "https://zoom.us/j/123456789#success",
-    meetingLink: "https://zoom.us/j/123456789#success",
+  mk(0, 13, 15, "Video Call — Kapoor Family", "meeting", {
+    link: "https://meet.google.com/mml-kapoor",
+    meetingLink: "https://meet.google.com/mml-kapoor",
     clientRelated: true,
-    client: "ABC Pvt. Ltd",
+    client: "Kapoor Family",
     assignees: ["Anjali Gupta"],
     people: ["Anjali Gupta"],
     inviteGroups: ["employees"],
-    attendeesList: "Problem Solving",
+    attendeesList: "Kapoor Family",
     meetingKind: "Individual",
     meetingTypes: ["video"],
-    emailIds: "anjali.gupta@mmlcompany.com;",
-    formDescription: "Logging Framework",
-    duration: "1 hour",
-    startTime: "10:00",
-    endTime: "11:00",
+    emailIds: "anjali.gupta@makemylagan.com;",
+    formDescription: "P3 video call to discuss shortlisted profiles",
+    duration: "2 hours",
+    startTime: "13:00",
+    endTime: "15:00",
     requirements: ["Meeting Notes"],
     notesTo: ["All Participants"],
     specialInstructions: "",
@@ -143,87 +143,87 @@ const INITIAL_EVENTS = [
     priority: "High",
     stage: "In Progress",
     stars: 20,
-    description: "Logging Framework",
+    description: "Walk Kapoor Family through 5 shortlisted matches and confirm next visit.",
     dueDate: addDays(startOfWeek(ANCHOR), 49),
   }),
-  mk(0, 15, 16, "Team Follow-up Call", "task", {
+  mk(0, 15, 16, "RM Follow-up Call", "task", {
     assignees: ["Rahul Verma"],
     stage: "In Progress",
     project: "Sales Pipeline",
     milestone: "Weekly Sync",
     progress: 55,
-    description: "Align on open follow-ups from yesterday’s client calls.",
+    description: "Align on open follow-ups from yesterday’s home visits and video calls.",
     comments: [
       { author: "Priya Sharma", text: "Please cover Sethi Family follow-up first.", date: new Date().toISOString() },
     ],
     checklist: [
-      { text: "Review open tickets", done: true, assignee: "Rahul Verma", dueDate: addDays(ANCHOR, 1) },
-      { text: "Call pending leads", done: false, assignee: "Rahul Verma", dueDate: addDays(ANCHOR, 1) },
+      { text: "Review open P2 intake gaps", done: true, assignee: "Rahul Verma", dueDate: addDays(ANCHOR, 1) },
+      { text: "Call pending prospects", done: false, assignee: "Rahul Verma", dueDate: addDays(ANCHOR, 1) },
     ],
     attachments: [{ name: "followups.pdf", size: "240 KB" }],
   }),
-  mk(0, 17, 18, "Send Proposal to Client", "other", {
+  mk(0, 17, 18, "Send Package Quote", "other", {
     clientRelated: true,
     client: "Sethi Family",
     assignees: ["Sana Iqbal"],
     priority: "High",
     stars: 15,
-    description: "Email the revised pricing proposal and wait for confirmation.",
+    description: "Email the Premium package quote and wait for family confirmation.",
   }),
-  mk(1, 9, 10, "Review Sales Dashboard", "task", {
+  mk(1, 9, 10, "Review Pipeline Board", "task", {
     assignees: ["Priya Sharma"],
     priority: "Medium",
     stage: "New",
     stars: 12,
-    project: "Analytics",
+    project: "Matchmaking",
     milestone: "Planning",
     progress: 20,
-    description: "Review yesterday’s pipeline metrics and flag any stuck deals.",
+    description: "Review yesterday’s P0–P3 movement and flag stuck prospects.",
     comments: [],
     checklist: [
-      { text: "Check P0/P1 stuck deals", done: false, assignee: "Priya Sharma", dueDate: addDays(ANCHOR, 2) },
+      { text: "Check P0/P1 stuck prospects", done: false, assignee: "Priya Sharma", dueDate: addDays(ANCHOR, 2) },
     ],
     attachments: [],
   }),
-  mk(1, 10, 11, "Share Invoice with Client", "task", {
+  mk(1, 10, 11, "Share Payment Link", "task", {
     clientRelated: true,
-    client: "Agarwal Contract",
+    client: "Agarwal Family",
     assignees: ["Dev Malhotra"],
     priority: "Critical",
     stars: 18,
-    project: "Billing",
+    project: "Closures",
     milestone: "Collections",
     progress: 40,
     stage: "In Progress",
-    description: "Send the pending invoice and confirm receipt.",
+    description: "Send Premium package payment link and confirm receipt.",
     comments: [],
     checklist: [],
-    attachments: [{ name: "invoice-agarwal.pdf", size: "128 KB" }],
+    attachments: [{ name: "payment-agarwal.pdf", size: "128 KB" }],
   }),
-  mk(1, 11, 12, "Prepare Client Report", "task", {
+  mk(1, 11, 12, "Prepare Match Shortlist", "task", {
     clientRelated: true,
     client: "Malhotra Family",
     assignees: ["Neha Kapoor"],
-    project: "Client Success",
-    milestone: "Reporting",
+    project: "Matchmaking",
+    milestone: "Shortlist",
     progress: 30,
     stage: "New",
-    description: "Compile weekly activity summary for the client review.",
+    description: "Compile weekly match shortlist for the family review call.",
     comments: [],
     checklist: [],
     attachments: [],
   }),
-  mk(1, 14, 16, "All Hand Meet - Ankur Mishra", "event", {
-    location: "",
-    venue: "",
+  mk(1, 14, 16, "Branch All-Hands — Ankur Mishra", "event", {
+    location: "Rajouri Garden Branch",
+    venue: "Rajouri Garden Branch",
     assignees: ["Anjali Gupta", "Abhinav Pandey"],
     people: ["Anjali Gupta", "Abhinav Pandey"],
     inviteGroups: ["employees"],
     attendeesList: "Anjali Gupta, Abhinav Pandey",
     eventType: "Company Event",
-    formDescription: "Company Event",
+    formDescription: "Branch Event",
     meetingTypes: [],
-    emailIds: "ankur.mishra@mmlcompany.com;",
+    emailIds: "ankur.mishra@makemylagan.com;",
     duration: "",
     startTime: "14:00",
     endTime: "17:00",
@@ -234,57 +234,57 @@ const INITIAL_EVENTS = [
     priority: "High",
     stage: "In Progress",
     stars: 25,
-    description: "Company-wide all-hands covering Q3 goals and updates.",
+    description: "Branch all-hands covering closures, home-visit targets and package upsells.",
     dueDate: addDays(startOfWeek(ANCHOR), 1),
   }),
-  mk(2, 9, 11, "Project Update Meeting", "meeting", {
+  mk(2, 9, 11, "Home Visit Briefing", "meeting", {
     link: "Join on Google Meet",
     assignees: ["Aditya Sharma"],
     stage: "Review",
-    description: "Weekly project status sync with the sales leads.",
+    description: "Weekly sync on scheduled home visits and capture checklist readiness.",
   }),
-  mk(2, 11, 12, "Follow up on Payment", "task", {
+  mk(2, 11, 12, "Follow up on Token Payment", "task", {
     clientRelated: true,
     client: "Kapoor Family",
     assignees: ["Rahul Verma"],
     priority: "Critical",
     stars: 22,
-    description: "Follow up on the outstanding payment and share payment link.",
+    description: "Follow up on the outstanding token payment and share the payment link.",
   }),
-  mk(2, 14, 16, "Project Update Meeting", "meeting", {
+  mk(2, 14, 16, "Profile Curation Review", "meeting", {
     link: "Join on Google Meet",
     assignees: ["Sana Iqbal"],
-    description: "Afternoon sync on pipeline blockers.",
+    description: "Afternoon sync on profile curation blockers for Exclusive packages.",
   }),
-  mk(2, 16, 17, "Team Follow-up Call", "task", {
+  mk(2, 16, 17, "RM Follow-up Call", "task", {
     assignees: ["Priya Sharma"],
-    description: "Wrap up remaining action items from morning standup.",
+    description: "Wrap up remaining action items from morning visit briefings.",
   }),
-  mk(3, 9, 10, "Prepare Client Report", "task", {
+  mk(3, 9, 10, "Prepare Match Shortlist", "task", {
     clientRelated: true,
     client: "Bansal Family",
     assignees: ["Neha Kapoor"],
   }),
-  mk(3, 10, 12, "Strategy Meeting with Marketing Team", "meeting", {
+  mk(3, 10, 12, "Community Campaign Sync", "meeting", {
     link: "Join on Google Meet",
     assignees: ["Aditya Sharma", "Sana Iqbal"],
     priority: "High",
     stage: "In Progress",
     stars: 20,
-    description: "Align campaign calendar with sales follow-up capacity.",
+    description: "Align community event outreach with RM follow-up capacity.",
   }),
-  mk(3, 12, 13, "Prepare Monthly Report", "task", {
+  mk(3, 12, 13, "Prepare Monthly Closures Report", "task", {
     assignees: ["Dev Malhotra"],
     stage: "Review",
     stars: 16,
-    description: "Draft the monthly sales performance report.",
+    description: "Draft the monthly package closures and win/loss report.",
   }),
-  mk(4, 9, 10, "Prepare Client Report", "task", {
+  mk(4, 9, 10, "Prepare Match Shortlist", "task", {
     clientRelated: true,
     client: "Gupta Family",
     assignees: ["Neha Kapoor"],
   }),
-  mk(4, 11, 13, "Product Launch Event", "event", {
+  mk(4, 11, 13, "Meet the Parents Evening", "event", {
     location: "Main Hall",
     venue: "Main Hall",
     assignees: ["Ishaan Roy", "Priya Sharma"],
@@ -292,9 +292,9 @@ const INITIAL_EVENTS = [
     inviteGroups: ["employees"],
     attendeesList: "Ishaan Roy, Priya Sharma",
     eventType: "Company Event",
-    formDescription: "Company Event",
+    formDescription: "Community Event",
     meetingTypes: ["face"],
-    emailIds: "events@mmlcompany.com;",
+    emailIds: "events@makemylagan.com;",
     duration: "2 hours",
     startTime: "11:00",
     endTime: "13:00",
@@ -303,53 +303,53 @@ const INITIAL_EVENTS = [
     priority: "High",
     stage: "In Progress",
     stars: 25,
-    description: "Host the product launch session in the main hall.",
+    description: "Host the Meet the Parents evening for shortlisted families in the main hall.",
   }),
-  mk(4, 13, 15, "Client Meeting with ABC Pvt. Ltd", "meeting", {
+  mk(4, 13, 15, "Office Visit — Malhotra Family", "meeting", {
     link: "Join on Google Meet",
     clientRelated: true,
-    client: "ABC Pvt. Ltd",
+    client: "Malhotra Family",
     assignees: ["Aditya Sharma"],
     priority: "High",
   }),
-  mk(4, 17, 18, "Update Meeting Notes", "other", {
+  mk(4, 17, 18, "Update Visit Notes", "other", {
     assignees: ["Priya Sharma"],
-    description: "Capture and share notes from today’s client meetings.",
+    description: "Capture and share notes from today’s home and office visits.",
   }),
-  mk(5, 9, 10, "Check Client Feedback", "task", {
+  mk(5, 9, 10, "Check Family Feedback", "task", {
     clientRelated: true,
     client: "Sethi Family",
     assignees: ["Rahul Verma"],
     stage: "In Progress",
-    description: "Review feedback forms submitted this week.",
+    description: "Review feedback forms submitted after last week’s profile shares.",
   }),
-  mk(5, 11, 13, "Strategy Meeting with Marketing Team", "meeting", {
+  mk(5, 11, 13, "Community Campaign Sync", "meeting", {
     link: "Join on Google Meet",
     assignees: ["Sana Iqbal"],
     priority: "High",
   }),
-  mk(5, 15, 16, "Send Event Invites to Clients", "other", {
+  mk(5, 15, 16, "Send Event Invites to Families", "other", {
     clientRelated: true,
     client: "Multiple",
     assignees: ["Neha Kapoor"],
     stars: 14,
-    description: "Send invites for next week’s community event.",
+    description: "Send invites for next week’s Meet the Parents evening.",
   }),
-  mk(6, 9, 10, "Prepare Pricing Proposal", "task", {
+  mk(6, 9, 10, "Prepare Package Proposal", "task", {
     clientRelated: true,
-    client: "Agarwal Contract",
+    client: "Agarwal Family",
     assignees: ["Dev Malhotra"],
     priority: "Critical",
     stars: 18,
-    description: "Finalize slab pricing options for Agarwal Contract.",
+    description: "Finalize Basic / Premium / Exclusive options for Agarwal Family.",
   }),
-  mk(6, 11, 12, "Call Back Pending Leads", "task", {
+  mk(6, 11, 12, "Call Back Pending Prospects", "task", {
     assignees: ["Priya Sharma"],
     priority: "High",
     stars: 15,
-    description: "Return calls to leads marked pending from Friday.",
+    description: "Return calls to P0 prospects marked pending from Friday.",
   }),
-  mk(6, 16, 17, "Prepare Client Report", "task", {
+  mk(6, 16, 17, "Prepare Match Shortlist", "task", {
     clientRelated: true,
     client: "Malhotra Family",
     assignees: ["Neha Kapoor"],
@@ -357,10 +357,10 @@ const INITIAL_EVENTS = [
 ];
 
 const INITIAL_UNSCHEDULED = [
-  { id: "u1", title: "Call back Sethi", type: "Lead", duration: "30 min" },
-  { id: "u2", title: "Draft Agarwal Contract", type: "Lead", duration: "30 min" },
-  { id: "u3", title: "Follow up with Mehta", type: "Lead", duration: "30 min" },
-  { id: "u4", title: "Prepare Sharma Proposal", type: "Lead", duration: "45 min" },
+  { id: "u1", title: "Call back Sethi Family", type: "Prospect", duration: "30 min" },
+  { id: "u2", title: "Draft Agarwal Package Quote", type: "Prospect", duration: "30 min" },
+  { id: "u3", title: "Follow up with Mehta Family", type: "Prospect", duration: "30 min" },
+  { id: "u4", title: "Prepare Sharma Match Shortlist", type: "Prospect", duration: "45 min" },
 ];
 
 const DAY_STATUS = { 3: "free", 9: "free", 11: "filling", 17: "busy", 26: "busy" };
@@ -915,7 +915,7 @@ export default function CalendarPage() {
     let endH = parseTimeHour(form.endTime, startH + 1);
     if (endH <= startH) endH = Math.min(startH + 1, 18);
     const client = form.inviteGroups?.includes("client")
-      ? form.people.find((p) => ["ABC Pvt. Ltd", "Sethi Family", "Agarwal Contract", "Malhotra Family", "Mehta & Co"].includes(p)) || ""
+      ? form.people.find((p) => ["Sethi Family", "Agarwal Family", "Malhotra Family", "Kapoor Family", "Mehta Family"].includes(p)) || ""
       : "";
     return {
       id: existingId || `${category}-${Date.now()}`,
@@ -1231,7 +1231,7 @@ export default function CalendarPage() {
             <ChevronDown size={14} className="text-[#7A0A17]/60 -rotate-90" />
           </div>
           <p className="text-[11.5px] text-[#6B7280] mt-1.5 leading-relaxed">
-            Free slots, reschedules, client history, slab progress.
+            Free slots, reschedules, family visits, package progress.
           </p>
         </button>
 
