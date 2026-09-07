@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Flag, Mail, MessageSquare, Phone } from "lucide-react";
 import { toast } from "react-toastify";
 import StatusPill from "../components/common/StatusPill";
@@ -25,6 +25,7 @@ const TABS = [
   { k: "cross", label: "Cross-sell", count: 11 },
   { k: "upsell", label: "Upsell", count: 8 },
   { k: "referral", label: "Referral", count: 9 },
+  { k: "renewal", label: "Subscription Renewals", count: 27 },
 ];
 
 const MODES = ["UPI", "Card", "NEFT", "Cheque", "Cash"];
@@ -115,6 +116,38 @@ const UPSELL_ROWS = [
   { name: "Vikram Ahluwalia", code: "MML-C-10396", current: "Signature", suggested: "Post-marriage ecosystem", value: "+₹75,000", why: "Marriage confirmed, wants concierge support", status: "Won", kind: "ok", action: "View" },
 ];
 
+const RENEWAL_ROWS = [
+  { name: "Priya Raheja", code: "MML-C-10437", pkg: "Classic", expires: "30 Sep 2026", daysLeft: "23 days", value: "₹22,000", last: "2 Sep · WhatsApp", status: "Expiring this week", kind: "warn" },
+  { name: "Ritu Saxena", code: "MML-C-10425", pkg: "Classic", expires: "12 Sep 2026", daysLeft: "5 days", value: "₹25,000", last: "4 Sep · phone call", status: "Expiring this week", kind: "warn" },
+  { name: "Aditya Verma", code: "MML-C-10444", pkg: "Premium", expires: "10 Sep 2026", daysLeft: "3 days", value: "₹51,000", last: "3 Sep · WhatsApp", status: "Expiring this week", kind: "warn" },
+  { name: "Karan Malhotra", code: "MML-C-10462", pkg: "Premium", expires: "8 Sep 2026", daysLeft: "1 day", value: "₹51,000", last: "1 Sep · phone call", status: "Expiring this week", kind: "bad" },
+  { name: "Neha Bansal", code: "MML-C-10480", pkg: "Classic", expires: "9 Sep 2026", daysLeft: "2 days", value: "₹25,000", last: "5 Sep · WhatsApp", status: "Expiring this week", kind: "warn" },
+  { name: "Siddharth Rao", code: "MML-C-10481", pkg: "Premium", expires: "11 Sep 2026", daysLeft: "4 days", value: "₹51,000", last: "4 Sep · SMS", status: "Expiring this week", kind: "warn" },
+  { name: "Meera Iyer", code: "MML-C-10482", pkg: "Exclusive", expires: "13 Sep 2026", daysLeft: "6 days", value: "₹1,00,000", last: "3 Sep · phone call", status: "Expiring this week", kind: "warn" },
+  { name: "Kabir Singh", code: "MML-C-10483", pkg: "Classic", expires: "7 Sep 2026", daysLeft: "0 days", value: "₹25,000", last: "6 Sep · WhatsApp", status: "Expiring this week", kind: "bad" },
+  { name: "Ishita Kapoor", code: "MML-C-10484", pkg: "Premium", expires: "14 Sep 2026", daysLeft: "7 days", value: "₹51,000", last: "2 Sep · email", status: "Expiring this week", kind: "warn" },
+  { name: "Rohan Desai", code: "MML-C-10485", pkg: "Classic", expires: "10 Sep 2026", daysLeft: "3 days", value: "₹25,000", last: "5 Sep · phone call", status: "Expiring this week", kind: "warn" },
+  { name: "Tanvi Shah", code: "MML-C-10486", pkg: "Exclusive", expires: "12 Sep 2026", daysLeft: "5 days", value: "₹1,00,000", last: "1 Sep · WhatsApp", status: "Expiring this week", kind: "warn" },
+  { name: "Aarav Khanna", code: "MML-C-10487", pkg: "Premium", expires: "9 Sep 2026", daysLeft: "2 days", value: "₹51,000", last: "4 Sep · SMS", status: "Expiring this week", kind: "warn" },
+  { name: "Rahul Sethi", code: "MML-C-10470", pkg: "Classic", expires: "28 Aug 2026", daysLeft: "10 days overdue", value: "₹25,000", last: "28 Aug · SMS", status: "Overdue", kind: "bad" },
+  { name: "Ananya Gupta", code: "MML-C-10471", pkg: "Premium", expires: "22 Aug 2026", daysLeft: "16 days overdue", value: "₹51,000", last: "4 Sep · WhatsApp", status: "Overdue", kind: "bad" },
+  { name: "Manish Tandon", code: "MML-C-10388", pkg: "Exclusive", expires: "15 Aug 2026", daysLeft: "23 days overdue", value: "₹1,00,000", last: "28 Aug · email", status: "Overdue", kind: "bad" },
+  { name: "Pooja Nair", code: "MML-C-10488", pkg: "Classic", expires: "20 Aug 2026", daysLeft: "18 days overdue", value: "₹25,000", last: "30 Aug · phone call", status: "Overdue", kind: "bad" },
+  { name: "Vivek Arora", code: "MML-C-10489", pkg: "Premium", expires: "18 Aug 2026", daysLeft: "20 days overdue", value: "₹51,000", last: "1 Sep · WhatsApp", status: "Overdue", kind: "bad" },
+  { name: "Sneha Reddy", code: "MML-C-10490", pkg: "Classic", expires: "25 Aug 2026", daysLeft: "13 days overdue", value: "₹25,000", last: "29 Aug · SMS", status: "Overdue", kind: "bad" },
+  { name: "Dev Malhotra", code: "MML-C-10491", pkg: "Exclusive", expires: "10 Aug 2026", daysLeft: "28 days overdue", value: "₹1,00,000", last: "27 Aug · email", status: "Overdue", kind: "bad" },
+  { name: "Kritika Jain", code: "MML-C-10492", pkg: "Premium", expires: "5 Aug 2026", daysLeft: "33 days overdue", value: "₹51,000", last: "2 Sep · phone call", status: "Overdue", kind: "bad" },
+  { name: "Nikhil Bose", code: "MML-C-10493", pkg: "Classic", expires: "12 Aug 2026", daysLeft: "26 days overdue", value: "₹25,000", last: "31 Aug · WhatsApp", status: "Overdue", kind: "bad" },
+  { name: "Aisha Khan", code: "MML-C-10494", pkg: "Premium", expires: "1 Aug 2026", daysLeft: "37 days overdue", value: "₹51,000", last: "26 Aug · SMS", status: "Overdue", kind: "bad" },
+  { name: "Yash Patel", code: "MML-C-10495", pkg: "Exclusive", expires: "8 Aug 2026", daysLeft: "30 days overdue", value: "₹1,00,000", last: "3 Sep · phone call", status: "Overdue", kind: "bad" },
+  { name: "Diya Menon", code: "MML-C-10496", pkg: "Classic", expires: "16 Aug 2026", daysLeft: "22 days overdue", value: "₹25,000", last: "28 Aug · WhatsApp", status: "Overdue", kind: "bad" },
+  { name: "Harsh Vardhan", code: "MML-C-10497", pkg: "Premium", expires: "24 Aug 2026", daysLeft: "14 days overdue", value: "₹51,000", last: "5 Sep · email", status: "Overdue", kind: "bad" },
+  { name: "Shalini Kapoor", code: "MML-C-10402", pkg: "Exclusive Privé", expires: "1 Oct 2026", daysLeft: "24 days", value: "₹5,00,000", last: "2 Sep · phone call", status: "Renewal due", kind: "info" },
+  { name: "Dr. Arjun Nair", code: "MML-C-10419", pkg: "Exclusive", expires: "5 Oct 2026", daysLeft: "28 days", value: "₹1,00,000", last: "4 Sep · WhatsApp", status: "Renewal due", kind: "info" },
+];
+
+const PAGE_SIZE = 8;
+
 const TAB_META = {
   overview: ["Post-Sales Desk", "Everything owed after the match is confirmed — balance payments, testimonials, reviews, cross-sell and upsell. (BRD S7)"],
   payment: ["Payment Collection", "Instalments and balance amounts due after matchmaking begins. Receipts post to Finance automatically. (BRD S7.1)"],
@@ -124,6 +157,7 @@ const TAB_META = {
   cross: ["Cross-sell", "Partner services offered to matched clients — photography, decor, venue, jewellery, travel. Commission tracked per deal. (BRD S7.5)"],
   upsell: ["Upsell", "Package upgrades, tenure extensions and add-on services for existing clients. (BRD S7.6)"],
   referral: ["Referral", "Referrals from matched clients — requests sent, conversions, and follow-up. (BRD S7.7)"],
+  renewal: ["Subscription Renewals", "Packages nearing expiry or already overdue — renewals, tenure extensions and win-back follow-ups. (BRD S7.8)"],
 };
 
 const TAB_ACTIONS = {
@@ -135,6 +169,7 @@ const TAB_ACTIONS = {
   cross: ["Partner catalogue", "Create Cross-sell offer"],
   upsell: ["Upgrade pricing", "Create upgrade quote"],
   referral: ["Referral rules", "Log referral"],
+  renewal: ["Renewal pricing", "Send renewal quote"],
 };
 
 const PS_TH = "px-4 py-3 text-left text-[10px] font-extrabold text-[#B0A3A2] uppercase tracking-wide align-bottom";
@@ -186,6 +221,45 @@ function IconBtn({ label, onClick, children }) {
     >
       {children}
     </button>
+  );
+}
+
+function TablePager({ page, totalPages, totalItems, pageSize, onChange, label = "rows" }) {
+  if (totalItems === 0) return null;
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, totalItems);
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  return (
+    <div className="flex items-center justify-between gap-3 px-5 py-3.5">
+      <p className="text-[12px] text-[#9CA3AF] font-medium">
+        Showing {start}–{end} of {totalItems} {label}
+      </p>
+      <div className="flex items-center gap-1.5">
+        {pages.map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => onChange(n)}
+            className={`size-8 rounded-lg grid place-items-center text-[13px] ${
+              n === page
+                ? "font-bold bg-[#7A0A17] text-white"
+                : "font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+            }`}
+          >
+            {n}
+          </button>
+        ))}
+        <button
+          type="button"
+          disabled={page >= totalPages}
+          onClick={() => onChange(Math.min(totalPages, page + 1))}
+          className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB] disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          ›
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -262,6 +336,10 @@ export default function PostSalesPage() {
   const [rfStatus, setRfStatus] = useState("all");
   const [rfOwner, setRfOwner] = useState("all");
   const [rfBranch, setRfBranch] = useState("all");
+  const [rnStatus, setRnStatus] = useState("all");
+  const [rnPackage, setRnPackage] = useState("all");
+  const [rnOwner, setRnOwner] = useState("me");
+  const [pageByTab, setPageByTab] = useState({});
   const [messageFor, setMessageFor] = useState(null);
 
   const head = role === "head";
@@ -308,6 +386,28 @@ export default function PostSalesPage() {
   const { sorted: sortedReviews, sort: rvSort, toggle: toggleRv } = useTableSort(REVIEW_ROWS);
   const { sorted: sortedCross, sort: crSort, toggle: toggleCr } = useTableSort(CROSS_ROWS);
   const { sorted: sortedUpsell, sort: upSort, toggle: toggleUp } = useTableSort(UPSELL_ROWS);
+  const renewalRows = useMemo(
+    () =>
+      RENEWAL_ROWS.filter((r) => {
+        if (rnStatus === "overdue" && r.status !== "Overdue") return false;
+        if (rnStatus === "expiring" && r.status !== "Expiring this week") return false;
+        if (rnStatus === "due" && r.status !== "Renewal due") return false;
+        if (rnPackage !== "all" && !r.pkg.toLowerCase().includes(rnPackage)) return false;
+        return true;
+      }),
+    [rnStatus, rnPackage]
+  );
+  const { sorted: sortedRenewals, sort: rnSort, toggle: toggleRn } = useTableSort(renewalRows);
+
+  const tabPage = pageByTab[tab] || 1;
+  const setTabPage = useCallback((p) => {
+    setPageByTab((prev) => ({ ...prev, [tab]: p }));
+  }, [tab]);
+
+  useEffect(() => {
+    setPageByTab((prev) => ({ ...prev, [tab]: 1 }));
+  }, [tab, payStatus, payOwner, payDue, fuAge, fuAttempt, fuOwner, tmFormat, tmStage, tmOwner, rvStatus, rvRating, rvOwner, crService, crPartner, crStatus, upReason, upPackage, upStatus, rfStatus, rfOwner, rfBranch, rnStatus, rnPackage, rnOwner]);
+
   const referralRows = useMemo(
     () =>
       CLIENTS.filter((c) => {
@@ -410,6 +510,7 @@ export default function PostSalesPage() {
         { label: "Google reviews", value: "34", note: "4.6 average rating", noteTone: "green", detail: "7 requests sent, not posted" },
         { label: "Cross-sell & upsell", value: "₹9.8L", note: "₹68,400 commission", noteTone: "green", detail: "19 offers open this quarter" },
         { label: "Referral", value: "17", note: "9 converted to deals", noteTone: "green", detailLink: { to: "/campaign/create", label: "Create campaign" } },
+        { label: "Subscription renewals", value: "27", note: "13 overdue", noteTone: "red", detail: "12 getting expired this week" },
       ]
     : [
         { label: "Balance outstanding", value: "₹6.2L", note: "6 clients overdue", noteTone: "red", detail: "Across 14 active payment plans" },
@@ -418,11 +519,12 @@ export default function PostSalesPage() {
         { label: "Google reviews", value: "11", note: "4.6 average rating", noteTone: "green", detail: "7 requests sent, not posted" },
         { label: "Cross-sell & upsell", value: "₹3.4L", note: "₹68,400 commission", noteTone: "green", detail: "19 offers open this quarter" },
         { label: "Referral", value: "6", note: "To get more refferals", noteTone: "green", detailLink: { to: "/campaign/create", label: "Create campaign" } },
+        { label: "Subscription renewals", value: "27", note: "13 overdue", noteTone: "red", detail: "12 getting expired this week" },
       ];
 
   const tasks = [
     { time: "10:00", kind: "PAYMENT", tone: "red", title: "Dr. Arjun Nair — collect balance ₹40,000", sub: "Exclusive · due 2 Sep · UPI link opened twice", value: "₹40,000", cta: "Record", go: "payment" },
-    { time: "11:30", kind: "PACK RENEWAL", tone: "amber", title: "Shalini Kapoor — reminder attempt 3", sub: "125000 pack renewal pending in 24 days", value: "₹1,25,000", cta: "Call", go: "followup" },
+    { time: "11:30", kind: "PACK RENEWAL", tone: "amber", title: "Shalini Kapoor — reminder attempt 3", sub: "125000 pack renewal pending in 24 days", value: "₹1,25,000", cta: "Call", go: "renewal" },
     { time: "01:00", kind: "TESTIMONIAL", tone: "blue", title: "Mehta family — record video testimonial", sub: "Engagement confirmed 24 Aug · consent signed", value: "—", cta: "Schedule", go: "testimonial" },
     { time: "03:00", kind: "CROSS-SELL", tone: "green", title: "Ritu Saxena — share photography partner quote", sub: "Kalyan Studios · ₹1,80,000 · 8% commission", value: "₹14,400", cta: "Send", go: "cross" },
     { time: "04:30", kind: "UPSELL", tone: "amber", title: "Aditya Verma — Premium to Exclusive upgrade", sub: "6 profiles shared, none shortlisted · senior RM pitch", value: "₹49,000", cta: "Quote", go: "upsell" },
@@ -450,6 +552,7 @@ export default function PostSalesPage() {
     cross: { k: "ok", strong: "₹68,400 commission earned this quarter.", text: "Partner offers only go out after the client confirms the match is progressing.", cta: "See rules" },
     upsell: { k: "warn", strong: "3 packages expire within 30 days.", text: "Renewal or tenure extension quotes should reach the client before expiry.", cta: "View expiring" },
     referral: { k: "info", strong: head ? "17 referrals received in the branch." : "6 referrals received from matched clients.", text: "Ask after engagement or marriage confirmation. Conversion is tracked against the referring client.", cta: "Send request" },
+    renewal: { k: "warn", strong: "27 renewals total · 13 overdue · 12 getting expired this week.", text: "Reach clients before the package ends so search continuity is not lost.", cta: "View overdue" },
   };
 
   const tablePack = {
@@ -600,11 +703,53 @@ export default function PostSalesPage() {
         ],
       },
     },
+    renewal: {
+      stats: [
+        { label: "Renewals total", value: "27", note: "Active subscription queue" },
+        { label: "Overdue", value: "13", note: "Past expiry, not renewed" },
+        { label: "Expiring this week", value: "12", note: "Need contact before Sunday" },
+        { label: "Quotes sent", value: "8", note: "Awaiting client reply" },
+      ],
+      title: "Subscription renewal queue",
+      sub: "Packages nearing expiry or already overdue",
+      count: `${RENEWAL_ROWS.length} renewals`,
+      footer: null,
+      playbook: {
+        title: "Renewal cadence",
+        sub: "Start early, escalate when overdue",
+        items: [
+          { tag: "DAY 30", tagColor: "#3b6fd4", meta: "Window open", title: "Send renewal quote early", body: "A renewal or tenure extension quote goes out 30 days before the package ends, while the search is still active." },
+          { tag: "THIS WEEK", tagColor: "#D97706", meta: "Urgent", title: "Call clients expiring within 7 days", body: "Phone first, then WhatsApp with the renewal link. Log the outcome so the next attempt is ready." },
+          { tag: "OVERDUE", tagColor: "#E8395B", meta: "Win-back", title: "Escalate after expiry", body: "Overdue renewals pause matchmaking access. Branch Head decides between a win-back offer or closing the subscription." },
+        ],
+      },
+    },
   };
 
   const pack = tablePack[tab];
   const banner = banners[tab];
   const attemptNext = modal ? Math.min((modal.cl.attempt || 1) + (fu[modal.cl.code] || 0) + 1, 3) : 1;
+
+  const getPaged = (rows) => {
+    const totalItems = rows.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE) || 1);
+    const page = Math.min(Math.max(1, tabPage), totalPages);
+    return {
+      rows: rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+      page,
+      totalPages,
+      totalItems,
+    };
+  };
+
+  const pagedPayments = getPaged(sortedPayments);
+  const pagedFollowup = getPaged(sortedFollowup);
+  const pagedTestimonials = getPaged(sortedTestimonials);
+  const pagedReviews = getPaged(sortedReviews);
+  const pagedCross = getPaged(sortedCross);
+  const pagedUpsell = getPaged(sortedUpsell);
+  const pagedReferrals = getPaged(sortedReferrals);
+  const pagedRenewals = getPaged(sortedRenewals);
 
   const onPrimary = () => {
     if (tab === "payment") {
@@ -636,7 +781,7 @@ export default function PostSalesPage() {
             ]}
           />
           <OutlineBtn
-            className={tab === "payment" || tab === "followup" || tab === "upsell" || tab === "referral" ? "border-[#7A0A17]/45 text-[#7A0A17]" : ""}
+            className={tab === "payment" || tab === "followup" || tab === "upsell" || tab === "referral" || tab === "renewal" ? "border-[#7A0A17]/45 text-[#7A0A17]" : ""}
             onClick={() => toast.info(`${outlineLabel}…`)}
           >
             {outlineLabel}
@@ -701,6 +846,7 @@ export default function PostSalesPage() {
           onClick={() => {
             if (banner.cta === "Open referral desk") setTab("referral");
             else if (banner.cta === "See rules") document.getElementById("cross-guardrails")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            else if (banner.cta === "View overdue" && tab === "renewal") setRnStatus("overdue");
             else toast.info(banner.cta);
           }}
         >
@@ -710,7 +856,7 @@ export default function PostSalesPage() {
 
       {tab === "overview" && (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2.5">
             {kpis.map((k) => (
               <MetricCard
                 key={k.label}
@@ -947,7 +1093,7 @@ export default function PostSalesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedReferrals.map((c) => {
+                  {pagedReferrals.rows.map((c) => {
                     const prob = PROBABILITY_META[c.probability] || PROBABILITY_META.medium;
                     return (
                       <tr key={c.id} className="border-b border-black/6 last:border-0">
@@ -986,26 +1132,14 @@ export default function PostSalesPage() {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
-              <p className="text-[12px] text-[#9CA3AF] font-medium">{pack.footer}</p>
-              <div className="flex items-center gap-1.5">
-                <span className="size-8 rounded-lg grid place-items-center text-[13px] font-bold bg-[#7A0A17] text-white">1</span>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Page 2")}
-                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                >
-                  2
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Next page")}
-                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                >
-                  ›
-                </button>
-              </div>
-            </div>
+            <TablePager
+              page={pagedReferrals.page}
+              totalPages={pagedReferrals.totalPages}
+              totalItems={pagedReferrals.totalItems}
+              pageSize={PAGE_SIZE}
+              onChange={setTabPage}
+              label="clients"
+            />
           </section>
 
           <Playbook title={pack.playbook.title} sub={pack.playbook.sub} items={pack.playbook.items} />
@@ -1090,7 +1224,7 @@ export default function PostSalesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedPayments.map((r) => (
+                  {pagedPayments.rows.map((r) => (
                     <tr key={r.code} className="border-b border-black/6 last:border-0">
                       <ClientCell name={r.name} code={r.code} />
                       <Td>{r.pkg}</Td>
@@ -1108,26 +1242,14 @@ export default function PostSalesPage() {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
-              <p className="text-[12px] text-[#9CA3AF] font-medium">{pack.footer}</p>
-              <div className="flex items-center gap-1.5">
-                <span className="size-8 rounded-lg grid place-items-center text-[13px] font-bold bg-[#7A0A17] text-white">1</span>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Page 2")}
-                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                >
-                  2
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Next page")}
-                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                >
-                  ›
-                </button>
-              </div>
-            </div>
+            <TablePager
+              page={pagedPayments.page}
+              totalPages={pagedPayments.totalPages}
+              totalItems={pagedPayments.totalItems}
+              pageSize={PAGE_SIZE}
+              onChange={setTabPage}
+              label="plans"
+            />
           </section>
 
           <Playbook title={pack.playbook.title} sub={pack.playbook.sub} items={pack.playbook.items} />
@@ -1211,7 +1333,7 @@ export default function PostSalesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedFollowup.map((r) => (
+                  {pagedFollowup.rows.map((r) => (
                     <tr key={r.code} className="border-b border-black/6 last:border-0">
                       <ClientCell name={r.name} code={r.code} />
                       <Td strong>{r.balance}</Td>
@@ -1228,26 +1350,14 @@ export default function PostSalesPage() {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
-              <p className="text-[12px] text-[#9CA3AF] font-medium">{pack.footer}</p>
-              <div className="flex items-center gap-1.5">
-                <span className="size-8 rounded-lg grid place-items-center text-[13px] font-bold bg-[#7A0A17] text-white">1</span>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Page 2")}
-                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                >
-                  2
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Next page")}
-                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                >
-                  ›
-                </button>
-              </div>
-            </div>
+            <TablePager
+              page={pagedFollowup.page}
+              totalPages={pagedFollowup.totalPages}
+              totalItems={pagedFollowup.totalItems}
+              pageSize={PAGE_SIZE}
+              onChange={setTabPage}
+              label="clients"
+            />
           </section>
 
           <Playbook title={pack.playbook.title} sub={pack.playbook.sub} items={pack.playbook.items} />
@@ -1331,7 +1441,7 @@ export default function PostSalesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedTestimonials.map((r) => (
+                  {pagedTestimonials.rows.map((r) => (
                     <tr key={r.code} className="border-b border-black/6 last:border-0">
                       <ClientCell name={r.name} code={r.code} />
                       <Td>{r.milestone}</Td>
@@ -1348,26 +1458,14 @@ export default function PostSalesPage() {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
-              <p className="text-[12px] text-[#9CA3AF] font-medium">{pack.footer}</p>
-              <div className="flex items-center gap-1.5">
-                <span className="size-8 rounded-lg grid place-items-center text-[13px] font-bold bg-[#7A0A17] text-white">1</span>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Page 2")}
-                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                >
-                  2
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Next page")}
-                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                >
-                  ›
-                </button>
-              </div>
-            </div>
+            <TablePager
+              page={pagedTestimonials.page}
+              totalPages={pagedTestimonials.totalPages}
+              totalItems={pagedTestimonials.totalItems}
+              pageSize={PAGE_SIZE}
+              onChange={setTabPage}
+              label="testimonials"
+            />
           </section>
 
           <Playbook title={pack.playbook.title} sub={pack.playbook.sub} items={pack.playbook.items} titleClass="text-[#7A0A17]" />
@@ -1452,7 +1550,7 @@ export default function PostSalesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedReviews.map((r) => (
+                  {pagedReviews.rows.map((r) => (
                     <tr key={r.code} className="border-b border-black/6 last:border-0">
                       <ClientCell name={r.name} code={r.code} />
                       <Td>{r.sent}</Td>
@@ -1469,26 +1567,14 @@ export default function PostSalesPage() {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
-              <p className="text-[12px] text-[#9CA3AF] font-medium">{pack.footer}</p>
-              <div className="flex items-center gap-1.5">
-                <span className="size-8 rounded-lg grid place-items-center text-[13px] font-bold bg-[#7A0A17] text-white">1</span>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Page 2")}
-                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                >
-                  2
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Next page")}
-                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                >
-                  ›
-                </button>
-              </div>
-            </div>
+            <TablePager
+              page={pagedReviews.page}
+              totalPages={pagedReviews.totalPages}
+              totalItems={pagedReviews.totalItems}
+              pageSize={PAGE_SIZE}
+              onChange={setTabPage}
+              label="requests"
+            />
           </section>
 
           <Playbook title={pack.playbook.title} sub={pack.playbook.sub} items={pack.playbook.items} />
@@ -1574,7 +1660,7 @@ export default function PostSalesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedCross.map((r) => (
+                  {pagedCross.rows.map((r) => (
                     <tr key={r.code} className="border-b border-black/6 last:border-0">
                       <ClientCell name={r.name} code={r.code} />
                       <Td>{r.service}</Td>
@@ -1593,26 +1679,14 @@ export default function PostSalesPage() {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
-              <p className="text-[12px] text-[#9CA3AF] font-medium">{pack.footer}</p>
-              <div className="flex items-center gap-1.5">
-                <span className="size-8 rounded-lg grid place-items-center text-[13px] font-bold bg-[#7A0A17] text-white">1</span>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Page 2")}
-                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                >
-                  2
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Next page")}
-                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                >
-                  ›
-                </button>
-              </div>
-            </div>
+            <TablePager
+              page={pagedCross.page}
+              totalPages={pagedCross.totalPages}
+              totalItems={pagedCross.totalItems}
+              pageSize={PAGE_SIZE}
+              onChange={setTabPage}
+              label="offers"
+            />
           </section>
 
           <div id="cross-guardrails">
@@ -1700,7 +1774,7 @@ export default function PostSalesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedUpsell.map((r) => (
+                  {pagedUpsell.rows.map((r) => (
                     <tr key={r.code} className="border-b border-black/6 last:border-0">
                       <ClientCell name={r.name} code={r.code} />
                       <Td>{r.current}</Td>
@@ -1716,26 +1790,135 @@ export default function PostSalesPage() {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
-              <p className="text-[12px] text-[#9CA3AF] font-medium">{pack.footer}</p>
-              <div className="flex items-center gap-1.5">
-                <span className="size-8 rounded-lg grid place-items-center text-[13px] font-bold bg-[#7A0A17] text-white">1</span>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Page 2")}
-                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                >
-                  2
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Next page")}
-                  className="size-8 rounded-lg grid place-items-center text-[13px] font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-                >
-                  ›
-                </button>
-              </div>
+            <TablePager
+              page={pagedUpsell.page}
+              totalPages={pagedUpsell.totalPages}
+              totalItems={pagedUpsell.totalItems}
+              pageSize={PAGE_SIZE}
+              onChange={setTabPage}
+              label="opportunities"
+            />
+          </section>
+
+          <Playbook title={pack.playbook.title} sub={pack.playbook.sub} items={pack.playbook.items} />
+        </>
+      )}
+
+      {tab === "renewal" && pack && (
+        <>
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            {pack.stats.map((s) => (
+              <MetricCard
+                key={s.label}
+                compact
+                className="shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+                label={s.label}
+                value={s.value}
+                note={s.note}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <NativeSelect
+                value={rnStatus}
+                onChange={setRnStatus}
+                options={[
+                  { value: "all", label: "Status: All" },
+                  { value: "expiring", label: "Status: Expiring this week" },
+                  { value: "overdue", label: "Status: Overdue" },
+                  { value: "due", label: "Status: Renewal due" },
+                ]}
+              />
+              <NativeSelect
+                value={rnPackage}
+                onChange={setRnPackage}
+                options={[
+                  { value: "all", label: "Package: All" },
+                  { value: "classic", label: "Package: Classic" },
+                  { value: "premium", label: "Package: Premium" },
+                  { value: "exclusive", label: "Package: Exclusive" },
+                ]}
+              />
+              <NativeSelect
+                value={rnOwner}
+                onChange={setRnOwner}
+                options={[
+                  { value: "me", label: "Owner: Me" },
+                  { value: "all", label: "Owner: All" },
+                ]}
+              />
             </div>
+            <p className="text-[13px] font-semibold text-[#9CA3AF]">{sortedRenewals.length} renewals</p>
+          </div>
+
+          <section className="bg-white border border-black/8 rounded-2xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+              <div>
+                <h2 className="text-[15px] font-bold text-[#111]">{pack.title}</h2>
+                <p className="text-[12px] text-[#9CA3AF] mt-0.5">{pack.sub}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => toast.info("Opening renewal pricing…")}
+                className="text-[13px] font-semibold text-[#7A0A17] hover:underline shrink-0"
+              >
+                Renewal pricing
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1040px] border-collapse">
+                <thead>
+                  <tr className="border-y border-black/8">
+                    <PsTh label="Client" sortKey="name" sort={rnSort} onSort={toggleRn} />
+                    <PsTh label="Package" sortKey="pkg" sort={rnSort} onSort={toggleRn} />
+                    <PsTh label="Expires" sortKey="expires" sort={rnSort} onSort={toggleRn} />
+                    <PsTh label="Days left" sortKey="daysLeft" sort={rnSort} onSort={toggleRn} />
+                    <PsTh label="Renewal value" sortKey="value" sort={rnSort} onSort={toggleRn} />
+                    <PsTh label="Last contact" sortKey="last" sort={rnSort} onSort={toggleRn} />
+                    <PsTh label="Status" sortKey="status" sort={rnSort} onSort={toggleRn} />
+                    <PsTh label="Actions" sortKey="actions" unsortable />
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagedRenewals.rows.map((r) => (
+                    <tr key={r.code} className="border-b border-black/6 last:border-0">
+                      <ClientCell name={r.name} code={r.code} />
+                      <Td>{r.pkg}</Td>
+                      <Td>{r.expires}</Td>
+                      <Td>{r.daysLeft}</Td>
+                      <Td strong>{r.value}</Td>
+                      <Td muted>{r.last}</Td>
+                      <Td>
+                        <StatusPill tone={KIND_TO_TONE[r.kind]}>{r.status}</StatusPill>
+                      </Td>
+                      <Td>
+                        <div className="flex items-center gap-0.5">
+                          <IconBtn label={`Call ${r.name}`} onClick={() => toast.info(`Calling ${r.name}…`)}>
+                            <Phone size={14} className="text-[#16A34A]" />
+                          </IconBtn>
+                          <IconBtn label={`Message ${r.name}`} onClick={() => setMessageFor(r)}>
+                            <MessageSquare size={14} className="text-[#D97706]" />
+                          </IconBtn>
+                          <IconBtn label={`Email ${r.name}`} onClick={() => toast.info(`Emailing ${r.name}…`)}>
+                            <Mail size={14} className="text-[#2563EB]" />
+                          </IconBtn>
+                        </div>
+                      </Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <TablePager
+              page={pagedRenewals.page}
+              totalPages={pagedRenewals.totalPages}
+              totalItems={pagedRenewals.totalItems}
+              pageSize={PAGE_SIZE}
+              onChange={setTabPage}
+              label="renewals"
+            />
           </section>
 
           <Playbook title={pack.playbook.title} sub={pack.playbook.sub} items={pack.playbook.items} />
