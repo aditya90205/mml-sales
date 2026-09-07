@@ -214,16 +214,6 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
       <div className="p-5 flex flex-col gap-4 overflow-y-auto scrollbar-thin">
         {/* Lock note + actions (same button chrome as pipeline board) */}
         <div className="flex items-center gap-3 flex-wrap">
-          <button
-            type="button"
-            onClick={onBack}
-            className="inline-flex items-center gap-1.5 h-[38px] px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors shrink-0"
-            aria-label="Back to pipeline"
-          >
-            <ArrowLeft size={15} />
-            Back
-          </button>
-
           <div className="flex-1 min-w-0 bg-[#FFFBEB] border border-[#FDE68A] rounded-2xl px-4 py-3 flex items-center gap-3 flex-wrap">
             <p className="text-[13px] text-[#111] min-w-0 flex-1">
               {nextStage ? (
@@ -249,6 +239,15 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 h-[38px] px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors shrink-0"
+              aria-label="Back to pipeline"
+            >
+              <ArrowLeft size={15} />
+              Back
+            </button>
             <button
               type="button"
               onClick={() => openWinLossModal("lost")}

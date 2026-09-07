@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import CampaignViewModal from "../components/campaign/CampaignViewModal.jsx";
+import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import biPlayCircle from "../assets/bi_play-circle.png";
 import biStopCircle from "../assets/bi_stop-circle.png";
 import hugeiconsSent from "../assets/hugeicons_sent.png";
@@ -204,6 +205,17 @@ function LeadsByChannelModal({ open, onClose }) {
   );
 }
 
+const CAMPAIGN_COLS = [
+  { label: "Campaign", key: "name" },
+  { label: "Target Group", key: "target" },
+  { label: "Channel", key: "channel" },
+  { label: "Start Date & Time", key: "start" },
+  { label: "End Date & Time", key: "end" },
+  { label: "Owner", key: "owner" },
+  { label: "Status", key: "status" },
+  { label: "Actions", key: "actions", unsortable: true },
+];
+
 function usePagedTable(rows, searchKeys) {
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
@@ -216,9 +228,11 @@ function usePagedTable(rows, searchKeys) {
     return rows.filter((row) => searchKeys.some((key) => String(row[key] ?? "").toLowerCase().includes(q)));
   }, [rows, query, searchKeys]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const { sorted, sort, toggle } = useTableSort(filtered, { defaultKey: "name" });
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
   const safePage = Math.min(page, totalPages);
-  const paged = filtered.slice((safePage - 1) * perPage, safePage * perPage);
+  const paged = sorted.slice((safePage - 1) * perPage, safePage * perPage);
 
   return {
     search,
@@ -229,8 +243,10 @@ function usePagedTable(rows, searchKeys) {
     page: safePage,
     setPage,
     totalPages,
-    totalItems: filtered.length,
+    totalItems: sorted.length,
     paged,
+    sort,
+    toggle,
   };
 }
 
@@ -331,14 +347,17 @@ export default function CampaignManagementPage() {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold tracking-wide">
-                  <th className="px-4 py-3 whitespace-nowrap">Campaign</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Target Group</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Channel</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Start Date &amp; Time</th>
-                  <th className="px-4 py-3 whitespace-nowrap">End Date &amp; Time</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Owner</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Actions</th>
+                  {CAMPAIGN_COLS.map((col) => (
+                    <SortableTh
+                      key={col.key}
+                      label={col.label}
+                      sortKey={col.key}
+                      sort={table.sort}
+                      onSort={table.toggle}
+                      unsortable={col.unsortable}
+                      className="px-4 py-3 whitespace-nowrap align-bottom"
+                    />
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/6">

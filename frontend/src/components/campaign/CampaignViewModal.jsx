@@ -133,7 +133,7 @@ export default function CampaignViewModal({ open, onClose, campaign }) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2.5 px-6 py-4 border-t border-black/8 shrink-0">
+        <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-black/8 shrink-0">
           <button
             type="button"
             onClick={onClose}
@@ -141,22 +141,20 @@ export default function CampaignViewModal({ open, onClose, campaign }) {
           >
             Back
           </button>
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => toast.success(`Draft saved for ${campaign.name}.`)}
-              className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
-            >
-              Save Draft
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-            >
-              Continue
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => toast.success(`Draft saved for ${campaign.name}.`)}
+            className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+          >
+            Save Draft
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            Continue
+          </button>
         </div>
       </div>
     </div>

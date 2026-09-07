@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Mail, MessageSquare, Paperclip, Plus } from "lucide-react";
+import { ArrowLeft, Bell, Mail, MessageSquare, Paperclip, Plus } from "lucide-react";
 import { toast } from "react-toastify";
 import ChannelTemplateModal from "../components/campaign/ChannelTemplateModal.jsx";
 
@@ -76,13 +76,24 @@ export default function CreateCampaignPage() {
       <div className="px-5 pt-5 pb-8 flex flex-col gap-5 min-w-0">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <h1 className="text-[26px] font-bold text-[#111] tracking-tight">Create New Campaign</h1>
-          <button
-            type="button"
-            onClick={() => toast.info("Exporting results...")}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-          >
-            Export results
-          </button>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => toast.info("Exporting results...")}
+              className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+            >
+              Export results
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/campaign/management")}
+              className="inline-flex items-center gap-1.5 h-[38px] px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors shrink-0"
+              aria-label="Back to campaigns"
+            >
+              <ArrowLeft size={15} />
+              Back
+            </button>
+          </div>
         </div>
 
         <div className="bg-white border border-black/10 rounded-2xl p-6 flex flex-col gap-7 shadow-sm">
@@ -92,7 +103,7 @@ export default function CreateCampaignPage() {
               <StepBadge n={1} />
               <h2 className="text-[15px] font-bold text-[#111]">Create Campaign</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-4 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
               <div>
                 <FieldLabel required>Campaign Name</FieldLabel>
                 <input
@@ -111,6 +122,16 @@ export default function CreateCampaignPage() {
                   className="w-full h-11 border border-black/12 rounded-xl px-3.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="flex flex-col gap-3 pt-1 border-t border-black/6">
+            <div className="flex items-center gap-2.5 pt-4">
+              <StepBadge n={2} />
+              <h2 className="text-[15px] font-bold text-[#111]">Who is your target segment / group</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_1fr_auto] gap-4 items-end">
               <div>
                 <FieldLabel required>Select Group</FieldLabel>
                 <select
@@ -132,24 +153,6 @@ export default function CreateCampaignPage() {
               >
                 <Plus size={14} /> Create
               </button>
-            </div>
-          </div>
-
-          {/* Step 2 */}
-          <div className="flex flex-col gap-3 pt-1 border-t border-black/6">
-            <div className="flex items-center gap-2.5 pt-4">
-              <StepBadge n={2} />
-              <h2 className="text-[15px] font-bold text-[#111]">Who is your target segment / group</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto] gap-4 items-end">
-              <div>
-                <FieldLabel required>Select Group</FieldLabel>
-                <select className="w-full h-11 border border-black/12 rounded-xl px-3.5 text-[13px] text-[#111] outline-none bg-white">
-                  <option value="">Select Group</option>
-                  <option>Common Pool</option>
-                  <option>Doctors</option>
-                </select>
-              </div>
               <p className="hidden md:block text-[13px] font-semibold text-[#9CA3AF] pb-3">OR</p>
               <div>
                 <FieldLabel required>Upload File / Bulk Import</FieldLabel>
