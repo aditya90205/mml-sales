@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { Pencil, Plus, CheckCircle2, XCircle, Trash2 } from "lucide-react";
+import { Pencil, Plus, MessageSquare, Trash2 } from "lucide-react";
 import Modal from "../ui/Modal";
+import SendMessageModal from "../common/SendMessageModal.jsx";
 import { SortableTh, useTableSort } from "../common/useTableSort.jsx";
 
 const TIMESHEET = {
@@ -184,8 +185,7 @@ export default function TimesheetDetailsModal({ open, onClose, employee, mode = 
   const [canEdit, setCanEdit] = useState(mode === "edit");
   const [manualEntries, setManualEntries] = useState(TIMESHEET.manualEntries);
   const [entryForm, setEntryForm] = useState(null);
-  const [rejecting, setRejecting] = useState(null);
-  const [rejectComment, setRejectComment] = useState("");
+  const [messageOpen, setMessageOpen] = useState(false);
 
   const indexedManual = useMemo(
     () => manualEntries.map((e, index) => ({ ...e, index })),
@@ -203,8 +203,7 @@ export default function TimesheetDetailsModal({ open, onClose, employee, mode = 
       setCanEdit(mode === "edit");
       setManualEntries(TIMESHEET.manualEntries.map((e) => ({ ...e })));
       setEntryForm(null);
-      setRejecting(null);
-      setRejectComment("");
+      setMessageOpen(false);
     }
   }, [open, mode]);
 
@@ -231,29 +230,6 @@ export default function TimesheetDetailsModal({ open, onClose, employee, mode = 
   const deleteEntry = (index) => {
     setManualEntries((prev) => prev.filter((_, i) => i !== index));
     toast.success("Manual entry deleted.");
-  };
-
-  const approveEntry = (index) => {
-    setManualEntries((prev) =>
-      prev.map((e, i) =>
-        i === index ? { ...e, status: "Regularization Approved", comment: /reject/i.test(e.status || "") ? "" : e.comment } : e
-      )
-    );
-    toast.success("Manual entry approved.");
-  };
-
-  const confirmReject = () => {
-    if (rejecting == null) return;
-    setManualEntries((prev) =>
-      prev.map((e, i) =>
-        i === rejecting
-          ? { ...e, status: "Regularization Rejected", comment: rejectComment.trim() || "Rejected by admin." }
-          : e
-      )
-    );
-    toast.success("Manual entry rejected.");
-    setRejecting(null);
-    setRejectComment("");
   };
 
   const th = "px-4 py-2.5 text-[10px] font-bold uppercase tracking-wide text-[#9CA3AF] whitespace-nowrap";
@@ -387,11 +363,12 @@ export default function TimesheetDetailsModal({ open, onClose, employee, mode = 
                         <td className="px-4 py-3 text-[13px] font-bold text-[#3B82F6] text-right whitespace-nowrap">{e.hours}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1.5">
-                            <IconBtn title="Approve" className="border-[#16A34A]/30 text-[#16A34A] hover:bg-[#E7F8EF]" onClick={() => canEdit && approveEntry(e.index)}>
-                              <CheckCircle2 size={14} />
-                            </IconBtn>
-                            <IconBtn title="Reject" className="border-[#DC2626]/30 text-[#DC2626] hover:bg-[#FEE2E2]" onClick={() => canEdit && (setRejecting(e.index), setRejectComment(e.comment || ""))}>
-                              <XCircle size={14} />
+                            <IconBtn
+                              title="Message"
+                              className="border-[#F59E0B]/30 text-[#F59E0B] hover:bg-[#FFF3E4] hover:text-[#D97706]"
+                              onClick={() => setMessageOpen(true)}
+                            >
+                              <MessageSquare size={14} />
                             </IconBtn>
                             <IconBtn title="Edit" className="border-[#3B82F6]/30 text-[#3B82F6] hover:bg-[#E8F2FE]" onClick={() => canEdit && setEntryForm({ mode: "edit", index: e.index, initial: { ...e, by: "Manual" } })}>
                               <Pencil size={13} />
@@ -453,27 +430,7 @@ export default function TimesheetDetailsModal({ open, onClose, employee, mode = 
         )}
       </Modal>
 
-      <Modal
-        open={rejecting != null}
-        onClose={() => { setRejecting(null); setRejectComment(""); }}
-        title="Reject Manual Entry"
-        width="max-w-[440px]"
-      >
-        <div className="flex flex-col gap-4">
-          <p className="text-[13px] text-[#6B7280]">Add a comment for this rejection. It will show under the entry.</p>
-          <textarea
-            value={rejectComment}
-            onChange={(e) => setRejectComment(e.target.value)}
-            rows={3}
-            placeholder="e.g. We can't approve this time entry..."
-            className="border border-black/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#7A0A17]/40 resize-none w-full"
-          />
-          <div className="flex items-center justify-end gap-3">
-            <button type="button" onClick={() => { setRejecting(null); setRejectComment(""); }} className="h-9 px-5 rounded-xl border border-black/10 text-[13px] font-semibold text-[#111]">Cancel</button>
-            <button type="button" onClick={confirmReject} className="h-9 px-6 rounded-xl bg-[#DC2626] text-[13px] font-semibold text-white">Reject</button>
-          </div>
-        </div>
-      </Modal>
+      <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
     </>
   );
 }
