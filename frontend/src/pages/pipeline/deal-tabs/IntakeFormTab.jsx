@@ -5,12 +5,14 @@ import {
   DEMO_PERSONAL_VALUES,
   snapshotPersonalValues,
   diffPersonalValues,
+  SECTION_BLOCKS,
+  SECTIONS_META,
+  diffSectionValues,
 } from "./intake/intakeFormData";
 import IntakeFillFormView from "./intake/IntakeFillFormView";
 import ClientRecordView from "./intake/ClientRecordView";
 import PersonalChangeOtpModal from "./intake/PersonalChangeOtpModal";
 import SectionEditModal from "./intake/SectionEditModal";
-import { SECTIONS_META } from "./intake/intakeFormData";
 
 function IntakeViewToggle({ view, onChange }) {
   const options = [
@@ -97,7 +99,7 @@ const DEMO_CHANGE_LOG = [
 
 /**
  * Intake Form tab — toggles between Fill the form and Client record views.
- * Personal details edits require OTP unlock; saves append to the change summary.
+ * Client-record section edits require Send OTP → verify before data updates.
  */
 export default function IntakeFormTab({ empty = false }) {
   const [view, setView] = useState("fill");
@@ -109,7 +111,12 @@ export default function IntakeFormTab({ empty = false }) {
   );
   const [personalUnlocked, setPersonalUnlocked] = useState(false);
   const [changeLog, setChangeLog] = useState(() => (empty ? [] : DEMO_CHANGE_LOG));
-  const [otpState, setOtpState] = useState({ open: false, mode: "unlock", changes: [] });
+  const [otpState, setOtpState] = useState({
+    open: false,
+    mode: "unlock",
+    changes: [],
+    sectionLabel: "",
+  });
   const [editSectionKey, setEditSectionKey] = useState(null);
   const [pendingSectionDraft, setPendingSectionDraft] = useState(null);
 
@@ -127,11 +134,10 @@ export default function IntakeFormTab({ empty = false }) {
   const closeEditSection = () => {
     setEditSectionKey(null);
     setPendingSectionDraft(null);
-    setPersonalUnlocked(false);
   };
 
   const requestPersonalUnlock = () => {
-    setOtpState({ open: true, mode: "unlock", changes: [] });
+    setOtpState({ open: true, mode: "unlock", changes: [], sectionLabel: "" });
   };
 
   const requestPersonalSave = ({ onSuccess }) => {
@@ -142,36 +148,36 @@ export default function IntakeFormTab({ empty = false }) {
       onSuccess?.();
       return;
     }
-    setOtpState({ open: true, mode: "commit", changes, onSuccess });
+    setOtpState({
+      open: true,
+      mode: "commit",
+      changes,
+      sectionLabel: "Personal details",
+      onSuccess,
+    });
   };
 
   const handleEditSectionSave = ({ values: draftValues, chips: draftChips }) => {
     const label = SECTIONS_META.find((s) => s.key === editSectionKey)?.label || "Section";
+    const blocks = SECTION_BLOCKS[editSectionKey] || [];
+    const before = cloneBeforeValues(blocks, values);
+    const changes = diffSectionValues(blocks, before, draftValues);
 
-    if (editSectionKey === "personal") {
-      const merged = { ...values, ...draftValues };
-      const changes = diffPersonalValues(personalBaseline, snapshotPersonalValues(merged));
-      if (!changes.length) {
-        applySectionDraft(draftValues, draftChips);
-        closeEditSection();
-        toast.success(`${label} updated.`);
-        return;
-      }
-      setPendingSectionDraft({ values: draftValues, chips: draftChips });
-      setOtpState({
-        open: true,
-        mode: "commit",
-        changes,
-        onSuccess: () => {
-          closeEditSection();
-        },
-      });
+    if (!changes.length) {
+      toast.info("No changes to save in this section.");
       return;
     }
 
-    applySectionDraft(draftValues, draftChips);
-    closeEditSection();
-    toast.success(`${label} updated.`);
+    setPendingSectionDraft({ values: draftValues, chips: draftChips, changes });
+    setOtpState({
+      open: true,
+      mode: "commit",
+      changes,
+      sectionLabel: label,
+      onSuccess: () => {
+        closeEditSection();
+      },
+    });
   };
 
   const handleOtpVerified = () => {
@@ -182,18 +188,22 @@ export default function IntakeFormTab({ empty = false }) {
       return;
     }
 
+    const pendingChanges = pendingSectionDraft?.changes || otpState.changes || [];
     const nextValues = pendingSectionDraft
       ? { ...values, ...pendingSectionDraft.values }
       : values;
+
     if (pendingSectionDraft) {
       applySectionDraft(pendingSectionDraft.values, pendingSectionDraft.chips);
       setPendingSectionDraft(null);
     }
 
     const current = snapshotPersonalValues(nextValues);
-    const changes = diffPersonalValues(personalBaseline, current);
     const at = formatChangeAt();
-    const entries = changes.map((c) => ({
+    const logEntries = (pendingChanges.length
+      ? pendingChanges
+      : diffPersonalValues(personalBaseline, current)
+    ).map((c) => ({
       id: `${c.key}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       fieldKey: c.key,
       label: c.label,
@@ -204,14 +214,16 @@ export default function IntakeFormTab({ empty = false }) {
       via: "OTP verified",
     }));
 
-    setChangeLog((prev) => [...entries, ...prev]);
+    if (logEntries.length) {
+      setChangeLog((prev) => [...logEntries, ...prev]);
+    }
     setPersonalBaseline(current);
     setPersonalUnlocked(false);
     closeOtp();
     toast.success(
-      changes.length === 1
-        ? "Change saved after OTP. Added to summary."
-        : `${changes.length} changes saved after OTP. Added to summary.`
+      logEntries.length === 1
+        ? "Change saved after OTP. Client data updated."
+        : `${logEntries.length} changes saved after OTP. Client data updated.`
     );
     otpState.onSuccess?.();
   };
@@ -270,14 +282,13 @@ export default function IntakeFormTab({ empty = false }) {
         chips={chips}
         onClose={closeEditSection}
         onSave={handleEditSectionSave}
-        personalUnlocked={personalUnlocked}
-        onRequestPersonalUnlock={requestPersonalUnlock}
       />
 
       <PersonalChangeOtpModal
         open={otpState.open}
         mode={otpState.mode}
         changes={otpState.changes}
+        sectionLabel={otpState.sectionLabel}
         onClose={() => {
           closeOtp();
           setPendingSectionDraft(null);
@@ -286,4 +297,19 @@ export default function IntakeFormTab({ empty = false }) {
       />
     </div>
   );
+}
+
+function cloneBeforeValues(blocks, values) {
+  const before = {};
+  for (const block of blocks || []) {
+    for (const field of block.fields) {
+      const raw = values[field.key];
+      if (raw == null) {
+        before[field.key] = field.type === "checklist" || field.type === "rows" ? [] : "";
+      } else {
+        before[field.key] = JSON.parse(JSON.stringify(raw));
+      }
+    }
+  }
+  return before;
 }

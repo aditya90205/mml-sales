@@ -1,59 +1,47 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../../../../components/ui/Modal";
 
-const DEMO_OTP = "123456";
-
-/**
- * OTP gate before unlocking / committing personal-detail changes.
- * mode: "unlock" | "commit"
- */
-export default function PersonalChangeOtpModal({
-  open,
-  mode = "unlock",
-  changes = [],
-  onClose,
-  onVerified,
-}) {
+function OtpModalBody({ mode, changes, sectionLabel, onClose, onVerified }) {
   const [otp, setOtp] = useState("");
   const [sending, setSending] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    setOtp("");
-  }, [open]);
+  const [sent, setSent] = useState(false);
 
   const title = mode === "commit" ? "Verify OTP to save changes" : "Verify OTP to edit";
   const subtitle =
     mode === "commit"
-      ? "Personal details changes need client OTP before they are saved."
+      ? sectionLabel
+        ? `Send OTP to the client, then enter it to update ${sectionLabel}.`
+        : "Send OTP to the client, then enter it before any client-record update is saved."
       : "Unlock personal details only after OTP verification.";
 
   const handleSend = () => {
     setSending(true);
     setTimeout(() => {
       setSending(false);
-      toast.success("OTP sent to client mobile (demo: 123456).");
+      setSent(true);
+      toast.success("OTP sent to client mobile (demo).");
     }, 400);
   };
 
   const handleVerify = () => {
+    if (!sent) {
+      toast.info("Send OTP to the client first.");
+      return;
+    }
     const code = otp.trim();
-    if (code.length < 4) {
+    if (!code.length) {
       toast.info("Enter the OTP sent to the client.");
       return;
     }
-    if (code !== DEMO_OTP) {
-      toast.error("Invalid OTP. Use 123456 for this demo.");
-      return;
-    }
+    // Demo mode: accept any OTP the user enters.
     onVerified?.();
   };
 
   return (
     <Modal
-      open={open}
+      open
       onClose={onClose}
       title={title}
       subtitle={subtitle}
@@ -75,7 +63,7 @@ export default function PersonalChangeOtpModal({
             onClick={handleVerify}
             className="h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
           >
-            Verify &amp; continue
+            Verify &amp; update
           </button>
         </>
       }
@@ -100,8 +88,31 @@ export default function PersonalChangeOtpModal({
           </div>
         )}
 
+        <div className="rounded-xl border border-[#7A0A17]/15 bg-[#FCF5F6] px-4 py-3.5">
+          <p className="text-[13px] font-semibold text-[#7A0A17]">Step 1 — Send OTP to client</p>
+          <p className="text-[12.5px] text-[#6B7280] mt-1">
+            Demo mode: send OTP, then enter any code to continue.
+          </p>
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={sending}
+            className="mt-3 h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors disabled:opacity-60"
+          >
+            {sending ? "Sending…" : sent ? "Resend OTP" : "Send OTP"}
+          </button>
+          {sent && (
+            <p className="text-[12px] font-medium text-[#166534] mt-2">
+              OTP sent. Enter any OTP to verify (demo).
+            </p>
+          )}
+        </div>
+
         <div>
-          <label className="block text-[12.5px] font-medium text-[#374151] mb-1.5">Enter OTP</label>
+          <p className="text-[13px] font-semibold text-[#111] mb-1.5">Step 2 — Enter OTP</p>
+          <label className="block text-[12.5px] font-medium text-[#374151] mb-1.5">
+            OTP from client
+          </label>
           <input
             type="text"
             inputMode="numeric"
@@ -109,19 +120,38 @@ export default function PersonalChangeOtpModal({
             maxLength={6}
             value={otp}
             onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder="6-digit code"
+            placeholder="Enter any OTP (demo)"
             className="w-full h-11 rounded-xl border border-black/12 px-3.5 text-[14px] font-semibold tracking-[0.2em] text-[#111] outline-none focus:border-[#7A0A17]/40"
           />
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={sending}
-            className="mt-2 text-[12.5px] font-semibold text-[#7A0A17] hover:underline disabled:opacity-50"
-          >
-            {sending ? "Sending…" : "Send OTP to client mobile"}
-          </button>
         </div>
       </div>
     </Modal>
+  );
+}
+
+/**
+ * OTP gate before unlocking / committing client-record changes.
+ * Demo: any OTP is accepted after Send OTP.
+ * mode: "unlock" | "commit"
+ */
+export default function PersonalChangeOtpModal({
+  open,
+  mode = "unlock",
+  changes = [],
+  sectionLabel = "",
+  onClose,
+  onVerified,
+}) {
+  if (!open) return null;
+
+  return (
+    <OtpModalBody
+      key={`${mode}-${sectionLabel}-${changes.map((c) => c.key).join(",")}`}
+      mode={mode}
+      changes={changes}
+      sectionLabel={sectionLabel}
+      onClose={onClose}
+      onVerified={onVerified}
+    />
   );
 }

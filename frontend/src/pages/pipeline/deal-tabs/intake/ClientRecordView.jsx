@@ -345,7 +345,7 @@ function ChangeSummaryCard({ changeLog = [] }) {
 
       {changeLog.length === 0 ? (
         <p className="text-[12.5px] text-[#6B7280] leading-relaxed">
-          No personal-detail changes yet. Edits need OTP first; each verified change is listed here.
+          No verified changes yet. Edit a section, send OTP, and each update appears here.
         </p>
       ) : (
         <div className="relative flex flex-col">

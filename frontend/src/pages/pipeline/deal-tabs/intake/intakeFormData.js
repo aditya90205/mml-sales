@@ -1014,6 +1014,43 @@ export function cloneSectionDraft(blocks, values = {}, chips = {}) {
   return { draftValues, draftChips };
 }
 
+function normalizeDiffValue(value) {
+  if (value == null) return "";
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function displayDiffValue(value) {
+  const normalized = normalizeDiffValue(value);
+  if (!normalized || normalized === "[]" || normalized === "{}") return "—";
+  if (normalized.length > 80) return `${normalized.slice(0, 77)}…`;
+  return normalized;
+}
+
+/** Diff section field values; returns [{ key, label, from, to }]. */
+export function diffSectionValues(blocks, beforeValues = {}, afterValues = {}) {
+  const changes = [];
+  for (const block of blocks || []) {
+    for (const field of block.fields) {
+      const fromRaw = beforeValues[field.key];
+      const toRaw = afterValues[field.key];
+      if (normalizeDiffValue(fromRaw) === normalizeDiffValue(toRaw)) continue;
+      changes.push({
+        key: field.key,
+        label: field.label || field.key,
+        from: displayDiffValue(fromRaw),
+        to: displayDiffValue(toRaw),
+      });
+    }
+  }
+  return changes;
+}
+
 export const SECTION_TIPS = {
   personal:
     "Ask like this: Profile ID and date fill in on save. Read the name back to the client before moving on.",

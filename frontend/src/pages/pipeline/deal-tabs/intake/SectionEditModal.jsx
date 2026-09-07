@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Pencil } from "lucide-react";
-import { toast } from "react-toastify";
 import Modal from "../../../../components/ui/Modal";
 import {
   SECTIONS_META,
@@ -10,20 +9,10 @@ import {
 } from "./intakeFormData";
 import { FormBlock } from "./IntakeSectionFields";
 
-function SectionEditBody({
-  sectionKey,
-  values,
-  chips,
-  onClose,
-  onSave,
-  personalUnlocked,
-  onRequestPersonalUnlock,
-}) {
+function SectionEditBody({ sectionKey, values, chips, onClose, onSave }) {
   const meta = SECTIONS_META.find((s) => s.key === sectionKey);
   const blocks = SECTION_BLOCKS[sectionKey] || [];
   const sectionIndex = SECTIONS_META.findIndex((s) => s.key === sectionKey);
-  const isPersonal = sectionKey === "personal";
-  const personalLocked = isPersonal && !personalUnlocked;
 
   const initial = cloneSectionDraft(blocks, values, chips);
   const [draftValues, setDraftValues] = useState(initial.draftValues);
@@ -38,14 +27,6 @@ function SectionEditBody({
       [chipsKey]: (prev[chipsKey] || []).filter((c) => c !== chip),
     }));
 
-  const handleSave = () => {
-    if (isPersonal && personalLocked) {
-      toast.info("Verify OTP before editing personal details.");
-      return;
-    }
-    onSave?.({ values: draftValues, chips: draftChips });
-  };
-
   const tip = SECTION_TIPS[sectionKey];
 
   return (
@@ -53,7 +34,7 @@ function SectionEditBody({
       open
       onClose={onClose}
       title={`Edit ${meta.label}`}
-      subtitle={`Section ${String(sectionIndex + 1).padStart(2, "0")} of ${String(SECTIONS_META.length).padStart(2, "0")} — update fields in this section only`}
+      subtitle={`Section ${String(sectionIndex + 1).padStart(2, "0")} of ${String(SECTIONS_META.length).padStart(2, "0")} — changes save only after client OTP`}
       icon={<Pencil size={18} />}
       iconBg="#F3E8F0"
       iconColor="#7A0A17"
@@ -69,63 +50,25 @@ function SectionEditBody({
           </button>
           <button
             type="button"
-            onClick={handleSave}
-            disabled={personalLocked}
-            className="h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={() => onSave?.({ values: draftValues, chips: draftChips })}
+            className="h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
           >
-            Save section
+            Save &amp; send OTP
           </button>
         </>
       }
     >
       <div className="flex flex-col gap-4">
+        <div className="rounded-xl border border-[#7A0A17]/15 bg-[#FCF5F6] px-4 py-3">
+          <p className="text-[13px] font-semibold text-[#7A0A17]">Client OTP required</p>
+          <p className="text-[12.5px] text-[#6B7280] mt-0.5">
+            After you save, send OTP to the client and enter it to update this section.
+          </p>
+        </div>
+
         {tip && (
           <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl px-4 py-3">
             <p className="text-[12.5px] text-[#92400E] italic leading-relaxed">{tip}</p>
-          </div>
-        )}
-
-        {isPersonal && (
-          <div
-            className={`rounded-xl border px-4 py-3 flex items-start justify-between gap-3 flex-wrap ${
-              personalLocked
-                ? "bg-[#FFFBEB] border-[#FDE68A]"
-                : "bg-[#E7F8EF] border-[#BBF7D0]"
-            }`}
-          >
-            <div className="min-w-0">
-              <p
-                className={`text-[13px] font-semibold ${
-                  personalLocked ? "text-[#92400E]" : "text-[#166534]"
-                }`}
-              >
-                {personalLocked
-                  ? "Personal details are locked"
-                  : "Personal details unlocked for editing"}
-              </p>
-              <p
-                className={`text-[12.5px] mt-0.5 ${
-                  personalLocked ? "text-[#92400E]/90" : "text-[#166534]/90"
-                }`}
-              >
-                {personalLocked
-                  ? "Verify OTP before changing any field."
-                  : "Edit freely, then save — OTP will confirm before changes are committed."}
-              </p>
-            </div>
-            {personalLocked ? (
-              <button
-                type="button"
-                onClick={onRequestPersonalUnlock}
-                className="h-9 px-3.5 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors shrink-0"
-              >
-                Verify OTP to edit
-              </button>
-            ) : (
-              <span className="inline-flex items-center h-9 px-3 rounded-full bg-white/80 text-[12px] font-semibold text-[#166534] shrink-0">
-                Editing unlocked
-              </span>
-            )}
           </div>
         )}
 
@@ -138,7 +81,6 @@ function SectionEditBody({
               chipValues={draftChips}
               onFieldChange={setField}
               onRemoveChip={removeChip}
-              locked={personalLocked}
             />
           ))
         ) : (
@@ -162,8 +104,6 @@ export default function SectionEditModal({
   chips,
   onClose,
   onSave,
-  personalUnlocked = false,
-  onRequestPersonalUnlock,
 }) {
   if (!open || !sectionKey) return null;
 
@@ -175,8 +115,6 @@ export default function SectionEditModal({
       chips={chips}
       onClose={onClose}
       onSave={onSave}
-      personalUnlocked={personalUnlocked}
-      onRequestPersonalUnlock={onRequestPersonalUnlock}
     />
   );
 }
