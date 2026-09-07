@@ -63,6 +63,8 @@ import {
   ReferenceLine,
   LabelList,
   Label,
+  useYAxisScale,
+  useOffset,
   PieChart,
   Pie,
   Cell,
@@ -234,7 +236,7 @@ const GOALS_STATS = [
   { label: "Actual Revenue",    value: "₹1.63 Cr", note: "65% of Target",  noteColor: "#3B82F6" },
   { label: "Projected Revenue", value: "₹1.55 Cr", note: "102% of Target", noteColor: "#8B5CF6" },
   { label: "Target (4 Weeks)",  value: "₹2.50 Cr", note: "Total Target",   noteColor: "#0D9488" },
-  { label: "Incentive (4 Weeks)", value: "₹2.29Cr", note: "Total Incentive", noteColor: "#F59E0B" },
+  { label:  "Incentive (till 4 week)", value: "₹12 Lakh", note: "Total Incentive", noteColor: "#F59E0B" },
   { label: "Total pack sold",   value: "15",        note: "Subscription Sold", noteColor: "#F59E0B" },
 ];
 
@@ -246,7 +248,6 @@ const TIER_COLORS = {
 };
 
 const TARGET_LINE_VALUE = 5.9;
-const INCENTIVE_LINE_VALUE = 5.05;
 
 /**
  * Weeks 1-4 are closed weeks (actual tier mix); weeks 5-8 are the
@@ -259,7 +260,7 @@ const REVENUE_WEEKS = [
   { week: "Week 1", weekLabel: "Week 1",                current: false, totalLabel: "₹4.8 Lakh",  height: 1.6, counts: { basic: 2, standard: 2, premium: 1, superPremium: 1 } },
   { week: "Week 2", weekLabel: "Week 2",                current: false, totalLabel: "₹6.0 Lakh",  height: 2.0, counts: { basic: 1, standard: 1, premium: 1, superPremium: 2 } },
   { week: "Week 3", weekLabel: "Week 3",                current: false, totalLabel: "₹8.0 Lakh",  height: 2.7, counts: { basic: 3, standard: 3, premium: 1, superPremium: 2 } },
-  { week: "Week 4", weekLabel: "Week 4 (Current Week)", current: true,  totalLabel: "₹10.0 Lakh", height: 3.3, counts: { basic: 2, standard: 1, premium: 3, superPremium: 4 } },
+  { week: "Week 4", weekLabel: "Week 4 (Current Week)", current: true,  totalLabel: "₹12.0 Lakh", height: 4.0, counts: { basic: 2, standard: 1, premium: 3, superPremium: 4 } },
 ];
 
 const PROJECTED_WEEKS = [
@@ -284,6 +285,7 @@ const REVENUE_CHART_DATA = [
     premiumCount: w.counts.premium,
     superPremiumCount: w.counts.superPremium,
     packTotal: w.counts.basic + w.counts.standard + w.counts.premium + w.counts.superPremium,
+    pipeline: null,
   })),
   ...PROJECTED_WEEKS.map((w) => ({
     week: w.week,
@@ -305,17 +307,17 @@ const CONVERSION_STATS = [
 ];
 
 const FUNNEL_LEGEND = [
-  { key: "leads",      label: "Leads",      color: "#2a78d6" },
-  { key: "contacts",   label: "Contacts",   color: "#1baf7a" },
-  { key: "converted",  label: "Converted",  color: "#4a3aa7" },
-  { key: "conversion", label: "Conversion", color: "#9CA3AF" },
+  { key: "prospects",      label: "Prospects",       color: "#2A78D6" },
+  { key: "qualifiedLeads", label: "Qualified Leads", color: "#1BAF7A" },
+  { key: "contacted",      label: "Contacted",       color: "#4A3AA7" },
+  { key: "converted",      label: "Converted",       color: "#9CA3AF" },
 ];
 
 const WEEKLY_FUNNEL_DATA = [
-  { week: "Week 1", range: "1-7 August",   leads: 320, contacts: 210, converted: 68, conversion: 68 },
-  { week: "Week 2", range: "8-14 August",  leads: 320, contacts: 210, converted: 68, conversion: 68 },
-  { week: "Week 3", range: "15-21 August", leads: 320, contacts: 210, converted: 68, conversion: 68 },
-  { week: "Week 4", range: "22-28 August", leads: 320, contacts: 210, converted: 68, conversion: 68 },
+  { week: "Week 1", range: "1-7 August",   prospects: 320, qualifiedLeads: 210, contacted: 145, converted: 68 },
+  { week: "Week 2", range: "8-14 August",  prospects: 320, qualifiedLeads: 210, contacted: 145, converted: 68 },
+  { week: "Week 3", range: "15-21 August", prospects: 320, qualifiedLeads: 210, contacted: 145, converted: 68 },
+  { week: "Week 4", range: "22-28 August", prospects: 320, qualifiedLeads: 210, contacted: 145, converted: 68 },
 ];
 
 const LEAD_TYPE_BREAKDOWN = [
@@ -699,7 +701,7 @@ function ReferenceLineTag({ viewBox, text, bg, color, dy = -14 }) {
   if (!viewBox) return null;
   const { x, y } = viewBox;
   return (
-    <foreignObject x={x + 8} y={y + dy - 14} width={200} height={32} style={{ overflow: "visible" }}>
+    <foreignObject x={x + 8} y={y + dy - 14} width={360} height={32} style={{ overflow: "visible" }}>
       <div
         className="inline-flex items-center h-[26px] px-3 rounded-lg text-[13px] font-bold whitespace-nowrap shadow-sm"
         style={{ backgroundColor: bg, color, border: `1.5px solid ${color}` }}
@@ -707,6 +709,25 @@ function ReferenceLineTag({ viewBox, text, bg, color, dy = -14 }) {
         {text}
       </div>
     </foreignObject>
+  );
+}
+
+/** Week-4 incentive chip, positioned at the current-week bar without a ReferenceLine. */
+function IncentiveWeekTag() {
+  const yScale = useYAxisScale();
+  const offset = useOffset();
+  const week4 = REVENUE_WEEKS.find((w) => w.current);
+  if (!yScale || !offset || !week4) return null;
+  const y = yScale(week4.height);
+  if (y == null) return null;
+  return (
+    <ReferenceLineTag
+      viewBox={{ x: offset.left, y }}
+      text={`Incentive (till 4 week) ${week4.totalLabel}`}
+      bg="#FFF3E4"
+      color="#F59E0B"
+      dy={-4}
+    />
   );
 }
 
@@ -821,7 +842,6 @@ const REVENUE_LEGEND = [
   { label: "Super Premium", type: "swatch", color: TIER_COLORS.superPremium },
   { label: "Projected Revenue Pipeline", type: "line", color: "#8B5CF6", dashed: true },
   { label: "Target", type: "line", color: "#0D9488", dashed: false },
-  { label: "Incentive", type: "line", color: "#F59E0B", dashed: true },
 ];
 
 function GoalsPerformanceCard() {
@@ -896,9 +916,7 @@ function GoalsPerformanceCard() {
             <ReferenceLine y={TARGET_LINE_VALUE} stroke="#0D9488" strokeWidth={2}>
               <Label content={(p) => <ReferenceLineTag viewBox={p.viewBox} text="Target ₹2.50 Cr" bg="#E7F8EF" color="#0D9488" dy={-4} />} />
             </ReferenceLine>
-            <ReferenceLine y={INCENTIVE_LINE_VALUE} stroke="#F59E0B" strokeWidth={2} strokeDasharray="6 4">
-              <Label content={(p) => <ReferenceLineTag viewBox={p.viewBox} text="Incentive ₹2.29 Cr" bg="#FFF3E4" color="#F59E0B" dy={-4} />} />
-            </ReferenceLine>
+            <IncentiveWeekTag />
 
             <Line
               type="monotone"
@@ -1052,7 +1070,6 @@ function LeadsConversionCard() {
               padding={{ left: 18, right: 18 }}
             />
             <YAxis
-              yAxisId="left"
               domain={[0, FUNNEL_Y_MAX]}
               ticks={FUNNEL_Y_TICKS}
               axisLine={false}
@@ -1061,31 +1078,19 @@ function LeadsConversionCard() {
               width={44}
               label={{ value: "Count", position: "top", offset: 18, fontSize: 11, fill: "#9CA3AF" }}
             />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              domain={[0, FUNNEL_Y_MAX]}
-              ticks={FUNNEL_Y_TICKS}
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 11, fill: "#9CA3AF" }}
-              width={44}
-              label={{ value: "Client", position: "top", offset: 18, fontSize: 11, fill: "#9CA3AF" }}
-            />
             <Tooltip content={<FunnelTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
 
-            <Bar yAxisId="left" dataKey="leads" fill={FUNNEL_LEGEND[0].color} barSize={22} radius={[4, 4, 0, 0]}>
-              <LabelList dataKey="leads" content={FunnelBarLabel} />
-            </Bar>
-            <Bar yAxisId="left" dataKey="contacts" fill={FUNNEL_LEGEND[1].color} barSize={22} radius={[4, 4, 0, 0]}>
-              <LabelList dataKey="contacts" content={FunnelBarLabel} />
-            </Bar>
-            <Bar yAxisId="left" dataKey="converted" fill={FUNNEL_LEGEND[2].color} barSize={22} radius={[4, 4, 0, 0]}>
-              <LabelList dataKey="converted" content={FunnelBarLabel} />
-            </Bar>
-            <Bar yAxisId="right" dataKey="conversion" fill={FUNNEL_LEGEND[3].color} barSize={22} radius={[4, 4, 0, 0]}>
-              <LabelList dataKey="conversion" content={FunnelBarLabel} />
-            </Bar>
+            {FUNNEL_LEGEND.map((f) => (
+              <Bar
+                key={f.key}
+                dataKey={f.key}
+                fill={f.color}
+                barSize={22}
+                radius={[4, 4, 0, 0]}
+              >
+                <LabelList dataKey={f.key} content={FunnelBarLabel} />
+              </Bar>
+            ))}
           </ComposedChart>
         </ResponsiveContainer>
         </div>

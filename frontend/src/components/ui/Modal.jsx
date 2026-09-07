@@ -12,6 +12,7 @@ export default function Modal({
   children,
   footer,
   width = "max-w-lg",
+  hideHeader = false,
 }) {
   useEffect(() => {
     if (!open) return;
@@ -39,30 +40,32 @@ export default function Modal({
         className={`relative z-10 w-full ${width} bg-white rounded-2xl shadow-xl flex flex-col max-h-[90vh]`}
       >
         {/* header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-black/10 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            {icon && (
-              <span
-                className="size-9 rounded-xl grid place-items-center shrink-0"
-                style={{ backgroundColor: iconBg, color: iconColor }}
-              >
-                {icon}
-              </span>
-            )}
-            <div className="min-w-0">
-              <h2 className="text-base font-semibold text-[#1a1a1a] truncate">{title}</h2>
-              {subtitle && <p className="text-xs text-[#6f7886] mt-0.5">{subtitle}</p>}
+        {!hideHeader && (
+          <div className="flex items-center justify-between px-6 py-4 border-b border-black/10 shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              {icon && (
+                <span
+                  className="size-9 rounded-xl grid place-items-center shrink-0"
+                  style={{ backgroundColor: iconBg, color: iconColor }}
+                >
+                  {icon}
+                </span>
+              )}
+              <div className="min-w-0">
+                <h2 className="text-base font-semibold text-[#1a1a1a] truncate">{title}</h2>
+                {subtitle && <p className="text-xs text-[#6f7886] mt-0.5">{subtitle}</p>}
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 rounded-lg text-[#6f7886] hover:bg-black/5 transition-colors shrink-0"
+              aria-label="Close modal"
+            >
+              <X size={18} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-lg text-[#6f7886] hover:bg-black/5 transition-colors shrink-0"
-            aria-label="Close modal"
-          >
-            <X size={18} />
-          </button>
-        </div>
+        )}
         {/* body */}
         <div className="overflow-y-auto flex-1 px-6 py-5 scrollbar-thin scrollbar-modal">{children}</div>
         {/* footer */}

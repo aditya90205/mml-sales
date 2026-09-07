@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, Filter, Flag, Mail, MessageSquare, Phone, Plus, Search, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ClientStatusBadge from "../components/common/ClientStatusBadge.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
+import ClientGroupsChart, { statsFromClients } from "../components/clients/ClientGroupsChart.jsx";
 import { BRANCHES, CLIENTS, PROBABILITY_META } from "../utils/clientsData.js";
 import { groupQuery, readSavedGroups, removeSavedGroup } from "../utils/clientGroups.js";
 import { matchesAll } from "../utils/clientQuery.js";
@@ -21,6 +22,8 @@ const COLUMNS = [
   { label: "Reason", key: "reason" },
   { label: "Actions", key: "actions", unsortable: true },
 ];
+
+const PER_PAGE_OPTIONS = [10, 15, 25, 50];
 
 function NativeSelect({ value, onChange, options }) {
   return (
@@ -55,9 +58,57 @@ function IconBtn({ label, onClick, children }) {
   );
 }
 
+function TablePagination({ page, totalPages, totalItems, pageSize, onChange }) {
+  if (totalItems === 0) return null;
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, totalItems);
+
+  return (
+    <div className="flex items-center justify-between gap-3 flex-wrap px-4 py-3 border-t border-black/8">
+      <p className="text-[12px] text-[#9CA3AF] font-medium">
+        Showing {start}–{end} of {totalItems} clients
+      </p>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          disabled={page <= 1}
+          onClick={() => onChange(page - 1)}
+          className="px-3 py-1.5 rounded-lg border border-black/10 bg-white text-[12px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Previous
+        </button>
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => onChange(n)}
+            className={`size-8 rounded-lg grid place-items-center text-[13px] ${
+              n === page
+                ? "font-bold bg-[#7A0A17] text-white"
+                : "font-semibold bg-white border border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
+            }`}
+          >
+            {n}
+          </button>
+        ))}
+        <button
+          type="button"
+          disabled={page >= totalPages}
+          onClick={() => onChange(page + 1)}
+          className="px-3 py-1.5 rounded-lg border border-black/10 bg-white text-[12px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function ClientDatabasePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const filterRef = useRef(null);
+  const perPageRef = useRef(null);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [savedGroups, setSavedGroups] = useState([]);
@@ -70,14 +121,25 @@ export default function ClientDatabasePage() {
   const [probFilter, setProbFilter] = useState("all");
   const [marriedFilter, setMarriedFilter] = useState("all");
   const [messageFor, setMessageFor] = useState(null);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [perPageOpen, setPerPageOpen] = useState(false);
 
   useEffect(() => {
-    setSavedGroups(readSavedGroups());
-  }, []);
+    const groups = readSavedGroups();
+    setSavedGroups(groups);
+
+    const selectId = location.state?.selectGroupId;
+    if (selectId && groups.some((g) => g.id === selectId)) {
+      setActiveGroupIds([selectId]);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   useEffect(() => {
     const onDoc = (e) => {
       if (!filterRef.current?.contains(e.target)) setFilterOpen(false);
+      if (!perPageRef.current?.contains(e.target)) setPerPageOpen(false);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
@@ -107,6 +169,9 @@ export default function ClientDatabasePage() {
       if (activeGroups.length > 0) {
         rows = rows.filter((c) =>
           activeGroups.some((g) => {
+            if (Array.isArray(g.clientIds) && g.clientIds.length > 0) {
+              return g.clientIds.includes(c.id);
+            }
             const { conditions, matchMode } = groupQuery(g);
             return matchesAll(c, conditions, matchMode);
           })
@@ -118,16 +183,54 @@ export default function ClientDatabasePage() {
 
   const { sorted, sort, toggle } = useTableSort(filtered, { defaultKey: null, defaultDir: "asc" });
 
+  const totalItems = sorted.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / perPage) || 1);
+  const safePage = Math.min(page, totalPages);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, statusFilter, branchFilter, genderFilter, probFilter, marriedFilter, activeGroupIds, perPage, grouping]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const paged = useMemo(() => {
+    const start = (safePage - 1) * perPage;
+    return sorted.slice(start, start + perPage);
+  }, [sorted, safePage, perPage]);
+
   const groups = useMemo(() => {
-    if (grouping === "none") return [{ key: "all", label: null, rows: sorted }];
+    if (grouping === "none") return [{ key: "all", label: null, rows: paged }];
     const map = new Map();
-    for (const row of sorted) {
+    for (const row of paged) {
       const label = row[grouping] || "Other";
       if (!map.has(label)) map.set(label, []);
       map.get(label).push(row);
     }
     return [...map.entries()].map(([label, rows]) => ({ key: label, label, rows }));
-  }, [sorted, grouping]);
+  }, [paged, grouping]);
+
+  const chartGroups = useMemo(() => {
+    if (activeGroupIds.length > 0) {
+      return savedGroups.filter((g) => activeGroupIds.includes(g.id));
+    }
+    return savedGroups;
+  }, [savedGroups, activeGroupIds]);
+
+  const chartData = useMemo(() => {
+    return chartGroups.map((g) => {
+      let clients;
+      if (Array.isArray(g.clientIds) && g.clientIds.length > 0) {
+        const idSet = new Set(g.clientIds);
+        clients = CLIENTS.filter((c) => idSet.has(c.id));
+      } else {
+        const { conditions, matchMode } = groupQuery(g);
+        clients = CLIENTS.filter((c) => matchesAll(c, conditions, matchMode));
+      }
+      return { group: g.name, ...statsFromClients(clients) };
+    });
+  }, [chartGroups]);
 
   const applySearch = () => setQuery(search);
 
@@ -316,6 +419,36 @@ export default function ClientDatabasePage() {
             ]}
           />
 
+          <div className="relative shrink-0" ref={perPageRef}>
+            <button
+              type="button"
+              onClick={() => setPerPageOpen((v) => !v)}
+              className="inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+            >
+              Per Page: {perPage}
+              <ChevronDown size={14} className={`text-[#9CA3AF] transition-transform ${perPageOpen ? "rotate-180" : ""}`} />
+            </button>
+            {perPageOpen && (
+              <div className="absolute right-0 top-[calc(100%+6px)] min-w-[100px] bg-white border border-black/8 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-30 py-1 overflow-hidden">
+                {PER_PAGE_OPTIONS.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => {
+                      setPerPage(n);
+                      setPerPageOpen(false);
+                    }}
+                    className={`w-full text-left px-3.5 py-2 text-[13px] transition-colors ${
+                      n === perPage ? "bg-[#FCF5F6] text-[#7A0A17] font-semibold" : "text-[#4B5563] hover:bg-[#FAFAFB]"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={() => navigate("/clients/create-group")}
@@ -375,6 +508,17 @@ export default function ClientDatabasePage() {
           )}
         </div>
 
+        {chartData.length > 0 && (
+          <ClientGroupsChart
+            data={chartData}
+            title={
+              activeGroupIds.length > 0
+                ? "Selected Groups — Client Overview"
+                : "Saved Groups — Client Overview"
+            }
+          />
+        )}
+
         <div className="flex items-center gap-6 flex-wrap text-[13px] font-medium text-[#374151]">
           {Object.entries(PROBABILITY_META).map(([key, meta]) => (
             <span key={key} className="flex items-center gap-1.5">
@@ -384,39 +528,48 @@ export default function ClientDatabasePage() {
           ))}
         </div>
 
-        <div className="overflow-x-auto border border-black/8 rounded-xl bg-white">
-          <table className="w-full text-left border-collapse min-w-[980px]">
-            <thead>
-              <tr className="border-b border-black/8 bg-[#FAFAFB]">
-                {COLUMNS.map((col) => (
-                  <SortableTh
-                    key={col.key}
-                    label={col.label}
-                    sortKey={col.key}
-                    sort={sort}
-                    onSort={toggle}
-                    unsortable={col.unsortable}
-                    className={`px-4 py-3 text-[10px] font-extrabold text-[#9CA3AF] uppercase tracking-wide whitespace-nowrap ${
-                      col.key === "status" ? "text-center" : ""
-                    }`}
-                  />
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-[13px] text-[#9CA3AF] font-medium">
-                    No clients found.
-                  </td>
+        <div className="border border-black/8 rounded-xl bg-white overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[980px]">
+              <thead>
+                <tr className="border-b border-black/8 bg-[#FAFAFB]">
+                  {COLUMNS.map((col) => (
+                    <SortableTh
+                      key={col.key}
+                      label={col.label}
+                      sortKey={col.key}
+                      sort={sort}
+                      onSort={toggle}
+                      unsortable={col.unsortable}
+                      className={`px-4 py-3 text-[10px] font-extrabold text-[#9CA3AF] uppercase tracking-wide whitespace-nowrap ${
+                        col.key === "status" ? "text-center" : ""
+                      }`}
+                    />
+                  ))}
                 </tr>
-              ) : (
-                groups.map((group) => (
-                  <FragmentGroup key={group.key} label={group.label} rows={group.rows} renderRow={renderRow} />
-                ))
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {paged.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-12 text-center text-[13px] text-[#9CA3AF] font-medium">
+                      No clients found.
+                    </td>
+                  </tr>
+                ) : (
+                  groups.map((group) => (
+                    <FragmentGroup key={group.key} label={group.label} rows={group.rows} renderRow={renderRow} />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <TablePagination
+            page={safePage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={perPage}
+            onChange={setPage}
+          />
         </div>
       </div>
 

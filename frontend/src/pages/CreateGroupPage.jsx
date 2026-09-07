@@ -175,7 +175,7 @@ export default function CreateGroupPage() {
       toast.error("Please select at least one client.");
       return;
     }
-    addSavedGroup({
+    const created = addSavedGroup({
       name: groupName.trim(),
       conditions,
       matchMode,
@@ -183,7 +183,7 @@ export default function CreateGroupPage() {
     });
     toast.success(`"${groupName.trim()}" saved with ${selectedIds.size} client${selectedIds.size === 1 ? "" : "s"}.`);
     setSaveOpen(false);
-    navigate("/clients");
+    navigate("/clients", { state: { selectGroupId: created.id, showChart: true } });
   };
 
   return (

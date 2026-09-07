@@ -4,7 +4,6 @@ import {
   CalendarClock,
   CalendarDays,
   Check,
-  CheckSquare,
   ClipboardList,
   Download,
   FileText,
@@ -18,6 +17,7 @@ import {
   Trash2,
   User,
   UserCheck,
+  X,
 } from "lucide-react";
 import Modal from "../ui/Modal";
 
@@ -29,7 +29,7 @@ const PRIORITY_FILL = {
 };
 
 const STAGE_DOT = {
-  New: "#E8395B",
+  New: "#16A34A",
   "In Progress": "#F59E0B",
   Review: "#3B82F6",
   Blocked: "#A855F7",
@@ -38,8 +38,9 @@ const STAGE_DOT = {
 
 function fmtDate(d) {
   if (!d) return "—";
+  if (typeof d === "string" && /^\d{2}-\d{2}-\d{2,4}$/.test(d)) return d;
   const date = d instanceof Date ? d : new Date(d);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return String(d);
   return `${String(date.getDate()).padStart(2, "0")}-${String(date.getMonth() + 1).padStart(2, "0")}-${date.getFullYear()}`;
 }
 
@@ -53,27 +54,25 @@ function fmtDateTime(d) {
 function DetailItem({ label, icon: Icon, children }) {
   return (
     <div className="min-w-0">
-      <p className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">
-        {Icon ? <Icon size={12} className="text-[#9CA3AF]" /> : null}
+      <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#8f95a5] uppercase tracking-wide">
+        {Icon ? <Icon size={13} className="text-[#8f95a5]" strokeWidth={1.75} /> : null}
         {label}
       </p>
-      <div className="text-[13px] font-semibold text-[#111] mt-1.5 break-words">{children}</div>
+      <div className="text-[14px] font-medium text-[#111] mt-1.5 break-words">{children}</div>
     </div>
   );
 }
 
 function TabBar({ tabs, active, onChange }) {
   return (
-    <div className="flex items-center gap-1 border-b border-black/8 mb-4 overflow-x-auto scrollbar-thin">
+    <div className="flex items-center gap-1 bg-[#f1f1f4] rounded-xl p-1 w-fit mb-6 max-w-full overflow-x-auto scrollbar-thin">
       {tabs.map((t) => (
         <button
           key={t.key}
           type="button"
           onClick={() => onChange(t.key)}
-          className={`px-3.5 py-2.5 text-[12.5px] font-semibold whitespace-nowrap border-b-2 -mb-px transition-colors ${
-            active === t.key
-              ? "border-[#7A0A17] text-[#7A0A17]"
-              : "border-transparent text-[#9CA3AF] hover:text-[#4B5563]"
+          className={`px-4 sm:px-5 py-2 rounded-lg text-[13px] font-medium whitespace-nowrap transition-colors ${
+            active === t.key ? "bg-white text-black shadow-sm" : "text-[#6f7886]"
           }`}
         >
           {t.label}
@@ -143,6 +142,9 @@ export default function TaskDetailsModal({
   const attachments = task.attachments || [];
   const doneCount = checklist.filter((i) => i.done).length;
   const checklistPct = checklist.length ? Math.round((doneCount / checklist.length) * 100) : 0;
+  const assigneeLabel = task.assignees?.length
+    ? task.assignees.join(", ")
+    : task.assignee || "Unassigned";
 
   const patch = (updater) => {
     const next = typeof updater === "function" ? updater(task) : { ...task, ...updater };
@@ -157,83 +159,89 @@ export default function TaskDetailsModal({
   ];
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={task.title}
-      subtitle="Task Details"
-      icon={<BarChart3 size={16} />}
-      iconBg="#E7F8EF"
-      iconColor="#16A34A"
-      width="max-w-[640px]"
-      footer={
-        <>
-          <button
-            type="button"
-            onClick={() => onEdit?.(task)}
-            className="h-9 px-4 rounded-xl border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors inline-flex items-center gap-1.5"
-          >
-            <Pencil size={13} /> Edit
-          </button>
+    <Modal open={open} onClose={onClose} hideHeader width="max-w-[640px]">
+      <div className="flex items-center justify-between pb-4 mb-2 border-b border-black/10 -mt-1">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="size-9 rounded-lg bg-[#eafdec] grid place-items-center shrink-0">
+            <BarChart3 size={18} className="text-[#12a44a]" />
+          </div>
+          <h2 className="text-lg sm:text-xl font-semibold text-black truncate">{task.title}</h2>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {onEdit ? (
+            <button
+              type="button"
+              onClick={() => onEdit(task)}
+              className="p-1.5 rounded-lg text-[#2b7fff] hover:bg-[#E8F2FE] transition-colors"
+              aria-label="Edit task"
+            >
+              <Pencil size={16} />
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={onClose}
-            className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+            className="p-1.5 rounded-lg text-black/60 hover:text-black hover:bg-black/5 transition-colors"
+            aria-label="Close"
           >
-            Close
+            <X size={22} />
           </button>
-        </>
-      }
-    >
+        </div>
+      </div>
+
       <TabBar tabs={tabs} active={tab} onChange={setTab} />
 
       {tab === "details" && (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6">
           <div className="grid grid-cols-2 gap-x-8 gap-y-5">
             <DetailItem label="Stage" icon={Layers}>
               <span className="inline-flex items-center gap-2">
-                <span className="size-2 rounded-full" style={{ backgroundColor: STAGE_DOT[task.stage] || "#9CA3AF" }} />
-                {task.stage}
+                <span
+                  className="size-2 rounded-full"
+                  style={{ backgroundColor: STAGE_DOT[task.stage] || "#9CA3AF" }}
+                />
+                {task.stage || "New"}
               </span>
             </DetailItem>
             <DetailItem label="Priority" icon={Flag}>
-              <span className={`inline-flex text-[11px] font-semibold px-2 py-1 rounded-md ${PRIORITY_FILL[task.priority] || PRIORITY_FILL.Medium}`}>
+              <span
+                className={`inline-flex text-[11px] font-semibold px-2.5 py-1 rounded-md ${
+                  PRIORITY_FILL[task.priority] || PRIORITY_FILL.Medium
+                }`}
+              >
                 {task.priority}
               </span>
             </DetailItem>
-            <DetailItem label="Assignee" icon={UserCheck}>
-              {task.assignees?.length ? task.assignees.join(", ") : "Unassigned"}
-            </DetailItem>
+            <DetailItem label="Assignee" icon={UserCheck}>{assigneeLabel}</DetailItem>
             <DetailItem label="Project" icon={ClipboardList}>{task.project || "—"}</DetailItem>
-            <DetailItem label="Client Related" icon={CheckSquare}>
-              {task.isClientRelated ? "Yes" : "No"}
+            <DetailItem label="Acknowledged At" icon={CalendarClock}>
+              {fmtDate(task.acknowledgedAt)}
             </DetailItem>
-            <DetailItem label="Client" icon={User}>
-              {task.isClientRelated && task.client ? task.client : "—"}
+            <DetailItem label="Assigned At" icon={CalendarClock}>
+              {fmtDate(task.assignedAt)}
             </DetailItem>
-            <DetailItem label="Start Date" icon={CalendarDays}>{fmtDate(task.startDate)}</DetailItem>
-            <DetailItem label="Due Date" icon={CalendarDays}>{fmtDate(task.dueDate)}</DetailItem>
-            <DetailItem label="Acknowledged At" icon={CalendarClock}>{fmtDate(task.acknowledgedAt)}</DetailItem>
-            <DetailItem label="Assigned At" icon={CalendarClock}>{fmtDate(task.assignedAt)}</DetailItem>
-            <DetailItem label="Stars (XP)" icon={Star}>{task.stars ?? "—"}</DetailItem>
-            <DetailItem label="Milestone" icon={Star}>{task.milestone || "—"}</DetailItem>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Progress</p>
+            <p className="text-[11px] font-semibold text-[#8f95a5] uppercase tracking-wide">Progress</p>
             <div className="flex items-center gap-3">
-              <div className="h-2 flex-1 rounded-full bg-[#EDEEF1] overflow-hidden">
-                <div className="h-full rounded-full bg-[#16A34A]" style={{ width: `${task.progress || 0}%` }} />
+              <div className="h-2 flex-1 rounded-full bg-[#eef0f2] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[#12a44a]"
+                  style={{ width: `${task.progress || 0}%` }}
+                />
               </div>
-              <span className="text-[12.5px] font-semibold text-[#111]">{task.progress || 0}%</span>
+              <span className="text-[14px] font-semibold text-black">{task.progress || 0}%</span>
             </div>
           </div>
 
+          <DetailItem label="Milestone" icon={Star}>{task.milestone || "—"}</DetailItem>
+
           <div className="flex flex-col gap-1.5">
-            <p className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">
-              <FileText size={12} /> Description
+            <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#8f95a5] uppercase tracking-wide">
+              <FileText size={13} className="text-[#8f95a5]" strokeWidth={1.75} /> Description
             </p>
-            <p className="text-[13px] text-[#374151] leading-relaxed font-medium">
+            <p className="text-[14px] text-[#111] leading-relaxed">
               {task.description || "No description added."}
             </p>
           </div>
@@ -243,14 +251,14 @@ export default function TaskDetailsModal({
       {tab === "comments" && (
         <div className="flex flex-col gap-4">
           {comments.length === 0 && (
-            <p className="text-[13px] text-[#9CA3AF]">No comments yet. Be the first to add one.</p>
+            <p className="text-[13px] text-[#6f7886]">No comments yet. Be the first to add one.</p>
           )}
           {comments.map((c, i) => (
-            <div key={i} className="border border-black/8 rounded-xl p-3.5 flex flex-col gap-2">
+            <div key={i} className="border border-black/10 rounded-xl p-4 flex flex-col gap-2">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-[13px] font-semibold text-[#111]">{c.author}</p>
-                  <p className="text-[11px] text-[#9CA3AF]">{fmtDateTime(c.date)}</p>
+                  <p className="text-[13px] font-semibold text-black">{c.author}</p>
+                  <p className="text-[11px] text-[#a8a8a8]">{fmtDateTime(c.date)}</p>
                 </div>
                 <button
                   type="button"
@@ -266,11 +274,11 @@ export default function TaskDetailsModal({
                   <Trash2 size={14} />
                 </button>
               </div>
-              <p className="text-[13px] text-[#374151]">{c.text}</p>
+              <p className="text-[13px] text-[#111]">{c.text}</p>
             </div>
           ))}
 
-          <p className="text-[13px] font-semibold text-[#111] mt-1">Post Comment</p>
+          <p className="text-[13px] font-semibold text-black mt-1">Post Comment</p>
           <div className="relative">
             <textarea
               rows={3}
@@ -287,7 +295,12 @@ export default function TaskDetailsModal({
                   ...task,
                   comments: [
                     ...comments,
-                    { author: "Priya Sharma", text: commentText.trim(), date: new Date().toISOString(), avatar: 0 },
+                    {
+                      author: "Priya Sharma",
+                      text: commentText.trim(),
+                      date: new Date().toISOString(),
+                      avatar: 0,
+                    },
                   ],
                 });
                 setCommentText("");
@@ -303,27 +316,32 @@ export default function TaskDetailsModal({
       {tab === "checklist" && (
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <p className="text-[13px] font-semibold text-[#111]">Progress</p>
-            <span className="text-[11px] font-medium text-[#6B7280] bg-[#F1F2F4] rounded-full px-2.5 py-1">
+            <p className="text-[13px] font-semibold text-black">Progress</p>
+            <span className="text-[11px] font-medium text-[#6f7886] bg-[#f1f1f4] rounded-full px-2.5 py-1">
               {doneCount}/{checklist.length} completed
             </span>
           </div>
-          <div className="h-2 rounded-full bg-[#EDEEF1] overflow-hidden">
-            <div className="h-full rounded-full bg-[#16A34A]" style={{ width: `${checklistPct}%` }} />
+          <div className="h-2 rounded-full bg-[#eef0f2] overflow-hidden">
+            <div className="h-full rounded-full bg-[#12a44a]" style={{ width: `${checklistPct}%` }} />
           </div>
 
           {checklist.length === 0 && (
-            <p className="text-[13px] text-[#9CA3AF]">No checklist items yet.</p>
+            <p className="text-[13px] text-[#6f7886]">No checklist items yet.</p>
           )}
           {checklist.map((item, i) => (
-            <div key={i} className="border border-black/8 rounded-xl p-3.5 flex items-start justify-between gap-3">
+            <div
+              key={i}
+              className="border border-black/10 rounded-xl p-4 flex items-start justify-between gap-3"
+            >
               <div className="flex items-start gap-3 flex-1 min-w-0">
                 <button
                   type="button"
                   onClick={() =>
                     patch({
                       ...task,
-                      checklist: checklist.map((it, idx) => (idx === i ? { ...it, done: !it.done } : it)),
+                      checklist: checklist.map((it, idx) =>
+                        idx === i ? { ...it, done: !it.done } : it
+                      ),
                     })
                   }
                   className={`size-5 rounded-md border shrink-0 mt-0.5 grid place-items-center ${
@@ -344,7 +362,9 @@ export default function TaskDetailsModal({
                           if (text) {
                             patch({
                               ...task,
-                              checklist: checklist.map((it, idx) => (idx === i ? { ...it, text } : it)),
+                              checklist: checklist.map((it, idx) =>
+                                idx === i ? { ...it, text } : it
+                              ),
                             });
                           }
                           setEditingChecklistIndex(null);
@@ -355,7 +375,9 @@ export default function TaskDetailsModal({
                         if (text) {
                           patch({
                             ...task,
-                            checklist: checklist.map((it, idx) => (idx === i ? { ...it, text } : it)),
+                            checklist: checklist.map((it, idx) =>
+                              idx === i ? { ...it, text } : it
+                            ),
                           });
                         }
                         setEditingChecklistIndex(null);
@@ -363,16 +385,22 @@ export default function TaskDetailsModal({
                       className="w-full h-9 px-3 rounded-lg border border-black/10 text-[13px] outline-none focus:border-[#7A0A17]/40"
                     />
                   ) : (
-                    <p className={`text-[13px] ${item.done ? "text-[#9CA3AF] line-through" : "text-[#111]"}`}>{item.text}</p>
+                    <p
+                      className={`text-[13px] ${
+                        item.done ? "text-[#a8a8a8] line-through" : "text-[#111]"
+                      }`}
+                    >
+                      {item.text}
+                    </p>
                   )}
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
                     {item.assignee && (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-[#6B7280] bg-[#F1F2F4] rounded-md px-2 py-1">
+                      <span className="inline-flex items-center gap-1 text-[11px] text-[#6f7886] bg-[#f1f1f4] rounded-md px-2 py-1">
                         <User size={11} /> {item.assignee}
                       </span>
                     )}
                     {item.dueDate && (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-[#6B7280] bg-[#F1F2F4] rounded-md px-2 py-1">
+                      <span className="inline-flex items-center gap-1 text-[11px] text-[#6f7886] bg-[#f1f1f4] rounded-md px-2 py-1">
                         <CalendarDays size={11} /> {fmtDate(item.dueDate)}
                       </span>
                     )}
@@ -386,7 +414,7 @@ export default function TaskDetailsModal({
                     setEditingChecklistIndex(i);
                     setEditingChecklistText(item.text);
                   }}
-                  className="p-1 text-[#3B82F6] hover:bg-[#E8F2FE] rounded-md"
+                  className="p-1 text-[#2b7fff] hover:bg-[#E8F2FE] rounded-md"
                 >
                   <Pencil size={14} />
                 </button>
@@ -406,7 +434,7 @@ export default function TaskDetailsModal({
             </div>
           ))}
 
-          <p className="text-[13px] font-semibold text-[#111] mt-1">Add checklist item</p>
+          <p className="text-[13px] font-semibold text-black mt-1">Add checklist item</p>
           <div className="flex items-center gap-2">
             <input
               value={checklistText}
@@ -425,8 +453,8 @@ export default function TaskDetailsModal({
                     {
                       text: checklistText.trim(),
                       done: false,
-                      assignee: task.assignees?.[0] || "Priya Sharma",
-                      dueDate: task.dueDate,
+                      assignee: task.assignees?.[0] || task.assignee || "Priya Sharma",
+                      dueDate: task.dueDate || task.date,
                     },
                   ],
                 });
@@ -450,7 +478,10 @@ export default function TaskDetailsModal({
             </div>
           ) : (
             attachments.map((a, i) => (
-              <div key={i} className="flex items-center justify-between border border-black/8 rounded-xl px-4 py-3">
+              <div
+                key={i}
+                className="flex items-center justify-between border border-black/10 rounded-xl px-4 py-3"
+              >
                 <div className="flex items-center gap-3 min-w-0">
                   <Paperclip size={16} className="text-[#6B7280] shrink-0" />
                   <div className="min-w-0">
@@ -458,7 +489,11 @@ export default function TaskDetailsModal({
                     <p className="text-[11px] text-[#9CA3AF]">{a.size || "—"}</p>
                   </div>
                 </div>
-                <button type="button" className="p-1 text-[#6B7280] hover:bg-[#FAFAFB] rounded-md" aria-label="Download">
+                <button
+                  type="button"
+                  className="p-1 text-[#6B7280] hover:bg-[#FAFAFB] rounded-md"
+                  aria-label="Download"
+                >
                   <Download size={16} />
                 </button>
               </div>

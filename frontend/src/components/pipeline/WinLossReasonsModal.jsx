@@ -32,6 +32,7 @@ function ReasonCheck({ checked }) {
 export default function WinLossReasonsModal({ open, onClose, onSave, mode = "lost" }) {
   const [selected, setSelected] = useState({});
   const [details, setDetails] = useState({});
+  const [priceDiscount, setPriceDiscount] = useState("");
   const [priceEscalated, setPriceEscalated] = useState(false);
   const [others, setOthers] = useState("");
   const [briefNote, setBriefNote] = useState("");
@@ -41,6 +42,7 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
     if (!open) return;
     setSelected({});
     setDetails({});
+    setPriceDiscount("");
     setPriceEscalated(false);
     setOthers("");
     setBriefNote("");
@@ -62,9 +64,16 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
 
   const handleEscalation = (e) => {
     e.stopPropagation();
+    if (!priceDiscount.trim()) {
+      setError("Enter the discount amount before escalating.");
+      return;
+    }
+    setError("");
     setSelected((prev) => ({ ...prev, price: true }));
     setPriceEscalated(true);
-    toast.success("Escalation message sent.");
+    toast.success(
+      `Escalation sent for ₹${priceDiscount.trim()} discount. Day follow up task is created for you.`
+    );
   };
 
   const handleSave = () => {
@@ -79,8 +88,10 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
     }
 
     const reasonParts = picked.map((r) => {
-      if (r.id === "price" && priceEscalated) {
-        return `${r.label} (Escalated)`;
+      if (r.id === "price") {
+        const amount = priceDiscount.trim() || "—";
+        const base = `${r.label} — Client asking for ₹${amount} discount; day follow-up task created`;
+        return priceEscalated ? `${base} (Escalated)` : base;
       }
       const extra = details[r.id]?.trim();
       return extra ? `${r.label} (${extra})` : r.label;
@@ -126,11 +137,32 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
                     <span className="text-[13.5px] font-medium text-[#111]">{reason.label}</span>
                   </button>
                   {reason.action === "escalation" && (
-                    <div className="pb-3 pl-8">
+                    <div className="pb-3 pl-8 flex flex-col gap-2">
+                      <label className="text-[12.5px] font-medium text-[#4B5563]">
+                        Client is asking for price discount
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={priceDiscount}
+                        onChange={(e) => {
+                          setPriceDiscount(e.target.value);
+                          setPriceEscalated(false);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        placeholder="e.g. 10,000"
+                        aria-label="Discount amount"
+                        className="w-full h-10 px-3 rounded-xl border border-black/10 bg-white text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/35 focus:ring-2 focus:ring-[#7A0A17]/10"
+                      />
+                      {priceEscalated && (
+                        <p className="text-[12.5px] text-[#16A34A] leading-snug">
+                          Day follow up task is created for you
+                        </p>
+                      )}
                       <button
                         type="button"
                         onClick={handleEscalation}
-                        className="h-9 px-4 rounded-xl border border-[#7A0A17]/25 bg-[#F8EEF0] text-[12.5px] font-semibold text-[#7A0A17] hover:bg-[#F3E4E7] transition-colors"
+                        className="self-start h-9 px-4 rounded-xl border border-[#7A0A17]/25 bg-[#F8EEF0] text-[12.5px] font-semibold text-[#7A0A17] hover:bg-[#F3E4E7] transition-colors"
                       >
                         {priceEscalated ? "Escalation sent" : "Escalation"}
                       </button>
