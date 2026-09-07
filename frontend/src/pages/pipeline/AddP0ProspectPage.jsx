@@ -5,7 +5,7 @@ import StageStepper from "../../components/pipeline/StageStepper";
 // TopBar is provided by Layout
 
 const BULK_IMPORT_BTN =
-  "inline-flex items-center gap-2 px-4 py-2 text-[13px] font-semibold text-[#4B5563] bg-white border border-black/10 rounded-xl hover:bg-[#F3F4F6] transition-colors";
+  "inline-flex items-center gap-2 px-5 py-2 text-[13px] font-semibold text-white bg-[#7A0A17] hover:bg-[#640712] rounded-xl transition-colors shadow-sm";
 
 export default function AddP0ProspectPage({ onBack, onAddProspect }) {
   const location = useLocation();
