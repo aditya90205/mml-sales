@@ -3,6 +3,7 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Clock, Bell, ArrowUpRight, CheckCheck, User, LogOut, Search, CircleDot, ChevronRight } from "lucide-react";
 import Avatar from "../ui/Avatar";
 import TimesheetDetailsModal from "../hrms/TimesheetDetailsModal";
+import { logout } from "../../utils/auth";
 
 
 const USER = {
@@ -288,7 +289,11 @@ function ProfileMenu() {
           </button>
           <button
             type="button"
-            onClick={() => { closeMenu(); navigate("/login"); }}
+            onClick={() => {
+              closeMenu();
+              logout();
+              navigate("/login", { replace: true });
+            }}
             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#DC2626] border-t border-black/8 hover:bg-[#FEF2F2] transition-colors rounded-b-2xl"
           >
             <LogOut size={15} /> Log out

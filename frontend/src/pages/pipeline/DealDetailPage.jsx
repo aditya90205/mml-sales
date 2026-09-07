@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
-import { Flag, MessageCircle, Minus, Phone, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
+import { AlarmClock, ArrowLeft, ArrowRight, ChevronDown, Flag, MessageCircle, Minus, Phone, Plus } from "lucide-react";
 import { toast } from "react-toastify";
 // TopBar is provided by Layout
 import StageStepper from "../../components/pipeline/StageStepper";
+import WinLossReasonsModal from "../../components/pipeline/WinLossReasonsModal";
 import DealTabs from "../../components/pipeline/DealTabs";
 import OverviewTab from "./deal-tabs/OverviewTab";
 import IntakeFormTab from "./deal-tabs/IntakeFormTab";
@@ -16,6 +18,7 @@ import PaymentsTab from "./deal-tabs/PaymentsTab";
 import P6ChecklistTab from "./deal-tabs/P6ChecklistTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
 import { EMPTY, atLeast, historyUntil, maybeDash, stageGateFor } from "./deal-tabs/stageContent.jsx";
+import eyeIcon from "../../assets/eye.png";
 
 const BASE_TABS = [
   { key: "overview",  label: "Overview" },
@@ -99,6 +102,8 @@ function initials(name = "") {
  */
 export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAdvance, initialTab = "overview" }) {
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [winLossModal, setWinLossModal] = useState({ open: false, mode: "lost" });
+  const [winLossOverride, setWinLossOverride] = useState(null);
   const lateTabsUnlocked = atLeast(currentStage, "P5");
   const nextStage = NEXT_STAGE[currentStage];
   const tabs = BASE_TABS.map((tab) =>
@@ -124,8 +129,8 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
       familyIncomeBand: maybeDash(detailsFilled, DEAL_DEFAULTS.familyIncomeBand),
       nextAction: maybeDash(detailsFilled, DEAL_DEFAULTS.nextAction),
       nextMeeting: maybeDash(detailsFilled, DEAL_DEFAULTS.nextMeeting),
-      winLossReasons: maybeDash(detailsFilled, DEAL_DEFAULTS.winLossReasons),
-      winLossTone: lead?.temperature || "Cold",
+      winLossReasons: winLossOverride?.reasons ?? maybeDash(detailsFilled, DEAL_DEFAULTS.winLossReasons),
+      winLossTone: winLossOverride?.tone ?? (lead?.temperature || "Cold"),
       lastDiscussionAt: maybeDash(detailsFilled, lead?.lastDiscussion || DEAL_DEFAULTS.lastDiscussionAt),
       lastDiscussionNote: maybeDash(detailsFilled, DEAL_DEFAULTS.lastDiscussionNote),
       nextActionAt: maybeDash(detailsFilled, lead?.nextAction || DEAL_DEFAULTS.nextActionAt),
@@ -141,10 +146,25 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
       weightedValue: maybeDash(detailsFilled, DEAL_DEFAULTS.weightedValue),
       weightedValueNote: maybeDash(detailsFilled, DEAL_DEFAULTS.weightedValueNote),
     };
-  }, [lead, currentStage]);
+  }, [lead, currentStage, winLossOverride]);
 
-  const handleMarkLost = () => toast.info(`${deal.name} marked as lost.`);
-  const handleMoveToCold = () => toast.info(`${deal.name} moved to Cold.`);
+  const openWinLossModal = (mode) => setWinLossModal({ open: true, mode });
+
+  const handleWinLossSave = ({ reasons, briefNote, mode }) => {
+    setWinLossOverride({
+      reasons,
+      tone: mode === "cold" ? "Cold" : "Lost",
+      briefNote,
+    });
+    setWinLossModal({ open: false, mode });
+    setActiveTab("overview");
+    toast.success(
+      mode === "cold"
+        ? `${deal.name} moved to Cold & Hold. Win / loss reasons updated.`
+        : `${deal.name} marked as lost. Win / loss reasons updated.`
+    );
+  };
+
   const handleConfirmMove = () => {
     if (!nextStage) return;
     onAdvance?.(lead, currentStage);
@@ -192,61 +212,102 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
       {/* TopBar is provided by Layout */}
 
       <div className="p-5 flex flex-col gap-4 overflow-y-auto scrollbar-thin">
-        {/* Locked-stage banner */}
-        <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-2xl px-4 py-3.5 flex items-center gap-3 flex-wrap">
-          <p className="text-[13px] text-[#111] min-w-0 flex-1">
-            {nextStage ? (
-              <>
-                <span className="font-bold">{nextStage} is locked.</span>{" "}
-                <span className="text-[#6B7280]">
-                  {LOCK_NOTES[currentStage] || "Complete the required steps for this stage before advancing."}
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="font-bold">Onboarding complete.</span>{" "}
-                <span className="text-[#6B7280]">This deal is at P6 handover. No further pipeline move is required.</span>
-              </>
-            )}
-          </p>
+        {/* Lock note + actions (same button chrome as pipeline board) */}
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             type="button"
-            className="shrink-0 h-8 px-3.5 rounded-lg bg-white border border-black/10 text-[12px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 h-[38px] px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors shrink-0"
+            aria-label="Back to pipeline"
           >
-            See blockers
+            <ArrowLeft size={15} />
+            Back
           </button>
-          <div className="flex items-center gap-2 shrink-0 ml-auto">
+
+          <div className="flex-1 min-w-0 bg-[#FFFBEB] border border-[#FDE68A] rounded-2xl px-4 py-3 flex items-center gap-3 flex-wrap">
+            <p className="text-[13px] text-[#111] min-w-0 flex-1">
+              {nextStage ? (
+                <>
+                  <span className="font-bold">{nextStage} is locked.</span>{" "}
+                  <span className="text-[#6B7280]">
+                    {LOCK_NOTES[currentStage] || "Complete the required steps for this stage before advancing."}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="font-bold">Onboarding complete.</span>{" "}
+                  <span className="text-[#6B7280]">This deal is at P6 handover. No further pipeline move is required.</span>
+                </>
+              )}
+            </p>
             <button
               type="button"
-              onClick={handleMarkLost}
-              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+              className="shrink-0 h-8 px-3.5 rounded-lg bg-white border border-[#FDE68A] text-[12px] font-semibold text-[#92400E] hover:bg-[#FFFBEB] transition-colors"
             >
-              <Flag size={13} /> Mark lost
+              See blockers
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => openWinLossModal("lost")}
+              className="inline-flex items-center gap-1.5 h-[38px] px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+            >
+              <Flag size={14} /> Mark lost
             </button>
             <button
               type="button"
-              onClick={handleMoveToCold}
-              className="h-9 px-4 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+              onClick={() => openWinLossModal("cold")}
+              className="inline-flex items-center gap-1.5 h-[38px] px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
             >
-              Move to Cold
-            </button>
-            <button
-              type="button"
-              onClick={onBack}
-              className="h-9 px-4 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-            >
-              Cancel
+              Move to Cold &amp; Hold
+              <ChevronDown size={14} className="text-[#9CA3AF]" />
             </button>
             {nextStage && (
               <button
                 type="button"
                 onClick={handleConfirmMove}
-                className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
+                className="inline-flex items-center gap-1.5 h-[38px] px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors"
               >
-                Move to {nextStage}
+                Move to {nextStage} <ArrowRight size={14} />
               </button>
             )}
           </div>
+        </div>
+
+        {/* Action alert + oversight — same as pipeline board */}
+        <div className="flex items-stretch gap-3 flex-wrap lg:flex-nowrap">
+          <div className="flex-1 min-w-0 bg-[#FDECEE] border border-[#F7D3D9] rounded-2xl px-4 py-3.5 flex items-center gap-3.5 flex-wrap">
+            <span className="size-9 rounded-xl bg-[#FFE1CC] grid place-items-center shrink-0">
+              <AlarmClock size={18} className="text-[#F97316]" strokeWidth={1.8} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-bold text-[#111]">2 items need action today</p>
+              <p className="text-[12px] text-[#6B7280] mt-0.5">
+                Sanjay Mehta has been in P4 for 9 days, 1 discount request is awaiting sales head approval.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 h-9 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+            >
+              View
+            </button>
+          </div>
+          <Link
+            to="/pipeline/cross-branch"
+            className="shrink-0 w-full lg:w-[230px] bg-white border border-black/8 rounded-2xl px-4 py-3.5 hover:bg-[#FAFAFB] transition-colors"
+          >
+            <div className="flex items-center gap-2 mb-2.5 whitespace-nowrap">
+              <img src={eyeIcon} alt="Oversight" style={{ width: 15, height: 15, objectFit: "contain" }} />
+              <p className="text-[13px] font-bold text-[#111]">Oversight</p>
+            </div>
+            <span className="flex items-center justify-between gap-2 w-full text-[11.5px] font-medium rounded-lg px-2.5 py-[9px] text-[#111] bg-[#E7F8EF]">
+              Cross Branch Flags
+              <span className="shrink-0 text-[10px] font-semibold bg-white/70 rounded px-1.5 py-0.5 text-[#111]">3</span>
+            </span>
+          </Link>
         </div>
 
         {/* Stage progress */}
@@ -305,6 +366,13 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
         {/* Tab content */}
         <div key={`${currentStage}-${activeTab}`}>{renderTab()}</div>
       </div>
+
+      <WinLossReasonsModal
+        open={winLossModal.open}
+        mode={winLossModal.mode}
+        onClose={() => setWinLossModal((prev) => ({ ...prev, open: false }))}
+        onSave={handleWinLossSave}
+      />
     </div>
   );
 }

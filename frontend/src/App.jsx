@@ -25,6 +25,7 @@ import QuotationsPage from "./pages/pipeline/desk/QuotationsPage";
 import DiscountRequestsPage from "./pages/pipeline/desk/DiscountRequestsPage";
 import ContractPaymentPage from "./pages/pipeline/desk/ContractPaymentPage";
 import P6HandoverPage from "./pages/pipeline/desk/P6HandoverPage";
+import { isAuthenticated } from "./utils/auth";
 
 // ── Placeholder for pages not yet built ──────────────────────────────────────
 function Placeholder({ title }) {
@@ -43,6 +44,9 @@ function Placeholder({ title }) {
 
 // ── Route helpers ─────────────────────────────────────────────────────────────
 function LayoutRoute({ children }) {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
   return <Layout>{children}</Layout>;
 }
 
@@ -74,7 +78,10 @@ export default function App() {
 
       <Routes>
         {/* Root redirect */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route
+          path="/"
+          element={<Navigate to={isAuthenticated() ? "/dashboard" : "/login"} replace />}
+        />
 
         {/* Auth */}
         <Route path="/login" element={<LoginPage />} />
