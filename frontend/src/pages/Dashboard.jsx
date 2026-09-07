@@ -141,7 +141,7 @@ const PRIORITY_ITEMS = [
   {
     parts: [
       { text: "1 urgent " },
-      { text: "complaint", to: "/reviews" },
+      { text: "complaint", to: `/hrms?tab=${encodeURIComponent("Complaint & Warning")}` },
       { text: " flagged — needs a same-day response" },
     ],
   },
