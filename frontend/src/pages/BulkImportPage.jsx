@@ -1,10 +1,11 @@
 import { useRef, useState } from "react";
-import { ChevronDown, Download, FileSpreadsheet, Trash2, Upload } from "lucide-react";
+import { ChevronDown, Download, FileSpreadsheet, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 // TopBar is provided by Layout
 import TableCard from "../components/common/TableCard";
 import StatusPill from "../components/common/StatusPill";
 import { useTableSort } from "../components/common/useTableSort.jsx";
+import AddP0ProspectPage from "./pipeline/AddP0ProspectPage";
 
 const STATS = [
   { label: "Imports this month", value: "14",    note: "8 Meta, 4 Google, 2 Excel", noteTone: "green", caption: "All sources tagged" },
@@ -92,6 +93,7 @@ export default function BulkImportPage() {
   );
   const [leadSource, setLeadSource] = useState("Walk-in register - South Ex");
   const [campaignTag, setCampaignTag] = useState("");
+  const [showAddProspect, setShowAddProspect] = useState(false);
 
   const firstRow = PREVIEW_ROWS[0];
   const mappedColumnCount = Object.values(mapping).filter((v) => v !== "skip").length;
@@ -113,6 +115,17 @@ export default function BulkImportPage() {
   const handleImport = () => {
     toast.success(`Import queued for ${PREVIEW_ROWS.length} preview rows (96 rows in the full file).`);
   };
+
+  if (showAddProspect) {
+    return (
+      <AddP0ProspectPage
+        onBack={() => setShowAddProspect(false)}
+        onAddProspect={(newLead) => {
+          toast.success(`Prospect "${newLead.name}" created successfully in P0 Prospect!`);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-[#F8F9FA]">
@@ -140,6 +153,13 @@ export default function BulkImportPage() {
               className="h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
             >
               Download template
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAddProspect(true)}
+              className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors"
+            >
+              <Plus size={15} /> Add Prospect / Lead
             </button>
             <button
               type="button"

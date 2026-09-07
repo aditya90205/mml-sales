@@ -19,7 +19,7 @@ const NAV_ITEMS = [
   { label: "Dashboard",       icon: LayoutDashboard, to: "/dashboard" },
   { label: "Calendar",        icon: CalendarDays,    to: "/calendar" },
   { label: "Tasks",           icon: CheckSquare,     to: "/tasks" },
-  { label: "Bulk Upload",     icon: Upload,          to: "/bulk-upload" },
+  { label: "Bulk Import / Add Lead (P0)",     icon: Upload,          to: "/bulk-upload" },
   { label: "Sales Pipeline (P0-P6)",  icon: KanbanSquare,    to: "/pipeline" },
   { label: "Campaign",        icon: Megaphone,       to: "/campaign/management" },
   { label: "Client Database", icon: Database,        to: "/clients" },

@@ -339,7 +339,7 @@ export default function TopBar({ page = "Dashboard" }) {
     matches: "Matches",
     calendar: "Calendar",
     tasks: "Tasks",
-    "bulk-upload": "Bulk Upload",
+    "bulk-upload": "Bulk Import",
     leaderboard: "Leaderboard",
     contest: "Contest",
     campaign: "Campaign",

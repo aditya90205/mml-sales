@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { Phone, CheckCircle2, Clock, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Phone, CheckCircle2, Clock, User, Upload } from "lucide-react";
 import StageStepper from "../../components/pipeline/StageStepper";
 // TopBar is provided by Layout
 
 export default function AddP0ProspectPage({ onBack, onAddProspect }) {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     source: "",
     firstName: "",
@@ -60,18 +62,19 @@ export default function AddP0ProspectPage({ onBack, onAddProspect }) {
         <div className="flex items-center gap-2.5">
           <button
             type="button"
+            onClick={() => navigate("/bulk-upload")}
+            className="inline-flex items-center gap-2 px-4 py-2 text-[13px] font-semibold text-[#4B5563] bg-white border border-black/10 rounded-xl hover:bg-[#F3F4F6] transition-colors"
+          >
+            <Upload size={14} />
+            Bulk Import
+          </button>
+          <button
+            type="button"
             onClick={onBack}
             className="px-4 py-2 text-[13px] font-semibold text-[#4B5563] bg-white border border-black/10 rounded-xl hover:bg-[#F3F4F6] transition-colors"
           >
             Cancel
           </button>
-          {/* <button
-            type="button"
-            onClick={handleSubmit}
-            className="px-4 py-2 text-[13px] font-semibold text-[#374151] bg-white border border-black/10 rounded-xl hover:bg-[#F3F4F6] transition-colors"
-          >
-            Save
-          </button> */}
           <button
             type="button"
             onClick={handleSubmit}
