@@ -141,31 +141,33 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
                       <label className="text-[12.5px] font-medium text-[#4B5563]">
                         Client is asking for price discount
                       </label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={priceDiscount}
-                        onChange={(e) => {
-                          setPriceDiscount(e.target.value);
-                          setPriceEscalated(false);
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        placeholder="e.g. 10,000"
-                        aria-label="Discount amount"
-                        className="w-full h-10 px-3 rounded-xl border border-black/10 bg-white text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/35 focus:ring-2 focus:ring-[#7A0A17]/10"
-                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={priceDiscount}
+                          onChange={(e) => {
+                            setPriceDiscount(e.target.value);
+                            setPriceEscalated(false);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          placeholder="e.g. 10,000"
+                          aria-label="Discount amount"
+                          className="w-[180px] h-9 px-3 rounded-xl border border-black/10 bg-white text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/35 focus:ring-2 focus:ring-[#7A0A17]/10"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleEscalation}
+                          className="h-9 px-4 rounded-xl border border-[#7A0A17]/25 bg-[#F8EEF0] text-[12.5px] font-semibold text-[#7A0A17] hover:bg-[#F3E4E7] transition-colors shrink-0"
+                        >
+                          {priceEscalated ? "Escalation sent" : "Escalation"}
+                        </button>
+                      </div>
                       {priceEscalated && (
                         <p className="text-[12.5px] text-[#16A34A] leading-snug">
                           Day follow up task is created for you
                         </p>
                       )}
-                      <button
-                        type="button"
-                        onClick={handleEscalation}
-                        className="self-start h-9 px-4 rounded-xl border border-[#7A0A17]/25 bg-[#F8EEF0] text-[12.5px] font-semibold text-[#7A0A17] hover:bg-[#F3E4E7] transition-colors"
-                      >
-                        {priceEscalated ? "Escalation sent" : "Escalation"}
-                      </button>
                     </div>
                   )}
                   {reason.inputType === "date" && (
