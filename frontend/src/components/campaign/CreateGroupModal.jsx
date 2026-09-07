@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Plus, Sparkles, X } from "lucide-react";
+import { Mail, MessageSquare, Phone, Plus, Sparkles, X } from "lucide-react";
 import { toast } from "react-toastify";
+import ClientStatusBadge from "../common/ClientStatusBadge.jsx";
 import Modal from "../ui/Modal.jsx";
 import { CLIENTS } from "../../utils/clientsData.js";
 import { addSavedGroup } from "../../utils/clientGroups.js";
@@ -86,21 +87,21 @@ function ConditionRow({ index, condition, onChange, onRemove }) {
   );
 }
 
-const DEFAULT_CONDITIONS = [
-  { ...makeCondition(), field: "Gender", operator: "is", value: "Female" },
-  { ...makeCondition(), field: "Area", operator: "is", value: "Rohini" },
-  { ...makeCondition(), field: "Education / College", operator: "contains", value: "IIM" },
-];
-
 /**
- * Same Create Group builder fields as CreateGroupPage, shown in a modal
- * with Cancel / Save for campaign (and other) flows.
+ * Same Create Group UI as CreateGroupPage (builder + matching clients table),
+ * shown in a modal with Cancel / Save for the campaign flow.
  */
 export default function CreateGroupModal({ open, onClose, onSaved }) {
   const [groupName, setGroupName] = useState("");
   const [description, setDescription] = useState("girls from Rohini who studied at IIM");
   const [matchMode, setMatchMode] = useState("ALL");
-  const [conditions, setConditions] = useState(DEFAULT_CONDITIONS.map((c) => ({ ...c, id: makeCondition().id })));
+  const [conditions, setConditions] = useState([
+    { ...makeCondition(), field: "Gender", operator: "is", value: "Female" },
+    { ...makeCondition(), field: "Area", operator: "is", value: "Rohini" },
+    { ...makeCondition(), field: "Education / College", operator: "contains", value: "IIM" },
+  ]);
+  const [results, setResults] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
 
   useEffect(() => {
     if (!open) return;
@@ -112,6 +113,8 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
       { ...makeCondition(), field: "Area", operator: "is", value: "Rohini" },
       { ...makeCondition(), field: "Education / College", operator: "contains", value: "IIM" },
     ]);
+    setResults(null);
+    setSelectedIds(new Set());
   }, [open]);
 
   const updateCondition = (id, next) => {
@@ -129,41 +132,74 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
   const clearAll = () => {
     setConditions([makeCondition()]);
     setDescription("");
+    setGroupName("");
+    setResults(null);
+    setSelectedIds(new Set());
   };
 
-  const resolveConditions = () => {
-    if (description.trim()) {
-      const parsed = parseDescription(description);
-      if (parsed.length > 0) {
-        setConditions(parsed);
-        return parsed;
-      }
-    }
-    return conditions;
+  const applyResults = (matched) => {
+    setResults(matched);
+    setSelectedIds(new Set(matched.map((c) => c.id)));
+    toast.success(`${matched.length} matching client${matched.length === 1 ? "" : "s"} found.`);
   };
 
   const runBuildQuery = () => {
-    const active = resolveConditions();
-    const matched = CLIENTS.filter((c) => matchesAll(c, active, matchMode));
-    toast.success(`${matched.length} matching client${matched.length === 1 ? "" : "s"} found.`);
+    let activeConditions = conditions;
+    if (description.trim()) {
+      const parsed = parseDescription(description);
+      if (parsed.length > 0) {
+        activeConditions = parsed;
+        setConditions(parsed);
+      }
+    }
+    applyResults(CLIENTS.filter((c) => matchesAll(c, activeConditions, matchMode)));
   };
 
   const runManualQuery = () => {
-    const matched = CLIENTS.filter((c) => matchesAll(c, conditions, matchMode));
-    toast.success(`${matched.length} matching client${matched.length === 1 ? "" : "s"} found.`);
+    applyResults(CLIENTS.filter((c) => matchesAll(c, conditions, matchMode)));
+  };
+
+  const toggleSelected = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    if (!results) return;
+    setSelectedIds(new Set(results.map((c) => c.id)));
+  };
+
+  const allSelected = results && results.length > 0 && selectedIds.size === results.length;
+
+  const toggleSelectAll = () => {
+    if (allSelected) setSelectedIds(new Set());
+    else selectAll();
   };
 
   const handleSave = () => {
-    const name = groupName.trim() || description.trim() || "New Group";
-    const activeConditions = resolveConditions();
-    const matched = CLIENTS.filter((c) => matchesAll(c, activeConditions, matchMode));
+    if (!groupName.trim()) {
+      toast.error("Please enter a group name.");
+      return;
+    }
+    if (!results) {
+      toast.error("Run Build query or Run manual query first.");
+      return;
+    }
+    if (selectedIds.size === 0) {
+      toast.error("Please select at least one client.");
+      return;
+    }
     const created = addSavedGroup({
-      name,
-      conditions: activeConditions,
+      name: groupName.trim(),
+      conditions,
       matchMode,
-      clientIds: matched.map((c) => c.id),
+      clientIds: Array.from(selectedIds),
     });
-    toast.success(`"${created.name}" saved with ${matched.length} client${matched.length === 1 ? "" : "s"}.`);
+    toast.success(`"${created.name}" saved with ${selectedIds.size} client${selectedIds.size === 1 ? "" : "s"}.`);
     onSaved?.(created);
     onClose?.();
   };
@@ -174,7 +210,7 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
       onClose={onClose}
       title="Create Group"
       subtitle="Describe who you're looking for, or build conditions manually."
-      width="max-w-4xl"
+      width="max-w-5xl"
       footer={
         <>
           <button
@@ -195,18 +231,6 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
       }
     >
       <div className="flex flex-col gap-6">
-        <div>
-          <label className="block text-[13px] font-bold text-[#111] mb-1.5">
-            Group Name <span className="text-[#E8395B]">*</span>
-          </label>
-          <input
-            value={groupName}
-            onChange={(e) => setGroupName(e.target.value)}
-            placeholder="e.g. Female IIM Alumni"
-            className="w-full h-11 border border-black/12 rounded-xl px-3.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40"
-          />
-        </div>
-
         <div className="flex flex-col gap-2">
           <p className="text-[14px] text-[#6B7280]">Describe who you're looking for</p>
           <div className="flex items-center gap-3 w-full min-w-0 flex-wrap sm:flex-nowrap">
@@ -264,6 +288,19 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
             </button>
           </div>
 
+          <div className="flex items-center gap-3">
+            <span className="shrink-0 text-[14px] font-semibold text-[#111] whitespace-nowrap">
+              Group Name <span className="text-[#E8395B]">*</span>
+            </span>
+            <input
+              value={groupName}
+              onChange={(e) => setGroupName(e.target.value)}
+              placeholder="e.g. Female IIM Alumni"
+              aria-label="Group name"
+              className="h-11 w-[520px] max-w-full shrink-0 border border-black/12 rounded-lg px-3.5 text-[14px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40"
+            />
+          </div>
+
           <div className="flex flex-col gap-3 items-start overflow-x-auto">
             {conditions.map((c, i) => (
               <ConditionRow
@@ -279,11 +316,108 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
           <button
             type="button"
             onClick={addCondition}
-            className="self-start inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-white border border-[#7A0A17]/35 text-[13px] font-bold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors"
+            className="self-start inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-[#7A0A17]/35 text-[13px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors"
           >
             <Plus size={15} /> Add condition
           </button>
         </div>
+
+        {results && (
+          <div className="border-t border-black/8 pt-5 flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <h2 className="text-[16px] font-bold text-[#111]">
+                Matching Clients{" "}
+                <span className="text-[#9CA3AF] font-medium">
+                  ({selectedIds.size} of {results.length} selected)
+                </span>
+              </h2>
+              <button
+                type="button"
+                disabled={results.length === 0}
+                onClick={selectAll}
+                className="inline-flex items-center h-10 px-4 rounded-xl bg-white border border-black/12 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Select All
+              </button>
+            </div>
+
+            <div className="overflow-x-auto border border-black/8 rounded-xl bg-white">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold tracking-wide">
+                    <th className="px-3 py-2.5 whitespace-nowrap w-10">
+                      <input
+                        type="checkbox"
+                        checked={allSelected}
+                        onChange={toggleSelectAll}
+                        aria-label="Select all clients"
+                        className="size-4 rounded border-black/25 accent-[#7A0A17] cursor-pointer"
+                      />
+                    </th>
+                    <th className="px-3 py-2.5 whitespace-nowrap">Client Name</th>
+                    <th className="px-3 py-2.5 whitespace-nowrap">Gender</th>
+                    <th className="px-3 py-2.5 whitespace-nowrap">Area</th>
+                    <th className="px-3 py-2.5 whitespace-nowrap">Education</th>
+                    <th className="px-3 py-2.5 whitespace-nowrap">Branch</th>
+                    <th className="px-3 py-2.5 whitespace-nowrap text-center">Status</th>
+                    <th className="px-3 py-2.5 whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-3 py-8 text-center text-[13px] text-[#9CA3AF] font-medium">
+                        No clients match these conditions.
+                      </td>
+                    </tr>
+                  ) : (
+                    results.map((c) => (
+                      <tr
+                        key={c.id}
+                        className={`border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors ${
+                          selectedIds.has(c.id) ? "bg-[#FCF5F6]" : ""
+                        }`}
+                      >
+                        <td className="px-3 py-2.5">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(c.id)}
+                            onChange={() => toggleSelected(c.id)}
+                            aria-label={`Select ${c.name}`}
+                            className="size-4 rounded border-black/25 accent-[#7A0A17] cursor-pointer"
+                          />
+                        </td>
+                        <td className="px-3 py-2.5 text-[13px] font-bold text-[#111] whitespace-nowrap">{c.name}</td>
+                        <td className="px-3 py-2.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.gender}</td>
+                        <td className="px-3 py-2.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.area}</td>
+                        <td className="px-3 py-2.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.education}</td>
+                        <td className="px-3 py-2.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.branch}</td>
+                        <td className="px-3 py-2.5">
+                          <div className="flex justify-center">
+                            <ClientStatusBadge status={c.status} married={c.married} />
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center gap-0.5">
+                            <button type="button" onClick={() => toast.info(`Calling ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Call ${c.name}`}>
+                              <Phone size={14} className="text-[#16A34A]" />
+                            </button>
+                            <button type="button" onClick={() => toast.info(`Messaging ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Message ${c.name}`}>
+                              <MessageSquare size={14} className="text-[#D97706]" />
+                            </button>
+                            <button type="button" onClick={() => toast.info(`Emailing ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Email ${c.name}`}>
+                              <Mail size={14} className="text-[#2563EB]" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </Modal>
   );
