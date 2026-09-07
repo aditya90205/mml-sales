@@ -86,13 +86,13 @@ function PackageCard({ pkg, empty = false, onSelect }) {
     >
       {pkg.upsellBadge && (
         <span className="absolute -top-3 right-4 inline-flex items-center gap-1 text-[10.5px] font-bold text-white bg-[#7A0A17] rounded-full px-2.5 py-1">
-          <TrendingUp size={11} /> UPSELL · {empty ? EMPTY : pkg.upsellBadge}
+          <TrendingUp size={11} /> UPSELL · {pkg.upsellBadge}
         </span>
       )}
 
       <h3 className="text-[15px] font-bold text-[#111]">{pkg.name}</h3>
-      <p className="text-[24px] font-bold text-[#111] mt-1">{empty ? EMPTY : pkg.price}</p>
-      <p className="text-[11.5px] text-[#9CA3AF] mt-0.5">{empty ? EMPTY : pkg.subtitle}</p>
+      <p className="text-[24px] font-bold text-[#111] mt-1">{pkg.price}</p>
+      <p className="text-[11.5px] text-[#9CA3AF] mt-0.5">{pkg.subtitle}</p>
 
       <ul className="flex flex-col gap-2 mt-4 flex-1">
         {pkg.features.map((f) => (
