@@ -994,6 +994,26 @@ export function countSectionFields(blocks, values, chipValues) {
   return { filled, total };
 }
 
+/** Clone only the values/chips that belong to a section's blocks. */
+export function cloneSectionDraft(blocks, values = {}, chips = {}) {
+  const draftValues = {};
+  const draftChips = {};
+  for (const block of blocks || []) {
+    for (const field of block.fields) {
+      const raw = values[field.key];
+      if (raw == null) {
+        draftValues[field.key] = field.type === "checklist" || field.type === "rows" ? [] : "";
+      } else {
+        draftValues[field.key] = JSON.parse(JSON.stringify(raw));
+      }
+      if (field.chipsKey) {
+        draftChips[field.chipsKey] = [...(chips[field.chipsKey] || [])];
+      }
+    }
+  }
+  return { draftValues, draftChips };
+}
+
 export const SECTION_TIPS = {
   personal:
     "Ask like this: Profile ID and date fill in on save. Read the name back to the client before moving on.",

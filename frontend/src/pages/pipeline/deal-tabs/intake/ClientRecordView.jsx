@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Download, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Check, Download, Eye, EyeOff, Pencil, ShieldCheck } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   SECTIONS_META,
@@ -694,7 +694,7 @@ function ClientServiceAgreementCard() {
   );
 }
 
-function ClientRecordSectionCard({ index, label, entries, captured, blankCount, onOpen }) {
+function ClientRecordSectionCard({ index, label, entries, captured, blankCount, onEdit }) {
   const [revealed, setRevealed] = useState({});
   const hasSensitive = entries.some((entry) => entry.sensitive);
 
@@ -742,10 +742,12 @@ function ClientRecordSectionCard({ index, label, entries, captured, blankCount, 
           <span className="text-[13px] text-[#6B7280]">{captured} captured</span>
           <button
             type="button"
-            onClick={onOpen}
-            className="h-8 px-3.5 rounded-lg border border-black/10 text-[12px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors"
+            onClick={onEdit}
+            className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-xl border border-[#7A0A17]/30 bg-white text-[12px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors"
+            aria-label={`Edit ${label}`}
           >
-            Open
+            <Pencil size={13} />
+            Edit
           </button>
         </div>
       </div>
@@ -886,7 +888,7 @@ function ClientRecordDetailTables({ values, empty }) {
   ));
 }
 
-export default function ClientRecordView({ values, chips, empty, changeLog = [], onOpenSection }) {
+export default function ClientRecordView({ values, chips, empty, changeLog = [], onEditSection }) {
   const sectionCards = SECTIONS_META.map((section, index) => {
     const blocks = SECTION_BLOCKS[section.key];
     if (!blocks) return null;
@@ -926,7 +928,7 @@ export default function ClientRecordView({ values, chips, empty, changeLog = [],
               entries={section.entries}
               captured={section.captured}
               blankCount={section.blankCount}
-              onOpen={() => onOpenSection(section.key)}
+              onEdit={() => onEditSection?.(section.key)}
             />
           ))}
 

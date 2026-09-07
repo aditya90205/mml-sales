@@ -9,6 +9,8 @@ import {
 import IntakeFillFormView from "./intake/IntakeFillFormView";
 import ClientRecordView from "./intake/ClientRecordView";
 import PersonalChangeOtpModal from "./intake/PersonalChangeOtpModal";
+import SectionEditModal from "./intake/SectionEditModal";
+import { SECTIONS_META } from "./intake/intakeFormData";
 
 function IntakeViewToggle({ view, onChange }) {
   const options = [
@@ -108,12 +110,25 @@ export default function IntakeFormTab({ empty = false }) {
   const [personalUnlocked, setPersonalUnlocked] = useState(false);
   const [changeLog, setChangeLog] = useState(() => (empty ? [] : DEMO_CHANGE_LOG));
   const [otpState, setOtpState] = useState({ open: false, mode: "unlock", changes: [] });
+  const [editSectionKey, setEditSectionKey] = useState(null);
+  const [pendingSectionDraft, setPendingSectionDraft] = useState(null);
 
   const setField = (key, value) => setValues((prev) => ({ ...prev, [key]: value }));
   const removeChip = (chipsKey, chip) =>
     setChips((prev) => ({ ...prev, [chipsKey]: (prev[chipsKey] || []).filter((c) => c !== chip) }));
 
+  const applySectionDraft = (draftValues, draftChips) => {
+    setValues((prev) => ({ ...prev, ...draftValues }));
+    setChips((prev) => ({ ...prev, ...draftChips }));
+  };
+
   const closeOtp = () => setOtpState((prev) => ({ ...prev, open: false }));
+
+  const closeEditSection = () => {
+    setEditSectionKey(null);
+    setPendingSectionDraft(null);
+    setPersonalUnlocked(false);
+  };
 
   const requestPersonalUnlock = () => {
     setOtpState({ open: true, mode: "unlock", changes: [] });
@@ -130,6 +145,35 @@ export default function IntakeFormTab({ empty = false }) {
     setOtpState({ open: true, mode: "commit", changes, onSuccess });
   };
 
+  const handleEditSectionSave = ({ values: draftValues, chips: draftChips }) => {
+    const label = SECTIONS_META.find((s) => s.key === editSectionKey)?.label || "Section";
+
+    if (editSectionKey === "personal") {
+      const merged = { ...values, ...draftValues };
+      const changes = diffPersonalValues(personalBaseline, snapshotPersonalValues(merged));
+      if (!changes.length) {
+        applySectionDraft(draftValues, draftChips);
+        closeEditSection();
+        toast.success(`${label} updated.`);
+        return;
+      }
+      setPendingSectionDraft({ values: draftValues, chips: draftChips });
+      setOtpState({
+        open: true,
+        mode: "commit",
+        changes,
+        onSuccess: () => {
+          closeEditSection();
+        },
+      });
+      return;
+    }
+
+    applySectionDraft(draftValues, draftChips);
+    closeEditSection();
+    toast.success(`${label} updated.`);
+  };
+
   const handleOtpVerified = () => {
     if (otpState.mode === "unlock") {
       setPersonalUnlocked(true);
@@ -138,7 +182,15 @@ export default function IntakeFormTab({ empty = false }) {
       return;
     }
 
-    const current = snapshotPersonalValues(values);
+    const nextValues = pendingSectionDraft
+      ? { ...values, ...pendingSectionDraft.values }
+      : values;
+    if (pendingSectionDraft) {
+      applySectionDraft(pendingSectionDraft.values, pendingSectionDraft.chips);
+      setPendingSectionDraft(null);
+    }
+
+    const current = snapshotPersonalValues(nextValues);
     const changes = diffPersonalValues(personalBaseline, current);
     const at = formatChangeAt();
     const entries = changes.map((c) => ({
@@ -193,10 +245,7 @@ export default function IntakeFormTab({ empty = false }) {
           chips={chips}
           empty={empty}
           changeLog={changeLog}
-          onOpenSection={(key) => {
-            setActiveKey(key);
-            setView("fill");
-          }}
+          onEditSection={(key) => setEditSectionKey(key)}
         />
       ) : (
         <IntakeFillFormView
@@ -214,11 +263,25 @@ export default function IntakeFormTab({ empty = false }) {
         />
       )}
 
+      <SectionEditModal
+        open={Boolean(editSectionKey)}
+        sectionKey={editSectionKey}
+        values={values}
+        chips={chips}
+        onClose={closeEditSection}
+        onSave={handleEditSectionSave}
+        personalUnlocked={personalUnlocked}
+        onRequestPersonalUnlock={requestPersonalUnlock}
+      />
+
       <PersonalChangeOtpModal
         open={otpState.open}
         mode={otpState.mode}
         changes={otpState.changes}
-        onClose={closeOtp}
+        onClose={() => {
+          closeOtp();
+          setPendingSectionDraft(null);
+        }}
         onVerified={handleOtpVerified}
       />
     </div>
