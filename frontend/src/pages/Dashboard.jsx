@@ -447,6 +447,11 @@ function AIAssistant() {
   const [message, setMessage] = useState("");
   const [prompts, setPrompts] = useState(AI_PROMPTS);
   const [tags, setTags] = useState(AI_TAGS);
+  const [activePromptId, setActivePromptId] = useState(2); // Today's top priority
+
+  const activePrompt = prompts.find((p) => p.id === activePromptId) || prompts[0];
+  const contentHeading =
+    activePrompt?.text === "Today's top priority" ? "Today's Priority" : activePrompt?.text || "Today's Priority";
 
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col gap-3.5 h-full">
@@ -467,27 +472,65 @@ function AIAssistant() {
           </div>
         </div>
 
-        {prompts.map((p) => (
-          <div key={p.id} className="flex items-center justify-between gap-3 bg-white border border-black/8 rounded-xl px-3 py-2.5">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="text-[13px] leading-none">🚀</span>
-              <span className="text-[13px] text-[#111] truncate">{p.text}</span>
+        {prompts.map((p) => {
+          const isActive = p.id === activePromptId;
+          return (
+            <div
+              key={p.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => setActivePromptId(p.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setActivePromptId(p.id);
+                }
+              }}
+              className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 cursor-pointer transition-colors border ${
+                isActive
+                  ? "bg-[#FDF2F3] border-[#7A0A17]/35 shadow-[inset_3px_0_0_0_#7A0A17]"
+                  : "bg-white border-black/8 hover:bg-[#FAFAFB]"
+              }`}
+              aria-pressed={isActive}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="text-[13px] leading-none" aria-hidden>
+                  🚀
+                </span>
+                <span className={`text-[13px] truncate ${isActive ? "font-semibold text-[#7A0A17]" : "text-[#111]"}`}>
+                  {p.text}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-[#3B82F6] hover:opacity-70 transition-opacity"
+                  aria-label="Edit prompt"
+                >
+                  <Edit3 size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPrompts((prev) => {
+                      const next = prev.filter((x) => x.id !== p.id);
+                      if (p.id === activePromptId && next.length) {
+                        setActivePromptId(next[0].id);
+                      }
+                      return next;
+                    });
+                  }}
+                  className="text-[#EF4444] hover:opacity-70 transition-opacity"
+                  aria-label="Delete prompt"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button type="button" className="text-[#3B82F6] hover:opacity-70 transition-opacity" aria-label="Edit prompt">
-                <Edit3 size={14} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setPrompts((prev) => prev.filter((x) => x.id !== p.id))}
-                className="text-[#EF4444] hover:opacity-70 transition-opacity"
-                aria-label="Delete prompt"
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
 
         <div className="flex flex-wrap items-center gap-2">
           {tags.map((tag) => (
@@ -504,9 +547,9 @@ function AIAssistant() {
         </div>
       </div>
 
-      {/* Today's priority + composer */}
+      {/* Active conversation content + composer */}
       <div className="border border-black/8 rounded-xl p-4 flex flex-col gap-3 flex-1">
-        <h3 className="text-[15px] font-bold text-[#111]">Today's Priority</h3>
+        <h3 className="text-[15px] font-bold text-[#111]">{contentHeading}</h3>
 
         <ul className="flex flex-col gap-2 flex-1">
           {PRIORITY_ITEMS.map((item, i) => (
