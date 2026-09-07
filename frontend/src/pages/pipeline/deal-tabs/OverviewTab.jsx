@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import {
   Activity,
@@ -446,6 +447,82 @@ function PersonalAssistantCard() {
   );
 }
 
+function StageStatusHover({ row }) {
+  const ref = useRef(null);
+  const hideTimer = useRef(null);
+  const [pos, setPos] = useState(null);
+  const style = SLA_STATUS_STYLES[row.status];
+
+  const open = () => {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    const width = 220;
+    let left = r.left;
+    left = Math.max(12, Math.min(left, window.innerWidth - width - 12));
+    const below = r.bottom + 8;
+    const placeAbove = below + 120 > window.innerHeight;
+    setPos({ anchorTop: r.top, top: below, left, placeAbove, width });
+  };
+
+  const scheduleClose = () => {
+    hideTimer.current = setTimeout(() => setPos(null), 120);
+  };
+
+  return (
+    <span
+      ref={ref}
+      onMouseEnter={open}
+      onMouseLeave={scheduleClose}
+      className="inline-flex cursor-default"
+    >
+      {style ? (
+        <span
+          className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md"
+          style={{ color: style.color, backgroundColor: style.bg }}
+        >
+          {row.status}
+        </span>
+      ) : (
+        <span className="text-[12px] text-[#4B5563]">{row.status || "-"}</span>
+      )}
+
+      {pos &&
+        createPortal(
+          <div
+            className="fixed z-[80] bg-white border border-black/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.14)] p-3.5"
+            style={{
+              width: pos.width,
+              top: pos.placeAbove ? undefined : pos.top,
+              bottom: pos.placeAbove ? window.innerHeight - pos.anchorTop + 8 : undefined,
+              left: pos.left,
+            }}
+            onMouseEnter={open}
+            onMouseLeave={scheduleClose}
+          >
+            <p className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-2.5">
+              {row.stage}
+            </p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+              {[
+                { label: "Entered", value: row.entered },
+                { label: "Exited", value: row.exited },
+                { label: "Duration", value: row.duration },
+                { label: "SLA", value: row.sla },
+              ].map((item) => (
+                <div key={item.label} className="min-w-0">
+                  <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{item.label}</p>
+                  <p className="text-[12.5px] font-semibold text-[#111] mt-0.5">{item.value || "-"}</p>
+                </div>
+              ))}
+            </div>
+          </div>,
+          document.body
+        )}
+    </span>
+  );
+}
+
 function StageHistoryCard({ rows, footnote }) {
   const { sorted, sort, toggle } = useTableSort(rows, { defaultKey: "stage" });
 
@@ -476,28 +553,16 @@ function StageHistoryCard({ rows, footnote }) {
             </tr>
           </thead>
           <tbody>
-            {sorted.map((row) => {
-              const status = SLA_STATUS_STYLES[row.status];
-              return (
-                <tr key={row.stage} className="border-b border-black/5 last:border-0">
-                  <td className="px-2.5 py-2.5 text-[12.5px] font-semibold text-[#111] whitespace-nowrap">{row.stage}</td>
-                  <td className="px-2.5 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.entered}</td>
-                  <td className="px-2.5 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.exited}</td>
-                  <td className="px-2.5 py-2.5 whitespace-nowrap">
-                    {status ? (
-                      <span
-                        className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md"
-                        style={{ color: status.color, backgroundColor: status.bg }}
-                      >
-                        {row.status}
-                      </span>
-                    ) : (
-                      row.status
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
+            {sorted.map((row) => (
+              <tr key={row.stage} className="border-b border-black/5 last:border-0">
+                <td className="px-2.5 py-2.5 text-[12.5px] font-semibold text-[#111] whitespace-nowrap">{row.stage}</td>
+                <td className="px-2.5 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.entered}</td>
+                <td className="px-2.5 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.exited}</td>
+                <td className="px-2.5 py-2.5 whitespace-nowrap">
+                  <StageStatusHover row={row} />
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
