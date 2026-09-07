@@ -161,13 +161,75 @@ function DiscussionField({ label, at, note, urgency, onFollowUp }) {
 const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
+const EDIT_FIELDS = [
+  { key: "dealCode", label: "Deal code" },
+  { key: "stageLabel", label: "Stage" },
+  { key: "packageInterest", label: "Package interest" },
+  { key: "dealValue", label: "Deal value" },
+  { key: "leadSource", label: "Lead source" },
+  { key: "leadScore", label: "Lead score" },
+  { key: "enquiryBy", label: "Enquiry made by" },
+  { key: "lookingFor", label: "Looking for" },
+  { key: "areaOfHouse", label: "Area of house" },
+  { key: "profession", label: "Profession" },
+  { key: "familyIncomeBand", label: "Family income band" },
+  { key: "nextMeeting", label: "Next schedule meeting" },
+  { key: "winLossReasons", label: "Win / loss analysis - reasons", full: true },
+  { key: "winLossTone", label: "Win / loss tone", type: "select", options: ["Hot", "Warm", "Cold", "Lost"] },
+  { key: "lastDiscussionAt", label: "Last discussion (date / time)" },
+  { key: "lastDiscussionNote", label: "Last discussion note", full: true },
+  { key: "nextActionAt", label: "Next action (date / time)" },
+  { key: "nextAction", label: "Next action note", full: true },
+  { key: "nextActionUrgency", label: "Next action urgency" },
+];
+
+function detailsFromDeal(deal) {
+  return {
+    dealCode: deal.dealCode || "",
+    stageLabel: deal.stageLabel || "",
+    packageInterest: deal.packageInterest || "",
+    dealValue: deal.dealValue || "",
+    leadSource: deal.leadSource || "",
+    leadScore: deal.leadScore || "",
+    enquiryBy: deal.enquiryBy || "",
+    lookingFor: deal.lookingFor || "",
+    areaOfHouse: deal.areaOfHouse || "",
+    profession: deal.profession || "",
+    familyIncomeBand: deal.familyIncomeBand || "",
+    nextMeeting: deal.nextMeeting || "",
+    winLossReasons: deal.winLossReasons || "",
+    winLossTone: deal.winLossTone || "Cold",
+    lastDiscussionAt: deal.lastDiscussionAt || "",
+    lastDiscussionNote: deal.lastDiscussionNote || "",
+    nextActionAt: deal.nextActionAt || "",
+    nextAction: deal.nextAction || "",
+    nextActionUrgency: deal.nextActionUrgency || "",
+  };
+}
+
 function DealDetailsCard({ deal }) {
   const [open, setOpen] = useState(false);
-  const [profession, setProfession] = useState(deal.profession || "");
-  const [nextAction, setNextAction] = useState(deal.nextAction || "");
+  const [details, setDetails] = useState(() => detailsFromDeal(deal));
+  const [draft, setDraft] = useState(() => detailsFromDeal(deal));
+
+  useEffect(() => {
+    const next = detailsFromDeal(deal);
+    setDetails(next);
+    if (!open) setDraft(next);
+  }, [deal]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const openModal = () => {
+    setDraft(details);
+    setOpen(true);
+  };
+
+  const setField = (key, value) => {
+    setDraft((prev) => ({ ...prev, [key]: value }));
+  };
 
   const handleSave = (e) => {
     e.preventDefault();
+    setDetails(draft);
     toast.success("Deal details updated.");
     setOpen(false);
   };
@@ -176,7 +238,7 @@ function DealDetailsCard({ deal }) {
     <div className="bg-white border border-black/8 rounded-2xl p-5">
       <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
         <h3 className="text-[14px] font-bold text-[#111]">Deal details</h3>
-        <TabHeaderButton onClick={() => setOpen(true)}>Edit details</TabHeaderButton>
+        <TabHeaderButton onClick={openModal}>Edit details</TabHeaderButton>
       </div>
 
       <Modal
@@ -184,6 +246,7 @@ function DealDetailsCard({ deal }) {
         onClose={() => setOpen(false)}
         title="Edit details"
         subtitle="Update deal fields for this client"
+        width="max-w-3xl"
         footer={
           <>
             <button
@@ -203,42 +266,63 @@ function DealDetailsCard({ deal }) {
           </>
         }
       >
-        <form id="edit-deal-form" onSubmit={handleSave} className="flex flex-col gap-4">
-          <div>
-            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Profession</label>
-            <input value={profession} onChange={(e) => setProfession(e.target.value)} className={FIELD} />
-          </div>
-          <div>
-            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Next action</label>
-            <input value={nextAction} onChange={(e) => setNextAction(e.target.value)} className={FIELD} />
-          </div>
+        <form id="edit-deal-form" onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {EDIT_FIELDS.map((field) => (
+            <div key={field.key} className={field.full ? "sm:col-span-2" : ""}>
+              <label className="block text-[13px] font-bold text-[#111] mb-1.5">{field.label}</label>
+              {field.type === "select" ? (
+                <select
+                  value={draft[field.key]}
+                  onChange={(e) => setField(field.key, e.target.value)}
+                  className={FIELD}
+                >
+                  {field.options.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              ) : field.full ? (
+                <textarea
+                  value={draft[field.key]}
+                  onChange={(e) => setField(field.key, e.target.value)}
+                  rows={2}
+                  className={`${FIELD} resize-none`}
+                />
+              ) : (
+                <input
+                  value={draft[field.key]}
+                  onChange={(e) => setField(field.key, e.target.value)}
+                  className={FIELD}
+                />
+              )}
+            </div>
+          ))}
         </form>
       </Modal>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
-        <DetailField label="Deal code" value={deal.dealCode} />
-        <DetailField label="Stage" value={deal.stageLabel} />
-        <DetailField label="Package interest" value={deal.packageInterest} />
-        <DetailField label="Deal value" value={deal.dealValue} />
-        <DetailField label="Lead source" value={deal.leadSource} />
-        <DetailField label="Lead score" value={deal.leadScore} />
-        <DetailField label="Enquiry made by" value={deal.enquiryBy} />
-        <DetailField label="Looking for" value={deal.lookingFor} />
-        <DetailField label="Area of house" value={deal.areaOfHouse} />
-        <DetailField label="Profession" value={deal.profession} />
-        <DetailField label="Family income band" value={deal.familyIncomeBand} />
-        <MeetingField label="Next schedule meeting" value={deal.nextMeeting} />
-        <WinLossReasonsField label="Win / loss analysis - reasons" value={deal.winLossReasons} tone={deal.winLossTone} />
+        <DetailField label="Deal code" value={details.dealCode} />
+        <DetailField label="Stage" value={details.stageLabel} />
+        <DetailField label="Package interest" value={details.packageInterest} />
+        <DetailField label="Deal value" value={details.dealValue} />
+        <DetailField label="Lead source" value={details.leadSource} />
+        <DetailField label="Lead score" value={details.leadScore} />
+        <DetailField label="Enquiry made by" value={details.enquiryBy} />
+        <DetailField label="Looking for" value={details.lookingFor} />
+        <DetailField label="Area of house" value={details.areaOfHouse} />
+        <DetailField label="Profession" value={details.profession} />
+        <DetailField label="Family income band" value={details.familyIncomeBand} />
+        <MeetingField label="Next schedule meeting" value={details.nextMeeting} />
+        <WinLossReasonsField label="Win / loss analysis - reasons" value={details.winLossReasons} tone={details.winLossTone} />
         <DiscussionField
           label="Last discussion"
-          at={deal.lastDiscussionAt}
-          note={deal.lastDiscussionNote}
+          at={details.lastDiscussionAt}
+          note={details.lastDiscussionNote}
           onFollowUp={() => toast.info("Follow-up history coming soon.")}
         />
         <DiscussionField
           label="Next action"
-          at={deal.nextActionAt}
-          note={deal.nextAction}
-          urgency={deal.nextActionUrgency}
+          at={details.nextActionAt}
+          note={details.nextAction}
+          urgency={details.nextActionUrgency}
         />
       </div>
     </div>
