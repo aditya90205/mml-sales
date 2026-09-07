@@ -240,13 +240,13 @@ function IntakeField({ def, value, chips, onChange, onRemoveChip }) {
   );
 }
 
-function FormBlock({ block, values, chipValues, onFieldChange, onRemoveChip }) {
+function FormBlock({ block, values, chipValues, onFieldChange, onRemoveChip, locked }) {
   const filled = block.fields.filter((f) => isFieldFilled(f, values, chipValues)).length;
   const total = block.fields.length;
   const colClass = block.columns === 1 ? "" : block.columns === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3";
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-5">
+    <div className={`bg-white border border-black/8 rounded-2xl p-5 ${locked ? "opacity-70" : ""}`}>
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2.5 min-w-0">
           <h3 className="text-[11px] font-bold text-[#7A0A17] uppercase tracking-wide shrink-0">{block.title}</h3>
@@ -260,7 +260,10 @@ function FormBlock({ block, values, chipValues, onFieldChange, onRemoveChip }) {
           {filled} of {total} filled
         </span>
       </div>
-      <div className={`grid grid-cols-1 ${colClass} gap-x-6 gap-y-4`}>
+      <div
+        className={`grid grid-cols-1 ${colClass} gap-x-6 gap-y-4 ${locked ? "pointer-events-none select-none" : ""}`}
+        aria-disabled={locked || undefined}
+      >
         {block.fields.map((f) => (
           <div
             key={f.key}
@@ -342,6 +345,10 @@ export default function IntakeFillFormView({
   setField,
   chips,
   removeChip,
+  personalUnlocked = false,
+  onRequestPersonalUnlock,
+  onRequestPersonalSave,
+  onFinishToRecord,
 }) {
   const activeIndex = SECTIONS_META.findIndex((s) => s.key === activeKey);
   const activeBlocks = SECTION_BLOCKS[activeKey];
@@ -355,16 +362,36 @@ export default function IntakeFillFormView({
   }));
 
   const overallPercent = empty ? 0 : Math.round((OVERALL_FILLED_FIELDS / OVERALL_TOTAL_FIELDS) * 100);
+  const isPersonal = activeKey === "personal";
+  const personalLocked = isPersonal && !personalUnlocked;
 
   const handleNext = () => {
+    if (isPersonal) {
+      onRequestPersonalSave?.({
+        onSuccess: () => {
+          const next = SECTIONS_META[activeIndex + 1];
+          if (next) {
+            toast.success(`Saved. Continuing to ${next.label}.`);
+            setActiveKey(next.key);
+          } else {
+            toast.success("Intake form saved.");
+            onFinishToRecord?.();
+          }
+        },
+      });
+      return;
+    }
+
     const next = SECTIONS_META[activeIndex + 1];
     if (next) {
       toast.success(`Saved. Continuing to ${next.label}.`);
       setActiveKey(next.key);
     } else {
       toast.success("Intake form saved.");
+      onFinishToRecord?.();
     }
   };
+
   const handlePrev = () => {
     const prev = SECTIONS_META[activeIndex - 1];
     if (prev) setActiveKey(prev.key);
@@ -387,6 +414,50 @@ export default function IntakeFillFormView({
           tip={SECTION_TIPS[activeKey]}
         />
 
+        {isPersonal && (
+          <div
+            className={`rounded-xl border px-4 py-3 flex items-start justify-between gap-3 flex-wrap ${
+              personalLocked
+                ? "bg-[#FFFBEB] border-[#FDE68A]"
+                : "bg-[#E7F8EF] border-[#BBF7D0]"
+            }`}
+          >
+            <div className="min-w-0">
+              <p
+                className={`text-[13px] font-semibold ${
+                  personalLocked ? "text-[#92400E]" : "text-[#166534]"
+                }`}
+              >
+                {personalLocked
+                  ? "Personal details are locked"
+                  : "Personal details unlocked for editing"}
+              </p>
+              <p
+                className={`text-[12.5px] mt-0.5 ${
+                  personalLocked ? "text-[#92400E]/90" : "text-[#166534]/90"
+                }`}
+              >
+                {personalLocked
+                  ? "Verify OTP before changing any field. Saved changes appear in the client-record summary."
+                  : "Edit freely, then save — OTP will confirm before changes are committed to the summary."}
+              </p>
+            </div>
+            {personalLocked ? (
+              <button
+                type="button"
+                onClick={onRequestPersonalUnlock}
+                className="h-9 px-3.5 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors shrink-0"
+              >
+                Verify OTP to edit
+              </button>
+            ) : (
+              <span className="inline-flex items-center h-9 px-3 rounded-full bg-white/80 text-[12px] font-semibold text-[#166534] shrink-0">
+                Editing unlocked
+              </span>
+            )}
+          </div>
+        )}
+
         {activeBlocks ? (
           activeBlocks.map((block) => (
             <FormBlock
@@ -396,6 +467,7 @@ export default function IntakeFillFormView({
               chipValues={chips}
               onFieldChange={setField}
               onRemoveChip={removeChip}
+              locked={personalLocked}
             />
           ))
         ) : (
