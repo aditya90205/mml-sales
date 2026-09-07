@@ -220,13 +220,6 @@ export default function CreateGroupPage() {
             >
               Build query
             </button>
-            <button
-              type="button"
-              onClick={runManualQuery}
-              className="h-12 px-6 rounded-lg bg-white border border-[#7A0A17]/30 text-[#7A0A17] text-[14px] font-bold hover:bg-[#FCF5F6] transition-colors shrink-0"
-            >
-              Run manual query
-            </button>
           </div>
         </div>
 
@@ -234,7 +227,7 @@ export default function CreateGroupPage() {
 
         <div className="flex flex-col gap-5 w-full">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <span className="text-[14px] font-semibold text-[#111]">Match</span>
               <div className="flex items-center rounded-lg overflow-hidden">
                 {["ALL", "ANY"].map((m) => (
@@ -251,6 +244,13 @@ export default function CreateGroupPage() {
                 ))}
               </div>
               <span className="text-[14px] text-[#9CA3AF]">of these conditions</span>
+              <button
+                type="button"
+                onClick={runManualQuery}
+                className="h-9 px-4 rounded-lg bg-white border border-[#7A0A17]/30 text-[#7A0A17] text-[13px] font-bold hover:bg-[#FCF5F6] transition-colors shrink-0"
+              >
+                Run manual query
+              </button>
             </div>
             <button
               type="button"
