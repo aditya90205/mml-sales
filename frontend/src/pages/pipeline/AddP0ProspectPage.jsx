@@ -1,11 +1,14 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Phone, CheckCircle2, Clock, User, Upload } from "lucide-react";
 import StageStepper from "../../components/pipeline/StageStepper";
 // TopBar is provided by Layout
 
+const BULK_IMPORT_BTN =
+  "inline-flex items-center gap-2 px-4 py-2 text-[13px] font-semibold text-[#4B5563] bg-white border border-black/10 rounded-xl hover:bg-[#F3F4F6] transition-colors";
+
 export default function AddP0ProspectPage({ onBack, onAddProspect }) {
-  const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     source: "",
     firstName: "",
@@ -52,6 +55,8 @@ export default function AddP0ProspectPage({ onBack, onAddProspect }) {
     onBack();
   };
 
+  const onBulkUpload = location.pathname === "/bulk-upload";
+
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-[#F8F9FA]">
       {/* TopBar is provided by Layout */}
@@ -60,14 +65,17 @@ export default function AddP0ProspectPage({ onBack, onAddProspect }) {
       <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-black/8 shrink-0 flex-wrap gap-4">
         <h1 className="text-[20px] font-bold text-[#111] tracking-tight">Add P0 Prospect</h1>
         <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => navigate("/bulk-upload")}
-            className="inline-flex items-center gap-2 px-4 py-2 text-[13px] font-semibold text-[#4B5563] bg-white border border-black/10 rounded-xl hover:bg-[#F3F4F6] transition-colors"
-          >
-            <Upload size={14} />
-            Bulk Import
-          </button>
+          {onBulkUpload ? (
+            <button type="button" onClick={onBack} className={BULK_IMPORT_BTN}>
+              <Upload size={14} />
+              Bulk Import
+            </button>
+          ) : (
+            <Link to="/bulk-upload" className={BULK_IMPORT_BTN}>
+              <Upload size={14} />
+              Bulk Import
+            </Link>
+          )}
           <button
             type="button"
             onClick={onBack}
