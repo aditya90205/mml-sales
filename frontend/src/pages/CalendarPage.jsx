@@ -268,6 +268,8 @@ const INITIAL_EVENTS = [
 const INITIAL_UNSCHEDULED = [
   { id: "u1", title: "Call back Sethi", type: "Lead", duration: "30 min" },
   { id: "u2", title: "Draft Agarwal Contract", type: "Lead", duration: "30 min" },
+  { id: "u3", title: "Follow up with Mehta", type: "Lead", duration: "30 min" },
+  { id: "u4", title: "Prepare Sharma Proposal", type: "Lead", duration: "45 min" },
 ];
 
 const DAY_STATUS = { 3: "free", 9: "free", 11: "filling", 17: "busy", 26: "busy" };
