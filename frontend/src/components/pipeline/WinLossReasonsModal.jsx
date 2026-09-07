@@ -71,9 +71,15 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
     setError("");
     setSelected((prev) => ({ ...prev, price: true }));
     setPriceEscalated(true);
-    toast.success(
-      `Escalation sent for ₹${priceDiscount.trim()} discount. Day follow up task is created for you.`
-    );
+    toast.success(`Escalation sent for ₹${priceDiscount.trim()} discount.`);
+  };
+
+  const handleFollowUpDate = (reasonId, value) => {
+    setDetails((prev) => ({ ...prev, [reasonId]: value }));
+    if (value) {
+      setSelected((prev) => ({ ...prev, [reasonId]: true }));
+      toast.success("Follow up task is created for you");
+    }
   };
 
   const handleSave = () => {
@@ -90,7 +96,7 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
     const reasonParts = picked.map((r) => {
       if (r.id === "price") {
         const amount = priceDiscount.trim() || "—";
-        const base = `${r.label} — Client asking for ₹${amount} discount; day follow-up task created`;
+        const base = `${r.label} — Client asking for ₹${amount} discount`;
         return priceEscalated ? `${base} (Escalated)` : base;
       }
       const extra = details[r.id]?.trim();
@@ -163,11 +169,6 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
                           {priceEscalated ? "Escalation sent" : "Escalation"}
                         </button>
                       </div>
-                      {priceEscalated && (
-                        <p className="text-[12.5px] text-[#16A34A] leading-snug">
-                          Day follow up task is created for you
-                        </p>
-                      )}
                     </div>
                   )}
                   {reason.inputType === "date" && (
@@ -175,9 +176,8 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
                       <input
                         type="date"
                         value={details[reason.id] || ""}
-                        onChange={(e) =>
-                          setDetails((prev) => ({ ...prev, [reason.id]: e.target.value }))
-                        }
+                        onChange={(e) => handleFollowUpDate(reason.id, e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
                         aria-label={reason.placeholder}
                         className="w-full h-10 px-3 rounded-xl border border-black/10 bg-white text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/35 focus:ring-2 focus:ring-[#7A0A17]/10"
                       />

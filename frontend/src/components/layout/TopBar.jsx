@@ -358,16 +358,19 @@ export default function TopBar({ page = "Dashboard" }) {
     notifications: "Notifications",
   };
 
-  const breadcrumbs = pathnames.length && pathnames[0] !== "dashboard"
-    ? [
-        { to: "/dashboard", name: routeNameMap.dashboard },
-        ...pathnames.map((seg, idx) => {
-          const to = `/${pathnames.slice(0, idx + 1).join("/")}`;
-          const name = routeNameMap[seg] || seg.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-          return { to, name };
-        }),
-      ]
-    : [{ to: "/dashboard", name: routeNameMap.dashboard }];
+  const breadcrumbs =
+    pathnames[0] === "calendar"
+      ? [{ to: "/calendar", name: "Calendar & Meetings" }]
+      : pathnames.length && pathnames[0] !== "dashboard"
+        ? [
+            { to: "/dashboard", name: routeNameMap.dashboard },
+            ...pathnames.map((seg, idx) => {
+              const to = `/${pathnames.slice(0, idx + 1).join("/")}`;
+              const name = routeNameMap[seg] || seg.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+              return { to, name };
+            }),
+          ]
+        : [{ to: "/dashboard", name: routeNameMap.dashboard }];
 
   return (
     <header className="fixed left-[58px] right-0 top-0 z-50 h-[56px] bg-white border-b border-black/8 flex items-center justify-between gap-4 px-5 shrink-0">
@@ -375,7 +378,7 @@ export default function TopBar({ page = "Dashboard" }) {
       <div className="flex items-center gap-3 min-w-0">
         <nav className="flex items-center gap-2 min-w-0">
           {breadcrumbs.map((b, i) => (
-            <span key={b.to} className="flex items-center gap-2 min-w-0">
+            <span key={`${b.to}-${b.name}-${i}`} className="flex items-center gap-2 min-w-0">
               {i < breadcrumbs.length - 1 ? (
                 <Link to={b.to} className="text-[13px] font-semibold text-[#7A0A17] hover:underline truncate">
                   {b.name}
