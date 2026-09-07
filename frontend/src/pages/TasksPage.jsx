@@ -43,24 +43,24 @@ const PRIORITY_STYLES = {
 
 const TASKS_BY_COLUMN = {
   new: [
-    { title: "API Integration & Core Testing", priority: "Medium", progress: 20, project: "E-Commerce Platform", date: "07-12-26", overdue: false, assignee: "Rahul Verma" },
-    { title: "API Integration & Core Testing", priority: "Medium", progress: 20, project: "E-Commerce Platform", date: "07-12-26", overdue: false, assignee: "Rahul Verma" },
+    { title: "Visit client — initial consultation", priority: "Medium", progress: 20, project: "South Delhi leads", date: "07-12-26", overdue: false, assignee: "Rahul Verma" },
+    { title: "Schedule home office visit", priority: "Medium", progress: 15, project: "Walk-in enquiries", date: "07-12-26", overdue: false, assignee: "Rahul Verma" },
   ],
   "in-progress": [
-    { title: "Design Systems & Core UI Mockups", priority: "Medium", progress: 60, project: "E-Commerce Platform", date: "07-12-26", overdue: false, assignee: "Sana Iqbal" },
-    { title: "API Integration & Core Testing",   priority: "Medium", progress: 20, project: "E-Commerce Platform", date: "07-12-26", overdue: false, assignee: "Sana Iqbal" },
+    { title: "Matchmaking shortlist for Ananya", priority: "Medium", progress: 60, project: "Premium package", date: "07-12-26", overdue: false, assignee: "Sana Iqbal" },
+    { title: "Complete biodata & preference form", priority: "Medium", progress: 40, project: "Profile creation", date: "07-12-26", overdue: false, assignee: "Sana Iqbal" },
   ],
   review: [
-    { title: "Payment Gateway Integration",     priority: "Critical", progress: 75, project: "Mobile Banking App",   date: "07-12-26", overdue: true,  assignee: "Dev Malhotra" },
-    { title: "API Integration & Core Testing",  priority: "Medium",   progress: 20, project: "E-Commerce Platform",  date: "07-12-26", overdue: false, assignee: "Dev Malhotra" },
+    { title: "Verify KYC & family documents", priority: "Critical", progress: 75, project: "P5 Payment deals", date: "07-12-26", overdue: true, assignee: "Dev Malhotra" },
+    { title: "Review proposed matches with parents", priority: "Medium", progress: 55, project: "Video call / Visit", date: "07-12-26", overdue: false, assignee: "Dev Malhotra" },
   ],
   blocked: [
-    { title: "Performance Benchmarking",        priority: "Low",    progress: 20, project: "API Gateway",          date: "07-12-26", overdue: false, assignee: "Neha Kapoor" },
-    { title: "API Integration & Core Testing",  priority: "Medium", progress: 20, project: "E-Commerce Platform",  date: "07-12-26", overdue: false, assignee: "Neha Kapoor" },
+    { title: "Awaiting discount approval", priority: "Low", progress: 20, project: "Negotiation desk", date: "07-12-26", overdue: false, assignee: "Neha Kapoor" },
+    { title: "Follow up — client no response", priority: "Medium", progress: 25, project: "Warm leads", date: "07-12-26", overdue: false, assignee: "Neha Kapoor" },
   ],
   done: [
-    { title: "UI/UX Improvements",              priority: "Low",    progress: 20, project: "API Gateway",         date: "07-12-26", overdue: false, assignee: "Ishaan Roy" },
-    { title: "API Integration & Core Testing",  priority: "Medium", progress: 20, project: "E-Commerce Platform", date: "07-12-26", overdue: false, assignee: "Ishaan Roy" },
+    { title: "Handover to relationship manager", priority: "Low", progress: 100, project: "P6 Onboarding", date: "07-12-26", overdue: false, assignee: "Ishaan Roy" },
+    { title: "Confirm meeting & send biodata pack", priority: "Medium", progress: 100, project: "Matchmaking", date: "07-12-26", overdue: false, assignee: "Ishaan Roy" },
   ],
 };
 
