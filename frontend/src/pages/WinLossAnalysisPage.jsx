@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Download } from "lucide-react";
+import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Download, Eye } from "lucide-react";
 import { toast } from "react-toastify";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import { AppPage, MetricCard, NativeSelect, OutlineBtn, Panel, PrimaryBtn, Td } from "../components/common/AppPage.jsx";
-import StatusPill from "../components/common/StatusPill";
 
 const STATS = [
   { label: "Deals closed", value: "7", note: "▲ 2 vs June", noteTone: "green" },
@@ -14,18 +14,16 @@ const STATS = [
 ];
 
 const REASONS = [
-  { id: "price", label: "Price / Budget / ROI", extra: "price" },
-  { id: "nodeal", label: "No decision / Think about it", extra: "date" },
+  { id: "price", label: "Price / Budget / ROI" },
+  { id: "nodeal", label: "No decision / Think about it" },
   { id: "competitor", label: "Competitor / Existing solution" },
-  { id: "timing", label: "Timing / priorities changed", extra: "date" },
+  { id: "timing", label: "Timing / priorities changed" },
   { id: "trust", label: "Trust / Risk / Fit" },
   { id: "noresponse", label: "No Response / delayed follow-up / Not interested now" },
   { id: "decision", label: "Decision maker / internal dependency" },
   { id: "wrong", label: "No / Never enquired / Wrong enquiry" },
 ];
 
-// Share of lost deals attributed to each reason above — the 46% for
-// "Price / Budget / ROI" lines up with the "Lost to price" stat card.
 const REASON_SHARE = {
   price: 46,
   nodeal: 34,
@@ -39,6 +37,9 @@ const REASON_SHARE = {
 
 const REASON_STATS = REASONS.map((r) => ({ id: r.id, label: r.label, value: REASON_SHARE[r.id] ?? 0 }));
 const REASON_MAX = Math.max(...REASON_STATS.map((r) => r.value));
+
+const reasonLabel = (id) => REASONS.find((r) => r.id === id)?.label ?? id;
+const reasonLabels = (...ids) => ids.map(reasonLabel);
 
 const SOURCES = [
   { source: "Outdoor board", leads: 84, closed: 11, roi: 11, rate: 13.1, revenue: "₹4.8L", cost: "₹4,400", loss: "Package mismatch" },
@@ -59,9 +60,6 @@ const SOURCE_COLS = [
   { label: "Cost / closed", key: "cost" },
   { label: "Top loss reason", key: "loss" },
 ];
-
-const reasonLabel = (id) => REASONS.find((r) => r.id === id)?.label ?? id;
-const reasonLabels = (...ids) => ids.map(reasonLabel);
 
 const FUNNEL_RAW = [
   { stage: "P0", name: "New", count: 1248, avgTime: "1.2 days", reasons: reasonLabels("wrong", "noresponse", "trust") },
@@ -105,8 +103,8 @@ function rateColor(pct) {
 function RateBar({ pct }) {
   const color = rateColor(pct);
   return (
-    <div className="flex items-center gap-2.5 min-w-[140px]">
-      <div className="h-1.5 w-[88px] rounded-full bg-[#F1F2F4] overflow-hidden">
+    <div className="flex items-center gap-2.5 min-w-[120px]">
+      <div className="h-1.5 w-[72px] rounded-full bg-[#F1F2F4] overflow-hidden">
         <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct * 2.4)}%`, backgroundColor: color }} />
       </div>
       <span className="text-[13px] font-semibold text-[#111] tabular-nums">{pct}%</span>
@@ -114,44 +112,79 @@ function RateBar({ pct }) {
   );
 }
 
-function Field({ label, required, children }) {
+const POPOVER_WIDTH = 280;
+
+function ReasonsHoverIcon({ reasons, label }) {
+  const ref = useRef(null);
+  const hideTimer = useRef(null);
+  const [pos, setPos] = useState(null);
+
+  const open = () => {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    let left = r.left + r.width / 2 - POPOVER_WIDTH / 2;
+    left = Math.max(12, Math.min(left, window.innerWidth - POPOVER_WIDTH - 12));
+    const below = r.bottom + 8;
+    const placeAbove = below + 160 > window.innerHeight;
+    setPos({ anchorTop: r.top, top: below, left, placeAbove });
+  };
+
+  const scheduleClose = () => {
+    hideTimer.current = setTimeout(() => setPos(null), 120);
+  };
+
   return (
-    <label className="block">
-      <span className="text-[12px] font-semibold text-[#374151]">
-        {label}
-        {required && <span className="text-[#E8395B]"> *</span>}
-      </span>
-      {children}
-    </label>
+    <span ref={ref} onMouseEnter={open} onMouseLeave={scheduleClose} className="inline-flex">
+      <button
+        type="button"
+        className="size-8 grid place-items-center rounded-lg hover:bg-black/4 transition-colors"
+        title={`View top reasons for ${label}`}
+        aria-label={`View top reasons for ${label}`}
+      >
+        <Eye size={16} className="text-[#CA8A04]" />
+      </button>
+
+      {pos &&
+        createPortal(
+          <div
+            className="fixed z-[80] w-[280px] max-w-[calc(100vw-24px)] bg-white border border-black/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.14)] p-3.5 overflow-hidden"
+            style={{
+              top: pos.placeAbove ? undefined : pos.top,
+              bottom: pos.placeAbove ? window.innerHeight - pos.anchorTop + 8 : undefined,
+              left: pos.left,
+            }}
+            onMouseEnter={open}
+            onMouseLeave={scheduleClose}
+          >
+            <p className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-2.5 break-words">
+              Top 3 reasons · {label}
+            </p>
+            <div className="flex flex-col gap-2 min-w-0">
+              {(reasons || []).map((reason, i) => (
+                <div key={reason} className="flex items-start gap-2.5 min-w-0">
+                  <span className="size-5 rounded-full bg-[#FCF5F6] text-[#7A0A17] text-[10px] font-bold grid place-items-center shrink-0 mt-0.5">
+                    {i + 1}
+                  </span>
+                  <span className="min-w-0 flex-1 text-[11.5px] font-semibold leading-snug text-[#6B7280] bg-[#F1F2F4] px-2.5 py-1.5 rounded-md break-words whitespace-normal">
+                    {reason}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>,
+          document.body
+        )}
+    </span>
   );
 }
 
 export default function WinLossAnalysisPage() {
   const [month, setMonth] = useState("july");
   const [scope, setScope] = useState("mine");
-  const [selected, setSelected] = useState(["nodeal", "competitor"]);
-  const [extras, setExtras] = useState({ price: "", nodeal: "", timing: "" });
-  const [others, setOthers] = useState("");
-  const [note, setNote] = useState("");
 
   const { sorted, sort, toggle } = useTableSort(SOURCES, { defaultKey: null });
   const { sorted: sortedFunnel, sort: funnelSort, toggle: toggleFunnel } = useTableSort(FUNNEL_ROWS, { defaultKey: null });
-
-  const toggleReason = (id) => {
-    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  };
-
-  const saveReasons = () => {
-    if (!selected.length) {
-      toast.error("Select at least one win / loss reason.");
-      return;
-    }
-    if (!others.trim() || !note.trim()) {
-      toast.error("Others and Brief comment are required.");
-      return;
-    }
-    toast.success("Win / loss reasons saved.");
-  };
 
   return (
     <AppPage
@@ -172,69 +205,58 @@ export default function WinLossAnalysisPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-3 items-stretch">
-        <section className="xl:col-span-3 bg-white border border-black/8 rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex flex-col min-w-0">
-          <h2 className="text-[15px] font-bold text-[#111] mb-3">Win / Loss Analysis — Reasons</h2>
-          <div className="flex flex-col gap-2.5">
-            {REASONS.map((reason) => {
-              const on = selected.includes(reason.id);
-              return (
-                <div key={reason.id} className="min-w-0">
-                  <label className="flex items-start gap-2.5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={on}
-                      onChange={() => toggleReason(reason.id)}
-                      className="size-4 mt-0.5 accent-[#7A0A17] shrink-0"
-                    />
-                    <span className="text-[13px] font-medium text-[#374151] leading-snug">{reason.label}</span>
-                  </label>
-                  {reason.extra === "price" && on && (
-                    <input
-                      value={extras.price}
-                      onChange={(e) => setExtras((f) => ({ ...f, price: e.target.value }))}
-                      placeholder="e.g. Target Price or discount"
-                      className="mt-1.5 ml-[26px] w-[min(100%,280px)] h-9 px-3 rounded-lg border border-black/10 text-[12.5px] outline-none focus:border-[#7A0A17]/40"
-                    />
-                  )}
-                  {reason.extra === "date" && on && (
-                    <input
-                      type="date"
-                      value={extras[reason.id] || ""}
-                      onChange={(e) => setExtras((f) => ({ ...f, [reason.id]: e.target.value }))}
-                      aria-label="Next follow up date"
-                      className="mt-1.5 ml-[26px] w-[min(100%,220px)] h-9 px-3 rounded-lg border border-black/10 text-[12.5px] text-[#6B7280] outline-none focus:border-[#7A0A17]/40"
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-3 mt-4">
-            <Field label="Others" required>
-              <textarea
-                value={others}
-                onChange={(e) => setOthers(e.target.value)}
-                placeholder="Write Comment"
-                rows={3}
-                className="mt-1.5 w-full px-3 py-2 rounded-xl border border-black/10 text-[13px] outline-none resize-none focus:border-[#7A0A17]/40"
-              />
-            </Field>
-            <Field label="Brief Comment / Note" required>
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Write Comment"
-                rows={3}
-                className="mt-1.5 w-full px-3 py-2 rounded-xl border border-black/10 text-[13px] outline-none resize-none focus:border-[#7A0A17]/40"
-              />
-            </Field>
-          </div>
-
-          <div className="flex justify-end mt-4 pt-1">
-            <PrimaryBtn onClick={saveReasons}>Save & Update</PrimaryBtn>
-          </div>
-        </section>
+        <div className="xl:col-span-3 min-w-0">
+          <Panel
+            title="Win / loss by stage"
+            subtitle="Funnel drop-off from P0 New through P6 Post Sale Onboarding"
+          >
+            <div className="overflow-x-auto -mx-1">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-black/8 bg-[#FAFAFB]">
+                    {FUNNEL_COLS.map((col) => (
+                      <SortableTh
+                        key={col.key}
+                        label={col.label}
+                        sortKey={col.key}
+                        sort={funnelSort}
+                        onSort={toggleFunnel}
+                        unsortable={col.unsortable}
+                        className="px-3 py-3 text-[10px] font-extrabold text-[#9CA3AF] uppercase tracking-wide whitespace-nowrap"
+                      />
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedFunnel.map((row) => (
+                    <tr key={row.stage} className="border-b border-black/6 last:border-0 hover:bg-[#FAFAFB]">
+                      <Td strong>{row.stage}</Td>
+                      <Td>{row.name}</Td>
+                      <Td>
+                        <span className="font-semibold text-[#111]">{row.count.toLocaleString("en-IN")}</span>
+                        <span className="text-[#9CA3AF] font-medium"> · {row.convPct}%</span>
+                      </Td>
+                      <Td>
+                        {row.dropped ? (
+                          <span>
+                            <span className="text-[#6B7280]">{row.dropFrom}</span>
+                            <span className="font-semibold text-[#E8395B]"> · {row.lossPct}%</span>
+                          </span>
+                        ) : (
+                          <span className="text-[#9CA3AF]">—</span>
+                        )}
+                      </Td>
+                      <Td>{row.avgTime}</Td>
+                      <Td>
+                        <ReasonsHoverIcon reasons={row.reasons} label={`${row.stage} ${row.name}`} />
+                      </Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Panel>
+        </div>
 
         <section className="xl:col-span-2 bg-white border border-black/8 rounded-2xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex flex-col min-w-0">
           <div className="mb-4">
@@ -259,63 +281,6 @@ export default function WinLossAnalysisPage() {
           </div>
         </section>
       </div>
-
-      <Panel
-        title="Win / loss by stage"
-        subtitle="Funnel drop-off from P0 New through P6 Post Sale Onboarding"
-      >
-        <div className="overflow-x-auto -mx-1">
-          <table className="w-full text-left border-collapse min-w-[920px]">
-            <thead>
-              <tr className="border-b border-black/8 bg-[#FAFAFB]">
-                {FUNNEL_COLS.map((col) => (
-                  <SortableTh
-                    key={col.key}
-                    label={col.label}
-                    sortKey={col.key}
-                    sort={funnelSort}
-                    onSort={toggleFunnel}
-                    unsortable={col.unsortable}
-                    className="px-4 py-3 text-[10px] font-extrabold text-[#9CA3AF] uppercase tracking-wide whitespace-nowrap"
-                  />
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sortedFunnel.map((row) => (
-                <tr key={row.stage} className="border-b border-black/6 last:border-0 hover:bg-[#FAFAFB]">
-                  <Td strong>{row.stage}</Td>
-                  <Td>{row.name}</Td>
-                  <Td>
-                    <span className="font-semibold text-[#111]">{row.count.toLocaleString("en-IN")}</span>
-                    <span className="text-[#9CA3AF] font-medium"> · {row.convPct}%</span>
-                  </Td>
-                  <Td>
-                    {row.dropped ? (
-                      <span>
-                        <span className="text-[#6B7280]">{row.dropFrom}</span>
-                        <span className="font-semibold text-[#E8395B]"> · {row.lossPct}%</span>
-                      </span>
-                    ) : (
-                      <span className="text-[#9CA3AF]">—</span>
-                    )}
-                  </Td>
-                  <Td>{row.avgTime}</Td>
-                  <Td>
-                    <div className="flex flex-wrap gap-1.5">
-                      {row.reasons.map((reason) => (
-                        <StatusPill key={reason} tone="gray">
-                          {reason}
-                        </StatusPill>
-                      ))}
-                    </div>
-                  </Td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Panel>
 
       <Panel
         title="Win / loss by source"
@@ -344,7 +309,7 @@ export default function WinLossAnalysisPage() {
         footnote="Instagram leads carry a Low Intent warning at entry, and the numbers here are why (BRD 5.1.1)."
       >
         <div className="overflow-x-auto -mx-1">
-          <table className="w-full text-left border-collapse min-w-[860px]">
+          <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-black/8 bg-[#FAFAFB]">
                 {SOURCE_COLS.map((col) => (
@@ -366,9 +331,9 @@ export default function WinLossAnalysisPage() {
                   <Td>{row.leads}</Td>
                   <Td>{row.closed}</Td>
                   <Td>{row.roi}</Td>
-                  <td className="px-4 py-3">
+                  <Td>
                     <RateBar pct={row.rate} />
-                  </td>
+                  </Td>
                   <Td strong>{row.revenue}</Td>
                   <Td muted={row.cost === "—"}>{row.cost}</Td>
                   <Td>{row.loss}</Td>
