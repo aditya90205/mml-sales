@@ -203,20 +203,20 @@ export default function CreateGroupPage() {
         <div className="flex flex-col gap-2 w-full">
           <p className="text-[14px] text-[#6B7280]">Describe who you're looking for</p>
           <div className="flex items-center gap-3 w-full min-w-0">
-            <div className="flex-1 min-w-0 flex items-center gap-2.5 h-12 border border-black/12 rounded-lg px-4 bg-white">
+            <div className="flex-1 min-w-0 flex items-center gap-2.5 h-11 border border-black/12 rounded-xl px-4 bg-white">
               <Sparkles size={16} className="text-[#F59E0B] shrink-0" />
               <input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && runBuildQuery()}
                 placeholder="e.g. girls from Rohini who studied at IIM"
-                className="flex-1 min-w-0 bg-transparent text-[15px] text-[#111] placeholder:text-[#9CA3AF] outline-none"
+                className="flex-1 min-w-0 bg-transparent text-[14px] text-[#111] placeholder:text-[#9CA3AF] outline-none"
               />
             </div>
             <button
               type="button"
               onClick={runBuildQuery}
-              className="h-12 px-6 rounded-lg bg-[#7A0A17] text-white text-[14px] font-bold hover:bg-[#640712] transition-colors shrink-0"
+              className="inline-flex items-center justify-center h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors shrink-0"
             >
               Build query
             </button>
@@ -247,7 +247,7 @@ export default function CreateGroupPage() {
               <button
                 type="button"
                 onClick={runManualQuery}
-                className="h-9 px-4 rounded-lg bg-white border border-[#7A0A17]/30 text-[#7A0A17] text-[13px] font-bold hover:bg-[#FCF5F6] transition-colors shrink-0"
+                className="inline-flex items-center justify-center h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors shrink-0"
               >
                 Run manual query
               </button>
@@ -259,6 +259,19 @@ export default function CreateGroupPage() {
             >
               Clear all
             </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="shrink-0 text-[14px] font-semibold text-[#111] whitespace-nowrap">
+              Group Name <span className="text-[#E8395B]">*</span>
+            </span>
+            <input
+              value={groupName}
+              onChange={(e) => setGroupName(e.target.value)}
+              placeholder="e.g. Female IIM Alumni"
+              aria-label="Group name"
+              className="h-11 w-[520px] max-w-full shrink-0 border border-black/12 rounded-lg px-3.5 text-[14px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40"
+            />
           </div>
 
           <div className="flex flex-col gap-3 items-start">
@@ -303,7 +316,13 @@ export default function CreateGroupPage() {
                 <button
                   type="button"
                   disabled={results.length === 0}
-                  onClick={() => setSaveOpen(true)}
+                  onClick={() => {
+                    if (groupName.trim()) {
+                      handleSaveGroup();
+                    } else {
+                      setSaveOpen(true);
+                    }
+                  }}
                   className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Save Group

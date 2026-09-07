@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Bell, Mail, MessageSquare, Paperclip, Plus } from "lucide-react";
 import { toast } from "react-toastify";
 import ChannelTemplateModal from "../components/campaign/ChannelTemplateModal.jsx";
+import CreateGroupModal from "../components/campaign/CreateGroupModal.jsx";
+import { readSavedGroups } from "../utils/clientGroups.js";
 
 const CHANNELS = [
   { key: "email", label: "Email", icon: Mail },
@@ -51,12 +53,20 @@ export default function CreateCampaignPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [group, setGroup] = useState("");
+  const [groupOptions, setGroupOptions] = useState(() => readSavedGroups());
   const [country, setCountry] = useState("");
   const [startMode, setStartMode] = useState("Manual");
   const [stopMode, setStopMode] = useState("Manual");
   const [maxRetry, setMaxRetry] = useState("03");
   const [selectedChannels, setSelectedChannels] = useState({ email: true, whatsapp: true, push: false, sms: true });
   const [activeModal, setActiveModal] = useState(null);
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
+
+  const groupSelectOptions = useMemo(() => {
+    const names = groupOptions.map((g) => g.name);
+    const extras = ["Common Pool", "Doctors", "P3 Pipeline", "New Opportunity"].filter((n) => !names.includes(n));
+    return [...names, ...extras];
+  }, [groupOptions]);
 
   const toggleChannel = (key) => {
     setSelectedChannels((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -69,6 +79,11 @@ export default function CreateCampaignPage() {
     }
     toast.success(`Campaign "${name}" saved.`);
     navigate("/campaign/management");
+  };
+
+  const handleGroupSaved = (created) => {
+    setGroupOptions(readSavedGroups());
+    setGroup(created.name);
   };
 
   return (
@@ -138,15 +153,16 @@ export default function CreateCampaignPage() {
                   className="w-full h-11 border border-black/12 rounded-xl px-3.5 text-[13px] text-[#111] outline-none bg-white"
                 >
                   <option value="">Select Group</option>
-                  <option>Common Pool</option>
-                  <option>Doctors</option>
-                  <option>P3 Pipeline</option>
-                  <option>New Opportunity</option>
+                  {groupSelectOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
                 </select>
               </div>
               <button
                 type="button"
-                onClick={() => toast.success("Group created.")}
+                onClick={() => setCreateGroupOpen(true)}
                 className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-white border border-[#7A0A17]/30 text-[13px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors shrink-0"
               >
                 <Plus size={14} /> Create
@@ -275,6 +291,11 @@ export default function CreateCampaignPage() {
       </div>
 
       <ChannelTemplateModal open={Boolean(activeModal)} onClose={() => setActiveModal(null)} channel={activeModal || "email"} />
+      <CreateGroupModal
+        open={createGroupOpen}
+        onClose={() => setCreateGroupOpen(false)}
+        onSaved={handleGroupSaved}
+      />
     </div>
   );
 }
