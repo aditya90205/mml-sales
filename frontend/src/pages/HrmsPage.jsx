@@ -41,7 +41,6 @@ import {
   Hand,
   CalendarCheck,
   CalendarPlus,
-  LogOut,
 } from "lucide-react";
 import { USER } from "../components/layout/TopBar";
 import Modal from "../components/ui/Modal";
@@ -56,6 +55,7 @@ import {
   TrainingViewModal,
 } from "../components/hrms/HrmsEntityModals.jsx";
 import conductReviewIcon from "../assets/conduct-review.png";
+import ResignationSection from "../components/hrms/ResignationSection.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import yellowLoopIcon from "../assets/yellow-loop.png";
 import redBackIcon from "../assets/red-back.png";
@@ -104,38 +104,8 @@ const HRMS_TABS = [
   "Documents",
   "Asset",
   "Awards & Contest",
-  "Exit",
+  "Resignation",
   "Complaint & Warning",
-];
-
-const INITIAL_EXIT_RECORDS = [
-  {
-    id: 1,
-    type: "Resignation",
-    raisedOn: "12 Jul 2026",
-    lastWorkingDay: "11 Aug 2026",
-    status: "In progress",
-    clearedBy: "HR · Komal Mehra",
-    note: "Notice period serving. Asset return pending for laptop.",
-  },
-  {
-    id: 2,
-    type: "Exit interview",
-    raisedOn: "18 Jul 2026",
-    lastWorkingDay: "11 Aug 2026",
-    status: "Scheduled",
-    clearedBy: "People Ops",
-    note: "Interview slotted for 05 Aug 2026 · 3:00 PM.",
-  },
-  {
-    id: 3,
-    type: "Clearance checklist",
-    raisedOn: "12 Jul 2026",
-    lastWorkingDay: "11 Aug 2026",
-    status: "3 of 8 done",
-    clearedBy: "IT · Finance · Admin",
-    note: "Email access, ID card and final settlement still open.",
-  },
 ];
 
 const INITIAL_COMPLAINTS_WARNINGS = [
@@ -2657,75 +2627,16 @@ export default function HrmsPage() {
           </div>
         )}
 
-        {/* EXIT TAB */}
-        {activeTab === "Exit" && (
-          <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { label: "Exit status", value: "In progress", sub: "Notice period active" },
-                { label: "Last working day", value: "11 Aug 2026", sub: "As per resignation" },
-                { label: "Clearance", value: "3 of 8", sub: "Checklist items done" },
-              ].map((card) => (
-                <div key={card.label} className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
-                  <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">{card.label}</p>
-                  <p className="text-xl font-extrabold text-[#111827] mt-1.5">{card.value}</p>
-                  <p className="text-[12.5px] text-[#6B7280] mt-1">{card.sub}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <div className="flex items-center gap-2.5">
-                  <span className="size-9 rounded-full bg-[#FCF5F6] text-[#7A0A17] grid place-items-center">
-                    <LogOut size={16} />
-                  </span>
-                  <div>
-                    <h3 className="text-sm font-extrabold text-[#111827]">Exit process</h3>
-                    <p className="text-[12.5px] text-[#6B7280]">Resignation, interview and clearance tracker</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Exit request form opens here.")}
-                  className="h-9 px-3.5 rounded-xl bg-[#7A0A17] text-white text-xs font-bold hover:bg-[#600712] transition-colors"
-                >
-                  Raise exit request
-                </button>
-              </div>
-
-              <div className="overflow-x-auto border border-black/8 rounded-xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-[#FAFAFB] border-b border-black/8">
-                      {["#", "Type", "Raised on", "Last working day", "Status", "Owner", "Note"].map((h) => (
-                        <th key={h} className="px-4 py-3 text-[11px] font-bold text-[#6B7280] whitespace-nowrap">
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {INITIAL_EXIT_RECORDS.map((row) => (
-                      <tr key={row.id} className="border-b border-black/5 last:border-b-0">
-                        <td className="px-4 py-3 text-[#6B7280]">{row.id}</td>
-                        <td className="px-4 py-3 font-bold text-[#111827] whitespace-nowrap">{row.type}</td>
-                        <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{row.raisedOn}</td>
-                        <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{row.lastWorkingDay}</td>
-                        <td className="px-4 py-3">
-                          <span className="inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FEF3C7] text-[#D97706] border border-[#D97706]/20">
-                            {row.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-[#374151] whitespace-nowrap">{row.clearedBy}</td>
-                        <td className="px-4 py-3 text-[#6B7280] min-w-[220px]">{row.note}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+        {/* EXIT / RESIGNATION TAB */}
+        {activeTab === "Resignation" && (
+          <ResignationSection
+            employee={{
+              name: USER.name,
+              id: "MML-E-1001",
+              department: "Sales",
+              designation: USER.role,
+            }}
+          />
         )}
 
         {/* COMPLAINT & WARNING TAB */}
@@ -2828,7 +2739,7 @@ export default function HrmsPage() {
         )}
 
         {/* Placeholder View for remaining tabs */}
-        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset", "Exit", "Complaint & Warning"].includes(activeTab) && (
+        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset", "Resignation", "Complaint & Warning"].includes(activeTab) && (
           <div className="bg-white border border-black/8 rounded-2xl p-12 text-center my-6 shadow-sm">
             <div className="size-16 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
               <FileText size={28} />
