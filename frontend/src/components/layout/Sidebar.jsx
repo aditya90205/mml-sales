@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -32,6 +32,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   return (
     <aside
@@ -69,6 +70,17 @@ export default function Sidebar() {
               to={item.to}
               end={item.to === "/dashboard"}
               aria-label={item.label}
+              onClick={(e) => {
+                // Deal/add/move views live on the same /pipeline route as the board.
+                // Re-clicking the sidebar item should exit those sub-views (like Back).
+                if (item.to === "/pipeline" && location.pathname === "/pipeline") {
+                  e.preventDefault();
+                  navigate("/pipeline", {
+                    replace: true,
+                    state: { resetPipeline: Date.now() },
+                  });
+                }
+              }}
               className={`relative flex items-center h-9 mx-2.5 rounded-lg shrink-0 transition-colors duration-150 ${
                 isActive
                   ? "bg-white/18 text-white"

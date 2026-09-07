@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   AlarmClock,
   ArrowRight,
@@ -727,6 +727,8 @@ function findLeadById(leadId) {
 
 export default function PipelineBoard() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const deepLinkedLead = useMemo(() => findLeadById(searchParams.get("openLead")), []); // eslint-disable-line react-hooks/exhaustive-deps
   const deepLinkedTab = useMemo(() => searchParams.get("tab") || "overview", []); // eslint-disable-line react-hooks/exhaustive-deps
   const [search, setSearch]             = useState("");
@@ -752,6 +754,14 @@ export default function PipelineBoard() {
     }, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Sidebar "Sales Pipeline" re-click while already on /pipeline (e.g. deal detail).
+  useEffect(() => {
+    if (!location.state?.resetPipeline) return;
+    setSubView(null);
+    setActiveLead(null);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.state?.resetPipeline]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddProspect = (newLead) => {
     const leadWithId = { id: `p0-${Date.now()}`, ...newLead };
