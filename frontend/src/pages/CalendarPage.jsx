@@ -9,6 +9,8 @@ import {
   CheckSquare,
   Users2,
   Pencil,
+  CalendarDays,
+  CircleDot,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../components/ui/Modal";
@@ -1215,25 +1217,30 @@ function WeekDayGrid({ days, eventsFor, onEventClick, dragOverCell, setDragOverC
           </div>
           {days.map((d) => {
             const dayEvents = eventsFor(d);
-            const taskCount = dayEvents.filter((e) => e.category === "task").length;
-            const meetingCount = dayEvents.filter((e) => e.category === "meeting").length;
+            const counts = {
+              event: dayEvents.filter((e) => e.category === "event").length,
+              task: dayEvents.filter((e) => e.category === "task").length,
+              meeting: dayEvents.filter((e) => e.category === "meeting").length,
+              other: dayEvents.filter((e) => e.category === "other").length,
+            };
+            const chips = [
+              { id: "event", count: counts.event, label: counts.event === 1 ? "Event" : "Events", Icon: CalendarDays },
+              { id: "task", count: counts.task, label: "Tasks", Icon: CheckSquare },
+              { id: "meeting", count: counts.meeting, label: counts.meeting === 1 ? "Meeting" : "Meetings", Icon: Users2 },
+              { id: "other", count: counts.other, label: "Others", Icon: CircleDot },
+            ];
             return (
               <div key={d.toISOString()} className="flex items-center justify-center gap-1.5 py-2 border-r border-black/8 last:border-r-0 flex-wrap px-1">
-                {taskCount > 0 && (
-                  <span
-                    className="inline-flex items-center gap-1 text-[10.5px] font-semibold px-2 py-1 rounded-md"
-                    style={{ color: CATEGORIES.task.text, backgroundColor: CATEGORIES.task.bg }}
-                  >
-                    <CheckSquare size={11} /> {taskCount} Tasks
-                  </span>
-                )}
-                {meetingCount > 0 && (
-                  <span
-                    className="inline-flex items-center gap-1 text-[10.5px] font-semibold px-2 py-1 rounded-md"
-                    style={{ color: CATEGORIES.meeting.text, backgroundColor: CATEGORIES.meeting.bg }}
-                  >
-                    <Users2 size={11} /> {meetingCount} Meeting{meetingCount > 1 ? "s" : ""}
-                  </span>
+                {chips.map(({ id, count, label, Icon }) =>
+                  count > 0 ? (
+                    <span
+                      key={id}
+                      className="inline-flex items-center gap-1 text-[10.5px] font-semibold px-2 py-1 rounded-md"
+                      style={{ color: CATEGORIES[id].text, backgroundColor: CATEGORIES[id].bg }}
+                    >
+                      <Icon size={11} /> {count} {label}
+                    </span>
+                  ) : null
                 )}
               </div>
             );
