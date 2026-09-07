@@ -47,6 +47,13 @@ import { USER } from "../components/layout/TopBar";
 import Modal from "../components/ui/Modal";
 import TimesheetDetailsModal from "../components/hrms/TimesheetDetailsModal";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
+import {
+  ConfirmDeleteModal,
+  GoalEditModal,
+  GoalViewModal,
+  TrainingEditModal,
+  TrainingViewModal,
+} from "../components/hrms/HrmsEntityModals.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import yellowLoopIcon from "../assets/yellow-loop.png";
 import redBackIcon from "../assets/red-back.png";
@@ -1017,6 +1024,10 @@ export default function HrmsPage() {
   const [addManualRowOpen, setAddManualRowOpen] = useState(false);
 
   // Trainings / Goals & Reviews / Documents / Asset tab state
+  const [trainings, setTrainings] = useState(INITIAL_TRAININGS);
+  const [goals, setGoals] = useState(INITIAL_GOALS);
+  const [trainingModal, setTrainingModal] = useState(null); // { mode: 'view'|'edit'|'delete', item }
+  const [goalModal, setGoalModal] = useState(null); // { mode: 'view'|'edit'|'delete', item }
   const [searchTraining, setSearchTraining] = useState("");
   const [trainingPage, setTrainingPage] = useState(1);
   const [searchGoal, setSearchGoal] = useState("");
@@ -1124,7 +1135,7 @@ export default function HrmsPage() {
     return true;
   };
 
-  const filteredTrainings = INITIAL_TRAININGS.filter((t) =>
+  const filteredTrainings = trainings.filter((t) =>
     t.program.toLowerCase().includes(searchTraining.toLowerCase())
   );
   const { sorted: sortedTrainings, sort: trainingSort, toggle: toggleTrainingSort } = useTableSort(filteredTrainings, {
@@ -1137,11 +1148,39 @@ export default function HrmsPage() {
     trainingPage * trainingPageSize
   );
 
-  const filteredGoals = INITIAL_GOALS.filter((g) => g.title.toLowerCase().includes(searchGoal.toLowerCase()));
+  const filteredGoals = goals.filter((g) => g.title.toLowerCase().includes(searchGoal.toLowerCase()));
   const { sorted: sortedGoals, sort: goalSort, toggle: toggleGoalSort } = useTableSort(filteredGoals, { defaultKey: "title" });
   const goalPageSize = 6;
   const goalTotalPages = Math.max(1, Math.ceil(filteredGoals.length / goalPageSize));
   const pagedGoals = sortedGoals.slice((goalPage - 1) * goalPageSize, goalPage * goalPageSize);
+
+  const handleSaveTraining = (updated) => {
+    setTrainings((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    setTrainingModal(null);
+    toast.success("Training updated successfully.");
+  };
+
+  const handleDeleteTraining = () => {
+    const item = trainingModal?.item;
+    if (!item) return;
+    setTrainings((prev) => prev.filter((t) => t.id !== item.id));
+    setTrainingModal(null);
+    toast.success(`“${item.program}” deleted.`);
+  };
+
+  const handleSaveGoal = (updated) => {
+    setGoals((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
+    setGoalModal(null);
+    toast.success("Goal updated successfully.");
+  };
+
+  const handleDeleteGoal = () => {
+    const item = goalModal?.item;
+    if (!item) return;
+    setGoals((prev) => prev.filter((g) => g.id !== item.id));
+    setGoalModal(null);
+    toast.success(`“${item.title}” deleted.`);
+  };
 
   const filteredDocuments = INITIAL_DOCUMENTS.filter((d) =>
     d.title.toLowerCase().includes(searchDocument.toLowerCase())
@@ -2267,22 +2306,28 @@ export default function HrmsPage() {
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
-                              onClick={() => toast.info(`Viewing ${t.program}`)}
+                              onClick={() => setTrainingModal({ mode: "view", item: t })}
                               className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center"
+                              title="View"
+                              aria-label={`View ${t.program}`}
                             >
                               <Eye size={13} />
                             </button>
                             <button
                               type="button"
-                              onClick={() => toast.info(`Editing ${t.program}`)}
+                              onClick={() => setTrainingModal({ mode: "edit", item: t })}
                               className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center"
+                              title="Edit"
+                              aria-label={`Edit ${t.program}`}
                             >
                               <Edit size={13} />
                             </button>
                             <button
                               type="button"
-                              onClick={() => toast.info(`Removing ${t.program}`)}
+                              onClick={() => setTrainingModal({ mode: "delete", item: t })}
                               className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center"
+                              title="Delete"
+                              aria-label={`Delete ${t.program}`}
                             >
                               <Trash2 size={13} />
                             </button>
@@ -2373,15 +2418,19 @@ export default function HrmsPage() {
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
-                                onClick={() => toast.info(`Viewing ${g.title}`)}
+                                onClick={() => setGoalModal({ mode: "view", item: g })}
                                 className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center"
+                                title="View"
+                                aria-label={`View ${g.title}`}
                               >
                                 <Eye size={13} />
                               </button>
                               <button
                                 type="button"
-                                onClick={() => toast.info(`Editing ${g.title}`)}
+                                onClick={() => setGoalModal({ mode: "edit", item: g })}
                                 className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center"
+                                title="Edit"
+                                aria-label={`Edit ${g.title}`}
                               >
                                 <Edit size={13} />
                               </button>
@@ -2389,13 +2438,17 @@ export default function HrmsPage() {
                                 type="button"
                                 onClick={() => toast.info(`Viewing progress history for ${g.title}`)}
                                 className="size-7 rounded-lg bg-[#EEF0FE] text-[#6366F1] hover:bg-[#DCE0FC] grid place-items-center"
+                                title="Progress graph"
+                                aria-label={`Progress graph for ${g.title}`}
                               >
                                 <BarChart3 size={13} />
                               </button>
                               <button
                                 type="button"
-                                onClick={() => toast.info(`Removing ${g.title}`)}
+                                onClick={() => setGoalModal({ mode: "delete", item: g })}
                                 className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center"
+                                title="Delete"
+                                aria-label={`Delete ${g.title}`}
                               >
                                 <Trash2 size={13} />
                               </button>
@@ -3091,6 +3144,44 @@ export default function HrmsPage() {
           id: "EMP00116",
           avatar: USER.avatar,
         }}
+      />
+
+      <TrainingViewModal
+        open={trainingModal?.mode === "view"}
+        training={trainingModal?.item}
+        onClose={() => setTrainingModal(null)}
+      />
+      <TrainingEditModal
+        open={trainingModal?.mode === "edit"}
+        training={trainingModal?.item}
+        onClose={() => setTrainingModal(null)}
+        onSave={handleSaveTraining}
+      />
+      <ConfirmDeleteModal
+        open={trainingModal?.mode === "delete"}
+        entityLabel="training"
+        itemName={trainingModal?.item?.program}
+        onClose={() => setTrainingModal(null)}
+        onConfirm={handleDeleteTraining}
+      />
+
+      <GoalViewModal
+        open={goalModal?.mode === "view"}
+        goal={goalModal?.item}
+        onClose={() => setGoalModal(null)}
+      />
+      <GoalEditModal
+        open={goalModal?.mode === "edit"}
+        goal={goalModal?.item}
+        onClose={() => setGoalModal(null)}
+        onSave={handleSaveGoal}
+      />
+      <ConfirmDeleteModal
+        open={goalModal?.mode === "delete"}
+        entityLabel="goal"
+        itemName={goalModal?.item?.title}
+        onClose={() => setGoalModal(null)}
+        onConfirm={handleDeleteGoal}
       />
 
       {/* 7. Add Expense Modal */}
