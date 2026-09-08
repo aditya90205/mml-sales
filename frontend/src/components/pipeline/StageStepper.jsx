@@ -5,7 +5,7 @@ const STAGES = [
   { id: "P3", name: "Video Call/Visit",        color: "#7C3AED" },
   { id: "P4", name: "Negotiation",             color: "#6366F1" },
   { id: "P5", name: "Closed - Payment Done",   color: "#16A34A" },
-  { id: "P6", name: "Handover/Onboarding",     color: "#EAB308" },
+  { id: "P6", name: "Handover to services",   color: "#EAB308" },
 ];
 
 // Name text only — left accent keeps each stage's pipeline color.

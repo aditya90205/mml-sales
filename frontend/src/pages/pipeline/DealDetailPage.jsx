@@ -20,6 +20,9 @@ import { toast } from "react-toastify";
 // TopBar is provided by Layout
 import StageStepper from "../../components/pipeline/StageStepper";
 import WinLossReasonsModal from "../../components/pipeline/WinLossReasonsModal";
+import BranchManagerAssignedModal, {
+  DUMMY_MANAGER,
+} from "../../components/pipeline/BranchManagerAssignedModal";
 import DealTabs from "../../components/pipeline/DealTabs";
 import EmailActivityButton from "../../components/common/EmailActivityButton.jsx";
 import SendMessageModal from "../../components/common/SendMessageModal.jsx";
@@ -44,7 +47,7 @@ const BASE_TABS = [
   { key: "visits",    label: "Video Call / Visits(P3)" },
   { key: "package",   label: "Negotiation / Package & Quote (P4)" },
   { key: "payments",  label: "Payments (P5)" },
-  { key: "p6",        label: "Handover/Onboarding (P6)" },
+  { key: "p6",        label: "Handover to services (P6)" },
   { key: "notes",     label: "Notes & RM Flags" },
   { key: "audit",     label: "Audit" },
 ];
@@ -89,7 +92,7 @@ const STAGE_LABELS = {
   P3: "P3 Visit / Video",
   P4: "P4 Negotiation",
   P5: "P5 Payment",
-  P6: "P6 Handover",
+  P6: "P6 Handover to services",
 };
 
 const NEXT_STAGE = {
@@ -147,6 +150,8 @@ export default function DealDetailPage({
   const [isPremium, setIsPremium] = useState(() => Boolean(lead?.starred));
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
+  const [serviceAssignOpen, setServiceAssignOpen] = useState(false);
+  const [serviceAssigned, setServiceAssigned] = useState(null);
   const [savedDetails, setSavedDetails] = useState(null);
   const lateTabsUnlocked = atLeast(currentStage, "P5");
   const nextStage = NEXT_STAGE[currentStage];
@@ -240,6 +245,14 @@ export default function DealDetailPage({
     };
   }, [lead, currentStage, winLossOverride, isPremium, savedDetails]);
 
+  const openHandoverSuccess = () => {
+    setServiceAssigned({
+      manager: DUMMY_MANAGER.name,
+      branch: DUMMY_MANAGER.branch,
+    });
+    setServiceAssignOpen(true);
+  };
+
   const openWinLossModal = (mode) => setWinLossModal({ open: true, mode });
 
   const handleWinLossSave = ({ reasons, briefNote, mode }) => {
@@ -309,6 +322,8 @@ export default function DealDetailPage({
           <P6ChecklistTab
             locked={!lateTabsUnlocked}
             allUnchecked={!atLeast(currentStage, "P5")}
+            onHandoverToServices={openHandoverSuccess}
+            serviceAssigned={serviceAssigned}
           />
         );
       default:
@@ -332,10 +347,19 @@ export default function DealDetailPage({
                     {LOCK_NOTES[currentStage] || "Complete the required steps for this stage before advancing."}
                   </span>
                 </>
+              ) : serviceAssigned ? (
+                <>
+                  <span className="font-bold">Service manager is assigned.</span>{" "}
+                  <span className="text-[#6B7280]">
+                    {serviceAssigned.manager} · {serviceAssigned.branch}. Deal handed over to services.
+                  </span>
+                </>
               ) : (
                 <>
-                  <span className="font-bold">Onboarding complete.</span>{" "}
-                  <span className="text-[#6B7280]">This deal is at P6 handover. No further pipeline move is required.</span>
+                  <span className="font-bold">Handover to services.</span>{" "}
+                  <span className="text-[#6B7280]">
+                    P6 checklist is complete. Assign a service manager to finish handover.
+                  </span>
                 </>
               )}
             </p>
@@ -372,13 +396,22 @@ export default function DealDetailPage({
               Move to Cold &amp; Hold
               <ChevronDown size={14} className="text-[#9CA3AF]" />
             </button>
-            {nextStage && (
+            {nextStage ? (
               <button
                 type="button"
                 onClick={handleConfirmMove}
                 className="inline-flex items-center gap-1.5 h-[38px] px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors"
               >
                 Move to {nextStage} <ArrowRight size={14} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={openHandoverSuccess}
+                className="inline-flex items-center gap-1.5 h-[38px] px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors"
+              >
+                Handover to services
+                <ArrowRight size={14} />
               </button>
             )}
           </div>
@@ -548,6 +581,13 @@ export default function DealDetailPage({
         mode={winLossModal.mode}
         onClose={() => setWinLossModal((prev) => ({ ...prev, open: false }))}
         onSave={handleWinLossSave}
+      />
+
+      <BranchManagerAssignedModal
+        open={serviceAssignOpen}
+        onClose={() => setServiceAssignOpen(false)}
+        clientName={deal.name}
+        dealCode={deal.dealCode}
       />
 
       <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
