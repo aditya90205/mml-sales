@@ -84,6 +84,15 @@ function toDateInput(d) {
   const date = d instanceof Date ? d : new Date(d);
   return date.toISOString().slice(0, 10);
 }
+function isHttpUrl(value) {
+  return typeof value === "string" && /^https?:\/\//i.test(value.trim());
+}
+function getMeetingJoinUrl(meta = {}) {
+  for (const candidate of [meta.meetingLink, meta.link]) {
+    if (isHttpUrl(candidate)) return candidate.trim();
+  }
+  return null;
+}
 
 const PRIORITY_STYLES = {
   Critical: { color: "#E8395B", bg: "#FDECEE" },
@@ -239,7 +248,8 @@ const INITIAL_EVENTS = [
     dueDate: addDays(startOfWeek(ANCHOR), 1),
   }),
   mk(2, 9, 11, "Home Visit Briefing", "meeting", {
-    link: "Join on Google Meet",
+    link: "https://meet.google.com/mml-home-visit",
+    meetingLink: "https://meet.google.com/mml-home-visit",
     assignees: ["Aditya Sharma"],
     stage: "Review",
     description: "Weekly sync on scheduled home visits and capture checklist readiness.",
@@ -253,7 +263,8 @@ const INITIAL_EVENTS = [
     description: "Follow up on the outstanding token payment and share the payment link.",
   }),
   mk(2, 14, 16, "Profile Curation Review", "meeting", {
-    link: "Join on Google Meet",
+    link: "https://meet.google.com/mml-profile-curation",
+    meetingLink: "https://meet.google.com/mml-profile-curation",
     assignees: ["Sana Iqbal"],
     description: "Afternoon sync on profile curation blockers for Exclusive packages.",
   }),
@@ -267,7 +278,8 @@ const INITIAL_EVENTS = [
     assignees: ["Neha Kapoor"],
   }),
   mk(3, 10, 12, "Community Campaign Sync", "meeting", {
-    link: "Join on Google Meet",
+    link: "https://meet.google.com/mml-campaign-sync",
+    meetingLink: "https://meet.google.com/mml-campaign-sync",
     assignees: ["Aditya Sharma", "Sana Iqbal"],
     priority: "High",
     stage: "In Progress",
@@ -307,7 +319,8 @@ const INITIAL_EVENTS = [
     description: "Host the Meet the Parents evening for shortlisted families in the main hall.",
   }),
   mk(4, 13, 15, "Office Visit — Malhotra Family", "meeting", {
-    link: "Join on Google Meet",
+    link: "https://meet.google.com/mml-malhotra",
+    meetingLink: "https://meet.google.com/mml-malhotra",
     clientRelated: true,
     client: "Malhotra Family",
     assignees: ["Aditya Sharma"],
@@ -325,7 +338,8 @@ const INITIAL_EVENTS = [
     description: "Review feedback forms submitted after last week’s profile shares.",
   }),
   mk(5, 11, 13, "Community Campaign Sync", "meeting", {
-    link: "Join on Google Meet",
+    link: "https://meet.google.com/mml-campaign-fri",
+    meetingLink: "https://meet.google.com/mml-campaign-fri",
     assignees: ["Sana Iqbal"],
     priority: "High",
   }),
@@ -389,11 +403,19 @@ function CategoryChip({ id, checked, onToggle, count }) {
 
 function EventBlock({ ev, onClick, dense }) {
   const cat = CATEGORIES[ev.category] || CATEGORIES.other;
+  const meetingUrl = ev.category === "meeting" ? getMeetingJoinUrl(ev.meta) : null;
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onClick(ev)}
-      className="w-full text-left rounded-lg px-2.5 py-2 hover:brightness-[0.97] transition-[filter] shrink-0"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick(ev);
+        }
+      }}
+      className="w-full text-left rounded-lg px-2.5 py-2 hover:brightness-[0.97] transition-[filter] shrink-0 cursor-pointer"
       style={{ backgroundColor: cat.bg, border: `1px solid ${cat.border}` }}
     >
       {!dense && (
@@ -401,16 +423,23 @@ function EventBlock({ ev, onClick, dense }) {
           {fmtTime(ev.startH)} - {fmtTime(ev.endH)}
         </p>
       )}
+      {!dense && meetingUrl && (
+        <a
+          href={meetingUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="block text-[11px] font-semibold mt-0.5 hover:underline"
+          style={{ color: cat.text }}
+        >
+          Join on Google Meet
+        </a>
+      )}
       <p className="text-[12.5px] font-bold leading-snug mt-0.5" style={{ color: cat.text }}>{ev.title}</p>
       {!dense && ev.meta?.location && (
         <p className="text-[11px] text-[#6B7280] mt-0.5">({ev.meta.location})</p>
       )}
-      {!dense && ev.meta?.link && (
-        <p className="text-[11px] font-semibold mt-1" style={{ color: cat.text }}>
-          {ev.meta.link}
-        </p>
-      )}
-    </button>
+    </div>
   );
 }
 
@@ -1601,6 +1630,7 @@ function EventListView({ events, onEventClick, onEdit, onDelete }) {
                 const priorityStyle = PRIORITY_STYLES[priority] || PRIORITY_STYLES.Medium;
                 const assignees = Array.isArray(ev.meta?.assignees) ? ev.meta.assignees : [];
                 const isToday = sameDay(ev.date, TODAY);
+                const meetingUrl = ev.category === "meeting" ? getMeetingJoinUrl(ev.meta) : null;
                 return (
                   <tr
                     key={ev.id}
@@ -1632,8 +1662,23 @@ function EventListView({ events, onEventClick, onEdit, onDelete }) {
                         {isToday ? " · Today" : ""}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-[12px] text-[#6B7280] whitespace-nowrap">
-                      {fmtTime(ev.startH)} – {fmtTime(ev.endH)}
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[12px] text-[#6B7280]">
+                          {fmtTime(ev.startH)} – {fmtTime(ev.endH)}
+                        </span>
+                        {meetingUrl ? (
+                          <a
+                            href={meetingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[11px] font-semibold text-[#41703D] hover:underline"
+                          >
+                            Join Google Meet
+                          </a>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <span
