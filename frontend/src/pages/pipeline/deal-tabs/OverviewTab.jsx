@@ -48,7 +48,13 @@ const AI_ACTIONS = [
   { label: "Activity", icon: Activity,  color: "#E8395B" },
 ];
 
-const AI_TAGS = ["Summary of the month", "Tomorrow Meetings", "Yesterday Feedbacks"];
+/** Conversation starter tabs on Overview (chip style — different from Dashboard rows). */
+const AI_CONVERSATION_TABS = [
+  "Today's Priority",
+  "Summary of the month",
+  "Tomorrow Meetings",
+  "Yesterday Feedbacks",
+];
 
 /** Same priority bullets + hyperlinks as the dashboard personal assistant. */
 const PRIORITY_ITEMS = [
@@ -346,7 +352,10 @@ function DealDetailsCard({ deal, onPremiumChange }) {
 
 function PersonalAssistantCard() {
   const [message, setMessage] = useState("");
-  const [tags, setTags] = useState(AI_TAGS);
+  const [tabs, setTabs] = useState(AI_CONVERSATION_TABS);
+  const [activeTab, setActiveTab] = useState("Today's Priority");
+
+  const contentHeading = tabs.includes(activeTab) ? activeTab : tabs[0] || "Today's Priority";
 
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col gap-3.5">
@@ -371,22 +380,46 @@ function PersonalAssistantCard() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              className="inline-flex items-center gap-2 text-[11px] text-[#4B5563] bg-[#F1F2F4] rounded-lg px-2.5 py-1.5"
-            >
-              {tag}
-              <button
-                type="button"
-                onClick={() => setTags((t) => t.filter((x) => x !== tag))}
-                className="text-[#6B7280] hover:text-[#111]"
-                aria-label={`Remove ${tag}`}
+          {tabs.map((tab) => {
+            const isActive = tab === activeTab;
+            return (
+              <span
+                key={tab}
+                role="button"
+                tabIndex={0}
+                onClick={() => setActiveTab(tab)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setActiveTab(tab);
+                  }
+                }}
+                aria-pressed={isActive}
+                className={`inline-flex items-center gap-2 text-[11px] rounded-lg px-2.5 py-1.5 cursor-pointer transition-colors border ${
+                  isActive
+                    ? "bg-[#FDF2F3] border-[#7A0A17]/40 text-[#7A0A17] font-semibold shadow-[inset_0_-2px_0_0_#7A0A17]"
+                    : "text-[#4B5563] bg-[#F1F2F4] border-transparent hover:bg-[#E9EAEC]"
+                }`}
               >
-                <X size={11} />
-              </button>
-            </span>
-          ))}
+                {tab}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTabs((prev) => {
+                      const next = prev.filter((x) => x !== tab);
+                      if (tab === activeTab && next.length) setActiveTab(next[0]);
+                      return next;
+                    });
+                  }}
+                  className={`hover:opacity-80 ${isActive ? "text-[#7A0A17]" : "text-[#6B7280] hover:text-[#111]"}`}
+                  aria-label={`Remove ${tab}`}
+                >
+                  <X size={11} />
+                </button>
+              </span>
+            );
+          })}
           <button
             type="button"
             className="inline-flex items-center gap-1 text-[11px] text-[#4B5563] bg-[#F1F2F4] rounded-lg px-2.5 py-1.5 hover:bg-[#E9EAEC] transition-colors"
@@ -397,7 +430,7 @@ function PersonalAssistantCard() {
       </div>
 
       <div className="border border-black/8 rounded-xl p-4 flex flex-col gap-3">
-        <h3 className="text-[15px] font-bold text-[#111]">Today&apos;s Priority</h3>
+        <h3 className="text-[15px] font-bold text-[#111]">{contentHeading}</h3>
 
         <ul className="flex flex-col gap-2">
           {PRIORITY_ITEMS.map((item, i) => (
