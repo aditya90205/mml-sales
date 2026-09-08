@@ -55,11 +55,11 @@ export function historyUntil(stage) {
 export function stageGateFor(stage) {
   const r = stageRank(stage);
   return [
-    { label: "Intake form complete", done: r >= 2 },
-    { label: "Video call or visit logged", done: r >= 3 },
-    { label: "Package selected & quoted", done: r >= 4 },
+    { label: "Profile Created & Intake", done: r >= 3 },
+    { label: "KYC documents uploaded", done: r >= 3 },
+    { label: "Video call or visit logged", done: r >= 4 },
+    { label: "Package selected & quoted", done: r >= 5 },
     { label: "Discount approved (if any)", done: r >= 5 },
-    { label: "KYC documents uploaded", done: r >= 5 },
     { label: "Handover Checklist Complete", done: r >= 6 },
   ];
 }
