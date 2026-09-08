@@ -55,7 +55,7 @@ export function historyUntil(stage) {
 export function stageGateFor(stage) {
   const r = stageRank(stage);
   return [
-    { label: "Intake form complete", done: r >= 1 },
+    { label: "Intake form complete", done: r >= 2 },
     { label: "Video call or visit logged", done: r >= 3 },
     { label: "Package selected & quoted", done: r >= 4 },
     { label: "Discount approved (if any)", done: r >= 5 },

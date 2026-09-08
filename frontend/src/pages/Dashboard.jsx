@@ -47,8 +47,6 @@ import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import DealDetailPage from "./pipeline/DealDetailPage";
-import MoveToP1Page from "./pipeline/MoveToP1Page";
-import MoveToP2Page from "./pipeline/MoveToP2Page";
 import AddP0ProspectPage from "./pipeline/AddP0ProspectPage";
 import { toast } from "react-toastify";
 import {
@@ -1581,6 +1579,25 @@ function stageKeyFromLead(lead) {
   return match ? match[0] : "P0";
 }
 
+const STAGE_LABELS_DASH = {
+  P0: "P0 - New",
+  P1: "P1 - Qualified",
+  P2: "P2 - Profile Creation",
+  P3: "P3 - Video Call/Visit",
+  P4: "P4 - Negotiation",
+  P5: "P5 - Profile Creation",
+  P6: "P6 - Service Handover",
+};
+
+const NEXT_STAGE_DASH = {
+  P0: "P1",
+  P1: "P2",
+  P2: "P3",
+  P3: "P4",
+  P4: "P5",
+  P5: "P6",
+};
+
 function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
   const navigate = useNavigate();
   const [period, setPeriod] = useState("this_month");
@@ -1878,7 +1895,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
 export default function Dashboard() {
   const [period, setPeriod] = useState("this_month");
   const [dealLead, setDealLead] = useState(null);
-  const [moveLead, setMoveLead] = useState(null);
+  const [dealStage, setDealStage] = useState(null);
   const [showAddProspect, setShowAddProspect] = useState(false);
   const [myLeads, setMyLeads] = useState(MY_LEADS);
 
@@ -1888,6 +1905,24 @@ export default function Dashboard() {
     if (h < 17) return "Good Afternoon";
     return "Good Evening";
   }, []);
+
+  const openDeal = (lead, stageKey) => {
+    setDealLead(lead);
+    setDealStage(stageKey || stageKeyFromLead(lead));
+  };
+
+  const updateLeadStage = (lead, nextStage, patch = {}) => {
+    const stageLabel = STAGE_LABELS_DASH[nextStage] || nextStage;
+    setMyLeads((prev) =>
+      prev.map((l) =>
+        l.name === lead.name && l.id === lead.id
+          ? { ...l, ...patch, stage: stageLabel, starred: patch.starred ?? l.starred }
+          : l
+      )
+    );
+    setDealLead((prev) => (prev ? { ...prev, ...patch, stage: stageLabel } : prev));
+    setDealStage(nextStage);
+  };
 
   if (showAddProspect) {
     return (
@@ -1900,38 +1935,27 @@ export default function Dashboard() {
     );
   }
 
-  if (moveLead && stageKeyFromLead(moveLead) === "P0") {
-    return (
-      <MoveToP1Page
-        lead={{ name: moveLead.name, mmlId: moveLead.id, source: moveLead.source }}
-        onBack={() => setMoveLead(null)}
-        onMoveToP1={() => {
-          toast.success(`Lead "${moveLead.name}" successfully moved to P1 Qualified!`);
-          setMoveLead(null);
-        }}
-      />
-    );
-  }
-
-  if (moveLead && stageKeyFromLead(moveLead) === "P1") {
-    return (
-      <MoveToP2Page
-        lead={{ name: moveLead.name, mmlId: moveLead.id, source: moveLead.source }}
-        onBack={() => setMoveLead(null)}
-        onMoveToP2={() => {
-          toast.success(`Lead "${moveLead.name}" successfully moved to P2 Data Collection!`);
-          setMoveLead(null);
-        }}
-      />
-    );
-  }
-
   if (dealLead) {
     return (
       <DealDetailPage
         lead={{ name: dealLead.name, mmlId: dealLead.id, starred: dealLead.starred }}
-        currentStage={stageKeyFromLead(dealLead)}
-        onBack={() => setDealLead(null)}
+        currentStage={dealStage || stageKeyFromLead(dealLead)}
+        onBack={() => {
+          setDealLead(null);
+          setDealStage(null);
+        }}
+        onAdvance={(lead, stageKey) => {
+          const next = NEXT_STAGE_DASH[stageKey];
+          if (!next) return;
+          updateLeadStage(lead, next);
+          toast.success(`Lead "${lead.name || dealLead.name}" moved to ${STAGE_LABELS_DASH[next]}!`);
+        }}
+        onP0DetailsSaved={(lead, details) => {
+          updateLeadStage(lead, "P1", {
+            starred: details?.premium === "Yes",
+          });
+          toast.success(`Details saved. Lead "${lead.name || dealLead.name}" moved to P1 Qualified!`);
+        }}
         onPremiumChange={(premium) => {
           setDealLead((prev) => (prev ? { ...prev, starred: premium } : prev));
           setMyLeads((prev) =>
@@ -1990,8 +2014,8 @@ export default function Dashboard() {
 
         <MyLeadsCard
           leads={myLeads}
-          onOpenDeal={setDealLead}
-          onMoveStage={(lead) => setMoveLead(lead)}
+          onOpenDeal={(lead) => openDeal(lead)}
+          onMoveStage={(lead, stageKey) => openDeal(lead, stageKey)}
           onAddProspect={() => setShowAddProspect(true)}
         />
 

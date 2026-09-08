@@ -116,7 +116,15 @@ function initials(name = "") {
  * Deal detail opened by clicking any pipeline card (P0–P6).
  * Tab data fills in by stage. Payments and P6 Checklist stay blurred until P5.
  */
-export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAdvance, initialTab = "overview", onPremiumChange }) {
+export default function DealDetailPage({
+  lead,
+  onBack,
+  currentStage = "P4",
+  onAdvance,
+  onP0DetailsSaved,
+  initialTab = "overview",
+  onPremiumChange,
+}) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [winLossModal, setWinLossModal] = useState({ open: false, mode: "lost" });
@@ -124,6 +132,7 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
   const [isPremium, setIsPremium] = useState(() => Boolean(lead?.starred));
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
+  const [savedDetails, setSavedDetails] = useState(null);
   const lateTabsUnlocked = atLeast(currentStage, "P5");
   const nextStage = NEXT_STAGE[currentStage];
   const tabs = BASE_TABS.map((tab) =>
@@ -142,15 +151,15 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
 
   const deal = useMemo(() => {
     const dealCode = (lead?.mmlId || "MML - D - 10471").replace(/\s*-\s*/g, "-");
-    const detailsFilled = atLeast(currentStage, "P1");
+    const detailsFilled = atLeast(currentStage, "P1") || Boolean(savedDetails);
     const flagsFilled = atLeast(currentStage, "P2");
-    return {
+    const base = {
       ...DEAL_DEFAULTS,
       dealCode,
       stageLabel: STAGE_LABELS[currentStage] || STAGE_LABELS.P4,
       name: lead?.name || "Ananya Gupta",
       premium: isPremium,
-      dealValue: currentStage === "P0" ? "₹25,000" : DEAL_DEFAULTS.dealValue,
+      dealValue: currentStage === "P0" && !savedDetails ? "₹25,000" : DEAL_DEFAULTS.dealValue,
       packageInterest: maybeDash(detailsFilled, DEAL_DEFAULTS.packageInterest),
       leadScore: maybeDash(detailsFilled, DEAL_DEFAULTS.leadScore),
       enquiryBy: maybeDash(detailsFilled, DEAL_DEFAULTS.enquiryBy),
@@ -171,11 +180,40 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
       ),
       stageGate: stageGateFor(currentStage),
       stageHistory: historyUntil(currentStage),
-      fieldsFilledNote: "0 of 14 mandatory fields filled. please fill/edit all the details to move to P1",
+      fieldsFilledNote:
+        currentStage === "P0" && !savedDetails
+          ? "0 of 14 mandatory fields filled. please fill/edit all the details to move to P1"
+          : "14 of 14 mandatory fields filled.",
       weightedValue: maybeDash(detailsFilled, DEAL_DEFAULTS.weightedValue),
       weightedValueNote: maybeDash(detailsFilled, DEAL_DEFAULTS.weightedValueNote),
     };
-  }, [lead, currentStage, winLossOverride, isPremium]);
+
+    if (!savedDetails) return base;
+
+    return {
+      ...base,
+      dealCode: savedDetails.dealCode || base.dealCode,
+      stageLabel: STAGE_LABELS[currentStage] || savedDetails.stageLabel || base.stageLabel,
+      packageInterest: savedDetails.packageInterest || base.packageInterest,
+      premium: savedDetails.premium === "Yes",
+      dealValue: savedDetails.dealValue || base.dealValue,
+      leadSource: savedDetails.leadSource || base.leadSource,
+      leadScore: savedDetails.leadScore || base.leadScore,
+      enquiryBy: savedDetails.enquiryBy || base.enquiryBy,
+      lookingFor: savedDetails.lookingFor || base.lookingFor,
+      areaOfHouse: savedDetails.areaOfHouse || base.areaOfHouse,
+      profession: savedDetails.profession || base.profession,
+      familyIncomeBand: savedDetails.familyIncomeBand || base.familyIncomeBand,
+      nextMeeting: savedDetails.nextMeeting || base.nextMeeting,
+      winLossReasons: savedDetails.winLossReasons || base.winLossReasons,
+      winLossTone: savedDetails.winLossTone || base.winLossTone,
+      lastDiscussionAt: savedDetails.lastDiscussionAt || base.lastDiscussionAt,
+      lastDiscussionNote: savedDetails.lastDiscussionNote || base.lastDiscussionNote,
+      nextActionAt: savedDetails.nextActionAt || base.nextActionAt,
+      nextAction: savedDetails.nextAction || base.nextAction,
+      nextActionUrgency: savedDetails.nextActionUrgency || base.nextActionUrgency,
+    };
+  }, [lead, currentStage, winLossOverride, isPremium, savedDetails]);
 
   const openWinLossModal = (mode) => setWinLossModal({ open: true, mode });
 
@@ -199,10 +237,25 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
     onAdvance?.(lead, currentStage);
   };
 
+  const handleDetailsSaved = (draft) => {
+    setSavedDetails(draft);
+    handlePremiumChange(draft.premium === "Yes");
+    if (currentStage === "P0") {
+      onP0DetailsSaved?.(lead, draft);
+    }
+  };
+
   const renderTab = () => {
     switch (activeTab) {
       case "overview":
-        return <OverviewTab deal={deal} onPremiumChange={handlePremiumChange} />;
+        return (
+          <OverviewTab
+            deal={deal}
+            currentStage={currentStage}
+            onPremiumChange={handlePremiumChange}
+            onDetailsSaved={handleDetailsSaved}
+          />
+        );
       case "intake":
         return <IntakeFormTab empty={currentStage === "P0"} />;
       case "visits":

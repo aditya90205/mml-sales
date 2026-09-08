@@ -217,7 +217,7 @@ function detailsFromDeal(deal) {
   };
 }
 
-function DealDetailsCard({ deal, onPremiumChange }) {
+function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved }) {
   const [open, setOpen] = useState(false);
   const [details, setDetails] = useState(() => detailsFromDeal(deal));
   const [draft, setDraft] = useState(() => detailsFromDeal(deal));
@@ -241,7 +241,10 @@ function DealDetailsCard({ deal, onPremiumChange }) {
     e.preventDefault();
     setDetails(draft);
     onPremiumChange?.(draft.premium === "Yes");
-    toast.success("Deal details updated.");
+    onDetailsSaved?.(draft);
+    if (currentStage !== "P0") {
+      toast.success("Deal details updated.");
+    }
     setOpen(false);
   };
 
@@ -622,12 +625,12 @@ function StageHistoryCard({ rows }) {
   );
 }
 
-function StageGateCard({ items: initialItems }) {
+function StageGateCard({ items: initialItems, stageKey }) {
   const [items, setItems] = useState(initialItems);
 
   useEffect(() => {
     setItems(initialItems);
-  }, [initialItems]);
+  }, [initialItems, stageKey]);
 
   const toggleItem = (label) => {
     setItems((prev) => prev.map((item) => (item.label === label ? { ...item, done: !item.done } : item)));
@@ -693,16 +696,21 @@ function RmFlagsCard({ flags }) {
  * Overview: deal details + dashboard AI form on the left;
  * stage gate, weighted value, RM flags, and Stage History & SLA on the right.
  */
-export default function OverviewTab({ deal, onPremiumChange }) {
+export default function OverviewTab({ deal, currentStage, onPremiumChange, onDetailsSaved }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,65fr)_minmax(0,35fr)] gap-5 items-start">
       <div className="flex flex-col gap-5 min-w-0">
-        <DealDetailsCard deal={deal} onPremiumChange={onPremiumChange} />
+        <DealDetailsCard
+          deal={deal}
+          currentStage={currentStage}
+          onPremiumChange={onPremiumChange}
+          onDetailsSaved={onDetailsSaved}
+        />
         <PersonalAssistantCard />
       </div>
 
       <div className="flex flex-col gap-5 min-w-0">
-        <StageGateCard items={deal.stageGate} />
+        <StageGateCard key={currentStage || deal.stageLabel} items={deal.stageGate} stageKey={currentStage || deal.stageLabel} />
         <WeightedValueCard
           label={deal.weightedValueLabel}
           value={deal.weightedValue}

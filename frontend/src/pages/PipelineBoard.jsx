@@ -31,8 +31,6 @@ import SendMessageModal from "../components/common/SendMessageModal.jsx";
 // TopBar is now provided by Layout
 import eyeIcon from "../assets/eye.png";
 import AddP0ProspectPage from "./pipeline/AddP0ProspectPage";
-import MoveToP1Page from "./pipeline/MoveToP1Page";
-import MoveToP2Page from "./pipeline/MoveToP2Page";
 import DealDetailPage from "./pipeline/DealDetailPage";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
@@ -758,7 +756,7 @@ export default function PipelineBoard() {
 
   // Dynamic state for pipeline lead items
   const [leadsData, setLeadsData]       = useState(LEADS_BY_STAGE);
-  const [subView, setSubView]           = useState(deepLinkedLead ? "deal-detail" : null); // null | "add-p0" | "move-p1" | "move-p2" | "deal-detail"
+  const [subView, setSubView]           = useState(deepLinkedLead ? "deal-detail" : null); // null | "add-p0" | "deal-detail"
   const [activeLead, setActiveLead]     = useState(deepLinkedLead?.lead ?? null);
   const [dealTargetStage, setDealTargetStage] = useState(deepLinkedLead?.stageId ?? "P5");
   const [dealInitialTab, setDealInitialTab] = useState(deepLinkedLead ? deepLinkedTab : "overview");
@@ -795,7 +793,7 @@ export default function PipelineBoard() {
     toast.success(`Prospect "${newLead.name}" created successfully in P0 Prospect!`);
   };
 
-  const handleMoveToP1 = (lead, updatedData) => {
+  const handleMoveToP1 = (lead, updatedData = {}) => {
     setLeadsData((prev) => {
       const p0Filtered = (prev.P0 || []).filter((l) => l.id !== lead.id);
       const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 8.5, completion: 45 };
@@ -805,61 +803,77 @@ export default function PipelineBoard() {
         P1: [updatedLead, ...(prev.P1 || [])],
       };
     });
+    const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 8.5, completion: 45 };
+    setActiveLead(updatedLead);
+    setDealTargetStage("P1");
     toast.success(`Lead "${lead.name}" successfully moved to P1 Qualified!`);
+    return updatedLead;
   };
 
-  const handleMoveToP2 = (lead, updatedData) => {
+  const handleMoveToP2 = (lead, updatedData = {}) => {
     setLeadsData((prev) => {
-      const p1Filtered = (prev.P1 || []).filter((l) => l.id !== lead.id);
+      const fromP0 = (prev.P0 || []).filter((l) => l.id !== lead.id);
+      const fromP1 = (prev.P1 || []).filter((l) => l.id !== lead.id);
       const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 9.0, completion: 70 };
       return {
         ...prev,
-        P1: p1Filtered,
+        P0: fromP0,
+        P1: fromP1,
         P2: [updatedLead, ...(prev.P2 || [])],
       };
     });
+    const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 9.0, completion: 70 };
+    setActiveLead(updatedLead);
+    setDealTargetStage("P2");
     toast.success(`Lead "${lead.name}" successfully moved to P2 Data Collection!`);
+    return updatedLead;
   };
 
   const handleMoveToP3 = (lead) => {
+    const updatedLead = { ...lead, completion: 80 };
     setLeadsData((prev) => {
       const from = (prev.P2 || []).filter((l) => l.id !== lead.id);
-      return { ...prev, P2: from, P3: [{ ...lead, completion: 80 }, ...(prev.P3 || [])] };
+      return { ...prev, P2: from, P3: [updatedLead, ...(prev.P3 || [])] };
     });
+    setActiveLead(updatedLead);
     toast.success(`Lead "${lead.name}" moved to P3 Visit / Video!`);
   };
 
   const handleMoveToP4 = (lead) => {
+    const updatedLead = { ...lead, completion: 90 };
     setLeadsData((prev) => {
       const from = (prev.P3 || []).filter((l) => l.id !== lead.id);
-      return { ...prev, P3: from, P4: [{ ...lead, completion: 90 }, ...(prev.P4 || [])] };
+      return { ...prev, P3: from, P4: [updatedLead, ...(prev.P4 || [])] };
     });
+    setActiveLead(updatedLead);
     toast.success(`Lead "${lead.name}" moved to P4 Negotiation!`);
   };
 
   const handleMoveToP5 = (lead) => {
+    const updatedLead = { ...lead, temperature: "Warm", completion: 100 };
     setLeadsData((prev) => {
       const p4Filtered = (prev.P4 || []).filter((l) => l.id !== lead.id);
-      const updatedLead = { ...lead, temperature: "Warm", completion: 100 };
       return {
         ...prev,
         P4: p4Filtered,
         P5: [updatedLead, ...(prev.P5 || [])],
       };
     });
+    setActiveLead(updatedLead);
     toast.success(`Lead "${lead.name}" moved to P5 Payment!`);
   };
 
   const handleMoveToP6 = (lead) => {
+    const updatedLead = { ...lead, temperature: "Warm", completion: 100 };
     setLeadsData((prev) => {
       const p5Filtered = (prev.P5 || []).filter((l) => l.id !== lead.id);
-      const updatedLead = { ...lead, temperature: "Warm", completion: 100 };
       return {
         ...prev,
         P5: p5Filtered,
         P6: [updatedLead, ...(prev.P6 || [])],
       };
     });
+    setActiveLead(updatedLead);
     toast.success(`Lead "${lead.name}" moved to P6 Handover!`);
   };
 
@@ -885,13 +899,12 @@ export default function PipelineBoard() {
   };
 
   const handleMoveStage = (lead, stageKey) => {
-    if (stageKey === "P0") {
-      setActiveLead(lead);
-      setSubView("move-p1");
-    } else if (stageKey === "P1") {
-      setActiveLead(lead);
-      setSubView("move-p2");
-    } else if (stageKey === "P2") {
+    // P0 / P1 move buttons open the deal detail page (no separate move form).
+    if (stageKey === "P0" || stageKey === "P1") {
+      handleOpenDeal(lead, stageKey);
+      return;
+    }
+    if (stageKey === "P2") {
       handleMoveToP3(lead);
       setSubView(null);
       setActiveLead(null);
@@ -908,6 +921,43 @@ export default function PipelineBoard() {
       setSubView(null);
       setActiveLead(null);
     }
+  };
+
+  /** Advance from deal detail without the old Move to P1 / P2 form pages. */
+  const handleAdvanceFromDetail = (lead, stageKey) => {
+    if (stageKey === "P0") {
+      handleMoveToP1(lead);
+      setSubView("deal-detail");
+    } else if (stageKey === "P1") {
+      handleMoveToP2(lead);
+      setSubView("deal-detail");
+    } else if (stageKey === "P2") {
+      handleMoveToP3(lead);
+      setDealTargetStage("P3");
+      setSubView("deal-detail");
+    } else if (stageKey === "P3") {
+      handleMoveToP4(lead);
+      setDealTargetStage("P4");
+      setSubView("deal-detail");
+    } else if (stageKey === "P4") {
+      handleMoveToP5(lead);
+      setDealTargetStage("P5");
+      setSubView("deal-detail");
+    } else if (stageKey === "P5") {
+      handleMoveToP6(lead);
+      setDealTargetStage("P6");
+      setSubView("deal-detail");
+    }
+  };
+
+  const handleP0DetailsSaved = (lead, details = {}) => {
+    handleMoveToP1(lead, {
+      profession: details.profession,
+      familyIncomeBand: details.familyIncomeBand,
+      areaOfHouse: details.areaOfHouse,
+      starred: details.premium === "Yes",
+    });
+    setSubView("deal-detail");
   };
 
   const columns = useMemo(
@@ -946,26 +996,6 @@ export default function PipelineBoard() {
     );
   }
 
-  if (subView === "move-p1") {
-    return (
-      <MoveToP1Page
-        lead={activeLead}
-        onBack={() => { setSubView(null); setActiveLead(null); }}
-        onMoveToP1={handleMoveToP1}
-      />
-    );
-  }
-
-  if (subView === "move-p2") {
-    return (
-      <MoveToP2Page
-        lead={activeLead}
-        onBack={() => { setSubView(null); setActiveLead(null); }}
-        onMoveToP2={handleMoveToP2}
-      />
-    );
-  }
-
   if (subView === "deal-detail") {
     return (
       <DealDetailPage
@@ -974,7 +1004,8 @@ export default function PipelineBoard() {
         currentStage={dealTargetStage}
         initialTab={dealInitialTab}
         onBack={() => { setSubView(null); setActiveLead(null); }}
-        onAdvance={handleMoveStage}
+        onAdvance={handleAdvanceFromDetail}
+        onP0DetailsSaved={handleP0DetailsSaved}
         onPremiumChange={handlePremiumChange}
       />
     );
