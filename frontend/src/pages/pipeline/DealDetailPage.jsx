@@ -39,16 +39,14 @@ import { EMPTY, atLeast, historyUntil, maybeDash, stageGateFor } from "./deal-ta
 import eyeIcon from "../../assets/eye.png";
 
 const BASE_TABS = [
-  { key: "overview",  label: "Overview" },
-  { key: "intake",    label: "Intake Form" },
-  { key: "visits",    label: "Visits & Meetings" },
-  { key: "package",   label: "Package & Quote" },
-  { key: "discounts", label: "Discount Approvals" },
-  { key: "documents", label: "Documents & KYC" },
+  { key: "overview",  label: "Overview (P0-P1)" },
+  { key: "intake",    label: "Profile Create (P2)" },
+  { key: "visits",    label: "Video Call / Visits(P3)" },
+  { key: "package",   label: "Negotiation / Package & Quote (P4)" },
+  { key: "payments",  label: "Payments (P5)" },
+  { key: "p6",        label: "Handover/Onboarding (P6)" },
   { key: "notes",     label: "Notes & RM Flags" },
   { key: "audit",     label: "Audit" },
-  { key: "payments",  label: "Payments" },
-  { key: "p6",        label: "P6 Checklist" },
 ];
 
 /** Static demo fields shown on the overview tab, layered over the lead's board data. */
@@ -79,7 +77,7 @@ const DEAL_DEFAULTS = {
     { label: "Parent is decision maker", tone: "blue" },
     { label: "Cross-branch price enquiry", tone: "amber" },
   ],
-  fieldsFilledNote: "11 of 14 mandatory fields filled. P1 remains locked until all sections show Complete",
+  fieldsFilledNote: "0 of 14 mandatory fields filled. please fill/edit all the details to move to P1",
 };
 
 const STAGE_LABELS = {
@@ -173,9 +171,7 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
       ),
       stageGate: stageGateFor(currentStage),
       stageHistory: historyUntil(currentStage),
-      fieldsFilledNote: detailsFilled
-        ? DEAL_DEFAULTS.fieldsFilledNote
-        : "0 of 14 mandatory fields filled. P1 remains locked until intake is complete",
+      fieldsFilledNote: "0 of 14 mandatory fields filled. please fill/edit all the details to move to P1",
       weightedValue: maybeDash(detailsFilled, DEAL_DEFAULTS.weightedValue),
       weightedValueNote: maybeDash(detailsFilled, DEAL_DEFAULTS.weightedValueNote),
     };

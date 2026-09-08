@@ -247,11 +247,16 @@ function DealDetailsCard({ deal, onPremiumChange }) {
 
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-5">
-      <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-        <h3 className="text-[14px] font-bold text-[#111]">Deal details</h3>
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div className="flex items-center gap-3 min-w-0 flex-1 flex-wrap">
+          <h3 className="text-[14px] font-bold text-[#111] shrink-0">Deal details</h3>
+          <p className="text-[11.5px] text-[#9CA3AF] bg-[#FAFAFB] border border-black/6 rounded-xl px-3 py-1.5 leading-snug max-w-full">
+            {deal.fieldsFilledNote ||
+              "0 of 14 mandatory fields filled. please fill/edit all the details to move to P1"}
+          </p>
+        </div>
         <TabHeaderButton onClick={openModal}>Edit details</TabHeaderButton>
       </div>
-
       <Modal
         open={open}
         onClose={() => setOpen(false)}
@@ -570,7 +575,7 @@ function StageStatusHover({ row }) {
   );
 }
 
-function StageHistoryCard({ rows, footnote }) {
+function StageHistoryCard({ rows }) {
   const { sorted, sort, toggle } = useTableSort(rows, { defaultKey: "stage" });
 
   return (
@@ -613,12 +618,6 @@ function StageHistoryCard({ rows, footnote }) {
           </tbody>
         </table>
       </div>
-
-      {footnote && (
-        <p className="text-[11.5px] text-[#9CA3AF] bg-[#FAFAFB] border border-black/6 rounded-xl px-3.5 py-2.5 mt-4">
-          {footnote}
-        </p>
-      )}
     </div>
   );
 }
@@ -710,7 +709,7 @@ export default function OverviewTab({ deal, onPremiumChange }) {
           note={deal.weightedValueNote}
         />
         <RmFlagsCard flags={deal.rmFlags} />
-        <StageHistoryCard rows={deal.stageHistory} footnote={deal.fieldsFilledNote} />
+        <StageHistoryCard rows={deal.stageHistory} />
       </div>
     </div>
   );
