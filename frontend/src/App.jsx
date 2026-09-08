@@ -20,6 +20,7 @@ import PackagesPlansPage from "./pages/PackagesPlansPage";
 import ColdCommonPoolPage from "./pages/ColdCommonPoolPage";
 import PostSalesPage from "./pages/PostSalesPage";
 import ProfileSettings from "./pages/ProfileSettings";
+import DocumentsPage from "./pages/DocumentsPage";
 import HomeOfficeVisitsPage from "./pages/pipeline/desk/HomeOfficeVisitsPage";
 import CrossBranchFlagsPage from "./pages/pipeline/desk/CrossBranchFlagsPage";
 import QuotationsPage from "./pages/pipeline/desk/QuotationsPage";
@@ -199,11 +200,11 @@ export default function App() {
         />
         <Route
           path="/media"
-          element={<LayoutRoute><Placeholder title="Media Library" /></LayoutRoute>}
+          element={<Navigate to="/documents?tab=media" replace />}
         />
         <Route
           path="/documents"
-          element={<LayoutRoute><Placeholder title="Documents" /></LayoutRoute>}
+          element={<LayoutRoute><DocumentsPage /></LayoutRoute>}
         />
 
         {/* ── System ── */}

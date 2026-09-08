@@ -352,7 +352,7 @@ export default function TopBar({ page = "Dashboard" }) {
     targets: "Targets",
     reviews: "Reviews",
     media: "Media Library",
-    documents: "Documents",
+    documents: "Documents & Media",
     settings: "Settings",
     support: "Help & Support",
     profile: "Profile",

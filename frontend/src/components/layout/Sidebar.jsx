@@ -12,6 +12,7 @@ import {
   BarChart3,
   Handshake,
   PackageSearch,
+  FileText,
 } from "lucide-react";
 import logo from "../../assets/logo.png";
 
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { label: "Post Sales",      icon: Handshake,       to: "/post-sales" },
   { label: "HRMS",            icon: Users,           to: "/hrms" },
   { label: "Leaderboard",     icon: Trophy,          to: "/leaderboard" },
+  { label: "Documents & Media", icon: FileText,      to: "/documents" },
 ];
 
 export default function Sidebar() {

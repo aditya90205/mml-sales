@@ -31,7 +31,6 @@ import {
   TrendingUp,
   Search,
   Filter,
-  MoreVertical,
   BarChart3,
   LayoutGrid,
   Lock,
@@ -103,7 +102,6 @@ const HRMS_TABS = [
   "Salary & Payslip",
   "Trainings",
   "Goals & Reviews",
-  "Documents",
   "Asset",
   "Awards & Contest",
   "Promotion and Transfer",
@@ -573,20 +571,6 @@ const INITIAL_GOALS = [
   { id: 7, title: "Reduce Response Time",     employee: "Priya Raheja",  goalType: "Customer Success",           startDate: "26-08-2026", endDate: "26-08-2026", progress: 70, status: "In Progress", remarks: "Comprehensive quarterly review pending sign-off from the reporting manager before the next cycle begins." },
   { id: 8, title: "Certification Completion", employee: "Vivek Sharma",  goalType: "Learning and Training Goals", startDate: "26-08-2026", endDate: "26-08-2026", progress: 40, status: "In Progress", remarks: "Comprehensive quarterly review pending sign-off from the reporting manager before the next cycle begins." },
   { id: 9, title: "Team Mentorship",          employee: "Aditya Sharma", goalType: "Career Development Goals",  startDate: "26-08-2026", endDate: "26-08-2026", progress: 85, status: "In Progress", remarks: "Comprehensive quarterly review pending sign-off from the reporting manager before the next cycle begins." },
-];
-
-const DOC_BORDER_COLORS = ["#F59E0B", "#3B82F6", "#16A34A", "#EAB308"];
-
-const INITIAL_DOCUMENTS = [
-  { id: 1, title: "Employee Contract",            category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
-  { id: 2, title: "Offer Letter",                  category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
-  { id: 3, title: "Salary Certificate",            category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
-  { id: 4, title: "Experience Certificate",        category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
-  { id: 5, title: "Data Privacy and Security Policy", category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
-  { id: 6, title: "Emergency Contact Form",        category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
-  { id: 7, title: "Expense Reimbursement Policy",  category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
-  { id: 8, title: "Remote Work Policy",            category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
-  { id: 9, title: "Code of Conduct Policy",        category: "Personal Documents", version: "v1.1", updated: "2024-01-01", downloads: 30 },
 ];
 
 const INITIAL_ASSETS = [
@@ -1240,7 +1224,7 @@ export default function HrmsPage() {
   const [sendMessageOpen, setSendMessageOpen] = useState(false);
   const [addManualRowOpen, setAddManualRowOpen] = useState(false);
 
-  // Trainings / Goals & Reviews / Documents / Asset tab state
+  // Trainings / Goals & Reviews / Asset tab state
   const [trainings, setTrainings] = useState(INITIAL_TRAININGS);
   const [goals, setGoals] = useState(INITIAL_GOALS);
   const [trainingModal, setTrainingModal] = useState(null); // { mode: 'view'|'edit'|'delete', item }
@@ -1250,8 +1234,6 @@ export default function HrmsPage() {
   const [searchGoal, setSearchGoal] = useState("");
   const [goalPage, setGoalPage] = useState(1);
   const [expandedRemarks, setExpandedRemarks] = useState({});
-  const [searchDocument, setSearchDocument] = useState("");
-  const [documentPage, setDocumentPage] = useState(1);
   const [searchAsset, setSearchAsset] = useState("");
   const [assetPage, setAssetPage] = useState(1);
   const [searchAward, setSearchAward] = useState("");
@@ -1408,16 +1390,6 @@ export default function HrmsPage() {
     setGoalModal(null);
     toast.success(`“${item.title}” deleted.`);
   };
-
-  const filteredDocuments = INITIAL_DOCUMENTS.filter((d) =>
-    d.title.toLowerCase().includes(searchDocument.toLowerCase())
-  );
-  const documentPageSize = 8;
-  const documentTotalPages = Math.max(1, Math.ceil(filteredDocuments.length / documentPageSize));
-  const pagedDocuments = filteredDocuments.slice(
-    (documentPage - 1) * documentPageSize,
-    documentPage * documentPageSize
-  );
 
   const filteredAssets = INITIAL_ASSETS.filter((a) =>
     a.name.toLowerCase().includes(searchAsset.toLowerCase())
@@ -2733,88 +2705,6 @@ export default function HrmsPage() {
           </div>
         )}
 
-        {/* DOCUMENTS TAB */}
-        {activeTab === "Documents" && (
-          <div className="flex flex-col gap-6">
-            <TabToolbar search={searchDocument} onSearchChange={(v) => { setSearchDocument(v); setDocumentPage(1); }} />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-              {pagedDocuments.map((doc, idx) => (
-                <div
-                  key={doc.id}
-                  className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm border-t-4"
-                  style={{ borderTopColor: DOC_BORDER_COLORS[idx % DOC_BORDER_COLORS.length] }}
-                >
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <h3 className="text-sm font-extrabold text-[#111827] leading-snug">{doc.title}</h3>
-                    <button
-                      type="button"
-                      onClick={() => toast.info(`Viewing ${doc.title}`)}
-                      className="text-[#9CA3AF] hover:text-[#111] shrink-0"
-                    >
-                      <Eye size={15} />
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-[#9CA3AF] mb-2.5">Last Update: {doc.updated}</p>
-
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FFEDD5] text-[#C2410C] border border-[#EA580C]/20">
-                        {doc.category}
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-bold text-[#9CA3AF]">{doc.version}</span>
-                  </div>
-                  <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#DBEAFE] text-[#2563EB] border border-[#2563EB]/20 mb-3">
-                    Published
-                  </span>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-black/6">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <img
-                        src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=80&h=80&fit=crop&crop=face"
-                        alt=""
-                        className="size-6 rounded-full object-cover shrink-0"
-                      />
-                      <span className="text-[11px] font-bold text-[#374151] truncate">Company</span>
-                      <span className="inline-flex items-center gap-1 shrink-0">
-                        <Download size={13} className="text-[#9CA3AF]" />
-                        <span className="text-[11px] font-bold text-[#6B7280]">{doc.downloads}</span>
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => toast.success(`Downloading ${doc.title}`)}
-                        className="text-[#16A34A] hover:opacity-70"
-                        aria-label="Download"
-                      >
-                        <Download size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toast.info(`More options for ${doc.title}`)}
-                        className="text-[#9CA3AF] hover:text-[#111]"
-                      >
-                        <MoreVertical size={14} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <Pagination
-              page={documentPage}
-              totalPages={documentTotalPages}
-              totalItems={filteredDocuments.length}
-              pageSize={documentPageSize}
-              itemLabel="documents"
-              onChange={setDocumentPage}
-            />
-          </div>
-        )}
-
         {/* ASSET TAB */}
         {activeTab === "Asset" && (
           <div className="flex flex-col gap-6">
@@ -3273,7 +3163,7 @@ export default function HrmsPage() {
         {activeTab === "Exit" && <ExitTab />}
 
         {/* Placeholder View for remaining tabs */}
-        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset", "Awards & Contest", "Complaint & Warning", "Promotion and Transfer", "Exit"].includes(activeTab) && (
+        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Asset", "Awards & Contest", "Complaint & Warning", "Promotion and Transfer", "Exit"].includes(activeTab) && (
           <div className="bg-white border border-black/8 rounded-2xl p-12 text-center my-6 shadow-sm">
             <div className="size-16 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
               <FileText size={28} />
