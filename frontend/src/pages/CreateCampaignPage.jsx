@@ -179,7 +179,7 @@ export default function CreateCampaignPage() {
                 onClick={() => setCreateGroupOpen(true)}
                 className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-white border border-[#7A0A17]/30 text-[13px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors shrink-0"
               >
-                <Plus size={14} /> Create
+                <Plus size={14} /> Create Client Group
               </button>
               <p className="hidden md:block text-[13px] font-semibold text-[#9CA3AF] pb-3">OR</p>
               <div>

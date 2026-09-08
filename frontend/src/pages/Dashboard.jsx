@@ -448,10 +448,24 @@ function AIAssistant() {
   const [prompts, setPrompts] = useState(AI_PROMPTS);
   const [tags, setTags] = useState(AI_TAGS);
   const [activePromptId, setActivePromptId] = useState(2); // Today's top priority
+  const [activeTag, setActiveTag] = useState(null);
 
-  const activePrompt = prompts.find((p) => p.id === activePromptId) || prompts[0];
-  const contentHeading =
-    activePrompt?.text === "Today's top priority" ? "Today's Priority" : activePrompt?.text || "Today's Priority";
+  const activePrompt = prompts.find((p) => p.id === activePromptId);
+  const contentHeading = activeTag
+    ? activeTag
+    : activePrompt?.text === "Today's top priority"
+      ? "Today's Priority"
+      : activePrompt?.text || "Today's Priority";
+
+  const selectPrompt = (id) => {
+    setActivePromptId(id);
+    setActiveTag(null);
+  };
+
+  const selectTag = (tag) => {
+    setActiveTag(tag);
+    setActivePromptId(null);
+  };
 
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col gap-3.5 h-full">
@@ -473,17 +487,17 @@ function AIAssistant() {
         </div>
 
         {prompts.map((p) => {
-          const isActive = p.id === activePromptId;
+          const isActive = !activeTag && p.id === activePromptId;
           return (
             <div
               key={p.id}
               role="button"
               tabIndex={0}
-              onClick={() => setActivePromptId(p.id)}
+              onClick={() => selectPrompt(p.id)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  setActivePromptId(p.id);
+                  selectPrompt(p.id);
                 }
               }}
               className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 cursor-pointer transition-colors border ${
@@ -518,6 +532,7 @@ function AIAssistant() {
                       const next = prev.filter((x) => x.id !== p.id);
                       if (p.id === activePromptId && next.length) {
                         setActivePromptId(next[0].id);
+                        setActiveTag(null);
                       }
                       return next;
                     });
@@ -533,14 +548,49 @@ function AIAssistant() {
         })}
 
         <div className="flex flex-wrap items-center gap-2">
-          {tags.map((tag) => (
-            <span key={tag} className="inline-flex items-center gap-2 text-[11px] text-[#4B5563] bg-[#F1F2F4] rounded-lg px-2.5 py-1.5">
-              {tag}
-              <button type="button" onClick={() => setTags((t) => t.filter((x) => x !== tag))} className="text-[#6B7280] hover:text-[#111]">
-                <X size={11} />
-              </button>
-            </span>
-          ))}
+          {tags.map((tag) => {
+            const isActive = activeTag === tag;
+            return (
+              <span
+                key={tag}
+                role="button"
+                tabIndex={0}
+                onClick={() => selectTag(tag)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    selectTag(tag);
+                  }
+                }}
+                aria-pressed={isActive}
+                className={`inline-flex items-center gap-2 text-[11px] rounded-lg px-2.5 py-1.5 cursor-pointer transition-colors border ${
+                  isActive
+                    ? "bg-[#FDF2F3] border-[#7A0A17]/40 text-[#7A0A17] font-semibold shadow-[inset_0_-2px_0_0_#7A0A17]"
+                    : "text-[#4B5563] bg-[#F1F2F4] border-transparent hover:bg-[#E9EAEC]"
+                }`}
+              >
+                {tag}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTags((prev) => {
+                      const next = prev.filter((x) => x !== tag);
+                      if (tag === activeTag) {
+                        setActiveTag(null);
+                        if (prompts.length) setActivePromptId(prompts[0].id);
+                      }
+                      return next;
+                    });
+                  }}
+                  className={`hover:opacity-80 ${isActive ? "text-[#7A0A17]" : "text-[#6B7280] hover:text-[#111]"}`}
+                  aria-label={`Remove ${tag}`}
+                >
+                  <X size={11} />
+                </button>
+              </span>
+            );
+          })}
           <button type="button" className="inline-flex items-center gap-1 text-[11px] text-[#4B5563] bg-[#F1F2F4] rounded-lg px-2.5 py-1.5 hover:bg-[#E9EAEC] transition-colors">
             See All <ArrowRight size={11} />
           </button>
