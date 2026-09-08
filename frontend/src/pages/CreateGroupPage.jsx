@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Mail, MessageSquare, Phone, Plus, Sparkles, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ClientStatusBadge from "../components/common/ClientStatusBadge.jsx";
-import Modal from "../components/ui/Modal.jsx";
 import { CLIENTS } from "../utils/clientsData.js";
 import { addSavedGroup } from "../utils/clientGroups.js";
 import {
@@ -99,7 +98,6 @@ export default function CreateGroupPage() {
   ]);
   const [results, setResults] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
-  const [saveOpen, setSaveOpen] = useState(false);
   const [groupName, setGroupName] = useState("");
 
   const updateCondition = (id, next) => {
@@ -168,7 +166,7 @@ export default function CreateGroupPage() {
 
   const handleSaveGroup = () => {
     if (!groupName.trim()) {
-      toast.error("Please name this group.");
+      toast.error("Please fill group name first.");
       return;
     }
     if (selectedIds.size === 0) {
@@ -182,7 +180,6 @@ export default function CreateGroupPage() {
       clientIds: Array.from(selectedIds),
     });
     toast.success(`"${groupName.trim()}" saved with ${selectedIds.size} client${selectedIds.size === 1 ? "" : "s"}.`);
-    setSaveOpen(false);
     navigate("/clients", { state: { selectGroupId: created.id, showChart: true } });
   };
 
@@ -317,13 +314,7 @@ export default function CreateGroupPage() {
                 <button
                   type="button"
                   disabled={results.length === 0}
-                  onClick={() => {
-                    if (groupName.trim()) {
-                      handleSaveGroup();
-                    } else {
-                      setSaveOpen(true);
-                    }
-                  }}
+                  onClick={handleSaveGroup}
                   className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Save Group
@@ -409,41 +400,6 @@ export default function CreateGroupPage() {
           </div>
         )}
       </div>
-
-      <Modal
-        open={saveOpen}
-        onClose={() => setSaveOpen(false)}
-        title="Save Group"
-        subtitle="Give this client group a name to find it later."
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={() => setSaveOpen(false)}
-              className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSaveGroup}
-              className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-            >
-              Save Group
-            </button>
-          </>
-        }
-      >
-        <label className="block text-[13px] font-bold text-[#111] mb-1.5">Group Name</label>
-        <input
-          autoFocus
-          value={groupName}
-          onChange={(e) => setGroupName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSaveGroup()}
-          placeholder="e.g. Female IIM Alumni"
-          className="w-full h-11 border border-black/12 rounded-xl px-3.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40"
-        />
-      </Modal>
     </div>
   );
 }

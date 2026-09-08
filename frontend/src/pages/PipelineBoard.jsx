@@ -755,11 +755,15 @@ export default function PipelineBoard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sidebar "Sales Pipeline" re-click while already on /pipeline (e.g. deal detail).
+  // Sidebar "Sales Pipeline" re-click while already on /pipeline:
+  // exit sub-views and clear filters so the full board/table shows again.
   useEffect(() => {
     if (!location.state?.resetPipeline) return;
     setSubView(null);
     setActiveLead(null);
+    setSearch("");
+    setStageFilter(null);
+    setSelectedScoreLead(null);
     navigate(location.pathname, { replace: true, state: null });
   }, [location.state?.resetPipeline]); // eslint-disable-line react-hooks/exhaustive-deps
 
