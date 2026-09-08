@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import PipelineBoard from "./pages/PipelineBoard";
 import HrmsPage from "./pages/HrmsPage";
 import ResignationsAdminPage from "./pages/hrms/ResignationsAdminPage";
+import PromotionsTransfersPage from "./pages/PromotionsTransfersPage";
 import BulkImportPage from "./pages/BulkImportPage";
 import TasksPage from "./pages/TasksPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
@@ -150,6 +151,7 @@ export default function App() {
         {/* ── Sidebar nav pages ── */}
         <Route path="/hrms"         element={<LayoutRoute><HrmsPage /></LayoutRoute>} />
         <Route path="/hrms/resignations" element={<LayoutRoute><ResignationsAdminPage /></LayoutRoute>} />
+        <Route path="/promotions-transfers" element={<LayoutRoute><PromotionsTransfersPage /></LayoutRoute>} />
         <Route path="/calendar"     element={<LayoutRoute><CalendarPage /></LayoutRoute>} />
         <Route path="/tasks"        element={<LayoutRoute><TasksPage /></LayoutRoute>} />
         <Route path="/bulk-upload"  element={<LayoutRoute><BulkImportPage /></LayoutRoute>} />
