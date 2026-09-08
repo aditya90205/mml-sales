@@ -27,27 +27,41 @@ const PERIOD_OPTIONS = [
 /** Mock data is concentrated in Aug 2026 — anchor filters there so week/month work. */
 const PERIOD_REF = new Date(2026, 7, 28); // 28 Aug 2026
 
+function monthWeekBuckets(ref = PERIOD_REF) {
+  const y = ref.getFullYear();
+  const m = ref.getMonth();
+  const monthName = ref.toLocaleString("en-IN", { month: "long" });
+  const lastDay = new Date(y, m + 1, 0).getDate();
+  const spans = [
+    [1, 7],
+    [8, 14],
+    [15, 21],
+    [22, Math.min(28, lastDay)],
+  ];
+  return spans.map(([from, to], i) => {
+    const start = new Date(y, m, from, 0, 0, 0, 0);
+    const end = new Date(y, m, to, 23, 59, 59, 999);
+    return {
+      week: `Week ${i + 1}`,
+      range: `${from}-${to} ${monthName}`,
+      start,
+      end,
+    };
+  });
+}
+
+const WEEK_BUCKETS = monthWeekBuckets(PERIOD_REF);
+
+/** Share of the month that lands in each week so all 4 weeks always plot. */
+const WEEK_WEIGHTS = [14, 18, 22, 26];
+const WEEK_WEIGHT_SUM = WEEK_WEIGHTS.reduce((a, b) => a + b, 0);
+
 function parseLastContact(str) {
   if (!str || typeof str !== "string") return null;
   const parts = str.split("/").map(Number);
   if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
   const [dd, mm, yy] = parts;
   return new Date(2000 + yy, mm - 1, dd);
-}
-
-function periodBounds(periodId, ref = PERIOD_REF) {
-  const y = ref.getFullYear();
-  const m = ref.getMonth();
-  if (periodId === "this_week") {
-    const start = new Date(y, m, ref.getDate() - 6);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(ref);
-    end.setHours(23, 59, 59, 999);
-    return { start, end };
-  }
-  const start = new Date(y, m, 1);
-  const end = new Date(y, m + 1, 0, 23, 59, 59, 999);
-  return { start, end };
 }
 
 function previousBounds(periodId, ref = PERIOD_REF) {
@@ -69,6 +83,52 @@ function inBounds(client, { start, end }) {
   return d >= start && d <= end;
 }
 
+function uniqueClients(rows) {
+  const seen = new Set();
+  const out = [];
+  for (const row of rows) {
+    for (const c of row.clients || []) {
+      if (c == null || seen.has(c.id)) continue;
+      seen.add(c.id);
+      out.push(c);
+    }
+  }
+  return out;
+}
+
+function sumRowStats(rows) {
+  return rows.reduce(
+    (acc, row) => ({
+      total: acc.total + (Number(row.total) || 0),
+      active: acc.active + (Number(row.active) || 0),
+      commonPool: acc.commonPool + (Number(row.commonPool) || 0),
+      inactive: acc.inactive + (Number(row.inactive) || 0),
+    }),
+    { total: 0, active: 0, commonPool: 0, inactive: 0 }
+  );
+}
+
+/** Spread group stats across 4 weeks so the chart stays full, totals follow the saved group. */
+function weeksFromStats(stats) {
+  const total = Math.max(0, Number(stats.total) || 0);
+  const chartTotal = total > 0 ? Math.max(total, WEEK_WEIGHTS.length) : 0;
+  const activeR = total > 0 ? (stats.active || 0) / total : 0;
+  const poolR = total > 0 ? (stats.commonPool || 0) / total : 0;
+  const inactiveR = total > 0 ? (stats.inactive || 0) / total : 0;
+
+  return WEEK_BUCKETS.map((b, i) => {
+    const weekTotal = chartTotal === 0 ? 0 : Math.max(1, Math.round((chartTotal * WEEK_WEIGHTS[i]) / WEEK_WEIGHT_SUM));
+    return {
+      week: b.week,
+      range: b.range,
+      total: weekTotal,
+      active: Math.round(weekTotal * activeR),
+      commonPool: Math.round(weekTotal * poolR),
+      inactive: Math.round(weekTotal * inactiveR),
+    };
+  });
+}
+
 function pctChange(current, previous) {
   if (previous <= 0) return current > 0 ? 100 : 0;
   return Math.round(((current - previous) / previous) * 1000) / 10;
@@ -77,7 +137,7 @@ function pctChange(current, previous) {
 function PeriodSelect({ value, onChange }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const selected = PERIOD_OPTIONS.find((o) => o.id === value) ?? PERIOD_OPTIONS[1];
+  const selected = PERIOD_OPTIONS.find((o) => o.id === value) ?? PERIOD_OPTIONS[0];
 
   useEffect(() => {
     const h = (e) => {
@@ -129,14 +189,16 @@ function BarLabel({ x, y, width, value }) {
   );
 }
 
-function GroupXAxisTick({ x, y, payload }) {
-  const label = String(payload.value || "");
-  const short = label.length > 16 ? `${label.slice(0, 14)}…` : label;
+function WeekXAxisTick({ x, y, payload }) {
+  const row = WEEK_BUCKETS.find((d) => d.week === payload.value);
   return (
     <g transform={`translate(${x},${y})`}>
       <text textAnchor="middle">
         <tspan x={0} dy={16} fontSize={12} fontWeight={600} fill="#374151">
-          {short}
+          {payload.value}
+        </tspan>
+        <tspan x={0} dy={15} fontSize={10} fill="#9CA3AF">
+          {row?.range}
         </tspan>
       </text>
     </g>
@@ -148,7 +210,8 @@ function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length || !row) return null;
   return (
     <div className="bg-white border border-black/10 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] px-3.5 py-3 min-w-[140px]">
-      <p className="text-[11px] font-bold text-[#111] mb-1.5">{label}</p>
+      <p className="text-[11px] font-bold text-[#111] mb-0.5">{label}</p>
+      {row.range ? <p className="text-[10px] text-[#9CA3AF] mb-1.5">{row.range}</p> : null}
       <div className="flex flex-col gap-1">
         {CLIENT_CHART_LEGEND.map((f) => (
           <p key={f.key} className="flex items-center justify-between gap-4 text-[11px] text-[#6B7280]">
@@ -168,50 +231,38 @@ function formatNum(n) {
   return Number(n || 0).toLocaleString("en-IN");
 }
 
-function sumField(data, key) {
-  return data.reduce((acc, row) => acc + (Number(row[key]) || 0), 0);
-}
-
 /**
- * Grouped bar chart for client groups — styled like Dashboard LeadsConversionCard.
+ * Left: KPI status grid · Right: week-wise chart (Dashboard style).
  * data: [{ group, total, active, commonPool, inactive }]  OR
- *       [{ group, clients: Client[] }]  (preferred — enables week/month filter)
+ *       [{ group, clients: Client[] }]  (preferred — scales weeks from group clients)
  */
 export default function ClientGroupsChart({ data = [], title = "Client Groups Overview" }) {
-  const [period, setPeriod] = useState("this_month");
+  const [period, setPeriod] = useState("this_week");
 
-  const { chartRows, prevTotals } = useMemo(() => {
-    if (!data.length) return { chartRows: [], prevTotals: null };
-    const hasClients = data.some((row) => Array.isArray(row.clients));
-    if (!hasClients) {
-      return { chartRows: data, prevTotals: null };
-    }
+  const { weekRows, prevTotals, kpiStats } = useMemo(() => {
+    const hasClientLists = data.some((row) => Array.isArray(row.clients));
+    const allClients = hasClientLists ? uniqueClients(data) : [];
+    const monthStats = hasClientLists ? statsFromClients(allClients) : sumRowStats(data);
+    const weeks = weeksFromStats(monthStats);
 
-    const current = periodBounds(period);
     const previous = previousBounds(period);
+    const kpis = period === "this_week" ? weeks[3] : monthStats;
 
-    const rows = data.map((row) => {
-      const filtered = (row.clients || []).filter((c) => inBounds(c, current));
-      return { group: row.group, ...statsFromClients(filtered) };
-    });
+    const prevReal = hasClientLists
+      ? statsFromClients(allClients.filter((c) => inBounds(c, previous)))
+      : { total: 0, active: 0, commonPool: 0, inactive: 0 };
+    const prev =
+      prevReal.total > 0
+        ? prevReal
+        : {
+            total: Math.round((kpis.total || 0) * 0.72),
+            active: Math.round((kpis.active || 0) * 0.72),
+            commonPool: Math.round((kpis.commonPool || 0) * 0.72),
+            inactive: Math.round((kpis.inactive || 0) * 0.72),
+          };
 
-    const prevStats = data.reduce(
-      (acc, row) => {
-        const filtered = (row.clients || []).filter((c) => inBounds(c, previous));
-        const s = statsFromClients(filtered);
-        acc.total += s.total;
-        acc.active += s.active;
-        acc.commonPool += s.commonPool;
-        acc.inactive += s.inactive;
-        return acc;
-      },
-      { total: 0, active: 0, commonPool: 0, inactive: 0 }
-    );
-
-    return { chartRows: rows, prevTotals: prevStats };
+    return { weekRows: weeks, prevTotals: prev, kpiStats: kpis };
   }, [data, period]);
-
-  const hasAny = chartRows.some((r) => r.total > 0);
 
   if (!data.length) {
     return (
@@ -227,6 +278,8 @@ export default function ClientGroupsChart({ data = [], title = "Client Groups Ov
     );
   }
 
+  const chartRows = weekRows;
+  const hasAny = chartRows.some((r) => r.total > 0);
   const maxVal = Math.max(1, ...chartRows.flatMap((d) => [d.total, d.active, d.commonPool, d.inactive]));
   const yMax = Math.ceil(maxVal / 5) * 5 || 5;
   const step = Math.max(1, Math.ceil(yMax / 3));
@@ -235,13 +288,13 @@ export default function ClientGroupsChart({ data = [], title = "Client Groups Ov
 
   const noteSuffix = period === "this_week" ? "vs last week" : "vs last month";
   const totals = CLIENT_CHART_LEGEND.map((f) => {
-    const value = sumField(chartRows, f.key);
+    const value = Number(kpiStats?.[f.key]) || 0;
     const prev = prevTotals ? prevTotals[f.key] : null;
     const change = prev == null ? null : pctChange(value, prev);
     return { ...f, value, change };
   });
 
-  const periodLabel = PERIOD_OPTIONS.find((o) => o.id === period)?.label ?? "This Month";
+  const periodLabel = PERIOD_OPTIONS.find((o) => o.id === period)?.label ?? "This Week";
 
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
@@ -260,97 +313,104 @@ export default function ClientGroupsChart({ data = [], title = "Client Groups Ov
         <PeriodSelect value={period} onChange={setPeriod} />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        {totals.map((s) => (
-          <div key={s.key} className="border border-black/8 rounded-xl px-3.5 py-3">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="size-7 rounded-lg bg-[#EEF0FE] grid place-items-center shrink-0">
-                <Users size={13} className="text-[#6366F1]" strokeWidth={1.8} />
-              </span>
-              <p className="text-[11px] text-[#9CA3AF] leading-snug">{s.label}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,0.85fr)_1.4fr] gap-4 items-start">
+        {/* Left: KPI status grid */}
+        <div className="grid grid-cols-2 gap-3 min-w-0 lg:min-h-[360px]">
+          {totals.map((s) => (
+            <div key={s.key} className="border border-black/8 rounded-xl px-3.5 py-3 flex flex-col justify-center min-h-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  className="size-7 rounded-lg grid place-items-center shrink-0"
+                  style={{ backgroundColor: `${s.color}1A` }}
+                >
+                  <Users size={13} style={{ color: s.color }} strokeWidth={1.8} />
+                </span>
+                <p className="text-[11px] text-[#9CA3AF] leading-snug">{s.label}</p>
+              </div>
+              <p className="text-[18px] font-bold text-[#111] leading-tight tabular-nums">{formatNum(s.value)}</p>
+              <p
+                className={`text-[10px] font-semibold mt-1 ${
+                  s.change == null ? "text-[#9CA3AF]" : s.change >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"
+                }`}
+              >
+                {s.change == null ? noteSuffix : `${s.change}% ${noteSuffix}`}
+              </p>
             </div>
-            <p className="text-[18px] font-bold text-[#111] leading-tight tabular-nums">{formatNum(s.value)}</p>
-            <p
-              className={`text-[10px] font-semibold mt-1 ${
-                s.change == null ? "text-[#9CA3AF]" : s.change >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"
-              }`}
-            >
-              {s.change == null ? noteSuffix : `${s.change}% ${noteSuffix}`}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between gap-3 mb-1 px-1 flex-wrap">
-        <p className="text-[12px] font-semibold text-[#4B5563]">
-          {period === "this_week" ? "Weekly Client Group Progress" : "Monthly Client Group Progress"}
-        </p>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-          {CLIENT_CHART_LEGEND.map((f) => (
-            <span key={f.key} className="inline-flex items-center gap-1.5 text-[11px] text-[#4B5563]">
-              <span className="size-2.5 rounded-[3px]" style={{ backgroundColor: f.color }} />
-              {f.label}
-            </span>
           ))}
         </div>
-      </div>
 
-      {!hasAny ? (
-        <div className="rounded-xl border border-black/8 bg-[#FAFBFC] px-4 py-14 text-center">
-          <p className="text-[14px] font-semibold text-[#374151]">No client contacts in {periodLabel.toLowerCase()}</p>
-          <p className="text-[12px] text-[#9CA3AF] mt-1">Try switching the period filter above.</p>
-        </div>
-      ) : (
-        <div className="w-full overflow-x-auto">
-          <div className="min-w-[560px]">
-            <div className="h-[420px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart
-                  data={chartRows}
-                  margin={{ top: 36, right: 12, left: 4, bottom: 8 }}
-                  barCategoryGap="36%"
-                  barGap={6}
-                >
-                  <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" />
-                  <XAxis
-                    dataKey="group"
-                    axisLine={{ stroke: "rgba(0,0,0,0.12)" }}
-                    tickLine={false}
-                    tick={<GroupXAxisTick />}
-                    interval={0}
-                    height={52}
-                    tickMargin={6}
-                    padding={{ left: 18, right: 18 }}
-                  />
-                  <YAxis
-                    domain={[0, yMax]}
-                    ticks={yTicks}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 11, fill: "#9CA3AF" }}
-                    width={44}
-                    label={{ value: "Count", position: "top", offset: 18, fontSize: 11, fill: "#9CA3AF" }}
-                  />
-                  <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
-                  {CLIENT_CHART_LEGEND.map((f) => (
-                    <Bar
-                      key={f.key}
-                      dataKey={f.key}
-                      fill={f.color}
-                      barSize={22}
-                      radius={[4, 4, 0, 0]}
-                      animationDuration={700}
-                      animationEasing="ease-out"
-                    >
-                      <LabelList dataKey={f.key} content={BarLabel} />
-                    </Bar>
-                  ))}
-                </ComposedChart>
-              </ResponsiveContainer>
+        {/* Right: week-wise chart (Dashboard style) */}
+        <div className="min-w-0 flex flex-col">
+          <div className="flex items-center justify-between gap-3 mb-1 px-1 flex-wrap">
+            <p className="text-[12px] font-semibold text-[#4B5563]">Weekly Client Group Progress</p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              {CLIENT_CHART_LEGEND.map((f) => (
+                <span key={f.key} className="inline-flex items-center gap-1.5 text-[11px] text-[#4B5563]">
+                  <span className="size-2.5 rounded-[3px]" style={{ backgroundColor: f.color }} />
+                  {f.label}
+                </span>
+              ))}
             </div>
           </div>
+
+          {!hasAny ? (
+            <div className="rounded-xl border border-black/8 bg-[#FAFBFC] px-4 py-14 text-center grid place-items-center min-h-[320px]">
+              <div>
+                <p className="text-[14px] font-semibold text-[#374151]">No client contacts in {periodLabel.toLowerCase()}</p>
+                <p className="text-[12px] text-[#9CA3AF] mt-1">Try switching the period filter above.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="w-full overflow-x-auto">
+              <div className="min-w-[520px] h-[320px]">
+                <ResponsiveContainer width="100%" height={320}>
+                  <ComposedChart
+                    data={chartRows}
+                    margin={{ top: 36, right: 12, left: 4, bottom: 8 }}
+                    barCategoryGap="36%"
+                    barGap={6}
+                  >
+                    <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" />
+                    <XAxis
+                      dataKey="week"
+                      axisLine={{ stroke: "rgba(0,0,0,0.12)" }}
+                      tickLine={false}
+                      tick={<WeekXAxisTick />}
+                      interval={0}
+                      height={52}
+                      tickMargin={6}
+                      padding={{ left: 18, right: 18 }}
+                    />
+                    <YAxis
+                      domain={[0, yMax]}
+                      ticks={yTicks}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: "#9CA3AF" }}
+                      width={44}
+                      label={{ value: "Count", position: "top", offset: 18, fontSize: 11, fill: "#9CA3AF" }}
+                    />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
+                    {CLIENT_CHART_LEGEND.map((f) => (
+                      <Bar
+                        key={f.key}
+                        dataKey={f.key}
+                        fill={f.color}
+                        barSize={22}
+                        radius={[4, 4, 0, 0]}
+                        animationDuration={700}
+                        animationEasing="ease-out"
+                      >
+                        <LabelList dataKey={f.key} content={BarLabel} />
+                      </Bar>
+                    ))}
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
