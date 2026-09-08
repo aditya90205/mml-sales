@@ -114,6 +114,42 @@ function SectionsSidebar({ sections, activeKey, onSelect }) {
   );
 }
 
+function SelectedDocumentsCard({ documents }) {
+  if (!documents?.length) return null;
+
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl overflow-hidden">
+      <div className="flex items-center justify-between gap-2 px-5 pt-4 pb-3">
+        <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wide">Selected documents</p>
+        <span className="text-[11px] font-semibold text-[#7A0A17]">{documents.length}</span>
+      </div>
+      <div className="flex flex-col border-t border-black/6">
+        {documents.map((doc) => (
+          <div
+            key={doc.id}
+            className="flex items-start gap-2.5 px-5 py-3 border-b border-black/5 last:border-0"
+          >
+            <span className="mt-0.5 size-4 rounded border border-[#16A34A] bg-[#E7F8EF] grid place-items-center shrink-0">
+              <span className="text-[9px] font-bold text-[#16A34A]">✓</span>
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12.5px] font-semibold text-[#111] leading-snug">
+                {doc.label}
+                {doc.mandatory ? <span className="text-[#E8395B]"> *</span> : null}
+              </p>
+              {doc.fileName ? (
+                <p className="text-[11px] text-[#16A34A] mt-0.5 truncate">{doc.fileName}</p>
+              ) : (
+                <p className="text-[11px] text-[#9CA3AF] mt-0.5">Selected · file pending</p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /**
  * "Fill the form" view — section header, field blocks, progress rail.
  */
@@ -131,13 +167,26 @@ export default function IntakeFillFormView({
   onFinishToRecord,
 }) {
   const [documentsKycOpen, setDocumentsKycOpen] = useState(false);
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
   const biodataInputRef = useRef(null);
+  const documentsKycRef = useRef(null);
 
   const handleBiodataUpload = (e) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
     toast.success(`Biodata uploaded: ${file.name}`);
+  };
+
+  const handleDocumentsKycDone = () => {
+    const selected = documentsKycRef.current?.getSelectedDocs?.() || [];
+    setSelectedDocuments(selected);
+    setDocumentsKycOpen(false);
+    if (selected.length) {
+      toast.success(`${selected.length} document${selected.length === 1 ? "" : "s"} saved.`);
+    } else {
+      toast.info("No documents selected.");
+    }
   };
 
   const activeIndex = SECTIONS_META.findIndex((s) => s.key === activeKey);
@@ -293,6 +342,7 @@ export default function IntakeFillFormView({
       <div className="flex flex-col gap-5">
         <FormFilledCard percent={overallPercent} filled={empty ? 0 : OVERALL_FILLED_FIELDS} total={OVERALL_TOTAL_FIELDS} />
         <SectionsSidebar sections={sections} activeKey={activeKey} onSelect={setActiveKey} />
+        <SelectedDocumentsCard documents={selectedDocuments} />
       </div>
 
       <Modal
@@ -323,14 +373,14 @@ export default function IntakeFillFormView({
         footer={
           <button
             type="button"
-            onClick={() => setDocumentsKycOpen(false)}
+            onClick={handleDocumentsKycDone}
             className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
           >
             Done
           </button>
         }
       >
-        <DocumentsKycTab empty={empty} embedded />
+        <DocumentsKycTab ref={documentsKycRef} empty={empty} embedded />
       </Modal>
     </div>
   );

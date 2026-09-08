@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
@@ -50,7 +50,7 @@ function MandatoryToggle({ checked, onChange }) {
 }
 
 /** Documents & KYC — used as a tab or embedded inside a modal. */
-export default function DocumentsKycTab({ empty = false, embedded = false }) {
+const DocumentsKycTab = forwardRef(function DocumentsKycTab({ empty = false, embedded = false }, ref) {
   const fileInputRef = useRef(null);
   const [docs, setDocs] = useState(INITIAL_DOCUMENTS);
   const [uploadForId, setUploadForId] = useState(null);
@@ -59,6 +59,10 @@ export default function DocumentsKycTab({ empty = false, embedded = false }) {
   const [editId, setEditId] = useState(null);
   const [nameDraft, setNameDraft] = useState("");
   const [mandatoryDraft, setMandatoryDraft] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    getSelectedDocs: () => docs.filter((d) => d.done).map((d) => ({ ...d })),
+  }));
 
   const visibleDocs = empty
     ? docs.map((d) => ({ ...d, label: d.label, fileName: "", done: false }))
@@ -302,4 +306,6 @@ export default function DocumentsKycTab({ empty = false, embedded = false }) {
       {body}
     </div>
   );
-}
+});
+
+export default DocumentsKycTab;
