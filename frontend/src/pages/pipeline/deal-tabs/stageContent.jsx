@@ -60,6 +60,7 @@ export function stageGateFor(stage) {
     { label: "Package selected & quoted", done: r >= 4 },
     { label: "Discount approved (if any)", done: r >= 5 },
     { label: "KYC documents uploaded", done: r >= 5 },
+    { label: "Handover Checklist Complete", done: r >= 6 },
   ];
 }
 
