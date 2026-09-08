@@ -1,157 +1,262 @@
 import { useRef, useState } from "react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
-import StatusPill from "../../../components/common/StatusPill";
-import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
-import { dashRows, EMPTY } from "./stageContent.jsx";
 
 const INITIAL_DOCUMENTS = [
-  { label: "Aadhaar card — client",    note: "Uploaded 29 Jun · auto-verified via KYC API",             done: true,  status: "Verified",    tone: "green" },
-  { label: "PAN card — client",        note: "Uploaded 29 Jun · auto-verified via KYC API",             done: true,  status: "Verified",    tone: "green" },
-  { label: "Parent Aadhaar & PAN",     note: "Father received. Mother's PAN outstanding.",              done: false, status: "Partial",     tone: "amber" },
-  { label: "Police verification",      note: "Third-party request raised 24 Jul",                       done: false, status: "In Progress", tone: "blue" },
-  { label: "House / GPS photo",        note: "Captured at home visit, 02 Jul",                          done: true,  status: "Verified",    tone: "green" },
-  { label: "Selfie with client",       note: "Captured at home visit, 02 Jul",                          done: true,  status: "Verified",    tone: "green" },
-  { label: "Handwritten contract — OCR", note: "Scan uploaded. Extraction queued for RM validation.",   done: false, status: "Pending",     tone: "gray" },
+  { id: "doc-1", label: "Aadhaar card — client", fileName: "", done: false },
+  { id: "doc-2", label: "PAN card — client", fileName: "", done: false },
+  { id: "doc-3", label: "Parent Aadhaar & PAN", fileName: "", done: false },
+  { id: "doc-4", label: "Police verification", fileName: "", done: false },
+  { id: "doc-5", label: "House / GPS photo", fileName: "", done: false },
+  { id: "doc-6", label: "Selfie with client", fileName: "", done: false },
+  { id: "doc-7", label: "Handwritten contract — OCR", fileName: "", done: false },
 ];
 
 const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
-/** Documents & KYC tab — per-document verification checklist. */
-export default function DocumentsKycTab({ empty = false }) {
-  const fileRef = useRef(null);
-  const [docs, setDocs] = useState(INITIAL_DOCUMENTS);
-  const [open, setOpen] = useState(false);
-  const [label, setLabel] = useState("");
-  const [file, setFile] = useState(null);
+const ACTION_BTN =
+  "inline-flex items-center justify-center h-9 px-3.5 rounded-lg bg-white border border-black/15 text-[12.5px] font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors shrink-0";
 
-  const reset = () => {
-    setLabel("");
-    setFile(null);
-    if (fileRef.current) fileRef.current.value = "";
+const ICON_BTN =
+  "inline-flex items-center justify-center size-9 rounded-lg border border-black/10 text-[#6B7280] hover:bg-[#FAFAFB] hover:text-[#111] transition-colors shrink-0";
+
+/** Documents & KYC — used as a tab or embedded inside a modal. */
+export default function DocumentsKycTab({ empty = false, embedded = false }) {
+  const fileInputRef = useRef(null);
+  const [docs, setDocs] = useState(INITIAL_DOCUMENTS);
+  const [uploadForId, setUploadForId] = useState(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [nameDraft, setNameDraft] = useState("");
+
+  const visibleDocs = empty
+    ? docs.map((d) => ({ ...d, label: d.label, fileName: "", done: false }))
+    : docs;
+
+  const toggleDoc = (id) => {
+    setDocs((prev) => prev.map((doc) => (doc.id === id ? { ...doc, done: !doc.done } : doc)));
   };
 
-  const handleSave = (e) => {
+  const openAddRow = () => {
+    setNameDraft("");
+    setAddOpen(true);
+  };
+
+  const saveAddRow = (e) => {
     e.preventDefault();
-    if (!label.trim() || !file) {
-      toast.error("Please add a document name and file.");
+    if (!nameDraft.trim()) {
+      toast.error("Please enter a document name.");
       return;
     }
     setDocs((prev) => [
-      {
-        label: label.trim(),
-        note: `Uploaded just now · ${file.name}`,
-        done: false,
-        status: "Pending",
-        tone: "gray",
-      },
       ...prev,
+      {
+        id: `doc-${Date.now()}`,
+        label: nameDraft.trim(),
+        fileName: "",
+        done: false,
+      },
     ]);
-    toast.success("Document uploaded.");
-    reset();
-    setOpen(false);
+    toast.success("Document row added.");
+    setAddOpen(false);
+    setNameDraft("");
   };
 
-  const toggleDoc = (index) => {
+  const openEdit = (doc) => {
+    setEditId(doc.id);
+    setNameDraft(doc.label);
+    setEditOpen(true);
+  };
+
+  const saveEdit = (e) => {
+    e.preventDefault();
+    if (!nameDraft.trim()) {
+      toast.error("Please enter a document name.");
+      return;
+    }
     setDocs((prev) =>
-      prev.map((doc, i) => {
-        if (i !== index) return doc;
-        const done = !doc.done;
-        return { ...doc, done, status: done ? "Verified" : "Pending", tone: done ? "green" : "gray" };
-      })
+      prev.map((doc) => (doc.id === editId ? { ...doc, label: nameDraft.trim() } : doc))
     );
+    toast.success("Document updated.");
+    setEditOpen(false);
+    setEditId(null);
+    setNameDraft("");
   };
 
-  const visibleDocs = dashRows(docs, empty, ["label"]);
+  const deleteDoc = (id) => {
+    setDocs((prev) => prev.filter((doc) => doc.id !== id));
+    toast.success("Document removed.");
+  };
 
-  return (
-    <div className="bg-white border border-black/8 rounded-2xl p-5">
-      <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-        <div className="min-w-0">
+  const startUpload = (id) => {
+    setUploadForId(id);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChosen = (e) => {
+    const file = e.target.files?.[0];
+    const targetId = uploadForId;
+    e.target.value = "";
+    setUploadForId(null);
+    if (!file || !targetId) return;
+    setDocs((prev) =>
+      prev.map((doc) =>
+        doc.id === targetId
+          ? { ...doc, fileName: file.name, done: true }
+          : doc
+      )
+    );
+    toast.success(`Attached ${file.name}`);
+  };
+
+  const body = (
+    <>
+      {!embedded && (
+        <div className="mb-4">
           <h3 className="text-[14px] font-bold text-[#111]">Documents &amp; KYC</h3>
           <p className="text-[12px] text-[#9CA3AF] mt-0.5">Aadhaar and PAN auto-verify via KYC API</p>
         </div>
-        <TabHeaderButton onClick={() => setOpen(true)}>Upload document</TabHeaderButton>
-      </div>
+      )}
 
-      <div className="flex flex-col divide-y divide-black/5">
-        {visibleDocs.map((doc, i) => (
-          <div key={`${doc.label}-${i}`} className="flex items-center gap-3 py-3.5 flex-wrap sm:flex-nowrap">
-            <ChecklistCheck done={doc.done} onClick={() => toggleDoc(i)} label={doc.label} />
-            <button type="button" onClick={() => toggleDoc(i)} className="min-w-0 flex-1 text-left">
-              <p className="text-[13px] font-semibold text-[#111]">{doc.label}</p>
-              <p className="text-[11.5px] text-[#9CA3AF] mt-0.5">{doc.note}</p>
-            </button>
-            <button type="button" onClick={() => toggleDoc(i)}>
-              {doc.status === EMPTY ? (
-                <span className="text-[12px] text-[#9CA3AF]">-</span>
-              ) : (
-                <StatusPill tone={doc.tone}>{doc.status}</StatusPill>
-              )}
-            </button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+        className="hidden"
+        onChange={handleFileChosen}
+      />
+
+      <div className="flex flex-col">
+        {visibleDocs.map((doc) => (
+          <div
+            key={doc.id}
+            className="flex items-center gap-3 py-3 border-b border-black/6 last:border-b-0 flex-wrap sm:flex-nowrap"
+          >
+            <ChecklistCheck done={doc.done} onClick={() => toggleDoc(doc.id)} label={doc.label} />
+            <div className="min-w-0 flex-1">
+              <p className="text-[13.5px] font-semibold text-[#111]">{doc.label}</p>
+              {doc.fileName ? (
+                <p className="text-[11.5px] text-[#16A34A] mt-0.5 truncate">{doc.fileName}</p>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+              <button type="button" onClick={() => openEdit(doc)} className={ICON_BTN} title="Edit" aria-label="Edit">
+                <Pencil size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteDoc(doc.id)}
+                className={`${ICON_BTN} hover:text-[#DC2626] hover:border-[#FECACA]`}
+                title="Delete"
+                aria-label="Delete"
+              >
+                <Trash2 size={14} />
+              </button>
+              <button type="button" onClick={() => startUpload(doc.id)} className={ACTION_BTN}>
+                Attach &amp; Upload
+              </button>
+            </div>
           </div>
         ))}
       </div>
 
+      <button
+        type="button"
+        onClick={openAddRow}
+        className="mt-4 inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/12 text-[13px] font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors"
+      >
+        <Plus size={15} />
+        Add Row
+      </button>
+
       <Modal
-        open={open}
-        onClose={() => { reset(); setOpen(false); }}
-        title="Upload document"
-        subtitle="KYC files are auto-verified where possible"
+        open={addOpen}
+        onClose={() => { setAddOpen(false); setNameDraft(""); }}
+        title="Add document"
+        subtitle="Enter a name for the new document row"
+        width="max-w-md"
         footer={
           <>
             <button
               type="button"
-              onClick={() => { reset(); setOpen(false); }}
+              onClick={() => { setAddOpen(false); setNameDraft(""); }}
               className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              form="upload-doc-form"
+              form="add-doc-row-form"
               className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
             >
-              Upload
+              Add
             </button>
           </>
         }
       >
-        <form id="upload-doc-form" onSubmit={handleSave} className="flex flex-col gap-4">
-          <div>
-            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Document name</label>
-            <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Aadhaar card — parent" className={FIELD} />
-          </div>
-          <div>
-            <label className="block text-[13px] font-bold text-[#111] mb-1.5">File</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                readOnly
-                value={file?.name || ""}
-                placeholder="PDF, JPG or PNG"
-                className={`${FIELD} bg-white`}
-              />
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="shrink-0 h-11 px-4 rounded-xl bg-white border border-black/12 text-[13px] font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors"
-              >
-                Browse
-              </button>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-              />
-            </div>
-          </div>
+        <form id="add-doc-row-form" onSubmit={saveAddRow} className="flex flex-col gap-3">
+          <label className="block text-[13px] font-bold text-[#111]">
+            Document name
+            <input
+              autoFocus
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              placeholder="e.g. Marriage certificate"
+              className={`${FIELD} mt-1.5`}
+            />
+          </label>
         </form>
       </Modal>
+
+      <Modal
+        open={editOpen}
+        onClose={() => { setEditOpen(false); setEditId(null); setNameDraft(""); }}
+        title="Edit document"
+        subtitle="Update the document name"
+        width="max-w-md"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => { setEditOpen(false); setEditId(null); setNameDraft(""); }}
+              className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="edit-doc-row-form"
+              className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+            >
+              Save
+            </button>
+          </>
+        }
+      >
+        <form id="edit-doc-row-form" onSubmit={saveEdit} className="flex flex-col gap-3">
+          <label className="block text-[13px] font-bold text-[#111]">
+            Document name
+            <input
+              autoFocus
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              className={`${FIELD} mt-1.5`}
+            />
+          </label>
+        </form>
+      </Modal>
+    </>
+  );
+
+  if (embedded) return <div className="min-w-0">{body}</div>;
+
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl p-5">
+      {body}
     </div>
   );
 }

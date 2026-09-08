@@ -13,6 +13,7 @@ export default function Modal({
   footer,
   width = "max-w-lg",
   hideHeader = false,
+  headerActions,
 }) {
   useEffect(() => {
     if (!open) return;
@@ -41,7 +42,7 @@ export default function Modal({
       >
         {/* header */}
         {!hideHeader && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-black/10 shrink-0">
+          <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-black/10 shrink-0">
             <div className="flex items-center gap-3 min-w-0">
               {icon && (
                 <span
@@ -56,14 +57,17 @@ export default function Modal({
                 {subtitle && <p className="text-xs text-[#6f7886] mt-0.5">{subtitle}</p>}
               </div>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1 rounded-lg text-[#6f7886] hover:bg-black/5 transition-colors shrink-0"
-              aria-label="Close modal"
-            >
-              <X size={18} />
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {headerActions}
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1 rounded-lg text-[#6f7886] hover:bg-black/5 transition-colors shrink-0"
+                aria-label="Close modal"
+              >
+                <X size={18} />
+              </button>
+            </div>
           </div>
         )}
         {/* body */}

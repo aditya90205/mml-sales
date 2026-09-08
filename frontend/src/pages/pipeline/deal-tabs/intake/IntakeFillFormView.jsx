@@ -1,4 +1,6 @@
+import { useRef, useState } from "react";
 import { toast } from "react-toastify";
+import { Upload } from "lucide-react";
 import {
   SECTIONS_META,
   SECTION_BLOCKS,
@@ -9,6 +11,8 @@ import {
   countSectionFields,
 } from "./intakeFormData";
 import { FormBlock } from "./IntakeSectionFields";
+import Modal from "../../../../components/ui/Modal";
+import DocumentsKycTab from "../DocumentsKycTab";
 
 function SectionHeader({
   index,
@@ -17,6 +21,7 @@ function SectionHeader({
   filled,
   total,
   tip,
+  onOpenDocumentsKyc,
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -43,10 +48,10 @@ function SectionHeader({
         </button>
         <button
           type="button"
-          onClick={() => toast.info("Attach photo or document coming soon.")}
+          onClick={onOpenDocumentsKyc}
           className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#374151] hover:bg-[#FAFAFB] transition-colors"
         >
-          Attach photo or document
+          Document & KYC
         </button>
       </div>
 
@@ -125,6 +130,16 @@ export default function IntakeFillFormView({
   onRequestPersonalSave,
   onFinishToRecord,
 }) {
+  const [documentsKycOpen, setDocumentsKycOpen] = useState(false);
+  const biodataInputRef = useRef(null);
+
+  const handleBiodataUpload = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    toast.success(`Biodata uploaded: ${file.name}`);
+  };
+
   const activeIndex = SECTIONS_META.findIndex((s) => s.key === activeKey);
   const activeBlocks = SECTION_BLOCKS[activeKey];
   const activeCounts = empty
@@ -187,6 +202,7 @@ export default function IntakeFillFormView({
           filled={activeCounts.filled}
           total={activeCounts.total}
           tip={SECTION_TIPS[activeKey]}
+          onOpenDocumentsKyc={() => setDocumentsKycOpen(true)}
         />
 
         {isPersonal && (
@@ -278,6 +294,44 @@ export default function IntakeFillFormView({
         <FormFilledCard percent={overallPercent} filled={empty ? 0 : OVERALL_FILLED_FIELDS} total={OVERALL_TOTAL_FIELDS} />
         <SectionsSidebar sections={sections} activeKey={activeKey} onSelect={setActiveKey} />
       </div>
+
+      <Modal
+        open={documentsKycOpen}
+        onClose={() => setDocumentsKycOpen(false)}
+        title="Documents & KYC"
+        subtitle="Aadhaar and PAN auto-verify via KYC API"
+        width="max-w-2xl"
+        headerActions={
+          <>
+            <input
+              ref={biodataInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              className="hidden"
+              onChange={handleBiodataUpload}
+            />
+            <button
+              type="button"
+              onClick={() => biodataInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/12 text-[12.5px] font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors"
+            >
+              <Upload size={14} />
+              Upload Biodata
+            </button>
+          </>
+        }
+        footer={
+          <button
+            type="button"
+            onClick={() => setDocumentsKycOpen(false)}
+            className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            Done
+          </button>
+        }
+      >
+        <DocumentsKycTab empty={empty} embedded />
+      </Modal>
     </div>
   );
 }
