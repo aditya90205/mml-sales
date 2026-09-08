@@ -369,7 +369,12 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => navigate("/tasks")}
+                onClick={() => {
+                  const client = deal.name || lead?.name || "";
+                  const params = new URLSearchParams({ createTask: "1" });
+                  if (client) params.set("client", client);
+                  navigate(`/calendar?${params.toString()}`);
+                }}
                 className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[12.5px] font-medium leading-none text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
               >
                 <CheckSquare size={14} className="shrink-0 block" aria-hidden />

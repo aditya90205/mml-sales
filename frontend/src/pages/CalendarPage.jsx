@@ -1,4 +1,5 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   ChevronLeft,
   ChevronRight,
@@ -757,6 +758,7 @@ function MiniCalendar({ cursor, onCursorChange, selected, onSelect }) {
 /* ───────────────────────── Page ───────────────────────── */
 
 export default function CalendarPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [view, setView] = useState("Week");
   const [viewOpen, setViewOpen] = useState(false);
   const [layout, setLayout] = useState("grid"); // "grid" | "list"
@@ -777,7 +779,29 @@ export default function CalendarPage() {
   const [createMeetingOpen, setCreateMeetingOpen] = useState(false);
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [createOtherOpen, setCreateOtherOpen] = useState(false);
+  const [taskPrefill, setTaskPrefill] = useState(null);
   const [dragOverCell, setDragOverCell] = useState(null);
+
+  useEffect(() => {
+    if (searchParams.get("createTask") !== "1") return;
+    const client = (searchParams.get("client") || "").trim();
+    setEditingItem(null);
+    setTaskPrefill(
+      client
+        ? {
+            isClientRelated: true,
+            client,
+            title: `Follow up — ${client}`,
+            description: `Follow-up task from pipeline for ${client}.`,
+          }
+        : { isClientRelated: true }
+    );
+    setCreateTaskOpen(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete("createTask");
+    next.delete("client");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const allChecked = activeCats.size === Object.keys(CATEGORIES).length;
 
@@ -1157,6 +1181,7 @@ export default function CalendarPage() {
 
   const closeTaskModal = () => {
     setCreateTaskOpen(false);
+    setTaskPrefill(null);
     setEditingItem((prev) => (prev?.category === "task" ? null : prev));
   };
 
@@ -1198,7 +1223,7 @@ export default function CalendarPage() {
             <div className="absolute left-0 right-0 top-[calc(100%+6px)] bg-white border border-black/10 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-40 py-1 overflow-hidden">
               {[
                 { label: "Event", icon: CalendarCheck2, color: "#A02868", onClick: () => { setEditingItem(null); setCreateEventOpen(true); } },
-                { label: "Task", icon: ListTodo, color: "#7C6CB0", onClick: () => { setEditingItem(null); setCreateTaskOpen(true); } },
+                { label: "Task", icon: ListTodo, color: "#7C6CB0", onClick: () => { setEditingItem(null); setTaskPrefill(null); setCreateTaskOpen(true); } },
                 { label: "Meeting", icon: Users2, color: "#41703D", onClick: () => { setEditingItem(null); setCreateMeetingOpen(true); } },
                 { label: "Others", icon: CircleDot, color: "#6F7886", onClick: () => { setEditingItem(null); setCreateOtherOpen(true); } },
               ].map((item) => (
@@ -1488,7 +1513,11 @@ export default function CalendarPage() {
         onClose={closeTaskModal}
         defaultDate={anchorDate}
         mode={editingItem?.category === "task" ? "edit" : "create"}
-        initial={editingItem?.category === "task" ? eventToTaskForm(editingItem) : null}
+        initial={
+          editingItem?.category === "task"
+            ? eventToTaskForm(editingItem)
+            : taskPrefill
+        }
         onSave={(form) => {
           if (editingItem?.category === "task") {
             handleUpdateTask(form);

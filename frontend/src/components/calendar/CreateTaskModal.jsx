@@ -127,7 +127,10 @@ export default function CreateTaskModal({ open, onClose, onSave, defaultDate, in
               <option value="" disabled>
                 Select a Client
               </option>
-              {TASK_CLIENTS.map((c) => (
+              {(form.client && !TASK_CLIENTS.includes(form.client)
+                ? [form.client, ...TASK_CLIENTS]
+                : TASK_CLIENTS
+              ).map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
