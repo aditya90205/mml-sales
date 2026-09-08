@@ -878,9 +878,18 @@ export default function PipelineBoard() {
   };
 
   const handleOpenDeal = (lead, stageKey) => {
+    const STAGE_TO_TAB = {
+      P0: "overview",
+      P1: "overview",
+      P2: "intake",
+      P3: "visits",
+      P4: "package",
+      P5: "payments",
+      P6: "p6",
+    };
     setActiveLead(lead);
     setDealTargetStage(stageKey);
-    setDealInitialTab("overview");
+    setDealInitialTab(STAGE_TO_TAB[stageKey] || "overview");
     setSubView("deal-detail");
   };
 

@@ -101,6 +101,17 @@ const NEXT_STAGE = {
   P5: "P6",
 };
 
+/** Which deal-detail tab belongs to each pipeline stage. */
+const STAGE_TO_TAB = {
+  P0: "overview",
+  P1: "overview",
+  P2: "intake",
+  P3: "visits",
+  P4: "package",
+  P5: "payments",
+  P6: "p6",
+};
+
 const LOCK_NOTES = {
   P0: "Qualify the lead and capture intent before this deal can move to P1.",
   P1: "Complete data collection requirements before this deal can move to P2.",
@@ -128,7 +139,9 @@ export default function DealDetailPage({
   onPremiumChange,
 }) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeTab, setActiveTab] = useState(
+    () => STAGE_TO_TAB[currentStage] || initialTab || "overview"
+  );
   const [winLossModal, setWinLossModal] = useState({ open: false, mode: "lost" });
   const [winLossOverride, setWinLossOverride] = useState(null);
   const [isPremium, setIsPremium] = useState(() => Boolean(lead?.starred));
@@ -145,6 +158,12 @@ export default function DealDetailPage({
   useEffect(() => {
     setIsPremium(Boolean(lead?.starred));
   }, [lead?.id, lead?.starred]);
+
+  // Keep the open tab aligned with the current pipeline stage (Move to P2 → Profile Create, etc.).
+  useEffect(() => {
+    const tabForStage = STAGE_TO_TAB[currentStage];
+    if (tabForStage) setActiveTab(tabForStage);
+  }, [currentStage]);
 
   const handlePremiumChange = (premium) => {
     setIsPremium(premium);
@@ -240,6 +259,8 @@ export default function DealDetailPage({
 
   const handleConfirmMove = () => {
     if (!nextStage) return;
+    const tabForNext = STAGE_TO_TAB[nextStage];
+    if (tabForNext) setActiveTab(tabForNext);
     onAdvance?.(lead, currentStage);
   };
 
