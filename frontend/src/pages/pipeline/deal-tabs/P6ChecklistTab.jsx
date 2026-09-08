@@ -87,7 +87,12 @@ function VerifiedCell({ pct, label, color }) {
 }
 
 /** Same design and data as the standalone "P6 Handover Checklist" page. */
-export default function P6ChecklistTab({ locked = true, allUnchecked = false }) {
+export default function P6ChecklistTab({
+  locked = true,
+  allUnchecked = false,
+  onHandoverToServices,
+  serviceAssigned = null,
+}) {
   const [sections, setSections] = useState(INITIAL_SECTIONS);
   const [sortMode, setSortMode] = useState("blocked");
   const [period, setPeriod] = useState("month");
@@ -99,6 +104,7 @@ export default function P6ChecklistTab({ locked = true, allUnchecked = false }) 
   const doneCount = allItems.filter((i) => i.done).length;
   const totalCount = allItems.length;
   const percent = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
+  const checklistReady = !allUnchecked && percent === 100;
 
   const toggleItem = (title) => {
     if (allUnchecked) return;
@@ -146,15 +152,42 @@ export default function P6ChecklistTab({ locked = true, allUnchecked = false }) 
     <div className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <h2 className="text-[16px] font-bold text-[#111]">P6 Handover Checklist</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <OutlineButton onClick={() => toast.info("Checklist template downloaded.")}>Checklist template</OutlineButton>
           <PrimaryButton onClick={verifyAll}>Verify all documents</PrimaryButton>
+          {serviceAssigned ? (
+            <PrimaryButton onClick={() => onHandoverToServices?.()}>
+              Service manager is assigned
+            </PrimaryButton>
+          ) : checklistReady ? (
+            <PrimaryButton onClick={() => onHandoverToServices?.()}>
+              Handover to services
+            </PrimaryButton>
+          ) : null}
         </div>
       </div>
 
+      {serviceAssigned && (
+        <div className="rounded-2xl border border-[#BBF7D0] bg-[#F0FDF4] px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <p className="text-[13px] font-bold text-[#14532D]">Service manager is assigned</p>
+            <p className="text-[12px] text-[#166534] mt-0.5">
+              {serviceAssigned.manager} · {serviceAssigned.branch}
+            </p>
+          </div>
+          <OutlineButton onClick={() => onHandoverToServices?.()}>View branch manager</OutlineButton>
+        </div>
+      )}
+
       <SectionCard
         title={`P6 Handover Checklist — ${allUnchecked ? "-" : "Sanjay Mehta"}`}
-        subtitle="Service assignment stays blocked until every item is verified."
+        subtitle={
+          serviceAssigned
+            ? `Handed over to services · ${serviceAssigned.manager}`
+            : checklistReady
+              ? "Checklist complete — ready for handover to services."
+              : "Service assignment stays blocked until every item is verified."
+        }
         action={<ProgressMeter label={`${doneCount} / ${totalCount} verified`} percent={percent} color={percent === 100 ? "#16A34A" : "#E8395B"} />}
       >
         {visibleSections.map((section, si) => (

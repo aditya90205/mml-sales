@@ -44,7 +44,7 @@ const PIPELINE_STAGES = [
   { id: "P3", label: "Video Call/Visit",        color: "#7C3AED" },
   { id: "P4", label: "Negotiation",             color: "#6366F1" },
   { id: "P5", label: "Closed",                  color: "#16A34A" },
-  { id: "P6", label: "Handover/Onboarding",  color: "#EAB308" },
+  { id: "P6", label: "Handover to services", color: "#EAB308" },
 ];
 
 const TEMPERATURE_STYLES = {
@@ -460,7 +460,7 @@ function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal
         </button>
       ) : (
         <span className="w-full inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-[#E7F8EF] text-[#16A34A] text-[12.5px] font-semibold">
-          Onboarding Complete
+          Handover to services
         </span>
       )}
     </div>
