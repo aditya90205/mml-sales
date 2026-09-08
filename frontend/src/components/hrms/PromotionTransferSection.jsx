@@ -928,7 +928,7 @@ export function PromotionsTransfersSection({ employee, showAll = false, initialV
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center gap-1 p-1 rounded-xl bg-[#F8F8FA] border border-black/8 w-fit">
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-[#F8F8FA] border border-black/8 w-fit self-end">
         {PT_VIEWS.map((item) => {
           const active = view === item.id;
           return (
