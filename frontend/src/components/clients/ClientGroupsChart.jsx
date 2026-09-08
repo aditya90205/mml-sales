@@ -297,14 +297,14 @@ export default function ClientGroupsChart({ data = [], title = "Client Groups Ov
   const periodLabel = PERIOD_OPTIONS.find((o) => o.id === period)?.label ?? "This Week";
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
-      <div className="flex items-center justify-between gap-3 mb-4 px-1 flex-wrap">
+    <div className="bg-white border border-black/8 rounded-2xl p-3.5 flex flex-col">
+      <div className="flex items-center justify-between gap-3 mb-3 px-1 flex-wrap">
         <div className="flex items-center gap-2.5">
-          <span className="size-9 rounded-xl bg-[#EEF0FE] grid place-items-center shrink-0">
-            <Users size={17} className="text-[#6366F1]" strokeWidth={1.8} />
+          <span className="size-8 rounded-xl bg-[#EEF0FE] grid place-items-center shrink-0">
+            <Users size={15} className="text-[#6366F1]" strokeWidth={1.8} />
           </span>
           <div>
-            <h2 className="text-[17px] font-bold text-[#111] leading-tight">{title}</h2>
+            <h2 className="text-[15px] font-bold text-[#111] leading-tight">{title}</h2>
             <p className="text-[11px] text-[#9CA3AF]">
               {data.length} group{data.length === 1 ? "" : "s"} · {periodLabel.toLowerCase()}
             </p>
@@ -313,23 +313,23 @@ export default function ClientGroupsChart({ data = [], title = "Client Groups Ov
         <PeriodSelect value={period} onChange={setPeriod} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,0.85fr)_1.4fr] gap-4 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(240px,0.75fr)_1.4fr] gap-3 items-stretch">
         {/* Left: KPI status grid */}
-        <div className="grid grid-cols-2 gap-3 min-w-0 lg:min-h-[360px]">
+        <div className="grid grid-cols-2 gap-2.5 min-w-0 content-start">
           {totals.map((s) => (
-            <div key={s.key} className="border border-black/8 rounded-xl px-3.5 py-3 flex flex-col justify-center min-h-[160px]">
-              <div className="flex items-center gap-2 mb-2">
+            <div key={s.key} className="border border-black/8 rounded-xl px-3 py-2.5 flex flex-col justify-center">
+              <div className="flex items-center gap-1.5 mb-1">
                 <span
-                  className="size-7 rounded-lg grid place-items-center shrink-0"
+                  className="size-6 rounded-md grid place-items-center shrink-0"
                   style={{ backgroundColor: `${s.color}1A` }}
                 >
-                  <Users size={13} style={{ color: s.color }} strokeWidth={1.8} />
+                  <Users size={12} style={{ color: s.color }} strokeWidth={1.8} />
                 </span>
-                <p className="text-[11px] text-[#9CA3AF] leading-snug">{s.label}</p>
+                <p className="text-[11px] text-[#9CA3AF] leading-none">{s.label}</p>
               </div>
-              <p className="text-[18px] font-bold text-[#111] leading-tight tabular-nums">{formatNum(s.value)}</p>
+              <p className="text-[16px] font-bold text-[#111] leading-tight tabular-nums">{formatNum(s.value)}</p>
               <p
-                className={`text-[10px] font-semibold mt-1 ${
+                className={`text-[10px] font-semibold mt-0.5 leading-tight ${
                   s.change == null ? "text-[#9CA3AF]" : s.change >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"
                 }`}
               >
@@ -354,7 +354,7 @@ export default function ClientGroupsChart({ data = [], title = "Client Groups Ov
           </div>
 
           {!hasAny ? (
-            <div className="rounded-xl border border-black/8 bg-[#FAFBFC] px-4 py-14 text-center grid place-items-center min-h-[320px]">
+            <div className="rounded-xl border border-black/8 bg-[#FAFBFC] px-4 py-10 text-center grid place-items-center min-h-[240px]">
               <div>
                 <p className="text-[14px] font-semibold text-[#374151]">No client contacts in {periodLabel.toLowerCase()}</p>
                 <p className="text-[12px] text-[#9CA3AF] mt-1">Try switching the period filter above.</p>
@@ -362,11 +362,11 @@ export default function ClientGroupsChart({ data = [], title = "Client Groups Ov
             </div>
           ) : (
             <div className="w-full overflow-x-auto">
-              <div className="min-w-[520px] h-[320px]">
-                <ResponsiveContainer width="100%" height={320}>
+              <div className="min-w-[520px] h-[240px]">
+                <ResponsiveContainer width="100%" height={240}>
                   <ComposedChart
                     data={chartRows}
-                    margin={{ top: 36, right: 12, left: 4, bottom: 8 }}
+                    margin={{ top: 28, right: 12, left: 4, bottom: 4 }}
                     barCategoryGap="36%"
                     barGap={6}
                   >
