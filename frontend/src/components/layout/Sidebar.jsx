@@ -28,12 +28,8 @@ const NAV_ITEMS = [
   { label: "Win / Loss",      icon: BarChart3,       to: "/win-loss" },
   { label: "Post Sales",      icon: Handshake,       to: "/post-sales" },
   { label: "HRMS",            icon: Users,           to: "/hrms" },
-<<<<<<< HEAD
-  { label: "Leaderboard",     icon: Trophy,          to: "/leaderboard" },
-=======
   { label: "Promotion and Transfers", icon: ArrowLeftRight, to: "/promotions-transfers" },
-  { label: "Leaderboard & Contest",     icon: Trophy,          to: "/leaderboard" },
->>>>>>> 06236cd752345490b7fc9202209cb0957cfced1b
+  { label: "Leaderboard",     icon: Trophy,          to: "/leaderboard" },
 ];
 
 export default function Sidebar() {
