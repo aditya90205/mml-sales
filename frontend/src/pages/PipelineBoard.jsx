@@ -27,6 +27,7 @@ import {
 import { toast } from "react-toastify";
 import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
+import SendMessageModal from "../components/common/SendMessageModal.jsx";
 // TopBar is now provided by Layout
 import eyeIcon from "../assets/eye.png";
 import AddP0ProspectPage from "./pipeline/AddP0ProspectPage";
@@ -510,6 +511,8 @@ const TABLE_COLS = [
 ];
 
 function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDeal }) {
+  const navigate = useNavigate();
+  const [messageOpen, setMessageOpen] = useState(false);
   const getValue = useCallback((row, key) => {
     if (key === "stage") return `${row.stage.id} ${row.stage.label}`;
     if (key === "owner") return OWNER.name;
@@ -522,6 +525,7 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
 
   return (
     <div>
+      <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
       {/* Priority legend */}
       <div className="flex items-center gap-4 mb-3">
         {Object.entries(PRIORITY_FLAG).map(([label, color]) => (
@@ -686,14 +690,29 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                             <Phone size={14} />
                           </button>
                         )}
-                        <button type="button" className="p-1 rounded-lg text-[#F59E0B] hover:bg-[#FFF3E4] transition-colors" title="Message">
+                        <button
+                          type="button"
+                          onClick={() => setMessageOpen(true)}
+                          className="p-1 rounded-lg text-[#F59E0B] hover:bg-[#FFF3E4] transition-colors"
+                          title="Message"
+                        >
                           <MessageSquare size={14} />
                         </button>
                         <EmailActivityButton
                           className="relative p-1 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] transition-colors"
                           hasUnread={idx % 2 === 0}
                         />
-                        <button type="button" className="p-1 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] transition-colors" title="Schedule">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const params = new URLSearchParams();
+                            if (lead.name) params.set("client", lead.name);
+                            const qs = params.toString();
+                            navigate(qs ? `/calendar?${qs}` : "/calendar");
+                          }}
+                          className="p-1 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] transition-colors"
+                          title="Schedule"
+                        >
                           <Calendar size={14} />
                         </button>
                         <button type="button" className="p-1 rounded-lg text-[#9CA3AF] hover:bg-black/5 transition-colors" title="More Options">

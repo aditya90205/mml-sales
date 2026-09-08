@@ -22,6 +22,7 @@ import StageStepper from "../../components/pipeline/StageStepper";
 import WinLossReasonsModal from "../../components/pipeline/WinLossReasonsModal";
 import DealTabs from "../../components/pipeline/DealTabs";
 import EmailActivityButton from "../../components/common/EmailActivityButton.jsx";
+import SendMessageModal from "../../components/common/SendMessageModal.jsx";
 import Modal from "../../components/ui/Modal.jsx";
 import OverviewTab from "./deal-tabs/OverviewTab";
 import IntakeFormTab from "./deal-tabs/IntakeFormTab";
@@ -124,6 +125,7 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
   const [winLossOverride, setWinLossOverride] = useState(null);
   const [isPremium, setIsPremium] = useState(() => Boolean(lead?.starred));
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [messageOpen, setMessageOpen] = useState(false);
   const lateTabsUnlocked = atLeast(currentStage, "P5");
   const nextStage = NEXT_STAGE[currentStage];
   const tabs = BASE_TABS.map((tab) =>
@@ -416,7 +418,7 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
                 )}
                 <button
                   type="button"
-                  onClick={() => toast.info("Opening message...")}
+                  onClick={() => setMessageOpen(true)}
                   className="p-1.5 rounded-lg text-[#F59E0B] hover:bg-[#FFF3E4] transition-colors"
                   title="Message"
                   aria-label="Message"
@@ -429,7 +431,13 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
                 />
                 <button
                   type="button"
-                  onClick={() => toast.info("Opening schedule...")}
+                  onClick={() => {
+                    const client = deal.name || lead?.name || "";
+                    const params = new URLSearchParams();
+                    if (client) params.set("client", client);
+                    const qs = params.toString();
+                    navigate(qs ? `/calendar?${qs}` : "/calendar");
+                  }}
                   className="p-1.5 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] transition-colors"
                   title="Schedule"
                   aria-label="Schedule"
@@ -464,6 +472,8 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
         onClose={() => setWinLossModal((prev) => ({ ...prev, open: false }))}
         onSave={handleWinLossSave}
       />
+
+      <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
 
       <Modal
         open={summaryOpen}

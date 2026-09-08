@@ -4,7 +4,9 @@ import {
   Calendar,
   FileText,
   Info,
+  Mail,
   MessageSquare,
+  Reply,
   User,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -35,6 +37,9 @@ const DEMO_TERMINATION = {
 };
 
 const SELF_EMPLOYEE = USER.name || "Ankur Sharma";
+
+const ACTION_BTN =
+  "inline-flex items-center gap-2 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors";
 
 function FieldLabel({ children, required }) {
   return (
@@ -93,11 +98,40 @@ function emptyResignationForm() {
 export default function ExitTab() {
   const fileInputRef = useRef(null);
   const [messageOpen, setMessageOpen] = useState(false);
+  const [messageTitle, setMessageTitle] = useState("Send Message");
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
   const [resignOpen, setResignOpen] = useState(false);
   const [form, setForm] = useState(emptyResignationForm);
   const [resignation, setResignation] = useState(null);
 
   const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  const openMessage = (title) => {
+    setMessageTitle(title);
+    setMessageOpen(true);
+  };
+
+  const openResignationEmail = () => {
+    setEmailSubject(`Follow-up: Resignation — ${resignation?.employee || SELF_EMPLOYEE}`);
+    setEmailBody("");
+    setEmailOpen(true);
+  };
+
+  const handleSendEmail = (e) => {
+    e.preventDefault();
+    if (!emailSubject.trim()) {
+      toast.error("Please enter a subject.");
+      return;
+    }
+    if (!emailBody.trim()) {
+      toast.error("Please enter an email message.");
+      return;
+    }
+    toast.success("Follow-up email sent.");
+    setEmailOpen(false);
+  };
 
   const handleBrowse = () => fileInputRef.current?.click();
 
@@ -158,9 +192,9 @@ export default function ExitTab() {
         </button>
       </div>
 
-      {/* Termination details — page layout from Termination Details modal */}
+      {/* Termination details */}
       <section className="bg-white border border-black/10 rounded-2xl shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-black/8">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-black/8 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
             <span className="size-9 rounded-xl bg-[#E7F8EF] text-[#16A34A] grid place-items-center shrink-0">
               <BarChart3 size={16} />
@@ -170,15 +204,25 @@ export default function ExitTab() {
               <p className="text-[12px] text-[#9CA3AF]">Official termination record for this employee</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setMessageOpen(true)}
-            className="inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors shrink-0"
-            aria-label="Open conversation about termination"
-          >
-            <MessageSquare size={15} className="text-[#7A0A17]" />
-            Conversation
-          </button>
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <button
+              type="button"
+              onClick={() => openMessage("Reply to Termination")}
+              className={ACTION_BTN}
+            >
+              <Reply size={14} className="text-[#7A0A17]" />
+              Reply
+            </button>
+            <button
+              type="button"
+              onClick={() => openMessage("Termination Conversation")}
+              className={ACTION_BTN}
+              aria-label="Open conversation about termination"
+            >
+              <MessageSquare size={14} className="text-[#7A0A17]" />
+              Conversation
+            </button>
+          </div>
         </div>
 
         <div className="p-5 flex flex-col gap-6">
@@ -251,7 +295,21 @@ export default function ExitTab() {
                 <p className="text-[12px] text-[#9CA3AF]">Submitted {resignation.submittedAt}</p>
               </div>
             </div>
-            <StatusBadge label={resignation.status} />
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <StatusBadge label={resignation.status} />
+              <button type="button" onClick={openResignationEmail} className={ACTION_BTN}>
+                <Mail size={14} className="text-[#2563EB]" />
+                Email
+              </button>
+              <button
+                type="button"
+                onClick={() => openMessage("Resignation Follow-up Message")}
+                className={ACTION_BTN}
+              >
+                <MessageSquare size={14} className="text-[#F59E0B]" />
+                Message
+              </button>
+            </div>
           </div>
 
           <div className="p-5 flex flex-col gap-5">
@@ -380,7 +438,62 @@ export default function ExitTab() {
         </form>
       </Modal>
 
-      <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
+      {/* Resignation follow-up email */}
+      <Modal
+        open={emailOpen}
+        onClose={() => setEmailOpen(false)}
+        title="Follow-up Email"
+        subtitle="Send an email regarding this resignation"
+        width="max-w-lg"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setEmailOpen(false)}
+              className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="resignation-followup-email"
+              className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+            >
+              Send Email
+            </button>
+          </>
+        }
+      >
+        <form id="resignation-followup-email" onSubmit={handleSendEmail} className="flex flex-col gap-4">
+          <div>
+            <FieldLabel required>Subject</FieldLabel>
+            <input
+              type="text"
+              value={emailSubject}
+              onChange={(e) => setEmailSubject(e.target.value)}
+              className={INPUT}
+              required
+            />
+          </div>
+          <div>
+            <FieldLabel required>Message</FieldLabel>
+            <textarea
+              rows={5}
+              value={emailBody}
+              onChange={(e) => setEmailBody(e.target.value)}
+              placeholder="Write your follow-up email..."
+              className={`${INPUT} h-auto py-2.5 resize-none`}
+              required
+            />
+          </div>
+        </form>
+      </Modal>
+
+      <SendMessageModal
+        open={messageOpen}
+        onClose={() => setMessageOpen(false)}
+        title={messageTitle}
+      />
     </div>
   );
 }

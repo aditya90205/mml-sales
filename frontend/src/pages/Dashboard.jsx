@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
   Plus,
@@ -1582,10 +1582,12 @@ function stageKeyFromLead(lead) {
 }
 
 function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
+  const navigate = useNavigate();
   const [period, setPeriod] = useState("this_month");
   const [leadsView, setLeadsView] = useState("team");
   const [leadsViewOpen, setLeadsViewOpen] = useState(false);
   const [scoreLead, setScoreLead] = useState(null);
+  const [messageOpen, setMessageOpen] = useState(false);
   const leadsViewRef = useRef(null);
   const { sorted, sort, toggle } = useTableSort(leads, { defaultKey: "name" });
 
@@ -1600,6 +1602,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
       <LeadScoreModal lead={scoreLead} onClose={() => setScoreLead(null)} />
+      <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
       <div className="flex items-center justify-between gap-3 mb-3 px-1 flex-wrap">
         <div className="relative" ref={leadsViewRef}>
           <button
@@ -1828,14 +1831,31 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
                           <Phone size={14} />
                         </button>
                       )}
-                      <button type="button" className="p-1.5 text-[#F59E0B] hover:bg-black/4 rounded-lg transition-colors" title="Message" aria-label="Message">
+                      <button
+                        type="button"
+                        onClick={() => setMessageOpen(true)}
+                        className="p-1.5 text-[#F59E0B] hover:bg-black/4 rounded-lg transition-colors"
+                        title="Message"
+                        aria-label="Message"
+                      >
                         <MessageSquare size={14} />
                       </button>
                       <EmailActivityButton
                         className="relative p-1.5 text-[#3B82F6] hover:bg-black/4 rounded-lg transition-colors"
                         hasUnread={i % 2 === 0}
                       />
-                      <button type="button" className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors" title="Schedule" aria-label="Schedule">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const params = new URLSearchParams();
+                          if (lead.name) params.set("client", lead.name);
+                          const qs = params.toString();
+                          navigate(qs ? `/calendar?${qs}` : "/calendar");
+                        }}
+                        className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors"
+                        title="Schedule"
+                        aria-label="Schedule"
+                      >
                         <Calendar size={14} />
                       </button>
                       <button type="button" className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors" title="More Options" aria-label="More Options">
