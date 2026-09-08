@@ -199,6 +199,18 @@ export default function CreateGroupPage() {
             Export results
           </button>
         </div>
+        <div className="flex items-center gap-3">
+            <span className="shrink-0 text-[14px] font-semibold text-[#111] whitespace-nowrap">
+              Group Name <span className="text-[#E8395B]">*</span>
+            </span>
+            <input
+              value={groupName}
+              onChange={(e) => setGroupName(e.target.value)}
+              placeholder="e.g. Female IIM Alumni"
+              aria-label="Group name"
+              className="h-11 w-[520px] max-w-full shrink-0 border border-black/12 rounded-lg px-3.5 text-[14px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40"
+            />
+          </div>
 
         <div className="flex flex-col gap-2 w-full">
           <p className="text-[14px] text-[#6B7280]">Describe who you're looking for</p>
@@ -261,18 +273,7 @@ export default function CreateGroupPage() {
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="shrink-0 text-[14px] font-semibold text-[#111] whitespace-nowrap">
-              Group Name <span className="text-[#E8395B]">*</span>
-            </span>
-            <input
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
-              placeholder="e.g. Female IIM Alumni"
-              aria-label="Group name"
-              className="h-11 w-[520px] max-w-full shrink-0 border border-black/12 rounded-lg px-3.5 text-[14px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40"
-            />
-          </div>
+       
 
           <div className="flex flex-col gap-3 items-start">
             {conditions.map((c, i) => (
