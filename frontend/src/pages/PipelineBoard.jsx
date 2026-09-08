@@ -450,7 +450,13 @@ function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal
           }}
           className="w-full inline-flex items-center justify-center gap-1.5 h-9 rounded-lg border border-[#7A0A17]/25 text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#FCF5F6] transition-colors"
         >
-          Move to {nextStageLabel} <ArrowRight size={13} />
+          {stageKey === "P0" ? (
+            "Edit / Move to P1"
+          ) : (
+            <>
+              Move to {nextStageLabel} <ArrowRight size={13} />
+            </>
+          )}
         </button>
       ) : (
         <span className="w-full inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-[#E7F8EF] text-[#16A34A] text-[12.5px] font-semibold">
