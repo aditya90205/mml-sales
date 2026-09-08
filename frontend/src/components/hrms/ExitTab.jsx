@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
+import SendEmailModal from "../common/SendEmailModal.jsx";
 import SendMessageModal from "../common/SendMessageModal.jsx";
 import { USER } from "../layout/TopBar";
 
@@ -100,8 +101,6 @@ export default function ExitTab() {
   const [messageOpen, setMessageOpen] = useState(false);
   const [messageTitle, setMessageTitle] = useState("Send Message");
   const [emailOpen, setEmailOpen] = useState(false);
-  const [emailSubject, setEmailSubject] = useState("");
-  const [emailBody, setEmailBody] = useState("");
   const [resignOpen, setResignOpen] = useState(false);
   const [form, setForm] = useState(emptyResignationForm);
   const [resignation, setResignation] = useState(null);
@@ -111,26 +110,6 @@ export default function ExitTab() {
   const openMessage = (title) => {
     setMessageTitle(title);
     setMessageOpen(true);
-  };
-
-  const openResignationEmail = () => {
-    setEmailSubject(`Follow-up: Resignation — ${resignation?.employee || SELF_EMPLOYEE}`);
-    setEmailBody("");
-    setEmailOpen(true);
-  };
-
-  const handleSendEmail = (e) => {
-    e.preventDefault();
-    if (!emailSubject.trim()) {
-      toast.error("Please enter a subject.");
-      return;
-    }
-    if (!emailBody.trim()) {
-      toast.error("Please enter an email message.");
-      return;
-    }
-    toast.success("Follow-up email sent.");
-    setEmailOpen(false);
   };
 
   const handleBrowse = () => fileInputRef.current?.click();
@@ -297,7 +276,7 @@ export default function ExitTab() {
             </div>
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
               <StatusBadge label={resignation.status} />
-              <button type="button" onClick={openResignationEmail} className={ACTION_BTN}>
+              <button type="button" onClick={() => setEmailOpen(true)} className={ACTION_BTN}>
                 <Mail size={14} className="text-[#2563EB]" />
                 Email
               </button>
@@ -439,55 +418,11 @@ export default function ExitTab() {
       </Modal>
 
       {/* Resignation follow-up email */}
-      <Modal
+      <SendEmailModal
         open={emailOpen}
         onClose={() => setEmailOpen(false)}
-        title="Follow-up Email"
-        subtitle="Send an email regarding this resignation"
-        width="max-w-lg"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={() => setEmailOpen(false)}
-              className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              form="resignation-followup-email"
-              className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-            >
-              Send Email
-            </button>
-          </>
-        }
-      >
-        <form id="resignation-followup-email" onSubmit={handleSendEmail} className="flex flex-col gap-4">
-          <div>
-            <FieldLabel required>Subject</FieldLabel>
-            <input
-              type="text"
-              value={emailSubject}
-              onChange={(e) => setEmailSubject(e.target.value)}
-              className={INPUT}
-              required
-            />
-          </div>
-          <div>
-            <FieldLabel required>Message</FieldLabel>
-            <textarea
-              rows={5}
-              value={emailBody}
-              onChange={(e) => setEmailBody(e.target.value)}
-              placeholder="Write your follow-up email..."
-              className={`${INPUT} h-auto py-2.5 resize-none`}
-              required
-            />
-          </div>
-        </form>
-      </Modal>
+        recipientName={resignation?.employee || SELF_EMPLOYEE}
+      />
 
       <SendMessageModal
         open={messageOpen}

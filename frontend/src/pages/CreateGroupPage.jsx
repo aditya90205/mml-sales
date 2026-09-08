@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Mail, MessageSquare, Phone, Plus, Sparkles, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ClientStatusBadge from "../components/common/ClientStatusBadge.jsx";
+import SendEmailModal from "../components/common/SendEmailModal.jsx";
 import { CLIENTS } from "../utils/clientsData.js";
 import { addSavedGroup } from "../utils/clientGroups.js";
 import {
@@ -99,6 +100,7 @@ export default function CreateGroupPage() {
   const [results, setResults] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [groupName, setGroupName] = useState("");
+  const [emailFor, setEmailFor] = useState(null);
 
   const updateCondition = (id, next) => {
     setConditions((prev) => prev.map((c) => (c.id === id ? next : c)));
@@ -386,7 +388,7 @@ export default function CreateGroupPage() {
                             <button type="button" onClick={() => toast.info(`Messaging ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Message ${c.name}`}>
                               <MessageSquare size={14} className="text-[#D97706]" />
                             </button>
-                            <button type="button" onClick={() => toast.info(`Emailing ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Email ${c.name}`}>
+                            <button type="button" onClick={() => setEmailFor(c)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Email ${c.name}`}>
                               <Mail size={14} className="text-[#2563EB]" />
                             </button>
                           </div>
@@ -400,6 +402,12 @@ export default function CreateGroupPage() {
           </div>
         )}
       </div>
+
+      <SendEmailModal
+        open={Boolean(emailFor)}
+        onClose={() => setEmailFor(null)}
+        recipientName={emailFor?.name || "Client"}
+      />
     </div>
   );
 }

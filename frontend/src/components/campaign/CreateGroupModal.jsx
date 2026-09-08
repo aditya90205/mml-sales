@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Mail, MessageSquare, Phone, Plus, Sparkles, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ClientStatusBadge from "../common/ClientStatusBadge.jsx";
+import SendEmailModal from "../common/SendEmailModal.jsx";
 import Modal from "../ui/Modal.jsx";
 import { CLIENTS } from "../../utils/clientsData.js";
 import { addSavedGroup } from "../../utils/clientGroups.js";
@@ -102,6 +103,7 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
   ]);
   const [results, setResults] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [emailFor, setEmailFor] = useState(null);
 
   useEffect(() => {
     if (!open) return;
@@ -205,6 +207,7 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
   };
 
   return (
+    <>
     <Modal
       open={open}
       onClose={onClose}
@@ -406,7 +409,7 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
                             <button type="button" onClick={() => toast.info(`Messaging ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Message ${c.name}`}>
                               <MessageSquare size={14} className="text-[#D97706]" />
                             </button>
-                            <button type="button" onClick={() => toast.info(`Emailing ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Email ${c.name}`}>
+                            <button type="button" onClick={() => setEmailFor(c)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Email ${c.name}`}>
                               <Mail size={14} className="text-[#2563EB]" />
                             </button>
                           </div>
@@ -421,5 +424,12 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
         )}
       </div>
     </Modal>
+
+    <SendEmailModal
+      open={Boolean(emailFor)}
+      onClose={() => setEmailFor(null)}
+      recipientName={emailFor?.name || "Client"}
+    />
+    </>
   );
 }
