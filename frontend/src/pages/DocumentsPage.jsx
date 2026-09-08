@@ -3,8 +3,15 @@ import { useSearchParams } from "react-router-dom";
 import { Download, Eye, Filter, MoreVertical, Search } from "lucide-react";
 import { toast } from "react-toastify";
 import MediaLibraryPage from "./MediaLibraryPage";
+import TutorialsTab from "../components/TutorialsTab";
 
-const TABS = ["Documents", "Media"];
+const TABS = ["Documents", "Media", "Tutorial"];
+
+const TAB_QUERY = {
+  Documents: null,
+  Media: "media",
+  Tutorial: "tutorial",
+};
 
 const DOC_BORDER_COLORS = ["#F59E0B", "#3B82F6", "#16A34A", "#EAB308"];
 
@@ -179,21 +186,26 @@ function DocumentsTab() {
   );
 }
 
+function tabFromParam(tabParam) {
+  if (tabParam === "media") return "Media";
+  if (tabParam === "tutorial") return "Tutorial";
+  return "Documents";
+}
+
 export default function DocumentsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState(() =>
-    tabParam === "media" ? "Media" : "Documents"
-  );
+  const [activeTab, setActiveTab] = useState(() => tabFromParam(tabParam));
 
   useEffect(() => {
-    setActiveTab(tabParam === "media" ? "Media" : "Documents");
+    setActiveTab(tabFromParam(tabParam));
   }, [tabParam]);
 
   const selectTab = (tab) => {
     setActiveTab(tab);
-    if (tab === "Media") {
-      setSearchParams({ tab: "media" }, { replace: true });
+    const query = TAB_QUERY[tab];
+    if (query) {
+      setSearchParams({ tab: query }, { replace: true });
     } else {
       setSearchParams({}, { replace: true });
     }
@@ -206,7 +218,7 @@ export default function DocumentsPage() {
           Documents & Media
         </h1>
         <p className="text-[13px] text-[#6B7280] mt-0.5">
-          Manage company documents and media library
+          Manage company documents, media library, and tutorials
         </p>
       </div>
 
@@ -237,6 +249,7 @@ export default function DocumentsPage() {
 
       {activeTab === "Documents" && <DocumentsTab />}
       {activeTab === "Media" && <MediaLibraryPage embedded />}
+      {activeTab === "Tutorial" && <TutorialsTab />}
     </div>
   );
 }

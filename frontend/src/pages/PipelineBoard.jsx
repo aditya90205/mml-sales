@@ -699,6 +699,7 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                         <EmailActivityButton
                           className="relative p-1 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] transition-colors"
                           hasUnread={idx % 2 === 0}
+                          recipientName={lead.name}
                         />
                         <button
                           type="button"

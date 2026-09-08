@@ -3,6 +3,7 @@ import { Flag, Mail, MessageSquare, Phone } from "lucide-react";
 import { toast } from "react-toastify";
 import StatusPill from "../components/common/StatusPill";
 import ClientStatusBadge from "../components/common/ClientStatusBadge.jsx";
+import SendEmailModal from "../components/common/SendEmailModal.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import {
@@ -341,6 +342,7 @@ export default function PostSalesPage() {
   const [rnOwner, setRnOwner] = useState("me");
   const [pageByTab, setPageByTab] = useState({});
   const [messageFor, setMessageFor] = useState(null);
+  const [emailFor, setEmailFor] = useState(null);
 
   const head = role === "head";
   const [pageTitle, pageSub] = TAB_META[tab];
@@ -1121,7 +1123,7 @@ export default function PostSalesPage() {
                             <IconBtn label={`Message ${c.name}`} onClick={() => setMessageFor(c)}>
                               <MessageSquare size={14} className="text-[#D97706]" />
                             </IconBtn>
-                            <IconBtn label={`Email ${c.name}`} onClick={() => toast.info(`Emailing ${c.name}…`)}>
+                            <IconBtn label={`Email ${c.name}`} onClick={() => setEmailFor(c)}>
                               <Mail size={14} className="text-[#2563EB]" />
                             </IconBtn>
                           </div>
@@ -1901,7 +1903,7 @@ export default function PostSalesPage() {
                           <IconBtn label={`Message ${r.name}`} onClick={() => setMessageFor(r)}>
                             <MessageSquare size={14} className="text-[#D97706]" />
                           </IconBtn>
-                          <IconBtn label={`Email ${r.name}`} onClick={() => toast.info(`Emailing ${r.name}…`)}>
+                          <IconBtn label={`Email ${r.name}`} onClick={() => setEmailFor(r)}>
                             <Mail size={14} className="text-[#2563EB]" />
                           </IconBtn>
                         </div>
@@ -2034,6 +2036,11 @@ export default function PostSalesPage() {
         )}
       </Modal>
       <SendMessageModal open={Boolean(messageFor)} onClose={() => setMessageFor(null)} />
+      <SendEmailModal
+        open={Boolean(emailFor)}
+        onClose={() => setEmailFor(null)}
+        recipientName={emailFor?.name || "Client"}
+      />
     </AppPage>
   );
 }

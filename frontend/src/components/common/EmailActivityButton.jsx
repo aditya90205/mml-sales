@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Mail } from "lucide-react";
+import SendEmailModal from "./SendEmailModal.jsx";
 
 const SAMPLE_EMAILS = [
   { subject: "Profile shortlist sent", snippet: "3 new matches shared for review — awaiting client feedback.", time: "2 hr ago", unread: true },
@@ -12,20 +13,25 @@ const POPOVER_WIDTH = 300;
 const POPOVER_MAX_HEIGHT = 300;
 
 /**
- * Mail icon used in lead-row action columns (Pipeline Board, Dashboard).
- * Only rows with unread activity (the red dot) open anything on hover — a
- * notification-list-style popover of recent email activity, positioned via
- * a portal so it isn't clipped by the tables' horizontal scroll, and kept
- * anchored to the icon while the page scrolls underneath it.
+ * Mail icon used in lead-row action columns (Pipeline Board, Dashboard, Deal Detail).
+ * Hover (unread only): notification-list popover of recent email activity.
+ * Click: opens the Send Email compose modal for that lead.
  */
-export default function EmailActivityButton({ className = "", size = 14, hasUnread = false }) {
+export default function EmailActivityButton({
+  className = "",
+  size = 14,
+  hasUnread = false,
+  recipientName = "Client",
+  recipientEmail,
+}) {
   const ref = useRef(null);
   const hideTimer = useRef(null);
   const [pos, setPos] = useState(null);
+  const [composeOpen, setComposeOpen] = useState(false);
   const unreadCount = SAMPLE_EMAILS.filter((m) => m.unread).length;
 
   const open = () => {
-    if (!hasUnread) return;
+    if (!hasUnread || composeOpen) return;
     if (hideTimer.current) clearTimeout(hideTimer.current);
     const r = ref.current?.getBoundingClientRect();
     if (!r) return;
@@ -54,11 +60,19 @@ export default function EmailActivityButton({ className = "", size = 14, hasUnre
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [!!pos]);
 
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    setPos(null);
+    setComposeOpen(true);
+  };
+
   return (
     <>
       <button
         ref={ref}
         type="button"
+        onClick={handleClick}
         onMouseEnter={open}
         onMouseLeave={scheduleClose}
         className={className}
@@ -104,6 +118,13 @@ export default function EmailActivityButton({ className = "", size = 14, hasUnre
           </div>,
           document.body
         )}
+
+      <SendEmailModal
+        open={composeOpen}
+        onClose={() => setComposeOpen(false)}
+        recipientName={recipientName}
+        recipientEmail={recipientEmail}
+      />
     </>
   );
 }
