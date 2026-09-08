@@ -1,10 +1,11 @@
-const STORAGE_KEY = "mml_sales_exits_v8";
+const STORAGE_KEY = "mml_sales_exits_v9";
 const LEGACY_STORAGE_KEYS = [
   "mml_sales_exits_v3",
   "mml_sales_exits_v4",
   "mml_sales_exits_v5",
   "mml_sales_exits_v6",
   "mml_sales_exits_v7",
+  "mml_sales_exits_v8",
 ];
 
 export const RESIGNATION_STAGES = [
@@ -289,33 +290,18 @@ export function isTermination(record) {
   return record?.exitType === EXIT_TYPES.TERMINATION;
 }
 
-export function getEmployeeExits(employeeName) {
-  const list = getResignationHistoryFor(employeeName);
-  return [...list].sort((a, b) => {
-    const aOpen = isOpenStatus(a.status) ? 0 : 1;
-    const bOpen = isOpenStatus(b.status) ? 0 : 1;
-    if (aOpen !== bOpen) return aOpen - bOpen;
-    return a.submittedOn < b.submittedOn ? 1 : -1;
-  });
+export const DEMO_EXIT_VIEWS = [
+  { id: "termination", label: "Termination" },
+  { id: "resignation", label: "Resignation" },
+];
+
+export function getLatestTerminationFor(employeeName) {
+  return getResignationHistoryFor(employeeName).find((r) => isTermination(r)) || null;
 }
 
-export function pickCurrentExit(records) {
-  return (
-    records.find((r) => isOpenStatus(r.status) && isTermination(r)) ||
-    records.find((r) => isOpenStatus(r.status)) ||
-    records[0] ||
-    null
-  );
-}
-
-export function canWithdrawRecord(record) {
-  return Boolean(record && !isTermination(record) && isOpenStatus(record.status));
-}
-
-export function hasOpenExit(employeeName, exceptId) {
-  return readResignations().some(
-    (r) => r.employeeName === employeeName && isOpenStatus(r.status) && r.id !== exceptId
-  );
+export function getLatestResignationFor(employeeName) {
+  const list = getResignationHistoryFor(employeeName).filter((r) => r.exitType === EXIT_TYPES.RESIGNATION);
+  return list.find((r) => isOpenStatus(r.status)) || list[0] || null;
 }
 
 export function getActiveResignationFor(employeeName) {
@@ -384,6 +370,9 @@ export function updateSalespersonComment(id, comment) {
 
 export function withdrawResignation(id, note) {
   const list = readResignations();
+  const rec = list.find((r) => r.id === id);
+  if (!rec || isTermination(rec) || !isOpenStatus(rec.status)) return rec || null;
+
   const reason = note?.trim();
   const timelineNote = reason
     ? `Exit request withdrawn by employee. ${reason}`
