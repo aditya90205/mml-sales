@@ -190,6 +190,8 @@ const EDIT_FIELDS = [
   { key: "nextActionAt", label: "Next action (date / time)" },
   { key: "nextAction", label: "Next action note", full: true },
   { key: "nextActionUrgency", label: "Next action urgency" },
+  { key: "assignedTo", label: "Assigned to" },
+  { key: "assignedBy", label: "Assigned by" },
 ];
 
 function detailsFromDeal(deal) {
@@ -214,6 +216,8 @@ function detailsFromDeal(deal) {
     nextActionAt: deal.nextActionAt || "",
     nextAction: deal.nextAction || "",
     nextActionUrgency: deal.nextActionUrgency || "",
+    assignedTo: deal.assignedTo || "",
+    assignedBy: deal.assignedBy || "",
   };
 }
 
@@ -353,6 +357,8 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved }
           note={details.nextAction}
           urgency={details.nextActionUrgency}
         />
+        <DetailField label="Assigned to" value={details.assignedTo} />
+        <DetailField label="Assigned by" value={details.assignedBy} />
       </div>
     </div>
   );

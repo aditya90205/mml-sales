@@ -66,6 +66,8 @@ const DEAL_DEFAULTS = {
   lastDiscussionNote: "Meeting Notes/Discussions",
   nextActionAt: "05/09/26, 4:55 PM",
   nextActionUrgency: "6 Hrs Left",
+  assignedTo: "Rohit K.",
+  assignedBy: "Aditya Sharma",
   packageInterest: "Premium",
   weightedValueLabel: "Weighted value",
   weightedValue: "₹30,600",
@@ -175,6 +177,8 @@ export default function DealDetailPage({
       lastDiscussionNote: maybeDash(detailsFilled, DEAL_DEFAULTS.lastDiscussionNote),
       nextActionAt: maybeDash(detailsFilled, lead?.nextAction || DEAL_DEFAULTS.nextActionAt),
       nextActionUrgency: detailsFilled ? (lead?.hrs != null ? `${lead.hrs} Hrs Left` : DEAL_DEFAULTS.nextActionUrgency) : null,
+      assignedTo: maybeDash(detailsFilled, lead?.owner || DEAL_DEFAULTS.assignedTo),
+      assignedBy: maybeDash(detailsFilled, DEAL_DEFAULTS.assignedBy),
       rmFlags: DEAL_DEFAULTS.rmFlags.map((flag) =>
         flagsFilled ? flag : { ...flag, label: EMPTY }
       ),
@@ -212,6 +216,8 @@ export default function DealDetailPage({
       nextActionAt: savedDetails.nextActionAt || base.nextActionAt,
       nextAction: savedDetails.nextAction || base.nextAction,
       nextActionUrgency: savedDetails.nextActionUrgency || base.nextActionUrgency,
+      assignedTo: savedDetails.assignedTo || base.assignedTo,
+      assignedBy: savedDetails.assignedBy || base.assignedBy,
     };
   }, [lead, currentStage, winLossOverride, isPremium, savedDetails]);
 
