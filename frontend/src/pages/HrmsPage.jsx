@@ -56,10 +56,6 @@ import {
 } from "../components/hrms/HrmsEntityModals.jsx";
 import conductReviewIcon from "../assets/conduct-review.png";
 import ResignationSection from "../components/hrms/ResignationSection.jsx";
-import {
-  PromotionSection,
-  TransferSection,
-} from "../components/hrms/PromotionTransferSection.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import yellowLoopIcon from "../assets/yellow-loop.png";
 import redBackIcon from "../assets/red-back.png";
@@ -108,8 +104,6 @@ const HRMS_TABS = [
   "Documents",
   "Asset",
   "Awards & Contest",
-  "Promotion",
-  "Transfer",
   "Exit",
   "Complaint & Warning",
 ];
@@ -2633,32 +2627,6 @@ export default function HrmsPage() {
           </div>
         )}
 
-        {/* PROMOTION TAB */}
-        {activeTab === "Promotion" && (
-          <PromotionSection
-            employee={{
-              name: USER.name,
-              id: "MML-E-1001",
-              department: "Sales",
-              designation: USER.role,
-            }}
-          />
-        )}
-
-        {/* TRANSFER TAB */}
-        {activeTab === "Transfer" && (
-          <TransferSection
-            employee={{
-              name: USER.name,
-              id: "MML-E-1001",
-              email: USER.email,
-              branch: "South Extension",
-              department: "Sales",
-              designation: USER.role,
-            }}
-          />
-        )}
-
         {/* EXIT TAB */}
         {activeTab === "Exit" && (
           <ResignationSection
@@ -2771,7 +2739,7 @@ export default function HrmsPage() {
         )}
 
         {/* Placeholder View for remaining tabs */}
-        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset", "Promotion", "Transfer", "Exit", "Complaint & Warning"].includes(activeTab) && (
+        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset", "Exit", "Complaint & Warning"].includes(activeTab) && (
           <div className="bg-white border border-black/8 rounded-2xl p-12 text-center my-6 shadow-sm">
             <div className="size-16 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
               <FileText size={28} />

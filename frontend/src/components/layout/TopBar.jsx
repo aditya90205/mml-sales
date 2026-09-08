@@ -318,6 +318,7 @@ export default function TopBar({ page = "Dashboard" }) {
   const routeNameMap = {
     dashboard: "Dashboard",
     hrms: "HRMS",
+    "promotions-transfers": "Promotion and Transfers",
     pipeline: "Pipeline Board",
     visits: "Home & Office Visits",
     "cross-branch": "Cross Branch Flags",

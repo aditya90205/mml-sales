@@ -910,3 +910,49 @@ export function TransferSection({ employee, showAll = false }) {
     </div>
   );
 }
+
+const PT_VIEWS = [
+  { id: "promotion", label: "Promotion" },
+  { id: "transfer", label: "Transfer" },
+];
+
+/** Combined Promotion + Transfer view with sub-tabs (default: Promotion). */
+export function PromotionsTransfersSection({ employee, showAll = false, initialView = "promotion" }) {
+  const [view, setView] = useState(
+    initialView === "transfer" ? "transfer" : "promotion"
+  );
+
+  useEffect(() => {
+    setView(initialView === "transfer" ? "transfer" : "promotion");
+  }, [initialView]);
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-[#F8F8FA] border border-black/8 w-fit">
+        {PT_VIEWS.map((item) => {
+          const active = view === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setView(item.id)}
+              className={`h-8 px-3.5 rounded-lg text-[12px] font-bold transition-colors ${
+                active
+                  ? "bg-white text-[#7A0A17] shadow-sm border border-black/8"
+                  : "text-[#6B7280] hover:text-[#111]"
+              }`}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {view === "transfer" ? (
+        <TransferSection employee={employee} showAll={showAll} />
+      ) : (
+        <PromotionSection employee={employee} showAll={showAll} />
+      )}
+    </div>
+  );
+}
