@@ -182,7 +182,7 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
 
   const handleSave = () => {
     if (!groupName.trim()) {
-      toast.error("Please enter a group name.");
+      toast.error("Please fill group name first.");
       return;
     }
     if (!results) {
