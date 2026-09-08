@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Edit2, Filter, Search, Star } from "lucide-react";
+import { ChevronDown, ChevronUp, Filter, Search } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTableSort } from "../components/common/useTableSort.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
@@ -22,18 +22,6 @@ const INITIAL_GLOBAL_LEADERBOARD = [
   { id: 9, rank: 9, name: "Ankur Sharma",   taskScore: 34, contestScore: 38, warningScore: 1, complaints: 1,  xp: 70 },
 ];
 
-const MY_CONTESTS = [
-  { id: 1, name: "Logging Framework",          type: "Individual", description: "Problem Solving",   activation: "Inactive", startDate: "20-05-26", endDate: "20-05-26", status: "In Progress" },
-  { id: 2, name: "API Development",            type: "Team",       description: "Team Contribution", activation: "Active",   startDate: "20-05-26", endDate: "20-05-26", status: "In Progress" },
-  { id: 3, name: "API Development",            type: "Individual", description: "Problem Solving",   activation: "Inactive", startDate: "20-05-26", endDate: "20-05-26", status: "In Progress" },
-  { id: 4, name: "Microservices Architecture", type: "Team",       description: "Team Contribution", activation: "Active",   startDate: "20-05-26", endDate: "20-05-26", status: "In Progress" },
-  { id: 5, name: "Logging Framework",          type: "Individual", description: "Problem Solving",   activation: "Inactive", startDate: "20-05-26", endDate: "20-05-26", status: "Completed" },
-  { id: 6, name: "API Development",            type: "Team",       description: "Team Contribution", activation: "Active",   startDate: "20-05-26", endDate: "20-05-26", status: "In Progress" },
-  { id: 7, name: "Logging Framework",          type: "Individual", description: "Problem Solving",   activation: "Inactive", startDate: "20-05-26", endDate: "20-05-26", status: "Completed" },
-  { id: 8, name: "Microservices Architecture", type: "Team",       description: "Team Contribution", activation: "Active",   startDate: "20-05-26", endDate: "20-05-26", status: "In Progress" },
-  { id: 9, name: "API Development",            type: "Individual", description: "Problem Solving",   activation: "Inactive", startDate: "20-05-26", endDate: "20-05-26", status: "Completed" },
-];
-
 const LEADERBOARD_COLS = [
   { label: "Rank", key: "rank" },
   { label: "Name", key: "name" },
@@ -45,19 +33,7 @@ const LEADERBOARD_COLS = [
   { label: "Action", key: "action", unsortable: true },
 ];
 
-const CONTEST_COLS = [
-  { label: "Name", key: "name" },
-  { label: "Type", key: "type" },
-  { label: "Short Description", key: "description" },
-  { label: "Activation Status", key: "activation" },
-  { label: "Start Date", key: "startDate" },
-  { label: "End Date", key: "endDate" },
-  { label: "Contest Status", key: "status" },
-  { label: "Action", key: "action", unsortable: true },
-];
-
 const LEADERBOARD_SEARCH_KEYS = ["name"];
-const CONTEST_SEARCH_KEYS = ["name", "type", "description", "activation", "status"];
 
 function AssetIcon({ src, alt = "", size = 16 }) {
   return (
@@ -199,21 +175,6 @@ function Pagination({ page, totalPages, totalItems, pageSize, itemLabel, onChang
         </button>
       </div>
     </div>
-  );
-}
-
-function StatusBadge({ label }) {
-  const styles = {
-    Active: "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/25",
-    Inactive: "bg-[#FEE2E2] text-[#DC2626] border-[#DC2626]/20",
-    "In Progress": "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20",
-    Completed: "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/25",
-  };
-
-  return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap border ${styles[label] || "bg-[#F1F2F4] text-[#6B7280] border-black/10"}`}>
-      {label}
-    </span>
   );
 }
 
@@ -422,96 +383,6 @@ function GlobalLeaderboardSection({ onMessage }) {
   );
 }
 
-function MyContestsSection() {
-  const table = usePagedTable(MY_CONTESTS, CONTEST_SEARCH_KEYS, null);
-
-  return (
-    <section className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
-      <h2 className="text-[22px] font-bold text-[#111] tracking-tight">My Contests</h2>
-
-      <ListToolbar
-        search={table.search}
-        onSearchChange={table.setSearch}
-        onSearch={table.applySearch}
-        perPage={table.perPage}
-        onPerPageChange={table.setPerPage}
-      />
-
-      <div className="overflow-x-auto border border-black/8 rounded-xl">
-        <table className="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold tracking-wide">
-              {CONTEST_COLS.map((col) => (
-                <DualSortTh
-                  key={col.key}
-                  label={col.label}
-                  sortKey={col.key}
-                  sort={table.sort}
-                  onSort={table.toggle}
-                  unsortable={col.unsortable}
-                />
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-black/6">
-            {table.paged.length === 0 ? (
-              <tr>
-                <td colSpan={CONTEST_COLS.length} className="px-4 py-10 text-center text-[13px] text-[#9CA3AF] font-medium">
-                  No contests found.
-                </td>
-              </tr>
-            ) : (
-              table.paged.map((row) => {
-                const canManage = row.status === "In Progress";
-                return (
-                  <tr key={row.id} className="hover:bg-[#FAFAFB] transition-colors">
-                    <td className="px-4 py-3.5 text-[13px] font-semibold text-[#111] whitespace-nowrap">{row.name}</td>
-                    <td className="px-4 py-3.5 text-[13px] font-medium text-[#374151]">{row.type}</td>
-                    <td className="px-4 py-3.5 text-[13px] font-medium text-[#374151]">{row.description}</td>
-                    <td className="px-4 py-3.5"><StatusBadge label={row.activation} /></td>
-                    <td className="px-4 py-3.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{row.startDate}</td>
-                    <td className="px-4 py-3.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{row.endDate}</td>
-                    <td className="px-4 py-3.5"><StatusBadge label={row.status} /></td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-0.5">
-                        <IconBtn label={`Favorite ${row.name}`} onClick={() => toast.success(`${row.name} marked as favorite.`)}>
-                          <Star size={15} className="text-[#F59E0B]" />
-                        </IconBtn>
-                        <IconBtn label={`View ${row.name}`} onClick={() => toast.info(`Viewing ${row.name}`)}>
-                          <AssetIcon src={eyeIcon} alt="view" />
-                        </IconBtn>
-                        {canManage && (
-                          <>
-                            <IconBtn label={`Edit ${row.name}`} onClick={() => toast.info(`Editing ${row.name}`)}>
-                              <Edit2 size={14} className="text-[#2563EB]" />
-                            </IconBtn>
-                            <IconBtn label={`Delete ${row.name}`} onClick={() => toast.error(`${row.name} deleted.`)}>
-                              <AssetIcon src={tblDeleteIcon} alt="delete" />
-                            </IconBtn>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <Pagination
-        page={table.page}
-        totalPages={table.totalPages}
-        totalItems={table.totalItems}
-        pageSize={table.perPage}
-        itemLabel="Contests"
-        onChange={table.setPage}
-      />
-    </section>
-  );
-}
-
 export default function LeaderboardPage() {
   const [messageOpen, setMessageOpen] = useState(false);
 
@@ -519,7 +390,6 @@ export default function LeaderboardPage() {
     <div className="flex flex-col flex-1 min-h-0">
       <div className="px-5 pt-5 pb-8 flex flex-col gap-6 min-w-0">
         <GlobalLeaderboardSection onMessage={() => setMessageOpen(true)} />
-        <MyContestsSection />
       </div>
 
       <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />

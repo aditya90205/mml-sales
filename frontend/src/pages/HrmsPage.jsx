@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { toast } from "react-toastify";
 import {
+  ExternalLink,
   ChevronRight,
   ChevronDown,
   Wallet,
@@ -106,6 +107,137 @@ const HRMS_TABS = [
   "Awards & Contest",
   "Exit",
   "Complaint & Warning",
+];
+
+const INITIAL_AWARDS = [
+  {
+    id: 1,
+    awardType: "Leadership Award",
+    awardDate: "2026-01-15",
+    gift: "Extra Leave Days",
+    certificateLabel: "leadership-award-cert.pdf",
+    certificateUrl: "#leadership-award-cert",
+    photoLabel: "award-ceremony.jpg",
+    photoUrl: "#award-ceremony",
+    description: "Mentored team members and contributed to their professional development",
+  },
+  {
+    id: 2,
+    awardType: "Sales Excellence",
+    awardDate: "2026-02-28",
+    gift: "Amazon Voucher ₹5,000",
+    certificateLabel: "sales-excellence-cert.pdf",
+    certificateUrl: "#sales-excellence-cert",
+    photoLabel: "sales-booster-photo.jpg",
+    photoUrl: "#sales-booster-photo",
+    description: "Highest qualified leads converted in Q1 across South Extension branch",
+  },
+  {
+    id: 3,
+    awardType: "Best Closer",
+    awardDate: "2025-11-20",
+    gift: "Cash Bonus ₹10,000",
+    certificateLabel: "best-closer-cert.pdf",
+    certificateUrl: "#best-closer-cert",
+    photoLabel: "conversion-king.jpg",
+    photoUrl: "#conversion-king",
+    description: "Closed 8 premium memberships within the contest window",
+  },
+  {
+    id: 4,
+    awardType: "Team Player",
+    awardDate: "2025-09-12",
+    gift: "Recognition Badge",
+    certificateLabel: "team-player-cert.pdf",
+    certificateUrl: "#team-player-cert",
+    photoLabel: "client-delight.jpg",
+    photoUrl: "#client-delight",
+    description: "Highest CSAT scores and zero open complaints during the campaign week",
+  },
+  {
+    id: 5,
+    awardType: "Rising Star",
+    awardDate: "2025-06-05",
+    gift: "Trophy + Gift Hamper",
+    certificateLabel: "rising-star-cert.pdf",
+    certificateUrl: "#rising-star-cert",
+    photoLabel: "rising-star-photo.jpg",
+    photoUrl: "#rising-star-photo",
+    description: "Fastest ramp-up to target among new sales managers this half-year",
+  },
+];
+
+const INITIAL_CONTESTS = [
+  {
+    id: 1,
+    challengeName: "Logging Framework",
+    typeReward: "Individual - XP",
+    earnedXp: 10,
+    period: "02-07-26 - 20-08-26",
+    project: "Security Audit & Compliance",
+    criteria: "Problem Solving",
+    difficulty: "Easy",
+    challengeStatus: "In Progress",
+    activeStatus: "Active",
+    members: ["Rahul Sharma", "Anil Gupta", "Sushant Mehta", "Adyasha Sahu"],
+    description: "Problem Solving",
+  },
+  {
+    id: 2,
+    challengeName: "Mega Lead Hunter",
+    typeReward: "Team - Badge",
+    earnedXp: 25,
+    period: "01-08-26 - 31-08-26",
+    project: "Pipeline Acceleration",
+    criteria: "Lead Generation",
+    difficulty: "Medium",
+    challengeStatus: "Completed",
+    activeStatus: "Closed",
+    members: ["Ankur Sharma", "Kuhu Sharma", "Priya Singh"],
+    description: "Generate maximum qualified leads and top the branch dashboard",
+  },
+  {
+    id: 3,
+    challengeName: "Sales Booster Sprint",
+    typeReward: "Individual - Cash",
+    earnedXp: 40,
+    period: "10-06-26 - 30-06-26",
+    project: "Q2 Revenue Push",
+    criteria: "Conversions",
+    difficulty: "Hard",
+    challengeStatus: "Completed",
+    activeStatus: "Closed",
+    members: ["Ankur Sharma", "Rohan Verma"],
+    description: "Close more deals and boost sales numbers this month",
+  },
+  {
+    id: 4,
+    challengeName: "Client Delight Week",
+    typeReward: "Team - XP",
+    earnedXp: 15,
+    period: "05-09-26 - 12-09-26",
+    project: "Post-Sale Experience",
+    criteria: "Customer Satisfaction",
+    difficulty: "Easy",
+    challengeStatus: "Not Started",
+    activeStatus: "Active",
+    members: ["Ankur Sharma", "Aditya Sharma", "Neha Kapoor"],
+    description: "Maintain CSAT and resolve open complaints within SLA",
+  },
+  {
+    id: 5,
+    challengeName: "Conversion King",
+    typeReward: "Individual - Trophy",
+    earnedXp: 50,
+    period: "01-05-26 - 31-05-26",
+    project: "Membership Closures",
+    criteria: "Deal Closure Rate",
+    difficulty: "Hard",
+    challengeStatus: "In Progress",
+    activeStatus: "Active",
+    members: ["Ankur Sharma", "Arjun Mehta", "Sana Iqbal"],
+    description: "Convert meetings into successful memberships",
+  },
 ];
 
 const INITIAL_COMPLAINTS_WARNINGS = [
@@ -490,6 +622,75 @@ function TabToolbar({ search, onSearchChange, placeholder = "Search..." }) {
         </button>
       </div>
     </div>
+  );
+}
+
+/** Compact members column: view icon + hover list of all names. */
+function MembersHoverView({ members = [] }) {
+  const ref = useRef(null);
+  const hideTimer = useRef(null);
+  const [pos, setPos] = useState(null);
+
+  const open = () => {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    const width = 220;
+    let left = r.left + r.width / 2 - width / 2;
+    left = Math.max(12, Math.min(left, window.innerWidth - width - 12));
+    const below = r.bottom + 8;
+    const placeAbove = below + 160 > window.innerHeight;
+    setPos({
+      top: placeAbove ? undefined : below,
+      bottom: placeAbove ? window.innerHeight - r.top + 8 : undefined,
+      left,
+    });
+  };
+
+  const scheduleClose = () => {
+    hideTimer.current = setTimeout(() => setPos(null), 120);
+  };
+
+  if (!members.length) {
+    return <span className="text-[#9CA3AF]">—</span>;
+  }
+
+  return (
+    <>
+      <button
+        ref={ref}
+        type="button"
+        onMouseEnter={open}
+        onMouseLeave={scheduleClose}
+        className="inline-flex items-center justify-center size-8 rounded-lg border border-black/10 text-[#6B7280] hover:text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors"
+        aria-label={`View ${members.length} members`}
+        title="View members"
+      >
+        <Eye size={14} />
+      </button>
+
+      {pos &&
+        createPortal(
+          <div
+            className="fixed z-[80] w-[220px] bg-white border border-black/10 rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.14)] p-3"
+            style={{ top: pos.top, bottom: pos.bottom, left: pos.left }}
+            onMouseEnter={open}
+            onMouseLeave={scheduleClose}
+          >
+            <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide mb-2">
+              Selected members ({members.length})
+            </p>
+            <ul className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
+              {members.map((name) => (
+                <li key={name} className="text-[12.5px] font-semibold text-[#111827]">
+                  {name}
+                </li>
+              ))}
+            </ul>
+          </div>,
+          document.body
+        )}
+    </>
   );
 }
 
@@ -1009,6 +1210,10 @@ export default function HrmsPage() {
   const [documentPage, setDocumentPage] = useState(1);
   const [searchAsset, setSearchAsset] = useState("");
   const [assetPage, setAssetPage] = useState(1);
+  const [searchAward, setSearchAward] = useState("");
+  const [awardPage, setAwardPage] = useState(1);
+  const [searchContest, setSearchContest] = useState("");
+  const [contestPage, setContestPage] = useState(1);
 
   // Form Fields
   const [issueText, setIssueText] = useState("");
@@ -1179,6 +1384,37 @@ export default function HrmsPage() {
   const assetPageSize = 10;
   const assetTotalPages = Math.max(1, Math.ceil(filteredAssets.length / assetPageSize));
   const pagedAssets = sortedAssets.slice((assetPage - 1) * assetPageSize, assetPage * assetPageSize);
+
+  const filteredAwards = INITIAL_AWARDS.filter((a) => {
+    const q = searchAward.toLowerCase();
+    return (
+      a.awardType.toLowerCase().includes(q) ||
+      a.gift.toLowerCase().includes(q) ||
+      a.description.toLowerCase().includes(q)
+    );
+  });
+  const { sorted: sortedAwards, sort: awardSort, toggle: toggleAwardSort } = useTableSort(filteredAwards, {
+    defaultKey: "awardDate",
+  });
+  const awardPageSize = 10;
+  const awardTotalPages = Math.max(1, Math.ceil(filteredAwards.length / awardPageSize));
+  const pagedAwards = sortedAwards.slice((awardPage - 1) * awardPageSize, awardPage * awardPageSize);
+
+  const filteredContests = INITIAL_CONTESTS.filter((c) => {
+    const q = searchContest.toLowerCase();
+    return (
+      c.challengeName.toLowerCase().includes(q) ||
+      c.project.toLowerCase().includes(q) ||
+      c.criteria.toLowerCase().includes(q) ||
+      c.challengeStatus.toLowerCase().includes(q)
+    );
+  });
+  const { sorted: sortedContests, sort: contestSort, toggle: toggleContestSort } = useTableSort(filteredContests, {
+    defaultKey: "challengeName",
+  });
+  const contestPageSize = 10;
+  const contestTotalPages = Math.max(1, Math.ceil(filteredContests.length / contestPageSize));
+  const pagedContests = sortedContests.slice((contestPage - 1) * contestPageSize, contestPage * contestPageSize);
 
   const { sorted: sortedLeaveTypes, sort: leaveSort, toggle: toggleLeaveSort } = useTableSort(LEAVE_BALANCE_TYPES, {
     defaultKey: "type",
@@ -2627,6 +2863,254 @@ export default function HrmsPage() {
           </div>
         )}
 
+        {/* AWARDS & CONTEST TAB */}
+        {activeTab === "Awards & Contest" && (
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { label: "Total awards", value: String(INITIAL_AWARDS.length), sub: "On your record" },
+                { label: "Active contests", value: String(INITIAL_CONTESTS.filter((c) => c.activeStatus === "Active").length), sub: "Open challenges" },
+                { label: "Latest award", value: "Leadership Award", sub: "15 Jan 2026" },
+              ].map((card) => (
+                <div key={card.label} className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+                  <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">{card.label}</p>
+                  <p className="text-xl font-extrabold text-[#111827] mt-1.5">{card.value}</p>
+                  <p className="text-[12.5px] text-[#6B7280] mt-1">{card.sub}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Awards table */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <span className="size-9 rounded-full bg-[#FFF7ED] text-[#F59E0B] grid place-items-center">
+                    <Trophy size={16} />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-[#111827]">My awards</h3>
+                    <p className="text-[12.5px] text-[#6B7280]">Award type, gifts, certificates and photos</p>
+                  </div>
+                </div>
+                <TabToolbar
+                  search={searchAward}
+                  onSearchChange={(v) => {
+                    setSearchAward(v);
+                    setAwardPage(1);
+                  }}
+                  placeholder="Search awards..."
+                />
+              </div>
+
+              <div className="overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <HrmsSortHead
+                      sort={awardSort}
+                      onSort={toggleAwardSort}
+                      cols={[
+                        { label: "#", key: "id", unsortable: true },
+                        { label: "Award Type", key: "awardType" },
+                        { label: "Award Date", key: "awardDate" },
+                        { label: "Gift", key: "gift" },
+                        { label: "Certificate", key: "certificateLabel", unsortable: true },
+                        { label: "Photo", key: "photoLabel", unsortable: true },
+                        { label: "Description", key: "description" },
+                      ]}
+                    />
+                  </thead>
+                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+                    {pagedAwards.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-10 text-center text-[13px] text-[#9CA3AF] font-medium">
+                          No awards found.
+                        </td>
+                      </tr>
+                    ) : (
+                      pagedAwards.map((row, idx) => (
+                        <tr key={row.id} className="hover:bg-[#FAFAFB] transition-colors">
+                          <td className="px-4 py-3 font-bold text-[#6B7280]">
+                            {(awardPage - 1) * awardPageSize + idx + 1}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1.5">
+                              <Trophy size={12} className="text-[#F59E0B] shrink-0" />
+                              {row.awardType}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{row.awardDate}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">{row.gift}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <a
+                              href={row.certificateUrl}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                toast.info(`Opening certificate: ${row.certificateLabel}`);
+                              }}
+                              className="inline-flex items-center gap-1 text-[#2563EB] hover:underline font-semibold"
+                            >
+                              <ExternalLink size={12} />
+                              {row.certificateLabel}
+                            </a>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <a
+                              href={row.photoUrl}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                toast.info(`Opening photo: ${row.photoLabel}`);
+                              }}
+                              className="inline-flex items-center gap-1 text-[#2563EB] hover:underline font-semibold"
+                            >
+                              <ExternalLink size={12} />
+                              {row.photoLabel}
+                            </a>
+                          </td>
+                          <td className="px-4 py-3 text-[#6B7280] font-medium min-w-[220px] max-w-[320px]">
+                            {row.description}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <Pagination
+                page={awardPage}
+                totalPages={awardTotalPages}
+                totalItems={filteredAwards.length}
+                pageSize={awardPageSize}
+                itemLabel="awards"
+                onChange={setAwardPage}
+              />
+            </div>
+
+            {/* Contests / Challenges table */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <span className="size-9 rounded-full bg-[#E7F8EF] text-[#16A34A] grid place-items-center">
+                    <Target size={16} />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-[#111827]">My contests</h3>
+                    <p className="text-[12.5px] text-[#6B7280]">Challenge details, XP, difficulty and status</p>
+                  </div>
+                </div>
+                <TabToolbar
+                  search={searchContest}
+                  onSearchChange={(v) => {
+                    setSearchContest(v);
+                    setContestPage(1);
+                  }}
+                  placeholder="Search contests..."
+                />
+              </div>
+
+              <div className="overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full table-fixed text-left border-collapse text-xs">
+                  <thead>
+                    <HrmsSortHead
+                      sort={contestSort}
+                      onSort={toggleContestSort}
+                      cols={[
+                        { label: "#", key: "id", unsortable: true },
+                        { label: "Challenge Name", key: "challengeName" },
+                        { label: "Type & Reward", key: "typeReward" },
+                        { label: "XP", key: "earnedXp" },
+                        { label: "Period", key: "period" },
+                        { label: "Project", key: "project" },
+                        { label: "Criteria", key: "criteria" },
+                        { label: "Difficulty", key: "difficulty" },
+                        { label: "Challenge Status", key: "challengeStatus" },
+                        { label: "Status", key: "activeStatus" },
+                        { label: "Members", key: "members", unsortable: true },
+                        { label: "Description", key: "description" },
+                      ]}
+                    />
+                  </thead>
+                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+                    {pagedContests.length === 0 ? (
+                      <tr>
+                        <td colSpan={12} className="px-4 py-10 text-center text-[13px] text-[#9CA3AF] font-medium">
+                          No contests found.
+                        </td>
+                      </tr>
+                    ) : (
+                      pagedContests.map((row, idx) => (
+                        <tr key={row.id} className="hover:bg-[#FAFAFB] transition-colors">
+                          <td className="px-2 py-3 font-bold text-[#6B7280] w-8">
+                            {(contestPage - 1) * contestPageSize + idx + 1}
+                          </td>
+                          <td className="px-2 py-3 font-bold truncate" title={row.challengeName}>{row.challengeName}</td>
+                          <td className="px-2 py-3 text-[#374151] truncate" title={row.typeReward}>{row.typeReward}</td>
+                          <td className="px-2 py-3 whitespace-nowrap">{row.earnedXp}</td>
+                          <td className="px-2 py-3 text-[#6B7280] truncate" title={row.period}>{row.period}</td>
+                          <td className="px-2 py-3 truncate" title={row.project}>{row.project}</td>
+                          <td className="px-2 py-3 truncate" title={row.criteria}>{row.criteria}</td>
+                          <td className="px-2 py-3">
+                            <span
+                              className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                row.difficulty === "Easy"
+                                  ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                                  : row.difficulty === "Medium"
+                                    ? "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
+                                    : "bg-[#FEE2E2] text-[#DC2626] border-[#DC2626]/20"
+                              }`}
+                            >
+                              {row.difficulty}
+                            </span>
+                          </td>
+                          <td className="px-2 py-3">
+                            <span
+                              className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                row.challengeStatus === "In Progress"
+                                  ? "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
+                                  : row.challengeStatus === "Completed"
+                                    ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                                    : "bg-[#F3F4F6] text-[#4B5563] border-black/10"
+                              }`}
+                            >
+                              {row.challengeStatus}
+                            </span>
+                          </td>
+                          <td className="px-2 py-3">
+                            <span
+                              className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                row.activeStatus === "Active"
+                                  ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                                  : "bg-[#F3F4F6] text-[#4B5563] border-black/10"
+                              }`}
+                            >
+                              {row.activeStatus}
+                            </span>
+                          </td>
+                          <td className="px-2 py-3 text-center">
+                            <MembersHoverView members={row.members} />
+                          </td>
+                          <td className="px-2 py-3 text-[#6B7280] font-medium truncate" title={row.description}>
+                            {row.description}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <Pagination
+                page={contestPage}
+                totalPages={contestTotalPages}
+                totalItems={filteredContests.length}
+                pageSize={contestPageSize}
+                itemLabel="contests"
+                onChange={setContestPage}
+              />
+            </div>
+          </div>
+        )}
+
         {/* EXIT TAB */}
         {activeTab === "Exit" && (
           <ResignationSection
@@ -2739,7 +3223,7 @@ export default function HrmsPage() {
         )}
 
         {/* Placeholder View for remaining tabs */}
-        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset", "Exit", "Complaint & Warning"].includes(activeTab) && (
+        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset", "Awards & Contest", "Exit", "Complaint & Warning"].includes(activeTab) && (
           <div className="bg-white border border-black/8 rounded-2xl p-12 text-center my-6 shadow-sm">
             <div className="size-16 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
               <FileText size={28} />

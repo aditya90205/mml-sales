@@ -27,7 +27,7 @@ const NAV_ITEMS = [
   { label: "Win / Loss",      icon: BarChart3,       to: "/win-loss" },
   { label: "Post Sales",      icon: Handshake,       to: "/post-sales" },
   { label: "HRMS",            icon: Users,           to: "/hrms" },
-  { label: "Leaderboard & Contest",     icon: Trophy,          to: "/leaderboard" },
+  { label: "Leaderboard",     icon: Trophy,          to: "/leaderboard" },
 ];
 
 export default function Sidebar() {
