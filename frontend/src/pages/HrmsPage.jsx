@@ -625,8 +625,15 @@ function TabToolbar({ search, onSearchChange, placeholder = "Search..." }) {
   );
 }
 
-/** Compact members column: view icon + hover list of all names. */
-function MembersHoverView({ members = [] }) {
+/** Compact column: icon + hover popup (members list or description text). */
+function HoverIconTip({
+  icon: Icon = Eye,
+  ariaLabel,
+  title,
+  panelTitle,
+  width = 240,
+  children,
+}) {
   const ref = useRef(null);
   const hideTimer = useRef(null);
   const [pos, setPos] = useState(null);
@@ -635,11 +642,10 @@ function MembersHoverView({ members = [] }) {
     if (hideTimer.current) clearTimeout(hideTimer.current);
     const r = ref.current?.getBoundingClientRect();
     if (!r) return;
-    const width = 220;
     let left = r.left + r.width / 2 - width / 2;
     left = Math.max(12, Math.min(left, window.innerWidth - width - 12));
     const below = r.bottom + 8;
-    const placeAbove = below + 160 > window.innerHeight;
+    const placeAbove = below + 180 > window.innerHeight;
     setPos({
       top: placeAbove ? undefined : below,
       bottom: placeAbove ? window.innerHeight - r.top + 8 : undefined,
@@ -651,10 +657,6 @@ function MembersHoverView({ members = [] }) {
     hideTimer.current = setTimeout(() => setPos(null), 120);
   };
 
-  if (!members.length) {
-    return <span className="text-[#9CA3AF]">—</span>;
-  }
-
   return (
     <>
       <button
@@ -663,34 +665,74 @@ function MembersHoverView({ members = [] }) {
         onMouseEnter={open}
         onMouseLeave={scheduleClose}
         className="inline-flex items-center justify-center size-8 rounded-lg border border-black/10 text-[#6B7280] hover:text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors"
-        aria-label={`View ${members.length} members`}
-        title="View members"
+        aria-label={ariaLabel}
+        title={title}
       >
-        <Eye size={14} />
+        <Icon size={14} />
       </button>
 
       {pos &&
         createPortal(
           <div
-            className="fixed z-[80] w-[220px] bg-white border border-black/10 rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.14)] p-3"
-            style={{ top: pos.top, bottom: pos.bottom, left: pos.left }}
+            className="fixed z-[80] bg-white border border-black/10 rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.14)] p-3"
+            style={{ top: pos.top, bottom: pos.bottom, left: pos.left, width }}
             onMouseEnter={open}
             onMouseLeave={scheduleClose}
           >
-            <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide mb-2">
-              Selected members ({members.length})
-            </p>
-            <ul className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
-              {members.map((name) => (
-                <li key={name} className="text-[12.5px] font-semibold text-[#111827]">
-                  {name}
-                </li>
-              ))}
-            </ul>
+            {panelTitle && (
+              <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide mb-2">
+                {panelTitle}
+              </p>
+            )}
+            {children}
           </div>,
           document.body
         )}
     </>
+  );
+}
+
+function MembersHoverView({ members = [] }) {
+  if (!members.length) {
+    return <span className="text-[#9CA3AF]">—</span>;
+  }
+
+  return (
+    <HoverIconTip
+      icon={Eye}
+      ariaLabel={`View ${members.length} members`}
+      title="View members"
+      panelTitle={`Selected members (${members.length})`}
+      width={220}
+    >
+      <ul className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
+        {members.map((name) => (
+          <li key={name} className="text-[12.5px] font-semibold text-[#111827]">
+            {name}
+          </li>
+        ))}
+      </ul>
+    </HoverIconTip>
+  );
+}
+
+function DescriptionHoverView({ description }) {
+  if (!description) {
+    return <span className="text-[#9CA3AF]">—</span>;
+  }
+
+  return (
+    <HoverIconTip
+      icon={FileText}
+      ariaLabel="View description"
+      title="View description"
+      panelTitle="Description"
+      width={280}
+    >
+      <p className="text-[12.5px] font-medium text-[#374151] leading-relaxed whitespace-pre-wrap">
+        {description}
+      </p>
+    </HoverIconTip>
   );
 }
 
@@ -3009,47 +3051,48 @@ export default function HrmsPage() {
               </div>
 
               <div className="overflow-x-auto border border-black/8 rounded-xl">
-                <table className="w-full table-fixed text-left border-collapse text-xs">
+                <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <HrmsSortHead
                       sort={contestSort}
                       onSort={toggleContestSort}
                       cols={[
-                        { label: "#", key: "id", unsortable: true },
+                        { label: "#", key: "id", unsortable: true, align: "center" },
                         { label: "Challenge Name", key: "challengeName" },
                         { label: "Type & Reward", key: "typeReward" },
-                        { label: "XP", key: "earnedXp" },
-                        { label: "Period", key: "period" },
+                        { label: "XP", key: "earnedXp", align: "center" },
                         { label: "Project", key: "project" },
                         { label: "Criteria", key: "criteria" },
-                        { label: "Difficulty", key: "difficulty" },
-                        { label: "Challenge Status", key: "challengeStatus" },
-                        { label: "Status", key: "activeStatus" },
-                        { label: "Members", key: "members", unsortable: true },
-                        { label: "Description", key: "description" },
+                        { label: "Difficulty", key: "difficulty", align: "center" },
+                        { label: "Challenge Status", key: "challengeStatus", align: "center" },
+                        { label: "Status", key: "activeStatus", align: "center" },
+                        { label: "Members", key: "members", unsortable: true, align: "center" },
+                        { label: "Description", key: "description", unsortable: true, align: "center" },
                       ]}
                     />
                   </thead>
                   <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
                     {pagedContests.length === 0 ? (
                       <tr>
-                        <td colSpan={12} className="px-4 py-10 text-center text-[13px] text-[#9CA3AF] font-medium">
+                        <td colSpan={11} className="px-4 py-10 text-center text-[13px] text-[#9CA3AF] font-medium">
                           No contests found.
                         </td>
                       </tr>
                     ) : (
                       pagedContests.map((row, idx) => (
                         <tr key={row.id} className="hover:bg-[#FAFAFB] transition-colors">
-                          <td className="px-2 py-3 font-bold text-[#6B7280] w-8">
+                          <td className="px-3 py-3 font-bold text-[#6B7280] text-center align-middle">
                             {(contestPage - 1) * contestPageSize + idx + 1}
                           </td>
-                          <td className="px-2 py-3 font-bold truncate" title={row.challengeName}>{row.challengeName}</td>
-                          <td className="px-2 py-3 text-[#374151] truncate" title={row.typeReward}>{row.typeReward}</td>
-                          <td className="px-2 py-3 whitespace-nowrap">{row.earnedXp}</td>
-                          <td className="px-2 py-3 text-[#6B7280] truncate" title={row.period}>{row.period}</td>
-                          <td className="px-2 py-3 truncate" title={row.project}>{row.project}</td>
-                          <td className="px-2 py-3 truncate" title={row.criteria}>{row.criteria}</td>
-                          <td className="px-2 py-3">
+                          <td className="px-3 py-3 align-middle">
+                            <p className="font-bold text-[#111827] whitespace-nowrap">{row.challengeName}</p>
+                            <p className="text-[11px] font-medium text-[#9CA3AF] mt-0.5 whitespace-nowrap">{row.period}</p>
+                          </td>
+                          <td className="px-3 py-3 text-[#374151] align-middle whitespace-nowrap">{row.typeReward}</td>
+                          <td className="px-3 py-3 text-center align-middle whitespace-nowrap">{row.earnedXp}</td>
+                          <td className="px-3 py-3 align-middle whitespace-nowrap">{row.project}</td>
+                          <td className="px-3 py-3 align-middle whitespace-nowrap">{row.criteria}</td>
+                          <td className="px-3 py-3 text-center align-middle">
                             <span
                               className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                                 row.difficulty === "Easy"
@@ -3062,7 +3105,7 @@ export default function HrmsPage() {
                               {row.difficulty}
                             </span>
                           </td>
-                          <td className="px-2 py-3">
+                          <td className="px-3 py-3 text-center align-middle">
                             <span
                               className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                                 row.challengeStatus === "In Progress"
@@ -3075,7 +3118,7 @@ export default function HrmsPage() {
                               {row.challengeStatus}
                             </span>
                           </td>
-                          <td className="px-2 py-3">
+                          <td className="px-3 py-3 text-center align-middle">
                             <span
                               className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                                 row.activeStatus === "Active"
@@ -3086,11 +3129,11 @@ export default function HrmsPage() {
                               {row.activeStatus}
                             </span>
                           </td>
-                          <td className="px-2 py-3 text-center">
+                          <td className="px-3 py-3 text-center align-middle">
                             <MembersHoverView members={row.members} />
                           </td>
-                          <td className="px-2 py-3 text-[#6B7280] font-medium truncate" title={row.description}>
-                            {row.description}
+                          <td className="px-3 py-3 text-center align-middle">
+                            <DescriptionHoverView description={row.description} />
                           </td>
                         </tr>
                       ))
