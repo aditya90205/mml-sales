@@ -56,7 +56,7 @@ import {
   TrainingViewModal,
 } from "../components/hrms/HrmsEntityModals.jsx";
 import conductReviewIcon from "../assets/conduct-review.png";
-import ResignationSection from "../components/hrms/ResignationSection.jsx";
+import ExitTab from "../components/hrms/ExitTab.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import yellowLoopIcon from "../assets/yellow-loop.png";
 import redBackIcon from "../assets/red-back.png";
@@ -3155,16 +3155,7 @@ export default function HrmsPage() {
         )}
 
         {/* EXIT TAB */}
-        {activeTab === "Exit" && (
-          <ResignationSection
-            employee={{
-              name: USER.name,
-              id: "MML-E-1001",
-              department: "Sales",
-              designation: USER.role,
-            }}
-          />
-        )}
+        {activeTab === "Exit" && <ExitTab />}
 
         {/* COMPLAINT & WARNING TAB */}
         {activeTab === "Complaint & Warning" && (
