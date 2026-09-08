@@ -5,13 +5,13 @@ import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import Modal from "../../../components/ui/Modal";
 
 const INITIAL_DOCUMENTS = [
-  { id: "doc-1", label: "Aadhaar card — client", fileName: "", done: false },
-  { id: "doc-2", label: "PAN card — client", fileName: "", done: false },
-  { id: "doc-3", label: "Parent Aadhaar & PAN", fileName: "", done: false },
-  { id: "doc-4", label: "Police verification", fileName: "", done: false },
-  { id: "doc-5", label: "House / GPS photo", fileName: "", done: false },
-  { id: "doc-6", label: "Selfie with client", fileName: "", done: false },
-  { id: "doc-7", label: "Handwritten contract — OCR", fileName: "", done: false },
+  { id: "doc-1", label: "Aadhaar card — client", fileName: "", done: false, mandatory: true },
+  { id: "doc-2", label: "PAN card — client", fileName: "", done: false, mandatory: true },
+  { id: "doc-3", label: "Parent Aadhaar & PAN", fileName: "", done: false, mandatory: false },
+  { id: "doc-4", label: "Police verification", fileName: "", done: false, mandatory: false },
+  { id: "doc-5", label: "House / GPS photo", fileName: "", done: false, mandatory: false },
+  { id: "doc-6", label: "Selfie with client", fileName: "", done: false, mandatory: false },
+  { id: "doc-7", label: "Handwritten contract — OCR", fileName: "", done: false, mandatory: false },
 ];
 
 const FIELD =
@@ -23,6 +23,32 @@ const ACTION_BTN =
 const ICON_BTN =
   "inline-flex items-center justify-center size-9 rounded-lg border border-black/10 text-[#6B7280] hover:bg-[#FAFAFB] hover:text-[#111] transition-colors shrink-0";
 
+function MandatoryToggle({ checked, onChange }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-[#FAFAFB] px-3.5 py-3">
+      <div className="min-w-0">
+        <p className="text-[13px] font-bold text-[#111]">Mandatory field</p>
+        <p className="text-[11.5px] text-[#9CA3AF] mt-0.5">Show a red * next to this document name</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative h-6 w-11 rounded-full transition-colors shrink-0 ${
+          checked ? "bg-[#7A0A17]" : "bg-[#D1D5DB]"
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform ${
+            checked ? "translate-x-5" : "translate-x-0"
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
 /** Documents & KYC — used as a tab or embedded inside a modal. */
 export default function DocumentsKycTab({ empty = false, embedded = false }) {
   const fileInputRef = useRef(null);
@@ -32,17 +58,24 @@ export default function DocumentsKycTab({ empty = false, embedded = false }) {
   const [editOpen, setEditOpen] = useState(false);
   const [editId, setEditId] = useState(null);
   const [nameDraft, setNameDraft] = useState("");
+  const [mandatoryDraft, setMandatoryDraft] = useState(false);
 
   const visibleDocs = empty
     ? docs.map((d) => ({ ...d, label: d.label, fileName: "", done: false }))
     : docs;
+
+  const resetDraft = () => {
+    setNameDraft("");
+    setMandatoryDraft(false);
+    setEditId(null);
+  };
 
   const toggleDoc = (id) => {
     setDocs((prev) => prev.map((doc) => (doc.id === id ? { ...doc, done: !doc.done } : doc)));
   };
 
   const openAddRow = () => {
-    setNameDraft("");
+    resetDraft();
     setAddOpen(true);
   };
 
@@ -59,16 +92,18 @@ export default function DocumentsKycTab({ empty = false, embedded = false }) {
         label: nameDraft.trim(),
         fileName: "",
         done: false,
+        mandatory: mandatoryDraft,
       },
     ]);
     toast.success("Document row added.");
     setAddOpen(false);
-    setNameDraft("");
+    resetDraft();
   };
 
   const openEdit = (doc) => {
     setEditId(doc.id);
     setNameDraft(doc.label);
+    setMandatoryDraft(Boolean(doc.mandatory));
     setEditOpen(true);
   };
 
@@ -79,12 +114,15 @@ export default function DocumentsKycTab({ empty = false, embedded = false }) {
       return;
     }
     setDocs((prev) =>
-      prev.map((doc) => (doc.id === editId ? { ...doc, label: nameDraft.trim() } : doc))
+      prev.map((doc) =>
+        doc.id === editId
+          ? { ...doc, label: nameDraft.trim(), mandatory: mandatoryDraft }
+          : doc
+      )
     );
     toast.success("Document updated.");
     setEditOpen(false);
-    setEditId(null);
-    setNameDraft("");
+    resetDraft();
   };
 
   const deleteDoc = (id) => {
@@ -138,7 +176,10 @@ export default function DocumentsKycTab({ empty = false, embedded = false }) {
           >
             <ChecklistCheck done={doc.done} onClick={() => toggleDoc(doc.id)} label={doc.label} />
             <div className="min-w-0 flex-1">
-              <p className="text-[13.5px] font-semibold text-[#111]">{doc.label}</p>
+              <p className="text-[13.5px] font-semibold text-[#111]">
+                {doc.label}
+                {doc.mandatory ? <span className="text-[#E8395B]"> *</span> : null}
+              </p>
               {doc.fileName ? (
                 <p className="text-[11.5px] text-[#16A34A] mt-0.5 truncate">{doc.fileName}</p>
               ) : null}
@@ -175,7 +216,7 @@ export default function DocumentsKycTab({ empty = false, embedded = false }) {
 
       <Modal
         open={addOpen}
-        onClose={() => { setAddOpen(false); setNameDraft(""); }}
+        onClose={() => { setAddOpen(false); resetDraft(); }}
         title="Add document"
         subtitle="Enter a name for the new document row"
         width="max-w-md"
@@ -183,7 +224,7 @@ export default function DocumentsKycTab({ empty = false, embedded = false }) {
           <>
             <button
               type="button"
-              onClick={() => { setAddOpen(false); setNameDraft(""); }}
+              onClick={() => { setAddOpen(false); resetDraft(); }}
               className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
             >
               Cancel
@@ -198,7 +239,7 @@ export default function DocumentsKycTab({ empty = false, embedded = false }) {
           </>
         }
       >
-        <form id="add-doc-row-form" onSubmit={saveAddRow} className="flex flex-col gap-3">
+        <form id="add-doc-row-form" onSubmit={saveAddRow} className="flex flex-col gap-4">
           <label className="block text-[13px] font-bold text-[#111]">
             Document name
             <input
@@ -209,12 +250,13 @@ export default function DocumentsKycTab({ empty = false, embedded = false }) {
               className={`${FIELD} mt-1.5`}
             />
           </label>
+          <MandatoryToggle checked={mandatoryDraft} onChange={setMandatoryDraft} />
         </form>
       </Modal>
 
       <Modal
         open={editOpen}
-        onClose={() => { setEditOpen(false); setEditId(null); setNameDraft(""); }}
+        onClose={() => { setEditOpen(false); resetDraft(); }}
         title="Edit document"
         subtitle="Update the document name"
         width="max-w-md"
@@ -222,7 +264,7 @@ export default function DocumentsKycTab({ empty = false, embedded = false }) {
           <>
             <button
               type="button"
-              onClick={() => { setEditOpen(false); setEditId(null); setNameDraft(""); }}
+              onClick={() => { setEditOpen(false); resetDraft(); }}
               className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
             >
               Cancel
@@ -237,7 +279,7 @@ export default function DocumentsKycTab({ empty = false, embedded = false }) {
           </>
         }
       >
-        <form id="edit-doc-row-form" onSubmit={saveEdit} className="flex flex-col gap-3">
+        <form id="edit-doc-row-form" onSubmit={saveEdit} className="flex flex-col gap-4">
           <label className="block text-[13px] font-bold text-[#111]">
             Document name
             <input
@@ -247,6 +289,7 @@ export default function DocumentsKycTab({ empty = false, embedded = false }) {
               className={`${FIELD} mt-1.5`}
             />
           </label>
+          <MandatoryToggle checked={mandatoryDraft} onChange={setMandatoryDraft} />
         </form>
       </Modal>
     </>
