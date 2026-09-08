@@ -15,11 +15,14 @@ import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
 import {
   CLEARANCE_ITEMS,
+  DEMO_EXIT_VIEWS,
   EXIT_TYPES,
   NOTICE_PERIOD_OPTIONS,
   REASON_OPTIONS,
   RESIGNATION_STAGES,
-  getActiveResignationFor,
+  getLatestResignationFor,
+  getLatestTerminationFor,
+  isOpenStatus,
   isTermination,
   submitResignation,
   suggestLastWorkingDay,
@@ -47,6 +50,51 @@ function StatusPill({ status }) {
     >
       {status}
     </span>
+  );
+}
+
+function ExitTypePill({ exitType }) {
+  if (exitType === EXIT_TYPES.TERMINATION) {
+    return (
+      <span className="inline-flex items-center text-[10.5px] font-bold px-2 py-1 rounded-md bg-[#FEE2E2] text-[#B91C1C] border border-[#DC2626]/15">
+        {EXIT_TYPES.TERMINATION}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center text-[10.5px] font-bold px-2 py-1 rounded-md bg-[#EEF0FE] text-[#4338CA] border border-[#6366F1]/15">
+      {EXIT_TYPES.RESIGNATION}
+    </span>
+  );
+}
+
+function DummyExitSwitcher({ value, onChange }) {
+  return (
+    <div className="flex items-center justify-between gap-3 flex-wrap bg-white border border-black/10 rounded-2xl px-4 py-3 shadow-sm">
+      <div>
+        <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">Dummy preview</p>
+        <p className="text-[11.5px] text-[#9CA3AF] mt-0.5">
+          Open Resignation, then use Withdraw request. Termination cannot be withdrawn.
+        </p>
+      </div>
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-[#F8F8FA] border border-black/8">
+        {DEMO_EXIT_VIEWS.map((view) => {
+          const active = value === view.id;
+          return (
+            <button
+              key={view.id}
+              type="button"
+              onClick={() => onChange(view.id)}
+              className={`h-8 px-3 rounded-lg text-[12px] font-bold transition-colors ${
+                active ? "bg-white text-[#7A0A17] shadow-sm border border-black/8" : "text-[#6B7280] hover:text-[#111]"
+              }`}
+            >
+              {view.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -312,24 +360,97 @@ function TerminationReasonModal({ open, onClose, record, onSaved }) {
   );
 }
 
+/** Confirm before withdrawing an in-progress resignation. */
+function ConfirmWithdrawModal({ open, onClose, record, onConfirm }) {
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    if (open) setNote("");
+  }, [open]);
+
+  if (!record) return null;
+
+  const handleConfirm = () => {
+    onConfirm?.(note);
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Withdraw exit request"
+      subtitle="This will stop your resignation. Your manager will be notified."
+      icon={<Undo2 size={16} />}
+      iconBg="#F3F4F6"
+      iconColor="#4B5563"
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+          >
+            Keep request
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            Yes, withdraw
+          </button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-3">
+        <div className="bg-[#FAFAFB] border border-black/8 rounded-xl px-4 py-3">
+          <p className="text-[12px] font-bold text-[#6B7280] uppercase tracking-wide">Current request</p>
+          <p className="text-[13.5px] font-bold text-[#111] mt-1">{record.reason}</p>
+          <p className="text-[12.5px] text-[#6B7280] mt-0.5">
+            Status: {record.status}
+            {record.requestedLastDay ? ` · last day ${record.requestedLastDay}` : ""}
+          </p>
+        </div>
+        <div>
+          <label className="block text-[13px] font-bold text-[#111] mb-1.5">Reason for withdrawing (optional)</label>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={3}
+            placeholder="e.g. Staying after a discussion with my manager..."
+            className="w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40 resize-none"
+          />
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export default function ResignationSection({ employee }) {
   const [submitOpen, setSubmitOpen] = useState(false);
   const [reasonModalOpen, setReasonModalOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [demoView, setDemoView] = useState("resignation");
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshKey forces a re-read from storage
-  const active = useMemo(() => getActiveResignationFor(employee.name), [employee.name, refreshKey]);
+  const active = useMemo(() => {
+    if (demoView === "termination") return getLatestTerminationFor(employee.name);
+    return getLatestResignationFor(employee.name);
+  }, [employee.name, refreshKey, demoView]);
 
-  const handleWithdraw = () => {
+  const handleWithdrawConfirm = (note) => {
     if (!active) return;
-    withdrawResignation(active.id);
-    toast.info("Exit request withdrawn.");
+    withdrawResignation(active.id, note);
+    setWithdrawOpen(false);
+    toast.success("Resignation withdrawn. Your manager has been notified.");
     setRefreshKey((k) => k + 1);
   };
 
   if (!active) {
     return (
       <div className="flex flex-col gap-5">
+        <DummyExitSwitcher value={demoView} onChange={setDemoView} />
         <div className="bg-white border border-black/10 rounded-2xl p-8 text-center shadow-sm">
           <div className="size-14 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
             <LogOut size={24} />
@@ -362,7 +483,9 @@ export default function ResignationSection({ employee }) {
   }
 
   const termination = isTermination(active);
-  const canWithdraw = !termination && active.status !== "Completed";
+  const withdrawn = active.status === "Withdrawn";
+  const rejected = active.status === "Rejected";
+  const canWithdraw = !termination && isOpenStatus(active.status);
   const clearedCount = Object.values(active.clearance).filter(Boolean).length;
   const stageIndex = Math.max(0, RESIGNATION_STAGES.indexOf(active.status));
   const progressPct = Math.round(((stageIndex + 1) / RESIGNATION_STAGES.length) * 100);
@@ -375,16 +498,13 @@ export default function ResignationSection({ employee }) {
 
   return (
     <div className="flex flex-col gap-5">
+      <DummyExitSwitcher value={demoView} onChange={setDemoView} />
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
           <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">Status</p>
           <div className="mt-1.5 flex items-center gap-2 flex-wrap">
             <StatusPill status={active.status} />
-            {termination && (
-              <span className="inline-flex items-center text-[10.5px] font-bold px-2 py-1 rounded-md bg-[#FEE2E2] text-[#B91C1C] border border-[#DC2626]/15">
-                {EXIT_TYPES.TERMINATION}
-              </span>
-            )}
+            <ExitTypePill exitType={active.exitType} />
           </div>
           <p className="text-[12.5px] text-[#6B7280] mt-2">
             {termination ? `Initiated on ${active.submittedOn}` : `Submitted on ${active.submittedOn}`}
@@ -399,7 +519,13 @@ export default function ResignationSection({ employee }) {
             {active.approvedLastDay || active.requestedLastDay}
           </p>
           <p className="text-[12.5px] text-[#6B7280] mt-1">
-            {active.approvedLastDay ? "Confirmed by manager" : "Requested · pending confirmation"}
+            {withdrawn
+              ? "Cancelled · request withdrawn"
+              : rejected
+                ? "Not approved"
+                : active.approvedLastDay
+                  ? "Confirmed by manager"
+                  : "Requested · pending confirmation"}
           </p>
         </div>
 
@@ -428,6 +554,12 @@ export default function ResignationSection({ employee }) {
                 <Eye size={13} /> View
               </button>
             </div>
+          </div>
+        ) : withdrawn || rejected ? (
+          <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+            <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">Reason</p>
+            <p className="text-xl font-extrabold text-[#111827] mt-1.5 leading-tight">{active.reason}</p>
+            <p className="text-[12.5px] text-[#6B7280] mt-1">Voluntary resignation</p>
           </div>
         ) : (
           <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
@@ -470,6 +602,13 @@ export default function ResignationSection({ employee }) {
                 />
               </div>
             </>
+          ) : withdrawn || rejected ? (
+            <>
+              <p className="text-xl font-extrabold text-[#111827] mt-1.5">{active.status}</p>
+              <p className="text-[12.5px] text-[#6B7280] mt-1">
+                {withdrawn ? "No longer in the exit process" : "Request was not approved"}
+              </p>
+            </>
           ) : (
             <>
               <p className="text-xl font-extrabold text-[#111827] mt-1.5">{progressPct}%</p>
@@ -495,7 +634,7 @@ export default function ResignationSection({ employee }) {
             </span>
             <div>
               <h3 className="text-sm font-extrabold text-[#111827]">
-                {termination ? "Termination progress" : "Exit progress"}
+                {termination ? "Termination progress" : withdrawn ? "Withdrawn request" : "Exit progress"}
               </h3>
               <p className="text-[12.5px] text-[#6B7280]">
                 {active.reason}
@@ -506,15 +645,61 @@ export default function ResignationSection({ employee }) {
           {canWithdraw && (
             <button
               type="button"
-              onClick={handleWithdraw}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-black/12 bg-white text-[#4B5563] text-xs font-bold hover:bg-[#FAFAFB] transition-colors"
+              onClick={() => setWithdrawOpen(true)}
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-[#7A0A17]/30 bg-[#FCF5F6] text-[#7A0A17] text-xs font-bold hover:bg-[#F8EEF0] transition-colors"
             >
               <Undo2 size={13} /> Withdraw request
+            </button>
+          )}
+          {withdrawn && (
+            <button
+              type="button"
+              onClick={() => setSubmitOpen(true)}
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-[#7A0A17] text-white text-xs font-bold hover:bg-[#640712] transition-colors"
+            >
+              <LogOut size={13} /> Submit new request
             </button>
           )}
         </div>
 
         <div className="px-5 py-5">
+          {canWithdraw && (
+            <div className="mb-5 rounded-xl border border-[#7A0A17]/15 bg-[#FCF5F6] px-4 py-3.5 flex items-start justify-between gap-3 flex-wrap">
+              <div className="min-w-0">
+                <p className="text-[13px] font-extrabold text-[#111827]">Changed your mind?</p>
+                <p className="text-[12.5px] text-[#6B7280] mt-0.5 leading-relaxed">
+                  You can withdraw this resignation anytime before it is completed. Your manager will be notified.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setWithdrawOpen(true)}
+                className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-[#7A0A17] text-white text-xs font-bold hover:bg-[#640712] transition-colors"
+              >
+                <Undo2 size={13} /> Withdraw request
+              </button>
+            </div>
+          )}
+
+          {withdrawn && (
+            <div className="mb-5 rounded-xl border border-black/8 bg-[#F3F4F6] px-4 py-3.5 flex items-start justify-between gap-3 flex-wrap">
+              <div className="min-w-0">
+                <p className="text-[13px] font-extrabold text-[#111827]">Exit request withdrawn</p>
+                <p className="text-[12.5px] text-[#6B7280] mt-0.5 leading-relaxed">
+                  You withdrew this request on {active.timeline.find((t) => t.status === "Withdrawn")?.date || active.submittedOn}.
+                  {active.withdrawNote ? ` ${active.withdrawNote}` : ""} You can submit a new exit request anytime.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSubmitOpen(true)}
+                className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-[#7A0A17] text-white text-xs font-bold hover:bg-[#640712] transition-colors"
+              >
+                Submit new request
+              </button>
+            </div>
+          )}
+
           {active.status !== "Withdrawn" && active.status !== "Rejected" && (
             <div className="mb-5 pb-5 border-b border-black/8">
               <div className="flex items-center justify-between gap-2 mb-3">
@@ -535,7 +720,8 @@ export default function ResignationSection({ employee }) {
             </p>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className={`grid grid-cols-1 ${withdrawn || rejected ? "" : "lg:grid-cols-2"} gap-6`}>
+            {!withdrawn && !rejected && (
             <div>
               <h4 className="text-[12px] font-extrabold text-[#111827] uppercase tracking-wide mb-3 flex items-center gap-1.5">
                 <Shield size={13} className="text-[#7A0A17]" /> Clearance checklist
@@ -584,6 +770,7 @@ export default function ResignationSection({ employee }) {
                 </p>
               )}
             </div>
+            )}
 
             <div className="flex flex-col gap-5">
               {/* {termination && (
@@ -673,6 +860,24 @@ export default function ResignationSection({ employee }) {
           onSaved={() => setRefreshKey((k) => k + 1)}
         />
       )}
+
+      <ConfirmWithdrawModal
+        open={withdrawOpen}
+        onClose={() => setWithdrawOpen(false)}
+        record={active}
+        onConfirm={handleWithdrawConfirm}
+      />
+
+      <SubmitExitModal
+        open={submitOpen}
+        onClose={() => setSubmitOpen(false)}
+        employee={employee}
+        onSubmitted={() => {
+          setSubmitOpen(false);
+          setDemoView("resignation");
+          setRefreshKey((k) => k + 1);
+        }}
+      />
     </div>
   );
 }

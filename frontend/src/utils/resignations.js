@@ -1,5 +1,11 @@
-const STORAGE_KEY = "mml_sales_exits_v6";
-const LEGACY_STORAGE_KEYS = ["mml_sales_exits_v3", "mml_sales_exits_v4", "mml_sales_exits_v5"];
+const STORAGE_KEY = "mml_sales_exits_v8";
+const LEGACY_STORAGE_KEYS = [
+  "mml_sales_exits_v3",
+  "mml_sales_exits_v4",
+  "mml_sales_exits_v5",
+  "mml_sales_exits_v6",
+  "mml_sales_exits_v7",
+];
 
 export const RESIGNATION_STAGES = [
   "Submitted",
@@ -101,6 +107,67 @@ const DEFAULT_RESIGNATIONS = [
         date: "2026-09-03",
         note: "Serving notice. Deal handover and client transition in progress.",
         by: "Reporting Manager",
+      },
+    ],
+  },
+  {
+    id: "r-demo-resign",
+    employeeName: "Ankur Sharma",
+    employeeId: "MML-E-1001",
+    department: "Sales",
+    designation: "Sales Manager",
+    exitType: EXIT_TYPES.RESIGNATION,
+    submittedOn: "2026-08-18",
+    reason: "Career growth / new opportunity",
+    reasonDetails:
+      "Received an offer aligned with long-term career goals. Happy to complete a full handover of active pipeline and key accounts.",
+    salespersonComment: "",
+    terminatedBy: null,
+    terminationCategory: null,
+    requestedLastDay: "2026-09-17",
+    noticePeriodDays: 30,
+    approvedLastDay: "2026-09-17",
+    status: "Notice Period",
+    clearance: { manager: true, it: false, finance: false, admin: false },
+    hrNote: "Handover of South Extension accounts to Priya before last working day.",
+    timeline: [
+      { status: "Submitted", date: "2026-08-18", note: "Exit request submitted by employee." },
+      { status: "Under Review", date: "2026-08-19", note: "Reviewed by reporting manager." },
+      {
+        status: "Approved",
+        date: "2026-08-21",
+        note: "Approved. Notice period confirmed at 30 days.",
+        by: "Reporting Manager",
+      },
+      { status: "Notice Period", date: "2026-08-21", note: "Now serving notice period.", by: "Reporting Manager" },
+    ],
+  },
+  {
+    id: "r-demo-withdraw",
+    employeeName: "Ankur Sharma",
+    employeeId: "MML-E-1001",
+    department: "Sales",
+    designation: "Sales Manager",
+    exitType: EXIT_TYPES.RESIGNATION,
+    submittedOn: "2026-07-05",
+    reason: "Health / personal reasons",
+    reasonDetails: "Needed time for a family medical situation. Withdrew after discussing a flexible work arrangement.",
+    salespersonComment: "",
+    terminatedBy: null,
+    terminationCategory: null,
+    requestedLastDay: "2026-08-04",
+    noticePeriodDays: 30,
+    approvedLastDay: null,
+    status: "Withdrawn",
+    clearance: { manager: false, it: false, finance: false, admin: false },
+    hrNote: "",
+    timeline: [
+      { status: "Submitted", date: "2026-07-05", note: "Exit request submitted by employee." },
+      { status: "Under Review", date: "2026-07-06", note: "Manager scheduled a retention discussion." },
+      {
+        status: "Withdrawn",
+        date: "2026-07-10",
+        note: "Exit request withdrawn by employee after retention discussion.",
       },
     ],
   },
@@ -222,6 +289,35 @@ export function isTermination(record) {
   return record?.exitType === EXIT_TYPES.TERMINATION;
 }
 
+export function getEmployeeExits(employeeName) {
+  const list = getResignationHistoryFor(employeeName);
+  return [...list].sort((a, b) => {
+    const aOpen = isOpenStatus(a.status) ? 0 : 1;
+    const bOpen = isOpenStatus(b.status) ? 0 : 1;
+    if (aOpen !== bOpen) return aOpen - bOpen;
+    return a.submittedOn < b.submittedOn ? 1 : -1;
+  });
+}
+
+export function pickCurrentExit(records) {
+  return (
+    records.find((r) => isOpenStatus(r.status) && isTermination(r)) ||
+    records.find((r) => isOpenStatus(r.status)) ||
+    records[0] ||
+    null
+  );
+}
+
+export function canWithdrawRecord(record) {
+  return Boolean(record && !isTermination(record) && isOpenStatus(record.status));
+}
+
+export function hasOpenExit(employeeName, exceptId) {
+  return readResignations().some(
+    (r) => r.employeeName === employeeName && isOpenStatus(r.status) && r.id !== exceptId
+  );
+}
+
 export function getActiveResignationFor(employeeName) {
   return readResignations().find((r) => r.employeeName === employeeName && isOpenStatus(r.status)) || null;
 }
@@ -286,14 +382,19 @@ export function updateSalespersonComment(id, comment) {
   return next.find((r) => r.id === id);
 }
 
-export function withdrawResignation(id) {
+export function withdrawResignation(id, note) {
   const list = readResignations();
+  const reason = note?.trim();
+  const timelineNote = reason
+    ? `Exit request withdrawn by employee. ${reason}`
+    : "Exit request withdrawn by employee.";
   const next = list.map((r) =>
     r.id === id
       ? {
           ...r,
           status: "Withdrawn",
-          timeline: [...r.timeline, { status: "Withdrawn", date: todayISO(), note: "Exit request withdrawn by employee." }],
+          withdrawNote: reason || "",
+          timeline: [...r.timeline, { status: "Withdrawn", date: todayISO(), note: timelineNote }],
         }
       : r
   );

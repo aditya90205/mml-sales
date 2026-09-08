@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  BarChart3,
   ChevronDown,
   Filter,
   Flag,
-  LayoutList,
   Mail,
   MessageSquare,
   Phone,
@@ -136,7 +134,8 @@ export default function ClientDatabasePage() {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [perPageOpen, setPerPageOpen] = useState(false);
-  const [viewMode, setViewMode] = useState("list"); // "list" | "graph"
+  const [scrollToChart, setScrollToChart] = useState(false);
+  const chartRef = useRef(null);
 
   useEffect(() => {
     const groups = readSavedGroups();
@@ -151,13 +150,22 @@ export default function ClientDatabasePage() {
       cleared = true;
     }
     if (openChart) {
-      setViewMode("graph");
+      setScrollToChart(true);
       cleared = true;
     }
     if (cleared) {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, location.pathname, navigate]);
+
+  useEffect(() => {
+    if (!scrollToChart || savedGroups.length === 0) return;
+    const id = requestAnimationFrame(() => {
+      chartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setScrollToChart(false);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [scrollToChart, savedGroups.length]);
 
   useEffect(() => {
     const onDoc = (e) => {
@@ -444,38 +452,6 @@ export default function ClientDatabasePage() {
           />
 
           <div className="flex items-center gap-2.5 ml-auto shrink-0 flex-wrap justify-end">
-            <div className="flex items-center h-10 rounded-xl border border-black/10 bg-white overflow-hidden shrink-0">
-              <button
-                type="button"
-                onClick={() => setViewMode("list")}
-                title="List view"
-                aria-pressed={viewMode === "list"}
-                aria-label="List view"
-                className={`h-full px-3 flex items-center transition-colors ${
-                  viewMode === "list"
-                    ? "bg-[#7A0A17] text-white"
-                    : "text-[#9CA3AF] hover:text-[#4B5563] hover:bg-[#FAFAFB]"
-                }`}
-              >
-                <LayoutList size={15} />
-              </button>
-              <span className="w-px h-5 bg-black/10" />
-              <button
-                type="button"
-                onClick={() => setViewMode("graph")}
-                title="Graph view"
-                aria-pressed={viewMode === "graph"}
-                aria-label="Graph view"
-                className={`h-full px-3 flex items-center transition-colors ${
-                  viewMode === "graph"
-                    ? "bg-[#7A0A17] text-white"
-                    : "text-[#9CA3AF] hover:text-[#4B5563] hover:bg-[#FAFAFB]"
-                }`}
-              >
-                <BarChart3 size={15} />
-              </button>
-            </div>
-
             <div className="relative shrink-0" ref={perPageRef}>
               <button
                 type="button"
@@ -566,71 +542,71 @@ export default function ClientDatabasePage() {
           )}
         </div>
 
-        {viewMode === "graph" ? (
-          <ClientGroupsChart
-            data={chartData}
-            title={
-              activeGroupIds.length > 0
-                ? "Selected Groups — Client Overview"
-                : "Saved Groups — Client Overview"
-            }
-          />
-        ) : (
-          <>
-            <div className="flex items-center gap-6 flex-wrap text-[13px] font-medium text-[#374151]">
-              {Object.entries(PROBABILITY_META).map(([key, meta]) => (
-                <span key={key} className="flex items-center gap-1.5">
-                  <Flag size={14} style={{ color: meta.color }} fill={meta.color} strokeWidth={0} />
-                  {meta.label}
-                </span>
-              ))}
-            </div>
-
-            <div className="border border-black/8 rounded-xl bg-white overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[980px]">
-                  <thead>
-                    <tr className="border-b border-black/8 bg-[#FAFAFB]">
-                      {COLUMNS.map((col) => (
-                        <SortableTh
-                          key={col.key}
-                          label={col.label}
-                          sortKey={col.key}
-                          sort={sort}
-                          onSort={toggle}
-                          unsortable={col.unsortable}
-                          className={`px-4 py-3 text-[10px] font-extrabold text-[#9CA3AF] uppercase tracking-wide whitespace-nowrap ${
-                            col.key === "status" ? "text-center" : ""
-                          }`}
-                        />
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paged.length === 0 ? (
-                      <tr>
-                        <td colSpan={10} className="px-4 py-12 text-center text-[13px] text-[#9CA3AF] font-medium">
-                          No clients found.
-                        </td>
-                      </tr>
-                    ) : (
-                      groups.map((group) => (
-                        <FragmentGroup key={group.key} label={group.label} rows={group.rows} renderRow={renderRow} />
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              <TablePagination
-                page={safePage}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                pageSize={perPage}
-                onChange={setPage}
-              />
-            </div>
-          </>
+        {savedGroups.length > 0 && (
+          <div ref={chartRef}>
+            <ClientGroupsChart
+              data={chartData}
+              title={
+                activeGroupIds.length > 0
+                  ? "Selected Groups — Client Overview"
+                  : "Saved Groups — Client Overview"
+              }
+            />
+          </div>
         )}
+
+        <div className="flex items-center gap-6 flex-wrap text-[13px] font-medium text-[#374151]">
+          {Object.entries(PROBABILITY_META).map(([key, meta]) => (
+            <span key={key} className="flex items-center gap-1.5">
+              <Flag size={14} style={{ color: meta.color }} fill={meta.color} strokeWidth={0} />
+              {meta.label}
+            </span>
+          ))}
+        </div>
+
+        <div className="border border-black/8 rounded-xl bg-white overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[980px]">
+              <thead>
+                <tr className="border-b border-black/8 bg-[#FAFAFB]">
+                  {COLUMNS.map((col) => (
+                    <SortableTh
+                      key={col.key}
+                      label={col.label}
+                      sortKey={col.key}
+                      sort={sort}
+                      onSort={toggle}
+                      unsortable={col.unsortable}
+                      className={`px-4 py-3 text-[10px] font-extrabold text-[#9CA3AF] uppercase tracking-wide whitespace-nowrap ${
+                        col.key === "status" ? "text-center" : ""
+                      }`}
+                    />
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {paged.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-12 text-center text-[13px] text-[#9CA3AF] font-medium">
+                      No clients found.
+                    </td>
+                  </tr>
+                ) : (
+                  groups.map((group) => (
+                    <FragmentGroup key={group.key} label={group.label} rows={group.rows} renderRow={renderRow} />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <TablePagination
+            page={safePage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={perPage}
+            onChange={setPage}
+          />
+        </div>
       </div>
 
       <SendMessageModal open={Boolean(messageFor)} onClose={() => setMessageFor(null)} />

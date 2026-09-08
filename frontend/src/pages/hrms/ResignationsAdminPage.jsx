@@ -132,9 +132,13 @@ function DetailModal({ record, onClose, onChanged }) {
             <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">
               Reason: {record.reason}
             </p>
-            {record.exitType === "Termination" && (
+            {record.exitType === "Termination" ? (
               <span className="text-[10px] font-bold uppercase tracking-wide text-[#B91C1C] bg-[#FEE2E2] px-1.5 py-0.5 rounded">
                 Termination
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold uppercase tracking-wide text-[#4338CA] bg-[#EEF0FE] px-1.5 py-0.5 rounded">
+                Resignation
               </span>
             )}
           </div>
@@ -332,9 +336,13 @@ export default function ResignationsAdminPage() {
                       <td className="px-4 py-3 text-[13px] font-bold text-[#111] whitespace-nowrap">
                         <span className="inline-flex items-center gap-1.5">
                           {r.employeeName}
-                          {r.exitType === "Termination" && (
+                          {r.exitType === "Termination" ? (
                             <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#B91C1C] bg-[#FEE2E2] px-1.5 py-0.5 rounded">
                               Term
+                            </span>
+                          ) : (
+                            <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#4338CA] bg-[#EEF0FE] px-1.5 py-0.5 rounded">
+                              Resign
                             </span>
                           )}
                         </span>

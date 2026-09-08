@@ -221,7 +221,7 @@ export default function ClientGroupsChart({ data = [], title = "Client Groups Ov
         </span>
         <p className="text-[15px] font-bold text-[#111]">No groups to chart yet</p>
         <p className="text-[13px] text-[#9CA3AF] mt-1 max-w-sm mx-auto">
-          Create a client group, then open Graph view to compare totals, active, pool, and inactive clients.
+          Create and save a client group to compare totals, active, pool, and inactive clients here.
         </p>
       </div>
     );
