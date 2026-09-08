@@ -181,6 +181,7 @@ export function addCampaign(payload) {
     description: payload.description || "",
     country: payload.country || "",
     maxRetry: payload.maxRetry || "",
+    uploadFileName: payload.uploadFileName || "",
   };
   const next = [created, ...list];
   writeCampaigns(next);

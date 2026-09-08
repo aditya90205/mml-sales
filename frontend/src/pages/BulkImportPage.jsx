@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { ChevronDown, Download, FileSpreadsheet, Plus, Trash2, Upload } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, ChevronDown, Download, FileSpreadsheet, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 // TopBar is provided by Layout
 import TableCard from "../components/common/TableCard";
@@ -84,6 +85,9 @@ function FieldSelect({ value, onChange }) {
  * is selected (mock data is used here for the design pass).
  */
 export default function BulkImportPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromCampaign = searchParams.get("from") === "campaign";
   const fileInputRef = useRef(null);
   const { sorted: sortedPreview, sort: previewSort, toggle: togglePreview } = useTableSort(PREVIEW_ROWS, { defaultKey: "first_name" });
   const { sorted: sortedImports, sort: importSort, toggle: toggleImports } = useTableSort(RECENT_IMPORTS, { defaultKey: "source" });
@@ -147,6 +151,16 @@ export default function BulkImportPage() {
             <p className="text-[13px] text-[#9CA3AF] mt-1">API syncs and the Excel fallback for bulk lead data</p>
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
+            {fromCampaign && (
+              <button
+                type="button"
+                onClick={() => navigate("/campaign/create")}
+                className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+              >
+                <ArrowLeft size={15} />
+                Back to campaign
+              </button>
+            )}
             <button
               type="button"
               onClick={() => toast.info("Downloading import template...")}

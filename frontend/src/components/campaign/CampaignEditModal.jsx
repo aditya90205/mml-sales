@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, Mail, MessageSquare, Paperclip, Plus, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ChannelTemplateModal from "./ChannelTemplateModal.jsx";
@@ -93,6 +94,8 @@ function buildFormState(campaign) {
 }
 
 export default function CampaignEditModal({ open, campaign, onClose, onSave, onBack }) {
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [group, setGroup] = useState("");
@@ -103,6 +106,7 @@ export default function CampaignEditModal({ open, campaign, onClose, onSave, onB
   const [selectedChannels, setSelectedChannels] = useState({ email: true, whatsapp: true, push: false, sms: true });
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
+  const [uploadFileName, setUploadFileName] = useState("");
   const [activeModal, setActiveModal] = useState(null);
 
   useEffect(() => {
@@ -118,6 +122,7 @@ export default function CampaignEditModal({ open, campaign, onClose, onSave, onB
     setSelectedChannels(next.selectedChannels);
     setStartAt(next.startAt);
     setEndAt(next.endAt);
+    setUploadFileName(campaign.uploadFileName || "");
     setActiveModal(null);
   }, [open, campaign]);
 
@@ -125,6 +130,16 @@ export default function CampaignEditModal({ open, campaign, onClose, onSave, onB
 
   const toggleChannel = (key) => {
     setSelectedChannels((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const openFilePicker = () => fileInputRef.current?.click();
+
+  const handleFileChosen = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadFileName(file.name);
+    toast.success(`"${file.name}" attached.`);
+    e.target.value = "";
   };
 
   const channelLabel = () =>
@@ -232,18 +247,34 @@ export default function CampaignEditModal({ open, campaign, onClose, onSave, onB
                 <p className="hidden md:block text-[13px] font-semibold text-[#9CA3AF] pb-3">OR</p>
                 <div>
                   <FieldLabel required>Upload File / Bulk Import</FieldLabel>
-                  <div className="flex items-center gap-2 h-11 border border-black/12 rounded-xl px-3.5">
-                    <input
-                      readOnly
-                      placeholder="Upload File"
-                      className="flex-1 min-w-0 bg-transparent text-[13px] text-[#9CA3AF] outline-none"
-                    />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv,.xlsx,.xls,.txt"
+                    className="hidden"
+                    onChange={handleFileChosen}
+                  />
+                  <button
+                    type="button"
+                    onClick={openFilePicker}
+                    className="flex items-center gap-2 w-full h-11 border border-black/12 rounded-xl px-3.5 text-left hover:bg-[#FAFAFB] transition-colors"
+                  >
+                    <span
+                      className={`flex-1 min-w-0 truncate text-[13px] ${
+                        uploadFileName ? "text-[#111] font-medium" : "text-[#9CA3AF]"
+                      }`}
+                    >
+                      {uploadFileName || "Upload File"}
+                    </span>
                     <Paperclip size={15} className="text-[#6B7280] shrink-0" />
-                  </div>
+                  </button>
                 </div>
                 <button
                   type="button"
-                  onClick={() => toast.info("Opening bulk import...")}
+                  onClick={() => {
+                    onClose?.();
+                    navigate("/bulk-upload?from=campaign");
+                  }}
                   className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-white border border-[#7A0A17]/30 text-[13px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors shrink-0"
                 >
                   Bulk Import →

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Paperclip,
   Plus,
+  X,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import ChannelTemplateModal from "../components/campaign/ChannelTemplateModal.jsx";
@@ -159,6 +160,8 @@ export default function CreateCampaignPage() {
   const [selectedChannels, setSelectedChannels] = useState({ email: true, whatsapp: true, push: false, sms: true });
   const [activeModal, setActiveModal] = useState(null);
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
+  const [uploadFileName, setUploadFileName] = useState("");
+  const fileInputRef = useRef(null);
 
   const groupSelectOptions = useMemo(() => {
     const names = groupOptions.map((g) => g.name);
@@ -168,6 +171,22 @@ export default function CreateCampaignPage() {
 
   const toggleChannel = (key) => {
     setSelectedChannels((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const openFilePicker = () => fileInputRef.current?.click();
+
+  const handleFileChosen = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadFileName(file.name);
+    toast.success(`"${file.name}" attached for this campaign.`);
+    e.target.value = "";
+  };
+
+  const clearUploadFile = (e) => {
+    e.stopPropagation();
+    setUploadFileName("");
+    toast.info("Uploaded file removed.");
   };
 
   const handleSave = () => {
@@ -196,6 +215,7 @@ export default function CreateCampaignPage() {
       endSchedule: stopMode === "Time based" ? endSchedule : null,
       country,
       maxRetry,
+      uploadFileName: uploadFileName || "",
       status: startMode === "Time based" ? "Scheduled" : "Not Started",
     });
     toast.success(`Campaign "${created.name}" saved.`);
@@ -291,18 +311,49 @@ export default function CreateCampaignPage() {
               <p className="hidden md:block text-[13px] font-semibold text-[#9CA3AF] pb-3">OR</p>
               <div>
                 <FieldLabel required>Upload File / Bulk Import</FieldLabel>
-                <div className="flex items-center gap-2 h-11 border border-black/12 rounded-xl px-3.5">
-                  <input
-                    readOnly
-                    placeholder="Upload File"
-                    className="flex-1 min-w-0 bg-transparent text-[13px] text-[#9CA3AF] outline-none"
-                  />
-                  <Paperclip size={15} className="text-[#6B7280] shrink-0" />
-                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.xlsx,.xls,.txt"
+                  className="hidden"
+                  onChange={handleFileChosen}
+                />
+                <button
+                  type="button"
+                  onClick={openFilePicker}
+                  className="flex items-center gap-2 w-full h-11 border border-black/12 rounded-xl px-3.5 text-left hover:bg-[#FAFAFB] transition-colors"
+                >
+                  <span
+                    className={`flex-1 min-w-0 truncate text-[13px] ${
+                      uploadFileName ? "text-[#111] font-medium" : "text-[#9CA3AF]"
+                    }`}
+                  >
+                    {uploadFileName || "Upload File"}
+                  </span>
+                  {uploadFileName ? (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={clearUploadFile}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          clearUploadFile(e);
+                        }
+                      }}
+                      className="p-0.5 rounded text-[#9CA3AF] hover:text-[#111]"
+                      aria-label="Remove uploaded file"
+                    >
+                      <X size={14} />
+                    </span>
+                  ) : (
+                    <Paperclip size={15} className="text-[#6B7280] shrink-0" />
+                  )}
+                </button>
               </div>
               <button
                 type="button"
-                onClick={() => toast.info("Opening bulk import...")}
+                onClick={() => navigate("/bulk-upload?from=campaign")}
                 className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-white border border-[#7A0A17]/30 text-[13px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors shrink-0"
               >
                 Bulk Import →
