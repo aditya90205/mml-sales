@@ -57,6 +57,7 @@ import {
 } from "../components/hrms/HrmsEntityModals.jsx";
 import conductReviewIcon from "../assets/conduct-review.png";
 import ExitTab from "../components/hrms/ExitTab.jsx";
+import { PromotionsTransfersSection } from "../components/hrms/PromotionTransferSection.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import yellowLoopIcon from "../assets/yellow-loop.png";
 import redBackIcon from "../assets/red-back.png";
@@ -105,8 +106,9 @@ const HRMS_TABS = [
   "Documents",
   "Asset",
   "Awards & Contest",
-  "Exit",
+  "Promotion and Transfer",
   "Complaint & Warning",
+  "Exit",
 ];
 
 const INITIAL_AWARDS = [
@@ -1800,69 +1802,13 @@ export default function HrmsPage() {
                 </div>
 
                 <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex-1 min-h-0 flex flex-col">
-                  <div className="flex items-center justify-between mb-4 shrink-0">
-                    <div className="flex items-center gap-3">
-                      <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                        <Receipt size={17} />
-                      </span>
-                      <h3 className="text-base font-extrabold text-[#111827]">My Expenses</h3>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setAddExpenseOpen(true)}
-                      className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-all shadow-2xs flex items-center gap-1"
-                    >
-                      <Plus size={13} /> Add Expense
-                    </button>
-                  </div>
-                  <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1">
-                    {expenses.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6 hover:border-black/15 transition-all"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-xs font-extrabold text-[#111827] truncate">{item.purpose}</p>
-                          <p className="text-[11px] text-[#6B7280] font-medium mt-0.5 truncate">{item.destination} &middot; {item.startDate}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setViewExpense(item)}
-                            className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center transition-colors"
-                          >
-                            <Eye size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => { setViewExpense(item); toast.info("Edit mode enabled"); }}
-                            className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center transition-colors"
-                          >
-                            <Edit size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteExpense(item.id)}
-                            className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center transition-colors"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-5 h-full min-h-0">
-                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm shrink-0">
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-3 mb-4 shrink-0">
                     <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
                       <Activity size={17} />
                     </span>
                     <h3 className="text-base font-extrabold text-[#111827]">Recent Activity</h3>
                   </div>
-                  <div className="space-y-4 relative before:absolute before:left-4 before:top-3 before:bottom-3 before:w-px before:bg-black/8">
+                  <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 relative before:absolute before:left-4 before:top-3 before:bottom-3 before:w-px before:bg-black/8">
                     <div className="flex items-start justify-between gap-3 relative pl-8">
                       <span className="absolute left-1 top-0.5 size-6 rounded-full bg-[#DCFCE7] text-[#16A34A] grid place-items-center ring-4 ring-white">
                         <CheckCircle2 size={14} />
@@ -1914,6 +1860,62 @@ export default function HrmsPage() {
                         Late
                       </span>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-5 h-full min-h-0">
+                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm shrink-0">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
+                        <Receipt size={17} />
+                      </span>
+                      <h3 className="text-base font-extrabold text-[#111827]">My Expenses</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAddExpenseOpen(true)}
+                      className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-all shadow-2xs flex items-center gap-1"
+                    >
+                      <Plus size={13} /> Add Expense
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {expenses.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6 hover:border-black/15 transition-all"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs font-extrabold text-[#111827] truncate">{item.purpose}</p>
+                          <p className="text-[11px] text-[#6B7280] font-medium mt-0.5 truncate">{item.destination} &middot; {item.startDate}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setViewExpense(item)}
+                            className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center transition-colors"
+                          >
+                            <Eye size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setViewExpense(item); toast.info("Edit mode enabled"); }}
+                            className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center transition-colors"
+                          >
+                            <Edit size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteExpense(item.id)}
+                            className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center transition-colors"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -3154,8 +3156,19 @@ export default function HrmsPage() {
           </div>
         )}
 
-        {/* EXIT TAB */}
-        {activeTab === "Exit" && <ExitTab />}
+        {/* PROMOTION AND TRANSFER TAB */}
+        {activeTab === "Promotion and Transfer" && (
+          <PromotionsTransfersSection
+            employee={{
+              name: USER.name,
+              id: "MML-E-1001",
+              email: USER.email,
+              branch: "South Extension",
+              department: "Sales",
+              designation: USER.role,
+            }}
+          />
+        )}
 
         {/* COMPLAINT & WARNING TAB */}
         {activeTab === "Complaint & Warning" && (
@@ -3256,8 +3269,11 @@ export default function HrmsPage() {
           </div>
         )}
 
+        {/* EXIT TAB */}
+        {activeTab === "Exit" && <ExitTab />}
+
         {/* Placeholder View for remaining tabs */}
-        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset", "Awards & Contest", "Exit", "Complaint & Warning"].includes(activeTab) && (
+        {!["Summary", "Attendance & Timesheet", "Salary & Payslip", "Incentives", "Trainings", "Goals & Reviews", "Documents", "Asset", "Awards & Contest", "Complaint & Warning", "Promotion and Transfer", "Exit"].includes(activeTab) && (
           <div className="bg-white border border-black/8 rounded-2xl p-12 text-center my-6 shadow-sm">
             <div className="size-16 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
               <FileText size={28} />
