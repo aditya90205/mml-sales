@@ -1,6 +1,17 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Bell, Mail, MessageSquare, Paperclip, Plus } from "lucide-react";
+import {
+  ArrowLeft,
+  Bell,
+  Calendar as CalendarIcon,
+  ChevronDown,
+  Clock,
+  Globe,
+  Mail,
+  MessageSquare,
+  Paperclip,
+  Plus,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import ChannelTemplateModal from "../components/campaign/ChannelTemplateModal.jsx";
 import CreateGroupModal from "../components/campaign/CreateGroupModal.jsx";
@@ -13,6 +24,17 @@ const CHANNELS = [
   { key: "push", label: "Push Notification", icon: Bell },
   { key: "sms", label: "SMS", icon: MessageSquare },
 ];
+
+const TIMEZONE_OPTIONS = [
+  "(IST+05:30) India Standard Time (India)",
+  "(GMT+00:00) Greenwich Mean Time",
+  "(EST-05:00) Eastern Time (US & Canada)",
+  "(PST-08:00) Pacific Time (US & Canada)",
+  "(GST+04:00) Gulf Standard Time",
+];
+
+const INPUT =
+  "w-full h-11 border border-black/12 rounded-xl px-3.5 text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/40 bg-white";
 
 function FieldLabel({ children, required }) {
   return (
@@ -49,6 +71,79 @@ function ToggleGroup({ options, value, onChange }) {
   );
 }
 
+function emptySchedule() {
+  return { date: "", time: "", timezone: TIMEZONE_OPTIONS[0] };
+}
+
+/** Date / time / timezone card shown when campaign start or stop is time-based. */
+function ScheduleTimeCard({ title, value, onChange }) {
+  const set = (field) => (e) => onChange({ ...value, [field]: e.target.value });
+
+  return (
+    <div className="bg-[#FAFAFB] border border-black/8 rounded-2xl p-5 flex flex-col gap-4">
+      <h3 className="text-[15px] font-bold text-[#111]">{title}</h3>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-[12.5px] text-[#9CA3AF] mb-1.5">Date</p>
+          <div className="relative">
+            <CalendarIcon
+              size={15}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none"
+            />
+            <input
+              type="date"
+              value={value.date}
+              onChange={set("date")}
+              className={`${INPUT} pl-10`}
+            />
+          </div>
+        </div>
+        <div>
+          <p className="text-[12.5px] text-[#9CA3AF] mb-1.5">Time</p>
+          <div className="relative">
+            <Clock
+              size={15}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none"
+            />
+            <input
+              type="time"
+              value={value.time}
+              onChange={set("time")}
+              className={`${INPUT} pl-10`}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[12.5px] text-[#9CA3AF] mb-1.5">Timezone</p>
+        <div className="relative">
+          <Globe
+            size={15}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none"
+          />
+          <select
+            value={value.timezone}
+            onChange={set("timezone")}
+            className={`${INPUT} pl-10 pr-10 appearance-none`}
+          >
+            {TIMEZONE_OPTIONS.map((tz) => (
+              <option key={tz} value={tz}>
+                {tz}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            size={15}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CreateCampaignPage() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
@@ -58,6 +153,8 @@ export default function CreateCampaignPage() {
   const [country, setCountry] = useState("");
   const [startMode, setStartMode] = useState("Manual");
   const [stopMode, setStopMode] = useState("Manual");
+  const [startSchedule, setStartSchedule] = useState(emptySchedule);
+  const [endSchedule, setEndSchedule] = useState(emptySchedule);
   const [maxRetry, setMaxRetry] = useState("03");
   const [selectedChannels, setSelectedChannels] = useState({ email: true, whatsapp: true, push: false, sms: true });
   const [activeModal, setActiveModal] = useState(null);
@@ -78,6 +175,14 @@ export default function CreateCampaignPage() {
       toast.error("Please enter a campaign name.");
       return;
     }
+    if (startMode === "Time based" && (!startSchedule.date || !startSchedule.time)) {
+      toast.error("Please set start date and time for the time-based campaign.");
+      return;
+    }
+    if (stopMode === "Time based" && (!endSchedule.date || !endSchedule.time)) {
+      toast.error("Please set end date and time for the time-based campaign stop.");
+      return;
+    }
     const created = addCampaign({
       name: name.trim(),
       description: description.trim(),
@@ -87,6 +192,8 @@ export default function CreateCampaignPage() {
       selectedChannels,
       startMode,
       stopMode,
+      startSchedule: startMode === "Time based" ? startSchedule : null,
+      endSchedule: stopMode === "Time based" ? endSchedule : null,
       country,
       maxRetry,
       status: startMode === "Time based" ? "Scheduled" : "Not Started",
@@ -230,6 +337,26 @@ export default function CreateCampaignPage() {
                 <ToggleGroup options={["Manual", "Time based", "Customer Action"]} value={stopMode} onChange={setStopMode} />
               </div>
             </div>
+
+            {(startMode === "Time based" || stopMode === "Time based") && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
+                {startMode === "Time based" && (
+                  <ScheduleTimeCard
+                    title="Start Time"
+                    value={startSchedule}
+                    onChange={setStartSchedule}
+                  />
+                )}
+                {stopMode === "Time based" && (
+                  <ScheduleTimeCard
+                    title="End Time"
+                    value={endSchedule}
+                    onChange={setEndSchedule}
+                  />
+                )}
+              </div>
+            )}
+
             <div className="max-w-[200px]">
               <label className="block text-[13px] font-semibold text-[#111] mb-1.5">Max Retry</label>
               <select

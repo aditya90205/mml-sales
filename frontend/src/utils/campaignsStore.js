@@ -116,6 +116,47 @@ export function channelsFromSelection(selectedChannels = {}) {
     .join(", ");
 }
 
+/** Format create-campaign schedule { date, time } → "01 Aug 26 - 09:32 PM". */
+export function formatScheduleLabel(schedule) {
+  if (!schedule?.date || !schedule?.time) return null;
+  const [year, month, day] = schedule.date.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const datePart = date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "2-digit",
+  });
+
+  const [hhRaw, mmRaw] = schedule.time.split(":");
+  const hh = Number(hhRaw);
+  const mm = Number(mmRaw);
+  if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
+  const period = hh >= 12 ? "PM" : "AM";
+  const h12 = hh % 12 || 12;
+  const timePart = `${String(h12).padStart(2, "0")}:${String(mm).padStart(2, "0")} ${period}`;
+  return `${datePart} - ${timePart}`;
+}
+
+function resolveStartLabel(payload) {
+  if (payload.start) return payload.start;
+  if (payload.startMode === "Time based") {
+    return formatScheduleLabel(payload.startSchedule) || "Time based";
+  }
+  return payload.startMode || "Manual";
+}
+
+function resolveEndLabel(payload) {
+  if (payload.end) return payload.end;
+  if (payload.stopMode === "Time based") {
+    return formatScheduleLabel(payload.endSchedule) || "Time based";
+  }
+  if (payload.stopMode === "Customer Action") return "Customer Action";
+  return payload.stopMode || "Manual";
+}
+
 export function addCampaign(payload) {
   const list = readCampaigns();
   const id = list.reduce((max, c) => Math.max(max, Number(c.id) || 0), 0) + 1;
@@ -129,8 +170,12 @@ export function addCampaign(payload) {
     tag: payload.tag || payload.description?.trim() || "New campaign",
     target: payload.target || payload.group || "Common Pool",
     channel,
-    start: payload.start || payload.startMode || "Manual",
-    end: payload.end || payload.stopMode || "Manual",
+    start: resolveStartLabel(payload),
+    end: resolveEndLabel(payload),
+    startSchedule: payload.startMode === "Time based" ? payload.startSchedule || null : null,
+    endSchedule: payload.stopMode === "Time based" ? payload.endSchedule || null : null,
+    startMode: payload.startMode || null,
+    stopMode: payload.stopMode || null,
     owner: payload.owner || "You",
     status: payload.status || "Not Started",
     description: payload.description || "",
