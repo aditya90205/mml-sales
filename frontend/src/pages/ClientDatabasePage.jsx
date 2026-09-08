@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import ClientStatusBadge from "../components/common/ClientStatusBadge.jsx";
+import SendEmailModal from "../components/common/SendEmailModal.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import ClientGroupsChart, { statsFromClients } from "../components/clients/ClientGroupsChart.jsx";
@@ -131,6 +132,7 @@ export default function ClientDatabasePage() {
   const [probFilter, setProbFilter] = useState("all");
   const [marriedFilter, setMarriedFilter] = useState("all");
   const [messageFor, setMessageFor] = useState(null);
+  const [emailFor, setEmailFor] = useState(null);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [perPageOpen, setPerPageOpen] = useState(false);
@@ -306,7 +308,7 @@ export default function ClientDatabasePage() {
             <IconBtn label={`Message ${c.name}`} onClick={() => setMessageFor(c)}>
               <MessageSquare size={14} className="text-[#D97706]" />
             </IconBtn>
-            <IconBtn label={`Email ${c.name}`} onClick={() => toast.info(`Emailing ${c.name}...`)}>
+            <IconBtn label={`Email ${c.name}`} onClick={() => setEmailFor(c)}>
               <Mail size={14} className="text-[#2563EB]" />
             </IconBtn>
           </div>
@@ -610,6 +612,11 @@ export default function ClientDatabasePage() {
       </div>
 
       <SendMessageModal open={Boolean(messageFor)} onClose={() => setMessageFor(null)} />
+      <SendEmailModal
+        open={Boolean(emailFor)}
+        onClose={() => setEmailFor(null)}
+        recipientName={emailFor?.name || "Client"}
+      />
     </div>
   );
 }

@@ -1843,6 +1843,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
                       <EmailActivityButton
                         className="relative p-1.5 text-[#3B82F6] hover:bg-black/4 rounded-lg transition-colors"
                         hasUnread={i % 2 === 0}
+                        recipientName={lead.name}
                       />
                       <button
                         type="button"

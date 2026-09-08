@@ -428,6 +428,7 @@ export default function DealDetailPage({ lead, onBack, currentStage = "P4", onAd
                 <EmailActivityButton
                   className="relative p-1.5 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] transition-colors"
                   hasUnread
+                  recipientName={deal.name || lead?.name || "Client"}
                 />
                 <button
                   type="button"

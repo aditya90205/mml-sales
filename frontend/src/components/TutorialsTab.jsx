@@ -2,14 +2,11 @@ import { useMemo, useState } from "react";
 import {
   BookOpen,
   Clock,
-  Filter,
   Play,
   Search,
   GraduationCap,
 } from "lucide-react";
 import Modal from "./ui/Modal";
-
-const CATEGORIES = ["All", "Getting Started", "Sales Pipeline", "Calendar", "HRMS", "Documents"];
 
 const TUTORIALS = [
   {
@@ -170,52 +167,27 @@ function TutorialPlayerModal({ tutorial, onClose }) {
 
 export default function TutorialsTab() {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("All");
   const [active, setActive] = useState(null);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return TUTORIALS.filter((t) => {
-      const catOk = category === "All" || t.category === category;
-      const searchOk =
-        !q ||
-        `${t.title} ${t.category} ${t.level} ${t.description}`.toLowerCase().includes(q);
-      return catOk && searchOk;
-    });
-  }, [search, category]);
+    if (!q) return TUTORIALS;
+    return TUTORIALS.filter((t) =>
+      `${t.title} ${t.category} ${t.level} ${t.description}`.toLowerCase().includes(q)
+    );
+  }, [search]);
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tutorials..."
-            className="w-full bg-white border border-black/12 rounded-xl pl-9 pr-3.5 py-2 text-xs outline-none focus:border-[#7A0A17]"
-          />
-        </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#6B7280] mr-1">
-            <Filter size={13} /> Category
-          </span>
-          {CATEGORIES.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setCategory(c)}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${
-                category === c
-                  ? "bg-[#7A0A17] text-white border-[#7A0A17]"
-                  : "bg-white text-[#374151] border-black/12 hover:bg-[#FAFAFB]"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+      <div className="relative max-w-md">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search tutorials..."
+          className="w-full bg-white border border-black/12 rounded-xl pl-9 pr-3.5 py-2 text-xs outline-none focus:border-[#7A0A17]"
+        />
       </div>
 
       <div className="flex items-center gap-2 text-xs font-semibold text-[#6B7280]">

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Filter, Search } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTableSort } from "../components/common/useTableSort.jsx";
+import SendEmailModal from "../components/common/SendEmailModal.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import emailLightIcon from "../assets/email-light.png";
 import tablerMessageIcon from "../assets/tabler_message.png";
@@ -289,7 +290,7 @@ function LiveBadge() {
   );
 }
 
-function GlobalLeaderboardSection({ onMessage }) {
+function GlobalLeaderboardSection({ onMessage, onEmail }) {
   const { rows: liveRows, activeId } = useLiveLeaderboard(INITIAL_GLOBAL_LEADERBOARD);
   const table = usePagedTable(liveRows, LEADERBOARD_SEARCH_KEYS, "rank");
 
@@ -353,7 +354,7 @@ function GlobalLeaderboardSection({ onMessage }) {
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-0.5">
-                      <IconBtn label={`Email ${row.name}`} onClick={() => toast.info(`Emailing ${row.name}`)}>
+                      <IconBtn label={`Email ${row.name}`} onClick={() => onEmail?.(row.name)}>
                         <AssetIcon src={emailLightIcon} alt="mail" />
                       </IconBtn>
                       <IconBtn label={`Message ${row.name}`} onClick={() => onMessage(row.name)}>
@@ -385,14 +386,23 @@ function GlobalLeaderboardSection({ onMessage }) {
 
 export default function LeaderboardPage() {
   const [messageOpen, setMessageOpen] = useState(false);
+  const [emailFor, setEmailFor] = useState(null);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="px-5 pt-5 pb-8 flex flex-col gap-6 min-w-0">
-        <GlobalLeaderboardSection onMessage={() => setMessageOpen(true)} />
+        <GlobalLeaderboardSection
+          onMessage={() => setMessageOpen(true)}
+          onEmail={(name) => setEmailFor(name)}
+        />
       </div>
 
       <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
+      <SendEmailModal
+        open={Boolean(emailFor)}
+        onClose={() => setEmailFor(null)}
+        recipientName={emailFor || "Client"}
+      />
     </div>
   );
 }
