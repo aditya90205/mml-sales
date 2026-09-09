@@ -27,6 +27,7 @@ import DealTabs from "../../components/pipeline/DealTabs";
 import EmailActivityButton from "../../components/common/EmailActivityButton.jsx";
 import SendMessageModal from "../../components/common/SendMessageModal.jsx";
 import Modal from "../../components/ui/Modal.jsx";
+import CreateTaskModal from "../../components/calendar/CreateTaskModal";
 import OverviewTab from "./deal-tabs/OverviewTab";
 import IntakeFormTab from "./deal-tabs/IntakeFormTab";
 import VisitsMeetingsTab from "./deal-tabs/VisitsMeetingsTab";
@@ -164,6 +165,8 @@ export default function DealDetailPage({
   const [serviceAssignOpen, setServiceAssignOpen] = useState(false);
   const [serviceAssigned, setServiceAssigned] = useState(null);
   const [savedDetails, setSavedDetails] = useState(null);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [followUpOpen, setFollowUpOpen] = useState(false);
   const lateTabsUnlocked = atLeast(currentStage, "P5");
   const nextStage = NEXT_STAGE[currentStage];
   const tabs = BASE_TABS.map((tab) =>
@@ -174,6 +177,10 @@ export default function DealDetailPage({
   useEffect(() => {
     setIsPremium(Boolean(lead?.starred));
   }, [lead?.id, lead?.starred]);
+
+  useEffect(() => {
+    setSelectedPackage(null);
+  }, [lead?.id]);
 
   // Keep the open tab aligned with the current pipeline stage (Move to P2 → Profile Create, etc.).
   useEffect(() => {
@@ -287,6 +294,11 @@ export default function DealDetailPage({
 
   const handleConfirmMove = () => {
     if (!nextStage) return;
+    if (currentStage === "P4" && !selectedPackage) {
+      setActiveTab("package");
+      toast.error("Select a package before moving to P5.");
+      return;
+    }
     const tabForNext = STAGE_TO_TAB[nextStage];
     if (tabForNext) setActiveTab(tabForNext);
     onAdvance?.(lead, currentStage);
@@ -316,7 +328,13 @@ export default function DealDetailPage({
       case "visits":
         return <VisitsMeetingsTab empty={!atLeast(currentStage, "P3")} />;
       case "package":
-        return <PackageQuoteTab empty={!atLeast(currentStage, "P4")} />;
+        return (
+          <PackageQuoteTab
+            empty={!atLeast(currentStage, "P4")}
+            selectedKey={selectedPackage?.key ?? null}
+            onPackageSelect={setSelectedPackage}
+          />
+        );
       case "discounts":
         return <DiscountApprovalsTab empty={!atLeast(currentStage, "P4")} />;
       case "documents":
@@ -500,12 +518,7 @@ export default function DealDetailPage({
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => {
-                  const client = deal.name || lead?.name || "";
-                  const params = new URLSearchParams({ createTask: "1" });
-                  if (client) params.set("client", client);
-                  navigate(`/calendar?${params.toString()}`);
-                }}
+                onClick={() => setFollowUpOpen(true)}
                 className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[12.5px] font-medium leading-none text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
               >
                 <CheckSquare size={14} className="shrink-0 block" aria-hidden />
@@ -680,6 +693,19 @@ export default function DealDetailPage({
           </div>
         </div>
       </Modal>
+
+      <CreateTaskModal
+        open={followUpOpen}
+        onClose={() => setFollowUpOpen(false)}
+        defaultDate={new Date()}
+        initial={{
+          isClientRelated: true,
+          client: deal.name || lead?.name || "",
+          title: `Follow up — ${deal.name || lead?.name || "client"}`,
+          description: `Follow-up task from pipeline for ${deal.name || lead?.name || "client"}.`,
+        }}
+        onSave={() => {}}
+      />
     </div>
   );
 }

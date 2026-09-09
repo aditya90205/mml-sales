@@ -29,7 +29,6 @@ const PACKAGES = [
     name: "Premium",
     price: "₹51,000",
     subtitle: "12 months, senior RM only",
-    selected: true,
     features: [
       { label: "Everything in Classic", included: true },
       { label: "Unlimited profiles", included: true },
@@ -94,11 +93,11 @@ const DATA_REVEAL_LEVELS = [
   { label: "Level 4 — Address", note: "Exclusive only · Branch Head approval", done: false },
 ];
 
-function PackageCard({ pkg, empty = false, onSelect }) {
-  const isHighlighted = !empty && pkg.selected;
+function PackageCard({ pkg, empty = false, selected = false, onSelect }) {
+  const isHighlighted = !empty && selected;
   return (
     <div
-      className={`relative rounded-2xl border p-5 flex flex-col ${
+      className={`relative rounded-2xl border p-5 flex flex-col transition-colors ${
         isHighlighted ? "bg-[#FEF4F5] border-[#F7C9CF]" : "bg-white border-black/8"
       }`}
     >
@@ -129,7 +128,6 @@ function PackageCard({ pkg, empty = false, onSelect }) {
         {isHighlighted ? (
           <button
             type="button"
-            disabled
             className="w-full h-10 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold"
           >
             Selected
@@ -137,8 +135,9 @@ function PackageCard({ pkg, empty = false, onSelect }) {
         ) : (
           <button
             type="button"
-            onClick={() => onSelect(pkg)}
-            className="w-full h-10 rounded-xl bg-white border border-black/12 text-[#111] text-[12.5px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+            disabled={empty}
+            onClick={() => onSelect?.(pkg)}
+            className="w-full h-10 rounded-xl bg-white border border-black/12 text-[#111] text-[12.5px] font-semibold hover:bg-[#FAFAFB] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Select
           </button>
@@ -508,7 +507,13 @@ function DataRevealCard({ empty = false }) {
 }
 
 /** Package & Quote tab — package catalogue, upsell prompt and the live quotation. */
-export default function PackageQuoteTab({ empty = false }) {
+export default function PackageQuoteTab({ empty = false, selectedKey = null, onPackageSelect }) {
+  const handleSelect = (pkg) => {
+    if (empty) return;
+    onPackageSelect?.(pkg);
+    toast.success(`${pkg.name} package selected.`);
+  };
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -532,7 +537,13 @@ export default function PackageQuoteTab({ empty = false }) {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {PACKAGES.map((pkg) => (
-          <PackageCard key={pkg.key} pkg={pkg} empty={empty} onSelect={(p) => toast.success(`${p.name} package selected.`)} />
+          <PackageCard
+            key={pkg.key}
+            pkg={pkg}
+            empty={empty}
+            selected={selectedKey === pkg.key}
+            onSelect={handleSelect}
+          />
         ))}
       </div>
 
