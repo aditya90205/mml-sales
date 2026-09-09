@@ -10,7 +10,6 @@ import {
   SlidersHorizontal,
   Trash2,
   UserCheck,
-  UserCog,
   UserPlus,
   Users,
   UserX,
@@ -45,13 +44,24 @@ const COLUMN_BY_STAGE = {
   Done: "done",
 };
 
-const STATS = [
-  { label: "Total Tasks", value: 125, icon: Users, color: "#6366F1", bg: "#EEF0FE" },
-  { label: "Unassigned", value: 12, icon: UserX, color: "#E8395B", bg: "#FDECEE" },
-  { label: "Assigned", value: 25, icon: UserCheck, color: "#F59E0B", bg: "#FFF3E4" },
-  { label: "Overdue", value: 25, icon: UserCog, color: "#3B82F6", bg: "#E8F2FE" },
-  { label: "High Priority", value: 100, icon: UserPlus, color: "#16A34A", bg: "#E7F8EF" },
+const STAT_DEFS = [
+  { id: "total", label: "Total Tasks", icon: Users, color: "#6366F1", bg: "#EEF0FE" },
+  { id: "unassigned", label: "Unassigned", icon: UserX, color: "#E8395B", bg: "#FDECEE" },
+  { id: "assigned", label: "Assigned", icon: UserCheck, color: "#F59E0B", bg: "#FFF3E4" },
+  { id: "high", label: "High Priority", icon: UserPlus, color: "#16A34A", bg: "#E7F8EF" },
 ];
+
+function isTaskUnassigned(task) {
+  return !task.assignees?.length && (!task.assignee || task.assignee === "Unassigned");
+}
+
+function matchesKpiFilter(task, kpiFilter) {
+  if (!kpiFilter || kpiFilter === "total") return true;
+  if (kpiFilter === "unassigned") return isTaskUnassigned(task);
+  if (kpiFilter === "assigned") return !isTaskUnassigned(task);
+  if (kpiFilter === "high") return task.priority === "High" || task.priority === "Critical";
+  return true;
+}
 
 const PRIORITY_STYLES = {
   Critical: { color: "#E8395B", bg: "#FDECEE" },
@@ -62,7 +72,9 @@ const PRIORITY_STYLES = {
 
 function makeTask(partial, columnId) {
   const stage = STAGE_BY_COLUMN[columnId] || "New";
-  const assignee = partial.assignee || "Unassigned";
+  const rawAssignee = partial.assignee;
+  const assignee =
+    !rawAssignee || rawAssignee === "Unassigned" ? "" : rawAssignee;
   return {
     id: partial.id || `task-${columnId}-${Math.random().toString(36).slice(2, 9)}`,
     title: partial.title,
@@ -72,7 +84,11 @@ function makeTask(partial, columnId) {
     date: partial.date || "07-12-26",
     overdue: Boolean(partial.overdue),
     assignee,
-    assignees: partial.assignees || (assignee !== "Unassigned" ? [assignee] : []),
+    assignees: partial.assignees?.length
+      ? partial.assignees.filter((name) => name && name !== "Unassigned")
+      : assignee
+        ? [assignee]
+        : [],
     stage,
     columnId,
     description:
@@ -123,7 +139,7 @@ const INITIAL_TASKS = [
       priority: "Medium",
       progress: 15,
       project: "Walk-in enquiries",
-      assignee: "Rahul Verma",
+      assignee: "",
       milestone: "Discovery",
     },
     "new"
@@ -172,7 +188,7 @@ const INITIAL_TASKS = [
       priority: "Medium",
       progress: 55,
       project: "Video call / Visit",
-      assignee: "Dev Malhotra",
+      assignee: "",
       milestone: "Matching",
     },
     "review"
@@ -196,7 +212,7 @@ const INITIAL_TASKS = [
       priority: "Medium",
       progress: 25,
       project: "Warm leads",
-      assignee: "Neha Kapoor",
+      assignee: "",
       milestone: "Follow-up",
     },
     "blocked"
@@ -237,7 +253,7 @@ function taskToForm(task) {
     priority: task.priority || "Medium",
     assignees: task.assignees?.length
       ? [...task.assignees]
-      : task.assignee
+      : task.assignee && task.assignee !== "Unassigned"
         ? [task.assignee]
         : [],
     isClientRelated: Boolean(task.isClientRelated),
@@ -253,7 +269,7 @@ function applyFormToTask(existing, form) {
   const stage = form.stage || existing?.stage || "New";
   const columnId = COLUMN_BY_STAGE[stage] || existing?.columnId || "new";
   const assignees = form.assignees?.length ? form.assignees : [];
-  const assignee = assignees[0] || existing?.assignee || "Unassigned";
+  const assignee = assignees[0] || "";
   return {
     ...(existing || {}),
     id: existing?.id || `task-${Date.now()}`,
@@ -305,28 +321,40 @@ function InitialsAvatar({ name, size = 26 }) {
 
 /* ───────────────────────── Stat bar ───────────────────────── */
 
-function StatBar() {
+function StatBar({ stats, activeKey, onSelect }) {
   return (
-    <div className="bg-white border border-black/8 rounded-2xl divide-y divide-black/8 sm:divide-y-0 sm:flex sm:items-stretch">
-      {STATS.map((stat, i) => (
-        <div
-          key={stat.label}
-          className={`flex items-center gap-3 px-4 py-3.5 flex-1 min-w-0 ${
-            i > 0 ? "sm:border-l sm:border-black/8" : ""
-          }`}
-        >
-          <span
-            className="size-9 rounded-xl grid place-items-center shrink-0"
-            style={{ backgroundColor: stat.bg, color: stat.color }}
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+      {stats.map((stat) => {
+        const active = activeKey === stat.id;
+        return (
+          <button
+            key={stat.id}
+            type="button"
+            onClick={() => onSelect(stat.id)}
+            aria-pressed={active}
+            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left min-w-0 transition-colors ${
+              active
+                ? "bg-[#FCF5F6] border-[#7A0A17]/25 shadow-[0_1px_2px_rgba(122,10,23,0.08)]"
+                : "bg-white border-black/8 hover:bg-[#FAFAFB]"
+            }`}
           >
-            <stat.icon size={16} />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[11px] text-[#9CA3AF] truncate">{stat.label}</p>
-            <p className="text-[18px] font-bold text-[#111] leading-tight">{stat.value}</p>
-          </div>
-        </div>
-      ))}
+            <span
+              className="size-9 rounded-xl grid place-items-center shrink-0"
+              style={{ backgroundColor: stat.bg, color: stat.color }}
+            >
+              <stat.icon size={16} />
+            </span>
+            <div className="min-w-0">
+              <p className={`text-[11px] truncate ${active ? "text-[#7A0A17] font-semibold" : "text-[#9CA3AF]"}`}>
+                {stat.label}
+              </p>
+              <p className={`text-[18px] font-bold leading-tight ${active ? "text-[#7A0A17]" : "text-[#111]"}`}>
+                {stat.value}
+              </p>
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -505,7 +533,11 @@ function TaskCard({ task, columnColor, onView, onEdit, onDelete }) {
             {task.date}
           </p>
         </div>
-        <InitialsAvatar name={task.assignee} />
+        {task.assignee && task.assignee !== "Unassigned" ? (
+          <InitialsAvatar name={task.assignee} />
+        ) : (
+          <span className="size-[26px] rounded-full border border-dashed border-black/15 bg-[#F3F4F6] shrink-0" />
+        )}
       </div>
     </div>
   );
@@ -638,10 +670,14 @@ function TaskListView({ rows, onView, onEdit, onDelete }) {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                      <InitialsAvatar name={task.assignee} size={22} />
-                      <span className="text-[12px] text-[#374151]">{task.assignee}</span>
-                    </span>
+                    {task.assignee && task.assignee !== "Unassigned" ? (
+                      <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                        <InitialsAvatar name={task.assignee} size={22} />
+                        <span className="text-[12px] text-[#374151]">{task.assignee}</span>
+                      </span>
+                    ) : (
+                      <span className="text-[12px] text-[#9CA3AF]">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-0.5">
@@ -688,31 +724,49 @@ export default function TasksPage() {
   const [search, setSearch] = useState("");
   const [perPage, setPerPage] = useState(10);
   const [view, setView] = useState("grid");
+  const [kpiFilter, setKpiFilter] = useState("total");
   const [viewing, setViewing] = useState(null);
   const [editing, setEditing] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
 
+  const kpiStats = useMemo(() => {
+    const unassigned = tasks.filter(isTaskUnassigned).length;
+    const assigned = tasks.length - unassigned;
+    const high = tasks.filter((t) => t.priority === "High" || t.priority === "Critical").length;
+    const counts = { total: tasks.length, unassigned, assigned, high };
+    return STAT_DEFS.map((def) => ({ ...def, value: counts[def.id] }));
+  }, [tasks]);
+
+  const filteredTasks = useMemo(
+    () => tasks.filter((t) => matchesKpiFilter(t, kpiFilter)),
+    [tasks, kpiFilter]
+  );
+
   const columns = useMemo(
     () =>
       TASK_COLUMNS.map((column) => {
-        const all = tasks.filter((t) => t.columnId === column.id);
-        const filtered = search
+        const all = filteredTasks.filter((t) => t.columnId === column.id);
+        const searched = search
           ? all.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
           : all;
-        return { column, tasks: filtered.slice(0, perPage) };
+        return { column, tasks: searched.slice(0, perPage) };
       }),
-    [tasks, search, perPage]
+    [filteredTasks, search, perPage]
   );
 
   const listRows = useMemo(() => {
     const rows = TASK_COLUMNS.flatMap((column) =>
-      tasks.filter((t) => t.columnId === column.id).map((task) => ({ task, column }))
+      filteredTasks.filter((t) => t.columnId === column.id).map((task) => ({ task, column }))
     );
-    const filtered = search
+    const searched = search
       ? rows.filter((r) => r.task.title.toLowerCase().includes(search.toLowerCase()))
       : rows;
-    return filtered.slice(0, perPage);
-  }, [tasks, search, perPage]);
+    return searched.slice(0, perPage);
+  }, [filteredTasks, search, perPage]);
+
+  const handleKpiSelect = (id) => {
+    setKpiFilter((prev) => (id === "total" || prev === id ? "total" : id));
+  };
 
   const handleView = (task) => setViewing(task);
 
@@ -770,7 +824,7 @@ export default function TasksPage() {
       </div>
 
       <div className="px-5 pb-8 flex flex-col gap-4 min-w-0">
-        <StatBar />
+        <StatBar stats={kpiStats} activeKey={kpiFilter} onSelect={handleKpiSelect} />
         <TasksToolbar
           search={search}
           onSearchChange={setSearch}
