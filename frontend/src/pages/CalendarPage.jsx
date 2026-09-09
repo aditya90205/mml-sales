@@ -388,8 +388,8 @@ function CategoryChip({ id, checked, onToggle, count }) {
     <button
       type="button"
       onClick={() => onToggle(id)}
-      className={`inline-flex items-center gap-1.5 text-[12.5px] font-medium whitespace-nowrap transition-opacity ${
-        checked ? "opacity-100" : "opacity-40"
+      className={`inline-flex items-center gap-1.5 text-[12.5px] whitespace-nowrap transition-colors ${
+        checked ? "font-semibold" : "font-medium"
       }`}
     >
       <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: cat.dot }} />
@@ -1379,16 +1379,17 @@ export default function CalendarPage() {
         </button>
 
         {upNext && (
-          <div className="bg-white border border-black/8 rounded-2xl p-3.5">
-            <div className="flex items-center justify-between">
-              <p className="text-[10.5px] font-bold text-[#9CA3AF] tracking-wide">
+          <div className="relative overflow-hidden rounded-2xl border border-[#7A0A17]/15 bg-gradient-to-br from-[#FFF5F6] to-[#FDECEE] p-3.5 shadow-[0_1px_2px_rgba(122,10,23,0.06)]">
+            <div className="absolute inset-y-0 left-0 w-1 bg-[#7A0A17]" />
+            <div className="flex items-center justify-between pl-1.5">
+              <p className="text-[10.5px] font-bold text-[#7A0A17] tracking-wide">
                 UP NEXT · {fmtTime(upNext.startH).toUpperCase()}
               </p>
-              <span className="text-[10px] font-bold text-[#E8395B] bg-[#FDECEE] px-1.5 py-0.5 rounded-md">
+              <span className="text-[10px] font-bold text-white bg-[#7A0A17] px-1.5 py-0.5 rounded-md">
                 {sameDay(upNext.date, TODAY) ? "Today" : upNext.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
               </span>
             </div>
-            <div className="flex items-center justify-between gap-2 mt-2">
+            <div className="flex items-center justify-between gap-2 mt-2 pl-1.5">
               <p className="text-[13px] font-bold text-[#111] leading-snug">{upNext.title}</p>
               <button
                 type="button"
@@ -1398,7 +1399,7 @@ export default function CalendarPage() {
                 Details
               </button>
             </div>
-            <p className="text-[11.5px] text-[#9CA3AF] mt-1">
+            <p className="inline-flex items-center mt-2 ml-1.5 text-[11.5px] font-semibold text-[#7A0A17] bg-white/70 border border-[#7A0A17]/12 px-2 py-0.5 rounded-md">
               {fmtTime(upNext.startH)} – {fmtTime(upNext.endH)}
             </p>
           </div>
@@ -1445,13 +1446,6 @@ export default function CalendarPage() {
               <ChevronRight size={17} />
             </button>
             <h1 className="text-[19px] font-bold text-[#111] tracking-tight ml-1">{rangeLabel}</h1>
-            <button
-              type="button"
-              onClick={() => jumpTo(new Date())}
-              className="ml-1 text-[11.5px] font-semibold text-[#7A0A17] border border-[#7A0A17]/20 rounded-lg px-2.5 py-1 hover:bg-[#FCF5F6] transition-colors"
-            >
-              Today
-            </button>
           </div>
 
           <div className="flex items-center gap-3.5 flex-wrap flex-1 min-w-[280px]">
