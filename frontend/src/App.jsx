@@ -28,6 +28,7 @@ import DiscountRequestsPage from "./pages/pipeline/desk/DiscountRequestsPage";
 import ContractPaymentPage from "./pages/pipeline/desk/ContractPaymentPage";
 import P6HandoverPage from "./pages/pipeline/desk/P6HandoverPage";
 import { isAuthenticated } from "./utils/auth";
+import ScrollToTop from "./components/common/ScrollToTop";
 
 // ── Placeholder for pages not yet built ──────────────────────────────────────
 function Placeholder({ title }) {
@@ -57,6 +58,7 @@ export default function App() {
 
   return (
     <BrowserRouter basename={basename}>
+      <ScrollToTop />
       {/* Toast notifications with close button & progress timer bar */}
       <ToastContainer
         position="top-right"

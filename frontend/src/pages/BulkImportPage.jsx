@@ -227,13 +227,7 @@ export default function BulkImportPage() {
             <div className="flex items-center gap-2 shrink-0">
               {fileName ? (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="h-9 px-4 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#4B5563] hover:bg-white/80 transition-colors"
-                  >
-                    Replace
-                  </button>
+                
                   <button
                     type="button"
                     onClick={handleDeleteFile}

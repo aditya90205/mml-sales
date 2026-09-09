@@ -17,6 +17,7 @@ import {
 import { toast } from "react-toastify";
 import CreateTaskModal from "../components/calendar/CreateTaskModal";
 import TaskDetailsModal from "../components/calendar/TaskDetailsModal";
+import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 
 /* ───────────────────────── Data ───────────────────────── */
 
@@ -578,9 +579,48 @@ function TaskColumn({ column, tasks, onView, onEdit, onDelete }) {
   );
 }
 
+const LIST_TH =
+  "text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3";
+
+const PRIORITY_RANK = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+
+function getTaskListValue(row, key) {
+  const task = row?.task || {};
+  const column = row?.column || {};
+  switch (key) {
+    case "title":
+      return task.title || "";
+    case "status":
+      return TASK_COLUMNS.findIndex((c) => c.id === column.id);
+    case "priority":
+      return PRIORITY_RANK[task.priority] ?? 99;
+    case "progress":
+      return task.progress ?? 0;
+    case "project":
+      return task.project || "";
+    case "date": {
+      const parts = String(task.date || "").split("-");
+      if (parts.length === 3) {
+        const [d, m, y] = parts;
+        return `20${y}-${m}-${d}`;
+      }
+      return task.date || "";
+    }
+    case "assignee":
+      return task.assignee && task.assignee !== "Unassigned" ? task.assignee : "";
+    default:
+      return "";
+  }
+}
+
 /* ───────────────────────── List view ───────────────────────── */
 
 function TaskListView({ rows, onView, onEdit, onDelete }) {
+  const { sorted, sort, toggle } = useTableSort(rows, {
+    defaultKey: "title",
+    getValue: getTaskListValue,
+  });
+
   if (rows.length === 0) {
     return (
       <div className="bg-white border border-black/8 rounded-2xl py-16 text-center text-[13px] text-[#9CA3AF]">
@@ -595,34 +635,23 @@ function TaskListView({ rows, onView, onEdit, onDelete }) {
         <table className="w-full min-w-[860px] border-collapse">
           <thead>
             <tr className="border-b border-black/8 bg-[#FAFAFB]">
-              <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">
-                Task
-              </th>
-              <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">
-                Status
-              </th>
-              <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">
-                Priority
-              </th>
-              <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">
-                Progress
-              </th>
-              <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">
-                Project
-              </th>
-              <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">
-                Due Date
-              </th>
-              <th className="text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">
-                Assignee
-              </th>
-              <th className="text-right text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3">
-                Actions
-              </th>
+              <SortableTh label="Task" sortKey="title" sort={sort} onSort={toggle} className={LIST_TH} />
+              <SortableTh label="Status" sortKey="status" sort={sort} onSort={toggle} className={LIST_TH} />
+              <SortableTh label="Priority" sortKey="priority" sort={sort} onSort={toggle} className={LIST_TH} />
+              <SortableTh label="Progress" sortKey="progress" sort={sort} onSort={toggle} className={LIST_TH} />
+              <SortableTh label="Project" sortKey="project" sort={sort} onSort={toggle} className={LIST_TH} />
+              <SortableTh label="Due Date" sortKey="date" sort={sort} onSort={toggle} className={LIST_TH} />
+              <SortableTh label="Assignee" sortKey="assignee" sort={sort} onSort={toggle} className={LIST_TH} />
+              <SortableTh
+                label="Actions"
+                sortKey="actions"
+                unsortable
+                className="text-right text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3"
+              />
             </tr>
           </thead>
           <tbody className="divide-y divide-black/6">
-            {rows.map(({ task, column }) => {
+            {sorted.map(({ task, column }) => {
               const priority = PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.Medium;
               return (
                 <tr key={task.id} className="hover:bg-[#FAFAFB] transition-colors">
