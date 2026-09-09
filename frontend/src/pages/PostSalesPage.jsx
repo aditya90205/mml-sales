@@ -15,18 +15,20 @@ import {
   Td,
 } from "../components/common/AppPage.jsx";
 import Modal from "../components/ui/Modal.jsx";
+import CreateMeetingEventModal from "../components/calendar/CreateMeetingEventModal";
+import CreateTaskModal from "../components/calendar/CreateTaskModal";
 import { CLIENTS, PROBABILITY_META } from "../utils/clientsData.js";
 
 const TABS = [
   { k: "overview", label: "Overview" },
   { k: "payment", label: "Payment Collection", count: 14 },
   { k: "followup", label: "Final Payment Follow-up", count: 6 },
+  { k: "renewal", label: "Subscription Renewals", count: 27 },
   { k: "testimonial", label: "Testimonials", count: 9 },
   { k: "review", label: "Google Reviews", count: 7 },
   { k: "cross", label: "Cross-sell", count: 11 },
   { k: "upsell", label: "Upsell", count: 8 },
   { k: "referral", label: "Referral", count: 9 },
-  { k: "renewal", label: "Subscription Renewals", count: 27 },
 ];
 
 const MODES = ["UPI", "Card", "NEFT", "Cheque", "Cash"];
@@ -343,6 +345,10 @@ export default function PostSalesPage() {
   const [pageByTab, setPageByTab] = useState({});
   const [messageFor, setMessageFor] = useState(null);
   const [emailFor, setEmailFor] = useState(null);
+  const [meetingOpen, setMeetingOpen] = useState(false);
+  const [taskOpen, setTaskOpen] = useState(false);
+  const [meetingInitial, setMeetingInitial] = useState(null);
+  const [taskInitial, setTaskInitial] = useState(null);
 
   const head = role === "head";
   const [pageTitle, pageSub] = TAB_META[tab];
@@ -502,6 +508,38 @@ export default function PostSalesPage() {
 
   const genericAction = (name, label) => {
     toast.info(`${label} — ${name}`);
+  };
+
+  const openTestimonialMeeting = (row) => {
+    setMeetingInitial({
+      title: `Testimonial shoot — ${row.name}`,
+      inviteGroups: ["client", "employees"],
+      people: [row.name],
+      description: "Other",
+      meetingTypes: ["face"],
+      notes: `Schedule testimonial (${row.format}) for ${row.name} · ${row.milestone}.`,
+    });
+    setMeetingOpen(true);
+  };
+
+  const openTestimonialTask = (row, action) => {
+    setTaskInitial({
+      isClientRelated: true,
+      client: row.name,
+      title: `${action} — ${row.name} testimonial`,
+      description: `${action} on testimonial for ${row.name} (${row.code}). Milestone: ${row.milestone}. Format: ${row.format}. Status: ${row.status}.`,
+      priority: action === "Call" ? "High" : "Medium",
+    });
+    setTaskOpen(true);
+  };
+
+  const testimonialAction = (row) => {
+    const label = row.action;
+    if (label === "Schedule") return openTestimonialMeeting(row);
+    if (label === "Remind" || label === "Call" || label === "Follow up") {
+      return openTestimonialTask(row, label);
+    }
+    return genericAction(row.name, label);
   };
 
   const kpis = head
@@ -1454,7 +1492,7 @@ export default function PostSalesPage() {
                         <StatusPill tone={KIND_TO_TONE[r.kind]}>{r.status}</StatusPill>
                       </Td>
                       <Td>{r.usage}</Td>
-                      <RowAction label={r.action} onClick={() => genericAction(r.name, r.action)} />
+                      <RowAction label={r.action} onClick={() => testimonialAction(r)} />
                     </tr>
                   ))}
                 </tbody>
@@ -2040,6 +2078,27 @@ export default function PostSalesPage() {
         open={Boolean(emailFor)}
         onClose={() => setEmailFor(null)}
         recipientName={emailFor?.name || "Client"}
+      />
+      <CreateMeetingEventModal
+        open={meetingOpen}
+        onClose={() => {
+          setMeetingOpen(false);
+          setMeetingInitial(null);
+        }}
+        entityLabel="Meeting"
+        defaultDate={new Date()}
+        initial={meetingInitial}
+        onSave={() => {}}
+      />
+      <CreateTaskModal
+        open={taskOpen}
+        onClose={() => {
+          setTaskOpen(false);
+          setTaskInitial(null);
+        }}
+        defaultDate={new Date()}
+        initial={taskInitial}
+        onSave={() => {}}
       />
     </AppPage>
   );
