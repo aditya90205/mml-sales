@@ -450,6 +450,13 @@ function QuotationCard({ empty = false }) {
         >
           Send quote to client
         </button>
+        <button
+          type="button"
+          onClick={() => toast.success("Payment link copied and ready to share.")}
+          className="h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
+        >
+          Payment link
+        </button>
       </div>
     </div>
   );

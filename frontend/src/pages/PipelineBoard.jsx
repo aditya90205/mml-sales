@@ -61,6 +61,17 @@ const PRIORITY_STYLES = {
 
 const OWNER = { name: "Aditya Sharma", label: "Owner", role: "Sales Manager", branch: "Rajouri Garden" };
 
+function getLeadContact(lead) {
+  const parts = (lead?.name || "client").trim().split(/\s+/);
+  const first = (parts[0] || "client").toLowerCase();
+  const last = (parts.slice(1).join("") || "user").toLowerCase();
+  const digits = String(lead?.id || "10428").replace(/\D/g, "").slice(-5).padStart(5, "4");
+  return {
+    email: lead?.email || `${first}.${last}@gmail.com`,
+    phone: lead?.phone || lead?.mobile || `+91 98765 ${digits}`,
+  };
+}
+
 /** Two sample cards per stage, mirroring the lead roster used on the dashboard. */
 const LEADS_BY_STAGE = {
   P0: [
@@ -324,6 +335,7 @@ function BoardToolbar({ search, onSearchChange, perPage, onPerPageChange, view, 
 function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal, onMoveStage, onOpenDeal }) {
   const temperature = TEMPERATURE_STYLES[lead.temperature];
   const priority = PRIORITY_STYLES[lead.priority];
+  const { email, phone } = getLeadContact(lead);
 
   const urgentHrs = lead.hrs <= 8;
   const canOpenDeal = true;
@@ -350,6 +362,11 @@ function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal
             {lead.starred && <Star size={12} className="text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={0} />}
           </span>
           <p className="text-[10px] text-[#9CA3AF]">{lead.mmlId}</p>
+          <p className="text-[10px] text-[#6B7280] truncate mt-0.5">
+            <span className="lowercase">{email}</span>
+            <span className="text-[#D1D5DB]"> · </span>
+            <span>{phone}</span>
+          </p>
         </div>
         <button type="button" onClick={(e) => e.stopPropagation()} className="p-1 text-[#9CA3AF] hover:text-[#111] rounded-md hover:bg-black/4 transition-colors shrink-0" aria-label="More options">
           <MoreVertical size={15} />
@@ -564,6 +581,7 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                 const temp   = TEMPERATURE_STYLES[lead.temperature];
                 const pri    = PRIORITY_STYLES[lead.priority];
                 const urgent = lead.hrs <= 8;
+                const { email, phone } = getLeadContact(lead);
                 return (
                   <tr
                     key={idx}
@@ -585,6 +603,11 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                             {lead.starred && <Star size={11} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />}
                           </div>
                           <p className="text-[10px] text-[#9CA3AF]">{lead.mmlId}</p>
+                          <p className="text-[10px] text-[#6B7280]">
+                            <span className="lowercase">{email}</span>
+                            <span className="text-[#D1D5DB]"> · </span>
+                            <span>{phone}</span>
+                          </p>
                         </div>
                       </div>
                     </td>

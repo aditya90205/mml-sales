@@ -128,6 +128,17 @@ function initials(name = "") {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 }
 
+function getDealContact(lead, name) {
+  const parts = (name || lead?.name || "client").trim().split(/\s+/);
+  const first = (parts[0] || "client").toLowerCase();
+  const last = (parts.slice(1).join("") || "user").toLowerCase();
+  const digits = String(lead?.id || "10471").replace(/\D/g, "").slice(-5).padStart(5, "4");
+  return {
+    email: lead?.email || `${first}.${last}@gmail.com`,
+    phone: lead?.phone || lead?.mobile || `+91 98765 ${digits}`,
+  };
+}
+
 /**
  * Deal detail opened by clicking any pipeline card (P0–P6).
  * Tab data fills in by stage. Payments and P6 Checklist stay blurred until P5.
@@ -179,11 +190,15 @@ export default function DealDetailPage({
     const dealCode = (lead?.mmlId || "MML - D - 10471").replace(/\s*-\s*/g, "-");
     const detailsFilled = atLeast(currentStage, "P1") || Boolean(savedDetails);
     const flagsFilled = atLeast(currentStage, "P2");
+    const name = lead?.name || "Ananya Gupta";
+    const contact = getDealContact(lead, name);
     const base = {
       ...DEAL_DEFAULTS,
       dealCode,
       stageLabel: STAGE_LABELS[currentStage] || STAGE_LABELS.P4,
-      name: lead?.name || "Ananya Gupta",
+      name,
+      email: contact.email,
+      phone: contact.phone,
       premium: isPremium,
       dealValue: currentStage === "P0" && !savedDetails ? "₹25,000" : DEAL_DEFAULTS.dealValue,
       packageInterest: maybeDash(detailsFilled, DEAL_DEFAULTS.packageInterest),
@@ -471,6 +486,11 @@ export default function DealDetailPage({
                     <Minus size={10} /> interest
                   </span>
                 </div>
+                <p className="text-[11px] text-[#6B7280] mt-0.5 truncate">
+                  <span className="lowercase">{deal.email}</span>
+                  <span className="text-[#D1D5DB]"> · </span>
+                  <span>{deal.phone}</span>
+                </p>
                 <p className="text-[12px] text-[#9CA3AF] mt-0.5">
                   {deal.dealCode} · Source: {deal.leadSource} · Created 24 Jun 2026 · Owner: Rohit K.
                 </p>
@@ -618,6 +638,11 @@ export default function DealDetailPage({
             </span>
             <div className="min-w-0">
               <p className="text-[15px] font-bold text-[#111] truncate">{deal.name}</p>
+              <p className="text-[11px] text-[#6B7280] mt-0.5 truncate">
+                <span className="lowercase">{deal.email}</span>
+                <span className="text-[#D1D5DB]"> · </span>
+                <span>{deal.phone}</span>
+              </p>
               <p className="text-[12px] text-[#6B7280] mt-0.5">Owner: Rohit K. · Source: {deal.leadSource}</p>
             </div>
           </div>
