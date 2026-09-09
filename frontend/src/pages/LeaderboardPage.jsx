@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Filter, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Filter } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTableSort } from "../components/common/useTableSort.jsx";
+import SearchField from "../components/common/SearchField.jsx";
 import SendEmailModal from "../components/common/SendEmailModal.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import emailLightIcon from "../assets/email-light.png";
@@ -70,29 +71,16 @@ function DualSortTh({ label, sortKey, sort, onSort, unsortable = false }) {
   );
 }
 
-function ListToolbar({ search, onSearchChange, perPage, onPerPageChange, onSearch }) {
+function ListToolbar({ search, onSearchChange, perPage, onPerPageChange }) {
   const [perPageOpen, setPerPageOpen] = useState(false);
 
   return (
     <div className="flex items-center gap-2.5 flex-wrap">
-      <div className="flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 flex-1 basis-[240px] max-w-[520px] focus-within:border-[#7A0A17]/40 transition-colors">
-        <Search size={15} className="text-[#9CA3AF] shrink-0" />
-        <input
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && onSearch?.()}
-          placeholder="Search..."
-          className="bg-transparent text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none w-full min-w-0"
-        />
-      </div>
-
-      <button
-        type="button"
-        onClick={() => onSearch?.()}
-        className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors shrink-0"
-      >
-        <Search size={14} /> Search
-      </button>
+      <SearchField
+        value={search}
+        onChange={onSearchChange}
+        className="w-full max-w-[280px]"
+      />
 
       <button
         type="button"
@@ -195,17 +183,16 @@ function IconBtn({ label, onClick, children }) {
 
 function usePagedTable(rows, searchKeys, defaultKey) {
   const [search, setSearch] = useState("");
-  const [query, setQuery] = useState("");
   const [perPage, setPerPage] = useState(10);
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = search.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter((row) =>
       searchKeys.some((key) => String(row[key] ?? "").toLowerCase().includes(q))
     );
-  }, [rows, query, searchKeys]);
+  }, [rows, search, searchKeys]);
 
   const { sorted, sort, toggle } = useTableSort(filtered, { defaultKey });
 
@@ -213,15 +200,12 @@ function usePagedTable(rows, searchKeys, defaultKey) {
   const safePage = Math.min(page, totalPages);
   const paged = sorted.slice((safePage - 1) * perPage, safePage * perPage);
 
-  const applySearch = () => {
-    setQuery(search);
-    setPage(1);
-  };
-
   return {
     search,
-    setSearch,
-    applySearch,
+    setSearch: (v) => {
+      setSearch(v);
+      setPage(1);
+    },
     perPage,
     setPerPage: (n) => { setPerPage(n); setPage(1); },
     page: safePage,
@@ -304,7 +288,6 @@ function GlobalLeaderboardSection({ onMessage, onEmail }) {
       <ListToolbar
         search={table.search}
         onSearchChange={table.setSearch}
-        onSearch={table.applySearch}
         perPage={table.perPage}
         onPerPageChange={table.setPerPage}
       />

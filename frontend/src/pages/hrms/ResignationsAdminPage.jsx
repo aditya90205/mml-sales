@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import { ArrowLeft, CheckCircle2, ChevronDown, Search, Shield, UserCheck, Users, UserX } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, Shield, UserCheck, Users, UserX } from "lucide-react";
+import SearchField from "../../components/common/SearchField.jsx";
 import Modal from "../../components/ui/Modal";
 import {
   CLEARANCE_ITEMS,
@@ -285,15 +286,12 @@ export default function ResignationsAdminPage() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 flex-1 basis-[240px] max-w-[400px] focus-within:border-[#7A0A17]/40 transition-colors">
-            <Search size={15} className="text-[#9CA3AF] shrink-0" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search employee..."
-              className="bg-transparent text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none w-full min-w-0"
-            />
-          </div>
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search employee..."
+            className="w-full max-w-[280px]"
+          />
           <div className="relative shrink-0">
             <select
               value={statusFilter}

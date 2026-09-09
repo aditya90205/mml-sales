@@ -24,6 +24,7 @@ import { toast } from "react-toastify";
 import Modal from "../components/ui/Modal";
 import CreateMeetingEventModal from "../components/calendar/CreateMeetingEventModal";
 import CreateTaskModal from "../components/calendar/CreateTaskModal";
+import SearchField from "../components/common/SearchField.jsx";
 import CreateOtherModal from "../components/calendar/CreateOtherModal";
 import TaskDetailsModal, { calendarEventToTaskView } from "../components/calendar/TaskDetailsModal";
 import MeetingDetailsModal, { calendarEventToMeetingView } from "../components/calendar/MeetingDetailsModal";
@@ -1476,12 +1477,12 @@ export default function CalendarPage() {
               </button>
               {searchOpen && (
                 <div className="absolute right-0 top-[calc(100%+8px)] w-[220px] bg-white border border-black/10 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] p-2 z-30">
-                  <input
-                    autoFocus
+                  <SearchField
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={setSearch}
                     placeholder="Search events..."
-                    className="w-full h-9 px-3 rounded-lg bg-[#F7F8FA] text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none"
+                    size="sm"
+                    className="w-full !bg-[#F7F8FA] !border-transparent"
                   />
                 </div>
               )}
