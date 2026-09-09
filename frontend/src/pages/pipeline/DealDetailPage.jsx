@@ -14,6 +14,7 @@ import {
   MoreVertical,
   Phone,
   PhoneOff,
+  Sparkles,
   Star,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -127,6 +128,36 @@ const LOCK_NOTES = {
 
 function initials(name = "") {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+}
+
+function summaryValue(value) {
+  if (value == null) return "not yet captured";
+  const text = String(value).trim();
+  if (!text || text === "-" || text === "—" || text === "–") return "not yet captured";
+  return text;
+}
+
+function buildClientSummaryPoints(deal) {
+  const points = [
+    `Current stage is ${summaryValue(deal.stageLabel)}.`,
+    `Deal value stands at ${summaryValue(deal.dealValue)}.`,
+    `Package interest: ${summaryValue(deal.packageInterest)}.`,
+    `Lead score: ${summaryValue(deal.leadScore)}.`,
+    `Looking for: ${summaryValue(deal.lookingFor)}.`,
+  ];
+
+  const nextAction = summaryValue(deal.nextAction);
+  if (nextAction === "not yet captured") {
+    points.push("Next action has not been set yet.");
+  } else {
+    points.push(
+      deal.nextActionUrgency
+        ? `Next action: ${nextAction} (${deal.nextActionUrgency}).`
+        : `Next action: ${nextAction}.`
+    );
+  }
+
+  return points;
 }
 
 function getDealContact(lead, name) {
@@ -635,13 +666,22 @@ export default function DealDetailPage({
         iconColor="#7A0A17"
         width="max-w-md"
         footer={
-          <button
-            type="button"
-            onClick={() => setSummaryOpen(false)}
-            className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#5F0812] transition-colors"
-          >
-            Close
-          </button>
+          <div className="flex items-center justify-end gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setSummaryOpen(false)}
+              className="h-9 px-4 rounded-xl bg-white border border-black/12 text-[#374151] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => toast.info("Ask AI is drafting a deeper client summary…")}
+              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#5F0812] transition-colors"
+            >
+              <Sparkles size={14} /> Ask AI
+            </button>
+          </div>
         }
       >
         <div className="space-y-4">
@@ -660,36 +700,23 @@ export default function DealDetailPage({
             </div>
           </div>
 
-          <div className="rounded-xl border border-black/8 bg-[#FAFAFB] px-3.5 py-3">
-            <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Current Stage</p>
-            <p className="text-[14px] font-bold text-[#7A0A17] mt-1">{deal.stageLabel}</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="rounded-xl border border-black/8 px-3 py-2.5">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Deal Value</p>
-              <p className="text-[13px] font-semibold text-[#111] mt-1">{deal.dealValue}</p>
-            </div>
-            <div className="rounded-xl border border-black/8 px-3 py-2.5">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Package</p>
-              <p className="text-[13px] font-semibold text-[#111] mt-1">{deal.packageInterest}</p>
-            </div>
-            <div className="rounded-xl border border-black/8 px-3 py-2.5">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Lead Score</p>
-              <p className="text-[13px] font-semibold text-[#111] mt-1">{deal.leadScore}</p>
-            </div>
-            <div className="rounded-xl border border-black/8 px-3 py-2.5">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Looking For</p>
-              <p className="text-[13px] font-semibold text-[#111] mt-1">{deal.lookingFor}</p>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-black/8 px-3.5 py-3">
-            <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Next Action</p>
-            <p className="text-[13px] font-medium text-[#111] mt-1 leading-snug">{deal.nextAction}</p>
-            {deal.nextActionUrgency && (
-              <p className="text-[11.5px] font-semibold text-[#DC2626] mt-1.5">{deal.nextActionUrgency}</p>
-            )}
+          <div className="rounded-xl border border-black/8 bg-[#FAFAFB] px-4 py-3.5">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#7A0A17] mb-2.5">
+              AI summary
+            </p>
+            <p className="text-[13px] text-[#374151] leading-relaxed">
+              Here is a quick point-wise summary for{" "}
+              <span className="font-semibold text-[#111]">{deal.name}</span> (
+              {deal.dealCode}):
+            </p>
+            <ul className="mt-3 flex flex-col gap-2">
+              {buildClientSummaryPoints(deal).map((point) => (
+                <li key={point} className="flex items-start gap-2 text-[13px] text-[#374151] leading-relaxed">
+                  <span className="mt-2 size-1.5 rounded-full bg-[#7A0A17] shrink-0" />
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </Modal>
