@@ -28,6 +28,54 @@ const PERSONAL_DETAILS_BLOCKS = [
       { key: "clientType", label: "Client type", required: true, type: "pill", options: ["Classic", "Premium", "Exclusive"] },
       { key: "profileStatus", label: "Profile status", type: "pill", options: ["Draft", "Under review", "Complete"] },
       { key: "maritalStatus", label: "Marital status", required: true, type: "pill", options: ["Never married", "Divorced", "Widow / Widower", "Annulled"] },
+      {
+        key: "spouseName",
+        label: "Spouse / ex-spouse name",
+        type: "text",
+        fullWidth: true,
+        showWhen: { key: "maritalStatus", values: ["Divorced"] },
+      },
+      {
+        key: "spouseOccupation",
+        label: "Spouse occupation",
+        type: "text",
+        showWhen: { key: "maritalStatus", values: ["Divorced"] },
+      },
+      {
+        key: "previousMarriageDate",
+        label: "Marriage date",
+        type: "text",
+        showWhen: { key: "maritalStatus", values: ["Divorced"] },
+      },
+      {
+        key: "divorceDate",
+        label: "Divorce / separation date",
+        type: "text",
+        showWhen: { key: "maritalStatus", values: ["Divorced"] },
+      },
+      {
+        key: "divorceChildren",
+        label: "Children from previous marriage",
+        type: "pill",
+        options: ["No children", "Have children"],
+        showWhen: { key: "maritalStatus", values: ["Divorced"] },
+      },
+      {
+        key: "divorceChildrenCount",
+        label: "No. of children",
+        type: "text",
+        showWhen: [
+          { key: "maritalStatus", values: ["Divorced"] },
+          { key: "divorceChildren", values: ["Have children"] },
+        ],
+      },
+      {
+        key: "exSpouseDetails",
+        label: "Other spouse details",
+        type: "textarea",
+        fullWidth: true,
+        showWhen: { key: "maritalStatus", values: ["Divorced"] },
+      },
       { key: "lookingFor", label: "Looking for", required: true, type: "pill", options: ["Groom", "Bride"] },
       { key: "enquiryBy", label: "Enquiry made by", type: "pill", options: ["Self", "Parent", "Sibling", "Relative"] },
     ],
@@ -967,6 +1015,19 @@ export function isFieldFilled(field, values, chipValues) {
   return isFilled(values[field.key]);
 }
 
+/** Whether a field should render given current values (supports showWhen). */
+export function isFieldVisible(field, values = {}) {
+  const rule = field?.showWhen;
+  if (!rule) return true;
+  const rules = Array.isArray(rule) ? rule : [rule];
+  return rules.every((r) => {
+    if (!r?.key) return true;
+    const current = values[r.key];
+    const allowed = r.values ?? (r.value != null ? [r.value] : []);
+    return allowed.includes(current);
+  });
+}
+
 /** Filled row objects for client-record detail tables. */
 export function getFilledRows(rows) {
   if (!Array.isArray(rows)) return [];
@@ -982,15 +1043,17 @@ export const RECORD_DETAIL_TABLES = [
 ];
 
 export function computeSectionPercent(blocks, values, chipValues) {
-  const total = blocks.reduce((sum, b) => sum + b.fields.length, 0);
-  const filled = blocks.reduce((sum, b) => sum + b.fields.filter((f) => isFieldFilled(f, values, chipValues)).length, 0);
+  const visible = blocks.flatMap((b) => b.fields.filter((f) => isFieldVisible(f, values)));
+  const total = visible.length;
+  const filled = visible.filter((f) => isFieldFilled(f, values, chipValues)).length;
   return total ? Math.round((filled / total) * 100) : 0;
 }
 
 export function countSectionFields(blocks, values, chipValues) {
   if (!blocks?.length) return { filled: 0, total: 0 };
-  const total = blocks.reduce((sum, b) => sum + b.fields.length, 0);
-  const filled = blocks.reduce((sum, b) => sum + b.fields.filter((f) => isFieldFilled(f, values, chipValues)).length, 0);
+  const visible = blocks.flatMap((b) => b.fields.filter((f) => isFieldVisible(f, values)));
+  const total = visible.length;
+  const filled = visible.filter((f) => isFieldFilled(f, values, chipValues)).length;
   return { filled, total };
 }
 
