@@ -437,7 +437,7 @@ function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal
             e.stopPropagation();
             onMoveStage?.(lead, stageKey);
           }}
-          className="w-full inline-flex items-center justify-center gap-1.5 h-9 rounded-lg border border-[#7A0A17]/25 text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#FCF5F6] transition-colors"
+          className="w-full inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-[#F8E8EA] border border-[#7A0A17]/20 text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#F0D4D8] transition-colors"
         >
           {stageKey === "P0" ? (
             "Edit / Move to P1"
