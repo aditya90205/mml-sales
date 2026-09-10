@@ -1817,16 +1817,1146 @@ type — all|Home visit|Office visit`,
 
   r += 2;
 
-  mergeNote("UPCOMING (append in this same sheet — no separate tabs)", {
+  // ═══════════════════════════════════════════════════════════
+  // PAGE 6 — Package & Quote (P4)
+  // ═══════════════════════════════════════════════════════════
+  addPageHeading(
+    "PAGE 6: Deal Detail — Package & Quote (P4) — File: deal-tabs/PackageQuoteTab.jsx",
+    "Default tab when stageId=P4. Sections: package catalogue (PACKAGES), Discount Approvals (embedded), Upsell banner (mostly FE/AI later), Quotation, Progressive data reveal, Cross-branch price check. Selected package key comes from DealDetailPage selectedPackage.key (basic|premium|exclusive). Move P4→P5 requires package selected (FE gate) then PATCH .../stage."
+  );
+
+  addMethodSection("▶ GET Requests — Package & Quote (P4)", "FF2563EB");
+
+  addApi({
+    sno: 1,
+    name: "Get Package & Quote Tab",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/package",
+    desc: "Full P4 tab payload. packages[] keys match PACKAGES (key, name, price, subtitle, features[], upsellBadge). selectedKey = selected package. quote + discountApprovals + dataReveal + crossBranchPriceCheck from QuotationCard / DiscountApprovalsCard / DataRevealCard.",
+    auth: "Yes",
+    params: "Path: id",
+    request: "— (no body)",
+    response: `{
+  "success": true,
+  "data": {
+    "id": "p4-1",
+    "stageId": "P4",
+    "dealCode": "MML-D-10428",
+    "currency": "INR",
+    "selectedKey": "premium",
+    "packages": [
+      {
+        "key": "basic",
+        "name": "Basic",
+        "price": "₹25,000",
+        "subtitle": "6 months · junior RM",
+        "features": [
+          { "label": "Profile creation & curation", "included": true },
+          { "label": "Verified Report", "included": false }
+        ]
+      },
+      {
+        "key": "premium",
+        "name": "Premium",
+        "price": "₹51,000",
+        "subtitle": "12 months, senior RM only",
+        "features": [
+          { "label": "Everything in Classic", "included": true },
+          { "label": "Dedicated senior RM", "included": false }
+        ]
+      },
+      {
+        "key": "exclusive",
+        "name": "Exclusive",
+        "price": "₹1,25,000",
+        "subtitle": "12 months, senior RM only",
+        "upsellBadge": "+74,000",
+        "features": [
+          { "label": "Everything in Premium", "included": true },
+          { "label": "Founder-approved special access", "included": true }
+        ]
+      }
+    ],
+    "discountApprovals": [
+      {
+        "id": "da-1",
+        "raised": "28 July",
+        "requested": "₹51,000",
+        "discount": "14.7%",
+        "approver": "Pooja Sharma",
+        "level": "Branch Head",
+        "status": "Pending"
+      },
+      {
+        "id": "da-2",
+        "raised": "v2",
+        "requested": "₹48,000",
+        "discount": "5.9%",
+        "approver": "Vinay Gupta",
+        "level": "Team Lead",
+        "status": "Approved"
+      }
+    ],
+    "quote": {
+      "versionLabel": "Draft v2",
+      "items": [
+        {
+          "item": "Premium Package",
+          "note": "12 months membership",
+          "type": "Base",
+          "qty": 1,
+          "quoted": "₹51,000",
+          "rate": "₹51,000"
+        },
+        {
+          "item": "Kundli / horoscope service",
+          "note": "Redeemable against wallet credits",
+          "type": "Base",
+          "qty": 1,
+          "quoted": "₹51,000",
+          "rate": "₹2,500"
+        },
+        {
+          "item": "Verified Profile Report",
+          "note": "Included in Premium – no charge",
+          "type": "Base",
+          "qty": 1,
+          "quoted": "₹51,000",
+          "rate": "₹0"
+        }
+      ],
+      "summary": [
+        { "label": "Subtotal", "value": "₹53,500" },
+        { "label": "Approved discount", "value": "-₹7,500" },
+        { "label": "Wallet credits applied (referral)", "value": "-₹1000" },
+        { "label": "GST @ 18%", "value": "₹8,100" }
+      ],
+      "totalPayable": "₹53,100"
+    },
+    "dataReveal": [
+      {
+        "label": "Level 1 — Photo",
+        "note": "All packages · on shortlist",
+        "done": true
+      },
+      {
+        "label": "Level 2 — Basic details",
+        "note": "All packages · age, height, education",
+        "done": true
+      },
+      {
+        "label": "Level 3 — Contact",
+        "note": "Premium & Exclusive · RM approval required",
+        "done": true
+      },
+      {
+        "label": "Level 4 — Address",
+        "note": "Exclusive only · Branch Head approval",
+        "done": false
+      }
+    ],
+    "crossBranchPriceCheck": {
+      "title": "Client contacted Rajouri branch.",
+      "detail": "Quoted ₹51,000 there too. Flagged to your Branch Head on 29 Jun"
+    }
+  }
+}`,
+    error: commonError,
+    ui: "PackageQuoteTab full layout",
+  });
+
+  addApi({
+    sno: 2,
+    name: "Get Discount Approvals",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/discounts",
+    desc: "Discount approval rows only (same shape as PackageQuoteTab DiscountApprovalsCard / DiscountApprovalsTab INITIAL_APPROVALS).",
+    auth: "Yes",
+    params: "Path: id",
+    request: "— (no body)",
+    response: `{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "da-1",
+        "raised": "28 July",
+        "requested": "₹51,000",
+        "discount": "14.7%",
+        "approver": "Pooja Sharma",
+        "level": "Branch Head",
+        "status": "Pending"
+      }
+    ]
+  }
+}`,
+    error: commonError,
+    ui: "Discount Approvals table",
+  });
+
+  addApi({
+    sno: 3,
+    name: "Preview Quote PDF",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/quote/preview",
+    desc: "Preview PDF button — returns file or download URL (FE toast: Generating quote PDF preview...).",
+    auth: "Yes",
+    params: "Path: id",
+    request: "— (no body)",
+    response: `Binary PDF
+OR
+{
+  "success": true,
+  "data": {
+    "downloadUrl": "https://...",
+    "expiresAt": "2026-07-02T12:00:00Z"
+  }
+}`,
+    error: commonError,
+    ui: "QuotationCard Preview PDF",
+  });
+
+  r++;
+
+  addMethodSection("▶ POST Requests — Package & Quote (P4)", "FF16A34A");
+
+  addApi({
+    sno: 1,
+    name: "Select Package",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/package/select",
+    desc: "PackageCard Select → onPackageSelect(pkg). Body key matches PACKAGES.key (basic|premium|exclusive). Required before Move to P5 in DealDetailPage.",
+    auth: "Yes",
+    params: "Path: id",
+    request: `{
+  "key": "premium"
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "selectedKey": "premium",
+    "name": "Premium",
+    "price": "₹51,000"
+  }
+}`,
+    error: `{
+  "success": false,
+  "message": "Invalid package key"
+}`,
+    ui: "PackageCard Select / DealDetailPage selectedPackage",
+  });
+
+  addApi({
+    sno: 2,
+    name: "Request Discount",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/discounts",
+    desc: "Request discount modal fields: requested, discount, level (Team Lead|Branch Head|Founder). Creates row status Pending; approver assigned by level matrix.",
+    auth: "Yes",
+    params: "Path: id",
+    request: `{
+  "requested": "51000",
+  "discount": "10",
+  "level": "Team Lead"
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "id": "da-3",
+    "raised": "Just now",
+    "requested": "₹51,000",
+    "discount": "10%",
+    "approver": "Vinay Gupta",
+    "level": "Team Lead",
+    "status": "Pending"
+  }
+}`,
+    error: `{
+  "success": false,
+  "message": "Please add requested amount and discount.",
+  "errors": [
+    { "field": "requested", "message": "Please add requested amount and discount." }
+  ]
+}`,
+    ui: "DiscountApprovalsCard Request discount form",
+  });
+
+  addApi({
+    sno: 3,
+    name: "Add Quote Add-on",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/quote/items",
+    desc: "Add add-on modal: itemName → item, quoted → quoted/rate, type Add-on, qty 1 (QuotationCard handleSave).",
+    auth: "Yes",
+    params: "Path: id",
+    request: `{
+  "item": "Photo reshoot",
+  "quoted": "2500"
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "item": "Photo reshoot",
+    "note": "Added to this quote",
+    "type": "Add-on",
+    "qty": 1,
+    "quoted": "₹2,500",
+    "rate": "₹2,500",
+    "totalPayable": "₹55,600"
+  }
+}`,
+    error: `{
+  "success": false,
+  "message": "Please add an item and amount."
+}`,
+    ui: "QuotationCard Add add-on",
+  });
+
+  addApi({
+    sno: 4,
+    name: "Send Quote to Client",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/quote/send",
+    desc: "Send quote to client button (FE toast: Quote sent to client.). Typically allowed after discount approved.",
+    auth: "Yes",
+    params: "Path: id",
+    request: `{
+  "channel": "email"
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "sent": true,
+    "sentAt": "2026-07-02T11:00:00Z"
+  }
+}`,
+    error: commonError,
+    ui: "QuotationCard Send quote to client",
+  });
+
+  addApi({
+    sno: 5,
+    name: "Create Payment Link",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/quote/payment-link",
+    desc: "Payment link button — returns shareable URL (FE: Payment link copied and ready to share).",
+    auth: "Yes",
+    params: "Path: id",
+    request: "— (no body) or {}",
+    response: `{
+  "success": true,
+  "data": {
+    "paymentUrl": "https://pay.example/mml/...",
+    "amount": "₹53,100"
+  }
+}`,
+    error: commonError,
+    ui: "QuotationCard Payment link",
+  });
+
+  r++;
+
+  addMethodSection("▶ PUT / PATCH Requests — Package & Quote (P4)", "FFD97706");
+
+  addApi({
+    sno: 1,
+    name: "Toggle Data Reveal Level",
+    method: "PATCH",
+    endpoint: "/api/v1/pipeline/leads/{id}/package/data-reveal",
+    desc: "DataRevealCard toggleLevel(label). Keys: label + done (DATA_REVEAL_LEVELS).",
+    auth: "Yes",
+    params: "Path: id",
+    request: `{
+  "label": "Level 4 — Address",
+  "done": true
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "dataReveal": [
+      {
+        "label": "Level 1 — Photo",
+        "note": "All packages · on shortlist",
+        "done": true
+      },
+      {
+        "label": "Level 2 — Basic details",
+        "note": "All packages · age, height, education",
+        "done": true
+      },
+      {
+        "label": "Level 3 — Contact",
+        "note": "Premium & Exclusive · RM approval required",
+        "done": true
+      },
+      {
+        "label": "Level 4 — Address",
+        "note": "Exclusive only · Branch Head approval",
+        "done": true
+      }
+    ]
+  }
+}`,
+    error: commonError,
+    ui: "Progressive data reveal checklist",
+  });
+
+  addApi({
+    sno: 2,
+    name: "Update Discount Approval Status",
+    method: "PATCH",
+    endpoint: "/api/v1/pipeline/leads/{id}/discounts/{discountId}",
+    desc: "Approver action — status Pending|Approved (and reject if product adds it). Updates quote Approved discount line when approved.",
+    auth: "Yes",
+    params: "Path: id, discountId",
+    request: `{
+  "status": "Approved"
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "id": "da-1",
+    "status": "Approved",
+    "approver": "Pooja Sharma",
+    "level": "Branch Head"
+  }
+}`,
+    error: commonError,
+    ui: "Discount approval workflow (authority matrix)",
+  });
+
+  mergeNote(
+    "P4 note: Package keys = basic|premium|exclusive. Discount levels = Team Lead|Branch Head|Founder. Quote line keys = item, note, type, qty, quoted, rate. AI pitch buttons are FE toast/coming soon — optional later. Currency INR / NRI USD toggle: INR live; USD coming soon on FE. Advance P4→P5 = select package then PATCH .../stage.",
+    {
+      height: 42,
+      font: { size: 10, italic: true, color: { argb: "FF6B7280" } },
+    }
+  );
+
+  r += 2;
+
+  // ═══════════════════════════════════════════════════════════
+  // PAGE 7 — Documents & KYC
+  // ═══════════════════════════════════════════════════════════
+  addPageHeading(
+    "PAGE 7: Deal Detail — Documents & KYC — File: deal-tabs/DocumentsKycTab.jsx",
+    "Also embedded in Intake Documents & KYC modal (getSelectedDocs = docs where done=true). Doc row keys: id, label, fileName, done, mandatory."
+  );
+
+  addMethodSection("▶ GET Requests — Documents & KYC", "FF2563EB");
+
+  addApi({
+    sno: 1,
+    name: "Get Documents & KYC List",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/documents",
+    desc: "Document checklist rows matching INITIAL_DOCUMENTS.",
+    auth: "Yes",
+    params: "Path: id",
+    request: "— (no body)",
+    response: `{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "doc-1",
+        "label": "Aadhaar card — client",
+        "fileName": "",
+        "done": false,
+        "mandatory": true
+      },
+      {
+        "id": "doc-2",
+        "label": "PAN card — client",
+        "fileName": "pan-front.jpg",
+        "done": true,
+        "mandatory": true
+      }
+    ]
+  }
+}`,
+    error: commonError,
+    ui: "DocumentsKycTab list / Intake selected docs",
+  });
+
+  r++;
+  addMethodSection("▶ POST Requests — Documents & KYC", "FF16A34A");
+
+  addApi({
+    sno: 1,
+    name: "Add Document Row",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/documents",
+    desc: "Add Row modal: nameDraft → label, mandatoryDraft → mandatory.",
+    auth: "Yes",
+    params: "Path: id",
+    request: `{
+  "label": "Passport — client",
+  "mandatory": false
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "id": "doc-8",
+    "label": "Passport — client",
+    "fileName": "",
+    "done": false,
+    "mandatory": false
+  }
+}`,
+    error: `{
+  "success": false,
+  "message": "Please enter a document name."
+}`,
+    ui: "Add document modal",
+  });
+
+  addApi({
+    sno: 2,
+    name: "Upload Document File",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/documents/{docId}/upload",
+    desc: "Attach & Upload — sets fileName and done=true (handleFileChosen).",
+    auth: "Yes",
+    params: "Path: id, docId",
+    request: `multipart/form-data:
+file: (binary)`,
+    response: `{
+  "success": true,
+  "data": {
+    "id": "doc-1",
+    "fileName": "aadhaar-front.jpg",
+    "done": true
+  }
+}`,
+    error: commonError,
+    ui: "Attach & Upload button",
+  });
+
+  r++;
+  addMethodSection("▶ PUT / PATCH / DELETE — Documents & KYC", "FFD97706");
+
+  addApi({
+    sno: 1,
+    name: "Update Document Row",
+    method: "PUT",
+    endpoint: "/api/v1/pipeline/leads/{id}/documents/{docId}",
+    desc: "Edit modal: label + mandatory.",
+    auth: "Yes",
+    params: "Path: id, docId",
+    request: `{
+  "label": "Aadhaar card — client",
+  "mandatory": true
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "id": "doc-1",
+    "label": "Aadhaar card — client",
+    "mandatory": true
+  }
+}`,
+    error: commonError,
+    ui: "Edit document pencil",
+  });
+
+  addApi({
+    sno: 2,
+    name: "Toggle Document Done",
+    method: "PATCH",
+    endpoint: "/api/v1/pipeline/leads/{id}/documents/{docId}/done",
+    desc: "ChecklistCheck toggleDoc(id).",
+    auth: "Yes",
+    params: "Path: id, docId",
+    request: `{
+  "done": true
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "id": "doc-1",
+    "done": true
+  }
+}`,
+    error: commonError,
+    ui: "Document checklist checkbox",
+  });
+
+  addApi({
+    sno: 3,
+    name: "Delete Document Row",
+    method: "DELETE",
+    endpoint: "/api/v1/pipeline/leads/{id}/documents/{docId}",
+    desc: "deleteDoc(id).",
+    auth: "Yes",
+    params: "Path: id, docId",
+    request: "—",
+    response: `{
+  "success": true,
+  "data": {
+    "id": "doc-3",
+    "deleted": true
+  }
+}`,
+    error: commonError,
+    ui: "Trash delete button",
+  });
+
+  r += 2;
+
+  // ═══════════════════════════════════════════════════════════
+  // PAGE 8 — Notes & RM Flags
+  // ═══════════════════════════════════════════════════════════
+  addPageHeading(
+    "PAGE 8: Deal Detail — Notes & RM Flags — File: deal-tabs/NotesRmFlagsTab.jsx",
+    "Note object keys: title, note, tag (RM note|Flag), tone (blue|amber), alert (boolean for Flag)."
+  );
+
+  addMethodSection("▶ GET Requests — Notes & RM Flags", "FF2563EB");
+
+  addApi({
+    sno: 1,
+    name: "Get Notes & RM Flags",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/notes",
+    desc: "List matching INITIAL_NOTES shape.",
+    auth: "Yes",
+    params: "Path: id",
+    request: "— (no body)",
+    response: `{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "note-1",
+        "title": "Family dynamics",
+        "note": "Father is the decision maker and the payer.",
+        "tag": "RM note",
+        "tone": "blue",
+        "alert": false
+      },
+      {
+        "id": "note-2",
+        "title": "Preference mismatch",
+        "note": "Client wants a doctor in NCR, parents will consider Punjab.",
+        "tag": "Flag",
+        "tone": "amber",
+        "alert": true
+      }
+    ]
+  }
+}`,
+    error: commonError,
+    ui: "NotesRmFlagsTab list",
+  });
+
+  r++;
+  addMethodSection("▶ POST Requests — Notes & RM Flags", "FF16A34A");
+
+  addApi({
+    sno: 1,
+    name: "Add Note / Flag",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/notes",
+    desc: "Add note form: title, body→note, kind→tag (RM note|Flag). Flag sets tone amber + alert true.",
+    auth: "Yes",
+    params: "Path: id",
+    request: `{
+  "title": "Family dynamics",
+  "note": "Father is the decision maker and the payer.",
+  "kind": "RM note"
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "id": "note-3",
+    "title": "Family dynamics",
+    "note": "Father is the decision maker and the payer.",
+    "tag": "RM note",
+    "tone": "blue",
+    "alert": false
+  }
+}`,
+    error: `{
+  "success": false,
+  "message": "Please add a title and note."
+}`,
+    ui: "Add note modal (title, kind, note/body)",
+  });
+
+  r += 2;
+
+  // ═══════════════════════════════════════════════════════════
+  // PAGE 9 — Audit
+  // ═══════════════════════════════════════════════════════════
+  addPageHeading(
+    "PAGE 9: Deal Detail — Audit — File: deal-tabs/AuditTab.jsx",
+    "Immutable log. Row keys: timestamp, actor, action, object, source. FE may mask rows by stage (maskAuditLog)."
+  );
+
+  addMethodSection("▶ GET Requests — Audit", "FF2563EB");
+
+  addApi({
+    sno: 1,
+    name: "Get Audit Log",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/audit",
+    desc: "Audit table rows. Optional stage query for progressive reveal like maskAuditLog(currentStage).",
+    auth: "Yes",
+    params: `Path: id
+Query: stage — P0|P1|...|P6 (optional)`,
+    request: "— (no body)",
+    response: `{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "timestamp": "28 Jul 09:14",
+        "actor": "Rohit Khanna",
+        "action": "Viewed masked mobile",
+        "object": "Client contact",
+        "source": "CRM Web"
+      },
+      {
+        "timestamp": "26 Jul 17:02",
+        "actor": "Rohit Khanna",
+        "action": "Raised discount request",
+        "object": "Quote v2",
+        "source": "CRM Web"
+      }
+    ]
+  }
+}`,
+    error: commonError,
+    ui: "AuditTab table",
+  });
+
+  addApi({
+    sno: 2,
+    name: "Export Audit Log",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/audit/export",
+    desc: "Export log button.",
+    auth: "Yes",
+    params: "Path: id",
+    request: "— (no body)",
+    response: `Binary file download (xlsx/csv)
+OR { "success": true, "data": { "downloadUrl": "https://..." } }`,
+    error: commonError,
+    ui: "TabHeaderButton Export log",
+  });
+
+  r += 2;
+
+  // ═══════════════════════════════════════════════════════════
+  // PAGE 10 — Payments (P5)
+  // ═══════════════════════════════════════════════════════════
+  addPageHeading(
+    "PAGE 10: Deal Detail — Payments / Contract (P5) — File: deal-tabs/PaymentsTab.jsx",
+    "Unlocked at P5 (locked overlay before). Consents: title, note, status, done, pending. Payments: date, mode, reference, amount, collectedBy, status, invoice{name,shared,sharedNote}. Contract timeline: tone, title, note, time. Filters: dealFilter, modeFilter."
+  );
+
+  addMethodSection("▶ GET Requests — Payments (P5)", "FF2563EB");
+
+  addApi({
+    sno: 1,
+    name: "Get Payments Tab",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/payments",
+    desc: "Consents + payments list + contractTimeline + totals footnote fields.",
+    auth: "Yes",
+    params: `Path: id
+Query:
+mode — all|UPI|Cheque|Payment link
+scope — deal|all (FE dealFilter)`,
+    request: "— (no body)",
+    response: `{
+  "success": true,
+  "data": {
+    "id": "p5-1",
+    "stageId": "P5",
+    "dealCode": "MML-D-10428",
+    "totals": {
+      "totalIncludingGst": "₹53,100",
+      "collected": "₹35,000",
+      "outstanding": "₹18,100"
+    },
+    "consents": [
+      {
+        "title": "Data privacy notification",
+        "note": "Accepted by the client on 29 Jun, 4:02 PM.",
+        "status": "Accepted",
+        "done": true
+      },
+      {
+        "title": "Marketing consent",
+        "note": "Opted in to WhatsApp and email · opted out of SMS.",
+        "status": "Partial",
+        "done": false,
+        "pending": true
+      }
+    ],
+    "payments": [
+      {
+        "date": "29 Jun 2026",
+        "mode": "UPI",
+        "reference": "MML-R-88213",
+        "amount": "₹15,000",
+        "collectedBy": "Payment link",
+        "status": "Received",
+        "invoice": {
+          "name": "Invoice-MML-R-88213.pdf",
+          "shared": true,
+          "sharedNote": "Sent by Rohit K. · 29 Jun, 4:18 PM"
+        }
+      },
+      {
+        "date": "Due 02 Aug",
+        "mode": "Payment link",
+        "reference": "MML-R-88512",
+        "amount": "₹18,100",
+        "collectedBy": "—",
+        "status": "Awaiting",
+        "invoice": {
+          "name": "Invoice-MML-R-88512.pdf",
+          "shared": false,
+          "sharedNote": "Not shared yet"
+        }
+      }
+    ],
+    "contractTimeline": [
+      {
+        "title": "OTP verified & signed",
+        "note": "OTP sent to +91 98•• •• 4412.",
+        "time": "29 Jun 2026, 6:18 PM — client",
+        "tone": "green"
+      },
+      {
+        "title": "Contract generated from quote v2",
+        "note": "Premium package — ₹53,100 after approved discount and GST.",
+        "time": "29 Jun 2026, 5:40 PM — you",
+        "tone": "green"
+      }
+    ]
+  }
+}`,
+    error: commonError,
+    ui: "PaymentsTab full screen",
+  });
+
+  addApi({
+    sno: 2,
+    name: "Download Invoice PDF",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/payments/{reference}/invoice",
+    desc: "Per-row invoice Download (invoice.name).",
+    auth: "Yes",
+    params: "Path: id, reference (e.g. MML-R-88213)",
+    request: "— (no body)",
+    response: "Binary PDF download",
+    error: commonError,
+    ui: "InvoiceCell Download",
+  });
+
+  addApi({
+    sno: 3,
+    name: "Download Consolidated Invoice",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/payments/invoice-pdf",
+    desc: "Header Invoice PDF button.",
+    auth: "Yes",
+    params: "Path: id",
+    request: "— (no body)",
+    response: "Binary PDF download",
+    error: commonError,
+    ui: "OutlineButton Invoice PDF",
+  });
+
+  r++;
+  addMethodSection("▶ POST / PATCH — Payments (P5)", "FF16A34A");
+
+  addApi({
+    sno: 1,
+    name: "Share / Reshare Invoice",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/payments/{reference}/invoice/share",
+    desc: "InvoiceCell Send/Reshare — sets invoice.shared true + sharedNote.",
+    auth: "Yes",
+    params: "Path: id, reference",
+    request: `{
+  "channel": "whatsapp"
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "reference": "MML-R-88512",
+    "invoice": {
+      "name": "Invoice-MML-R-88512.pdf",
+      "shared": true,
+      "sharedNote": "Sent & shared by sales · just now"
+    }
+  }
+}`,
+    error: commonError,
+    ui: "InvoiceCell Send / Reshare",
+  });
+
+  addApi({
+    sno: 2,
+    name: "Toggle Consent Item",
+    method: "PATCH",
+    endpoint: "/api/v1/pipeline/leads/{id}/payments/consents",
+    desc: "toggleConsent(title) — done + status Accepted|Pending.",
+    auth: "Yes",
+    params: "Path: id",
+    request: `{
+  "title": "Marketing consent",
+  "done": true
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "title": "Marketing consent",
+    "done": true,
+    "status": "Accepted"
+  }
+}`,
+    error: commonError,
+    ui: "Consent & compliance CheckRow",
+  });
+
+  addApi({
+    sno: 3,
+    name: "Advance to P6 (from Payments)",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/payments/advance-p6",
+    desc: "Advance to P6 button. FE blocks while outstanding balance exists. On success stageId becomes P6 (or call existing PATCH stage).",
+    auth: "Yes",
+    params: "Path: id",
+    request: "— (no body) or {}",
+    response: `{
+  "success": true,
+  "data": {
+    "stageId": "P6",
+    "outstanding": "₹0"
+  }
+}`,
+    error: `{
+  "success": false,
+  "message": "P6 stays locked until the balance clears."
+}`,
+    ui: "PrimaryButton Advance to P6",
+  });
+
+  mergeNote(
+    "Payments note: Payment history button is FE navigate/toast for now. Status values: Received|Cleared|Awaiting. Modes: UPI|Cheque|Payment link.",
+    { height: 28, font: { size: 10, italic: true, color: { argb: "FF6B7280" } } }
+  );
+
+  r += 2;
+
+  // ═══════════════════════════════════════════════════════════
+  // PAGE 11 — P6 Handover Checklist
+  // ═══════════════════════════════════════════════════════════
+  addPageHeading(
+    "PAGE 11: Deal Detail — Handover to Services (P6) — File: deal-tabs/P6ChecklistTab.jsx",
+    "Checklist sections (n, heading, items[{title,note,status,done}]). Handover queue rows: deal, client, pkg, verified, verifiedPct, blocking, owner, status. Handover assigns service manager (DealDetailPage DUMMY_MANAGER → serviceAssigned {manager, branch})."
+  );
+
+  addMethodSection("▶ GET Requests — P6 Checklist", "FF2563EB");
+
+  addApi({
+    sno: 1,
+    name: "Get P6 Handover Checklist",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/p6",
+    desc: "Sections + progress + serviceAssigned + queue (optional branch-wide).",
+    auth: "Yes",
+    params: `Path: id
+Query:
+sortMode — blocked|ready
+period — month|quarter`,
+    request: "— (no body)",
+    response: `{
+  "success": true,
+  "data": {
+    "id": "p6-1",
+    "stageId": "P6",
+    "clientName": "Sanjay Mehta",
+    "doneCount": 13,
+    "totalCount": 16,
+    "percent": 81,
+    "checklistReady": false,
+    "serviceAssigned": null,
+    "sections": [
+      {
+        "n": 1,
+        "heading": "Identity & verification documents",
+        "items": [
+          {
+            "title": "Aadhaar card",
+            "note": "Auto-verified via KYC API on 29 Jun.",
+            "status": "Verified",
+            "done": true
+          },
+          {
+            "title": "Police verification",
+            "note": "Third-party request raised 24 Jul.",
+            "status": "In progress",
+            "done": false
+          }
+        ]
+      },
+      {
+        "n": 4,
+        "heading": "Commercial & consent",
+        "items": [
+          {
+            "title": "Payment cleared in full",
+            "note": "₹18,100 balance outstanding.",
+            "status": "Pending",
+            "done": false
+          },
+          {
+            "title": "Contract signed with OTP",
+            "note": "Signed 29 Jun, 6:18 PM.",
+            "status": "Verified",
+            "done": true
+          }
+        ]
+      }
+    ],
+    "queue": [
+      {
+        "deal": "MML-D-10428",
+        "client": "Sanjay Mehta",
+        "pkg": "Premium",
+        "verified": "13/16",
+        "verifiedPct": 81,
+        "blocking": "Balance payment",
+        "owner": "Rohit Khanna",
+        "status": "Blocked"
+      }
+    ]
+  }
+}`,
+    error: commonError,
+    ui: "P6ChecklistTab",
+  });
+
+  r++;
+  addMethodSection("▶ POST / PATCH — P6 Checklist", "FF16A34A");
+
+  addApi({
+    sno: 1,
+    name: "Toggle P6 Checklist Item",
+    method: "PATCH",
+    endpoint: "/api/v1/pipeline/leads/{id}/p6/items",
+    desc: "toggleItem(title) — done + status Verified|Pending.",
+    auth: "Yes",
+    params: "Path: id",
+    request: `{
+  "title": "Payment cleared in full",
+  "done": true
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "title": "Payment cleared in full",
+    "done": true,
+    "status": "Verified",
+    "doneCount": 14,
+    "totalCount": 16,
+    "percent": 88,
+    "checklistReady": false
+  }
+}`,
+    error: commonError,
+    ui: "P6 CheckRow onToggle",
+  });
+
+  addApi({
+    sno: 2,
+    name: "Verify All Documents",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/p6/verify-all",
+    desc: "verifyAll() — marks every checklist item done/Verified.",
+    auth: "Yes",
+    params: "Path: id",
+    request: "— (no body) or {}",
+    response: `{
+  "success": true,
+  "data": {
+    "doneCount": 16,
+    "totalCount": 16,
+    "percent": 100,
+    "checklistReady": true
+  }
+}`,
+    error: commonError,
+    ui: "PrimaryButton Verify all documents",
+  });
+
+  addApi({
+    sno: 3,
+    name: "Handover to Services",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/p6/handover",
+    desc: "Handover to services / assign service manager. Returns serviceAssigned {manager, branch} (FE BranchManagerAssignedModal).",
+    auth: "Yes",
+    params: "Path: id",
+    request: `{
+  "managerId": "u-mgr-1"
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "serviceAssigned": {
+      "manager": "Anita Kapoor",
+      "branch": "Rajouri Garden"
+    },
+    "stageId": "P6",
+    "handedOver": true
+  }
+}`,
+    error: `{
+  "success": false,
+  "message": "Checklist incomplete — handover blocked."
+}`,
+    ui: "Handover to services / Service manager is assigned",
+  });
+
+  addApi({
+    sno: 4,
+    name: "Download Checklist Template",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/p6/checklist-template",
+    desc: "Checklist template button download.",
+    auth: "Yes",
+    params: "Path: id",
+    request: "— (no body)",
+    response: "Binary file download",
+    error: commonError,
+    ui: "OutlineButton Checklist template",
+  });
+
+  mergeNote(
+    "P6 note: Queue filters sortMode blocked|ready and period month|quarter are query params on GET. Founder exception release can be a later PATCH — FE footnote only today. Stage moves still use PATCH .../stage where applicable.",
+    { height: 36, font: { size: 10, italic: true, color: { argb: "FF6B7280" } } }
+  );
+
+  r += 2;
+
+  mergeNote("DOCUMENT COMPLETE — Pipeline deal detail tabs covered", {
     font: { bold: true, size: 11, color: { argb: "FF111827" } },
-    fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FFF3F4F6" } },
+    fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FFE7F8EF" } },
   });
   mergeNote(
-    "Next tabs one-by-one: Package & Quote (P4) → Discounts → Documents & KYC → Notes & RM Flags → Audit → Payments (P5) → P6 Checklist. Same rules: FE static UI; BE dynamic fields matching frontend keys.",
-    { height: 40 }
+    "Covered pages: 1 Board · 2 Add P0 · 3 Overview · 4 Intake P2 · 5 Visits P3 · 6 Package P4 · 7 Documents · 8 Notes · 9 Audit · 10 Payments P5 · 11 P6 Checklist. Optional later: Cross-branch flags detail page, Calendar CreateTask from deal header, Call logging. Same rules throughout: FE static UI; BE dynamic camelCase fields from frontend.",
+    { height: 44 }
   );
   mergeNote(
-    "Document version: 1.6  |  Pages: Board + Add P0 + Overview + Intake (P2) + Visits (P3)  |  Status: Ready for review",
+    "Document version: 2.0  |  Full deal-detail pipeline API set  |  Status: Ready for client / backend review",
     { font: { size: 9, italic: true, color: { argb: "FF9CA3AF" } } }
   );
 
