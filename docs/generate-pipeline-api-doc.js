@@ -1102,16 +1102,356 @@ Rules (match FE):
 
   r += 2;
 
+  // ═══════════════════════════════════════════════════════════
+  // PAGE 4 — Profile Create / Intake (P2)
+  // ═══════════════════════════════════════════════════════════
+  addPageHeading(
+    "PAGE 4: Deal Detail — Profile Create / Intake (P2) — Files: IntakeFormTab.jsx + intake/intakeFormData.js",
+    "Default tab when stageId=P2 (STAGE_TO_TAB). Two FE views (toggle is FE-only): Fill the form + Client record. Booklet sections (FE labels): personal, education, residency, family, siblings, match, essential, medical, declaration, communication, casesheet. Field keys = intakeFormData.js (e.g. firstName, mobile, courses[]). Client-record / personal saves require OTP (send → verify → commit). Move P2→P3 uses existing PATCH .../stage."
+  );
+
+  addMethodSection("▶ GET Requests — Intake / Profile Create (P2)", "FF2563EB");
+
+  addApi({
+    sno: 1,
+    name: "Get Intake Form (full booklet)",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/intake",
+    desc: "DYNAMIC intake state for both Fill form + Client record. values = flat map of field keys from SECTION_BLOCKS; chips holds upload chip lists (e.g. aadhaarFiles). Progress numbers for Form filled card / section sidebar. Schema labels stay on FE (SECTIONS_META).",
+    auth: "Yes",
+    params: "Path: id",
+    request: "— (no body)",
+    response: `{
+  "success": true,
+  "data": {
+    "id": "p2-1",
+    "stageId": "P2",
+    "personalUnlocked": false,
+    "overallFilledFields": 145,
+    "overallTotalFields": 270,
+    "overallPercent": 54,
+    "sections": [
+      {
+        "key": "personal",
+        "filled": 28,
+        "total": 40,
+        "percent": 70
+      },
+      {
+        "key": "education",
+        "filled": 12,
+        "total": 25,
+        "percent": 48
+      }
+    ],
+    "values": {
+      "gender": "Female",
+      "firstName": "Priya",
+      "middleName": "",
+      "lastName": "Raheja",
+      "clientType": "Exclusive",
+      "profileStatus": "Under review",
+      "maritalStatus": "Never married",
+      "lookingFor": "Groom",
+      "enquiryBy": "Parent",
+      "panNo": "AHXPR••••K",
+      "aadhaarNo": "•••• •••• 4417",
+      "mobile": "98••• ••164",
+      "alternateContact": "",
+      "email": "priya.raheja@gmail.com",
+      "dob": "14 Jul 1995",
+      "timeOfBirth": "04:20",
+      "placeOfBirth": "Delhi",
+      "height": "5 ft 4 in / 163 cms",
+      "occupation": "Professional",
+      "courses": [
+        {
+          "level": "Professional",
+          "course": "CA — 4 yrs",
+          "stream": "Audit & taxation",
+          "institution": "ICAI",
+          "year": "2019",
+          "pct": "AIR 214"
+        }
+      ]
+    },
+    "chips": {
+      "aadhaarFiles": ["aadhaar-front.jpg", "aadhaar-back.jpg"]
+    },
+    "changeLog": [
+      {
+        "id": "demo-mobile-1",
+        "fieldKey": "mobile",
+        "label": "Mobile",
+        "from": "98••• ••771",
+        "to": "98••• ••164",
+        "at": "07 Sep 2026, 11:24 am",
+        "by": "Neha Sharma",
+        "via": "OTP verified"
+      }
+    ]
+  }
+}
+
+Note: values may include any key from intakeFormData SECTION_BLOCKS (personal→casesheet). Do not invent alternate names. Empty P0 intake returns values: {} and chips: {}.`,
+    error: commonError,
+    ui: "IntakeFormTab values/chips/changeLog + Fill form progress",
+  });
+
+  addApi({
+    sno: 2,
+    name: "Get Intake Section",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/intake/sections/{sectionKey}",
+    desc: "Optional slice for one booklet section. sectionKey = SECTIONS_META.key (personal|education|residency|family|siblings|match|essential|medical|declaration|communication|casesheet).",
+    auth: "Yes",
+    params: `Path:
+id
+sectionKey`,
+    request: "— (no body)",
+    response: `{
+  "success": true,
+  "data": {
+    "sectionKey": "personal",
+    "filled": 28,
+    "total": 40,
+    "percent": 70,
+    "values": {
+      "firstName": "Priya",
+      "lastName": "Raheja",
+      "mobile": "98••• ••164",
+      "email": "priya.raheja@gmail.com"
+    },
+    "chips": {
+      "aadhaarFiles": ["aadhaar-front.jpg", "aadhaar-back.jpg"]
+    }
+  }
+}`,
+    error: commonError,
+    ui: "Active booklet section / SectionEditModal load",
+  });
+
+  addApi({
+    sno: 3,
+    name: "Get Intake Change Log",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/intake/change-log",
+    desc: "OTP-verified field history shown on Client record Change summary. Keys match DEMO_CHANGE_LOG / handleOtpVerified log entries.",
+    auth: "Yes",
+    params: "Path: id",
+    request: "— (no body)",
+    response: `{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "demo-email-1",
+        "fieldKey": "email",
+        "label": "E-mail",
+        "from": "priya.r@outlook.com",
+        "to": "priya.raheja@gmail.com",
+        "at": "05 Sep 2026, 04:12 pm",
+        "by": "Neha Sharma",
+        "via": "OTP verified"
+      }
+    ]
+  }
+}`,
+    error: commonError,
+    ui: "ClientRecordView changeLog",
+  });
+
+  r++;
+
+  addMethodSection("▶ PUT / PATCH Requests — Intake / Profile Create (P2)", "FFD97706");
+
+  addApi({
+    sno: 1,
+    name: "Save Intake Section Draft (Fill form)",
+    method: "PUT",
+    endpoint: "/api/v1/pipeline/leads/{id}/intake/sections/{sectionKey}",
+    desc: "Persists section field values while filling (draft). Body values keys must match intakeFormData field keys for that section. chips optional (upload filenames / ids). Personal final commit from Client record still goes through OTP verify API.",
+    auth: "Yes",
+    params: `Path:
+id
+sectionKey — personal|education|residency|family|siblings|match|essential|medical|declaration|communication|casesheet`,
+    request: `{
+  "values": {
+    "firstName": "Priya",
+    "lastName": "Raheja",
+    "mobile": "9876543210",
+    "email": "priya.raheja@gmail.com",
+    "gender": "Female",
+    "maritalStatus": "Never married",
+    "lookingFor": "Groom",
+    "dob": "14 Jul 1995",
+    "placeOfBirth": "Delhi",
+    "religion": "Hindu",
+    "sectCaste": "Agarwal",
+    "height": "5 ft 4 in / 163 cms"
+  },
+  "chips": {
+    "aadhaarFiles": ["aadhaar-front.jpg", "aadhaar-back.jpg"]
+  }
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "sectionKey": "personal",
+    "filled": 28,
+    "total": 40,
+    "percent": 70,
+    "overallFilledFields": 145,
+    "overallTotalFields": 270,
+    "overallPercent": 54,
+    "updatedAt": "2025-09-10T12:00:00Z"
+  }
+}`,
+    error: `{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    { "field": "firstName", "message": "First name is required" }
+  ]
+}`,
+    ui: "IntakeFillFormView setField / section navigation persistence",
+  });
+
+  r++;
+
+  addMethodSection("▶ POST Requests — Intake / Profile Create (P2)", "FF16A34A");
+
+  addApi({
+    sno: 1,
+    name: "Send Intake OTP",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/intake/otp/send",
+    desc: "PersonalChangeOtpModal Step 1. mode=unlock (edit personal) or mode=commit (save personal / section after changes). FE shows Send OTP → client mobile.",
+    auth: "Yes",
+    params: "Path: id",
+    request: `{
+  "mode": "commit",
+  "sectionKey": "personal",
+  "sectionLabel": "Personal details"
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "sent": true,
+    "expiresInSeconds": 300,
+    "maskedMobile": "98••• ••164"
+  }
+}`,
+    error: commonError,
+    ui: "PersonalChangeOtpModal handleSend",
+  });
+
+  addApi({
+    sno: 2,
+    name: "Verify Intake OTP & Commit Changes",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/intake/otp/verify",
+    desc: "PersonalChangeOtpModal Step 2 + handleOtpVerified. unlock: sets personalUnlocked. commit: applies values/chips, appends changeLog entries (fieldKey, label, from, to, at, by, via).",
+    auth: "Yes",
+    params: "Path: id",
+    request: `{
+  "mode": "commit",
+  "otp": "123456",
+  "sectionKey": "personal",
+  "sectionLabel": "Personal details",
+  "changes": [
+    {
+      "key": "mobile",
+      "label": "Mobile",
+      "from": "98••• ••771",
+      "to": "9876543210"
+    }
+  ],
+  "values": {
+    "mobile": "9876543210",
+    "email": "priya.raheja@gmail.com"
+  },
+  "chips": {
+    "aadhaarFiles": ["aadhaar-front.jpg", "aadhaar-back.jpg"]
+  }
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "personalUnlocked": false,
+    "applied": true,
+    "changeLogEntries": [
+      {
+        "id": "cl-1",
+        "fieldKey": "mobile",
+        "label": "Mobile",
+        "from": "98••• ••771",
+        "to": "9876543210",
+        "at": "10 Sep 2026, 06:12 pm",
+        "by": "Neha Sharma",
+        "via": "OTP verified"
+      }
+    ],
+    "overallFilledFields": 146,
+    "overallTotalFields": 270,
+    "overallPercent": 54
+  }
+}`,
+    error: `{
+  "success": false,
+  "message": "Enter the OTP sent to the client.",
+  "errors": [
+    { "field": "otp", "message": "Enter the OTP sent to the client." }
+  ]
+}`,
+    ui: "PersonalChangeOtpModal Verify & update / SectionEditModal Save & send OTP flow",
+  });
+
+  addApi({
+    sno: 3,
+    name: "Upload Intake Document Chip",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/intake/uploads",
+    desc: "Upload for fields with type=upload (e.g. panNo, aadhaarNo). Returns filename/id pushed into chips[chipsKey] (FE: aadhaarFiles).",
+    auth: "Yes",
+    params: "Path: id",
+    request: `multipart/form-data:
+fieldKey: aadhaarNo
+chipsKey: aadhaarFiles
+file: (binary)`,
+    response: `{
+  "success": true,
+  "data": {
+    "fieldKey": "aadhaarNo",
+    "chipsKey": "aadhaarFiles",
+    "fileName": "aadhaar-front.jpg",
+    "fileId": "file-123"
+  }
+}`,
+    error: commonError,
+    ui: "Intake upload fields / removeChip list",
+  });
+
+  mergeNote(
+    "Intake note: Full field catalog lives in frontend intakeFormData.js (SECTION_BLOCKS). API stores/returns the same camelCase keys — do not rename (firstName stays firstName, not client_name). Section tips, booklet labels, Fill/Record toggle are FE-static. Advance P2→P3 = PATCH /pipeline/leads/{id}/stage with fromStage P2, toStage P3 (already on PAGE 1).",
+    {
+      height: 44,
+      font: { size: 10, italic: true, color: { argb: "FF6B7280" } },
+    }
+  );
+
+  r += 2;
+
   mergeNote("UPCOMING (append in this same sheet — no separate tabs)", {
     font: { bold: true, size: 11, color: { argb: "FF111827" } },
     fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FFF3F4F6" } },
   });
   mergeNote(
-    "Next tabs one-by-one: Profile Create / Intake (P2) → Visits (P3) → Package (P4) → Discounts → Documents → Notes & RM Flags → Audit → Payments (P5) → P6 Checklist. Same rules: FE static UI; BE dynamic fields matching frontend keys; premium (not starred) for Star.",
+    "Next tabs one-by-one: Visits / Video Call (P3) → Package & Quote (P4) → Discounts → Documents & KYC → Notes & RM Flags → Audit → Payments (P5) → P6 Checklist. Same rules: FE static UI; BE dynamic fields matching frontend keys.",
     { height: 40 }
   );
   mergeNote(
-    "Document version: 1.4  |  Pages: Pipeline Board + Add P0 + Deal Overview  |  Field fix: starred → premium  |  Status: Ready for review",
+    "Document version: 1.5  |  Pages: Board + Add P0 + Overview + Intake (P2)  |  Status: Ready for review",
     { font: { size: 9, italic: true, color: { argb: "FF9CA3AF" } } }
   );
 
