@@ -1442,16 +1442,391 @@ file: (binary)`,
 
   r += 2;
 
+  // ═══════════════════════════════════════════════════════════
+  // PAGE 5 — Visits / Video Call (P3)
+  // ═══════════════════════════════════════════════════════════
+  addPageHeading(
+    "PAGE 5: Deal Detail — Visits & Meetings (P3) — File: deal-tabs/VisitsMeetingsTab.jsx",
+    "Default tab when stageId=P3. Same design as desk/HomeOfficeVisitsPage.jsx. Dynamic: visit details form (visitType, date, slot, client, attend, vehicle), mandatory capture checklist, visits list + lastAction (summary/notes/recording/transcript). Filters period + typeFilter. FE-only: section titles, ProgressMeter colors, StatusPill tones can be mapped from status. Move P3→P4 = existing PATCH .../stage."
+  );
+
+  addMethodSection("▶ GET Requests — Visits & Meetings (P3)", "FF2563EB");
+
+  addApi({
+    sno: 1,
+    name: "Get Visits Tab (deal)",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/visits",
+    desc: "Loads VisitsMeetingsTab: active/scheduled visit details, capture checklist, and upcoming/recent visits list. Field names match FE state + VISITS / CAPTURE_ITEMS objects.",
+    auth: "Yes",
+    params: `Path: id
+
+Query (list filters — FE: period, typeFilter):
+period — month|quarter
+type — all|Home visit|Office visit`,
+    request: "— (no body)",
+    response: `{
+  "success": true,
+  "data": {
+    "id": "p3-1",
+    "stageId": "P3",
+    "dealCode": "MML-D-10434",
+    "locationNote": "Greater Kailash · GPS required",
+    "activeVisit": {
+      "id": "visit-1",
+      "visitType": "Home visit",
+      "date": "2026-07-02",
+      "slot": "11:00 AM – 1:00 PM",
+      "client": "Aditya Verma",
+      "attend": "Client + both parents",
+      "vehicle": "Yes — branch car",
+      "status": "Scheduled",
+      "progressPercent": 35
+    },
+    "capture": [
+      {
+        "title": "House / GPS photo",
+        "note": "Taken at the door with location accuracy under 15m.",
+        "status": "Captured",
+        "done": true
+      },
+      {
+        "title": "Selfie with client",
+        "note": "Staff and client in frame. Used for in-person verification.",
+        "status": "Captured",
+        "done": true
+      },
+      {
+        "title": "Staff activity form",
+        "note": "Who attended, talking points and next action.",
+        "status": "Pending",
+        "done": false,
+        "pending": true
+      },
+      {
+        "title": "Advance booking call log",
+        "note": "Call confirming the slot is logged against the deal.",
+        "status": "Not started",
+        "done": false
+      }
+    ],
+    "captureDone": 2,
+    "captureTotal": 4,
+    "visits": [
+      {
+        "id": "visit-1",
+        "date": "02 Jul",
+        "client": "Aditya Verma",
+        "type": "Home visit",
+        "executive": "Rohit Khanna",
+        "capture": "2 of 4",
+        "vehicle": "Yes",
+        "status": "Scheduled",
+        "lastAction": {
+          "summary": "Family open to Premium; prefers GK / South Delhi matches",
+          "notes": "Discussed package options; parents want evening slots",
+          "recording": "Not recorded yet",
+          "transcript": "Not available"
+        }
+      },
+      {
+        "id": "visit-2",
+        "date": "14 Jul",
+        "client": "Sanjay Mehta",
+        "type": "Office visit",
+        "executive": "Pooja Sharma",
+        "capture": "4 of 4",
+        "vehicle": "No",
+        "status": "Completed",
+        "lastAction": {
+          "summary": "Ready to shortlist 5 profiles this week",
+          "notes": "Agreed on Classic package; KYC pending",
+          "recording": "18 min · Office visit",
+          "transcript": "Full transcript ready (12 pages)"
+        }
+      }
+    ]
+  }
+}`,
+    error: commonError,
+    ui: "VisitsMeetingsTab — details form + capture + DeskTable",
+  });
+
+  addApi({
+    sno: 2,
+    name: "Get Visit by Id",
+    method: "GET",
+    endpoint: "/api/v1/pipeline/leads/{id}/visits/{visitId}",
+    desc: "Single visit with capture + lastAction detail (hover icons: summary, notes, recording, transcript).",
+    auth: "Yes",
+    params: "Path: id, visitId",
+    request: "— (no body)",
+    response: `{
+  "success": true,
+  "data": {
+    "id": "visit-2",
+    "date": "14 Jul",
+    "client": "Sanjay Mehta",
+    "type": "Office visit",
+    "executive": "Pooja Sharma",
+    "capture": "4 of 4",
+    "vehicle": "No",
+    "status": "Completed",
+    "visitType": "Office visit",
+    "slot": "2:00 PM – 4:00 PM",
+    "attend": "Client only",
+    "lastAction": {
+      "summary": "Ready to shortlist 5 profiles this week",
+      "notes": "Agreed on Classic package; KYC pending",
+      "recording": "18 min · Office visit",
+      "transcript": "Full transcript ready (12 pages)"
+    },
+    "captureItems": [
+      {
+        "title": "House / GPS photo",
+        "status": "Captured",
+        "done": true
+      }
+    ]
+  }
+}`,
+    error: commonError,
+    ui: "LastActionIcons hover / visit row open",
+  });
+
+  r++;
+
+  addMethodSection("▶ POST Requests — Visits & Meetings (P3)", "FF16A34A");
+
+  addApi({
+    sno: 1,
+    name: "Schedule / Create Visit",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/visits",
+    desc: "Creates a visit from Visit details form fields (same keys as FE useState: visitType, date, slot, client, attend, vehicle).",
+    auth: "Yes",
+    params: "Path: id",
+    request: `{
+  "visitType": "Home visit",
+  "date": "2026-07-02",
+  "slot": "11:00 AM – 1:00 PM",
+  "client": "Aditya Verma",
+  "attend": "Client + both parents",
+  "vehicle": "Yes — branch car"
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "id": "visit-3",
+    "visitType": "Home visit",
+    "date": "2026-07-02",
+    "slot": "11:00 AM – 1:00 PM",
+    "client": "Aditya Verma",
+    "attend": "Client + both parents",
+    "vehicle": "Yes — branch car",
+    "status": "Scheduled",
+    "executive": "Rohit Khanna",
+    "capture": "0 of 4",
+    "lastAction": {
+      "summary": "Visit not started",
+      "notes": "No notes yet",
+      "recording": "Not recorded yet",
+      "transcript": "Not available"
+    }
+  }
+}`,
+    error: `{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    { "field": "date", "message": "Date is required" },
+    { "field": "slot", "message": "Time slot is required" }
+  ]
+}`,
+    ui: "Visit details form save / schedule",
+  });
+
+  addApi({
+    sno: 2,
+    name: "Start Visit",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/visits/{visitId}/start",
+    desc: "PrimaryButton Start Visit — marks visit in progress and unlocks capture checklist (FE toast: Visit started. Capture checklist is live.).",
+    auth: "Yes",
+    params: "Path: id, visitId",
+    request: "— (no body) or {}",
+    response: `{
+  "success": true,
+  "data": {
+    "id": "visit-1",
+    "status": "In progress",
+    "captureLive": true
+  }
+}`,
+    error: commonError,
+    ui: "PrimaryButton Start Visit",
+  });
+
+  addApi({
+    sno: 3,
+    name: "Reschedule Visit",
+    method: "POST",
+    endpoint: "/api/v1/pipeline/leads/{id}/visits/{visitId}/reschedule",
+    desc: "OutlineButton Reschedule — updates date and/or slot (FE: Reschedule slot opened).",
+    auth: "Yes",
+    params: "Path: id, visitId",
+    request: `{
+  "date": "2026-07-05",
+  "slot": "2:00 PM – 4:00 PM"
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "id": "visit-1",
+    "date": "2026-07-05",
+    "slot": "2:00 PM – 4:00 PM",
+    "status": "Scheduled"
+  }
+}`,
+    error: commonError,
+    ui: "OutlineButton Reschedule",
+  });
+
+  r++;
+
+  addMethodSection("▶ PUT / PATCH Requests — Visits & Meetings (P3)", "FFD97706");
+
+  addApi({
+    sno: 1,
+    name: "Update Visit Details",
+    method: "PUT",
+    endpoint: "/api/v1/pipeline/leads/{id}/visits/{visitId}",
+    desc: "Updates active visit form fields (visitType, date, slot, client, attend, vehicle).",
+    auth: "Yes",
+    params: "Path: id, visitId",
+    request: `{
+  "visitType": "Office visit",
+  "date": "2026-07-02",
+  "slot": "5:00 PM – 7:00 PM",
+  "client": "Aditya Verma",
+  "attend": "Client + both parents",
+  "vehicle": "No — staff travel"
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "id": "visit-1",
+    "visitType": "Office visit",
+    "date": "2026-07-02",
+    "slot": "5:00 PM – 7:00 PM",
+    "client": "Aditya Verma",
+    "attend": "Client + both parents",
+    "vehicle": "No — staff travel",
+    "status": "Scheduled"
+  }
+}`,
+    error: commonError,
+    ui: "Visit details Field inputs",
+  });
+
+  addApi({
+    sno: 2,
+    name: "Toggle Capture Checklist Item",
+    method: "PATCH",
+    endpoint: "/api/v1/pipeline/leads/{id}/visits/{visitId}/capture",
+    desc: "CheckRow toggleCapture(title). Matches CAPTURE_ITEMS: title + done; BE sets status Captured|Pending (FE also maps tone).",
+    auth: "Yes",
+    params: "Path: id, visitId",
+    request: `{
+  "title": "Staff activity form",
+  "done": true
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "id": "visit-1",
+    "capture": [
+      {
+        "title": "House / GPS photo",
+        "status": "Captured",
+        "done": true
+      },
+      {
+        "title": "Selfie with client",
+        "status": "Captured",
+        "done": true
+      },
+      {
+        "title": "Staff activity form",
+        "status": "Captured",
+        "done": true,
+        "pending": false
+      },
+      {
+        "title": "Advance booking call log",
+        "status": "Not started",
+        "done": false
+      }
+    ],
+    "captureDone": 3,
+    "captureTotal": 4,
+    "captureLabel": "3 of 4"
+  }
+}`,
+    error: commonError,
+    ui: "Mandatory capture CheckRow onToggle",
+  });
+
+  addApi({
+    sno: 3,
+    name: "Update Visit Last Action / Notes",
+    method: "PATCH",
+    endpoint: "/api/v1/pipeline/leads/{id}/visits/{visitId}/last-action",
+    desc: "Updates lastAction object keys used by LastActionIcons: summary, notes, recording, transcript.",
+    auth: "Yes",
+    params: "Path: id, visitId",
+    request: `{
+  "summary": "Family open to Premium; prefers GK / South Delhi matches",
+  "notes": "Discussed package options; parents want evening slots",
+  "recording": "Not recorded yet",
+  "transcript": "Not available"
+}`,
+    response: `{
+  "success": true,
+  "data": {
+    "id": "visit-1",
+    "lastAction": {
+      "summary": "Family open to Premium; prefers GK / South Delhi matches",
+      "notes": "Discussed package options; parents want evening slots",
+      "recording": "Not recorded yet",
+      "transcript": "Not available"
+    }
+  }
+}`,
+    error: commonError,
+    ui: "Meeting notes / recording / transcript data behind action icons",
+  });
+
+  mergeNote(
+    "P3 note: Visit type options = Home visit | Office visit. Slot options = 11:00 AM – 1:00 PM | 2:00 PM – 4:00 PM | 5:00 PM – 7:00 PM (FE select). Capture titles must match CAPTURE_ITEMS exactly. Table columns: date, client, type, executive, capture, vehicle, status, lastAction. Advance P3→P4 = PATCH /pipeline/leads/{id}/stage.",
+    {
+      height: 40,
+      font: { size: 10, italic: true, color: { argb: "FF6B7280" } },
+    }
+  );
+
+  r += 2;
+
   mergeNote("UPCOMING (append in this same sheet — no separate tabs)", {
     font: { bold: true, size: 11, color: { argb: "FF111827" } },
     fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FFF3F4F6" } },
   });
   mergeNote(
-    "Next tabs one-by-one: Visits / Video Call (P3) → Package & Quote (P4) → Discounts → Documents & KYC → Notes & RM Flags → Audit → Payments (P5) → P6 Checklist. Same rules: FE static UI; BE dynamic fields matching frontend keys.",
+    "Next tabs one-by-one: Package & Quote (P4) → Discounts → Documents & KYC → Notes & RM Flags → Audit → Payments (P5) → P6 Checklist. Same rules: FE static UI; BE dynamic fields matching frontend keys.",
     { height: 40 }
   );
   mergeNote(
-    "Document version: 1.5  |  Pages: Board + Add P0 + Overview + Intake (P2)  |  Status: Ready for review",
+    "Document version: 1.6  |  Pages: Board + Add P0 + Overview + Intake (P2) + Visits (P3)  |  Status: Ready for review",
     { font: { size: 9, italic: true, color: { argb: "FF9CA3AF" } } }
   );
 
