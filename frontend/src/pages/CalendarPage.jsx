@@ -499,12 +499,15 @@ function eventToMeetingForm(ev) {
   const m = ev.meta || {};
   return {
     title: ev.title || "",
+    meetingWith: m.meetingWith || (m.clientRelated ? "client" : "employee"),
     inviteGroups: m.inviteGroups || (m.clientRelated ? ["client", "employees"] : ["employees"]),
     people: Array.isArray(m.people) ? m.people : Array.isArray(m.assignees) ? m.assignees : [],
-    emailIds: m.emailIds || "team@mmlcompany.com;",
+    emails: Array.isArray(m.emails) ? m.emails : String(m.emailIds || "").split(/[;,]/).map((x) => x.trim()).filter(Boolean),
+    emailIds: m.emailIds || "",
     specialInstructions: m.specialInstructions || "",
     notes: m.description && m.description !== (m.eventType || m.formDescription) ? m.description : "",
     description: m.eventType || m.formDescription || "",
+    meetingType: m.meetingType || m.meetingTypes?.[0] || "video",
     meetingTypes: m.meetingTypes?.length ? m.meetingTypes : ["video"],
     meetingLink: m.meetingLink || m.link || "",
     venue: m.venue || m.location || "",
@@ -513,8 +516,16 @@ function eventToMeetingForm(ev) {
     startTime: m.startTime || hourToTimeStr(ev.startH),
     endTime: m.endTime || hourToTimeStr(ev.endH),
     duration: m.duration || "",
+    reminderChannels: m.reminderChannels || ["email"],
+    messageTemplate: m.messageTemplate || "",
+    messageBody: m.messageBody || "",
+    reminderFrequency: m.reminderFrequency || ["on_day"],
+    customReminders: m.customReminders || [],
+    priority: m.priority || "High",
     attachment: m.attachment || "",
-    requirements: m.requirements?.length ? m.requirements : ["Transcripts"],
+    referenceLink: m.referenceLink || "",
+    referenceLinkDescription: m.referenceLinkDescription || "",
+    requirements: m.requirements || [],
     notesTo: m.notesTo || [],
   };
 }
@@ -551,7 +562,7 @@ function eventToOtherForm(ev) {
   };
 }
 
-const MEETING_TYPE_LABELS = { video: "Virtual/Video", telephonic: "Telephonic", face: "Face to Face" };
+const MEETING_TYPE_LABELS = { video: "Virtual / Online", telephonic: "Telephone", face: "Face to Face" };
 const INVITE_GROUP_LABELS = { others: "Others/External", employees: "Employees", client: "Client" };
 
 function CalendarItemDetails({ item }) {
@@ -1057,9 +1068,22 @@ export default function CalendarPage() {
     const startH = parseTimeHour(form.startTime, 10);
     let endH = parseTimeHour(form.endTime, startH + 1);
     if (endH <= startH) endH = Math.min(startH + 1, 18);
-    const client = form.inviteGroups?.includes("client")
-      ? form.people.find((p) => ["Sethi Family", "Agarwal Family", "Malhotra Family", "Kapoor Family", "Mehta Family"].includes(p)) || ""
-      : "";
+    const clientNames = [
+      "Sethi Family",
+      "Agarwal Family",
+      "Malhotra Family",
+      "Kapoor Family",
+      "Mehta Family",
+      "Rajouri Family",
+      "Sharma Family",
+      "Gupta Family",
+      "Verma Family",
+      "Nair Family",
+    ];
+    const client =
+      form.people?.find((p) => clientNames.includes(p)) ||
+      (form.meetingWith === "client" ? form.people?.[0] || "" : "") ||
+      "";
     return {
       id: existingId || `${category}-${Date.now()}`,
       date,
@@ -1068,9 +1092,10 @@ export default function CalendarPage() {
       title: form.title?.trim() || form.description || (category === "event" ? "New Event" : "New Meeting"),
       category,
       meta: {
-        priority: "Medium",
-        clientRelated: Boolean(client) || form.inviteGroups?.includes("client"),
+        priority: form.priority || "Medium",
+        clientRelated: Boolean(client) || form.meetingWith === "client" || form.inviteGroups?.includes("client"),
         client,
+        meetingWith: form.meetingWith || "",
         assignees: form.people?.length ? form.people : ["Priya Sharma"],
         people: form.people || [],
         inviteGroups: form.inviteGroups || [],
@@ -1088,9 +1113,18 @@ export default function CalendarPage() {
         venue: form.venue || "",
         link: form.meetingLink || "",
         meetingLink: form.meetingLink || "",
-        meetingTypes: form.meetingTypes || [],
+        meetingType: form.meetingType || form.meetingTypes?.[0] || "",
+        meetingTypes: form.meetingTypes || (form.meetingType ? [form.meetingType] : []),
+        emails: form.emails || [],
         emailIds: form.emailIds || "",
         duration: form.duration || "",
+        reminderChannels: form.reminderChannels || [],
+        messageTemplate: form.messageTemplate || "",
+        messageBody: form.messageBody || "",
+        reminderFrequency: form.reminderFrequency || [],
+        customReminders: form.customReminders || [],
+        referenceLink: form.referenceLink || "",
+        referenceLinkDescription: form.referenceLinkDescription || "",
         requirements: form.requirements || [],
         notesTo: form.notesTo || [],
         attachment: form.attachment || "",
