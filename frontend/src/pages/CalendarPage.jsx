@@ -558,18 +558,41 @@ function eventToEventForm(ev) {
   };
 }
 
+function effortFromHours(hours) {
+  if (hours >= 2) return "2 hours";
+  if (hours >= 1) return "1 hour";
+  return "30 mins";
+}
+
 function eventToTaskForm(ev) {
   const m = ev.meta || {};
+  const priority = m.priority === "Critical" ? "High" : m.priority || "Low";
   return {
     title: ev.title || "",
-    description: m.description || "",
-    priority: m.priority || "Medium",
+    description: m.description || "Follow up on pending response",
+    customDescription: m.customDescription || "",
+    priority,
+    taskType: m.taskType || "Client visit",
+    branch: m.branch || "Rajouri Garden",
     assignees: Array.isArray(m.assignees) ? m.assignees : [],
     isClientRelated: Boolean(m.clientRelated),
     client: m.client || "",
     startDate: toDateInput(ev.date),
-    dueDate: toDateInput(m.dueDate || addDays(ev.date, 3)),
-    stars: m.stars ?? 7,
+    dueDate: toDateInput(m.dueDate || addDays(ev.date, 1)),
+    dueTime: m.dueTime || m.startTime || hourToTimeStr(ev.startH),
+    estimatedEffort: m.estimatedEffort || effortFromHours(Math.max(1, (ev.endH ?? ev.startH + 1) - ev.startH)),
+    repeats: m.repeats || "Does not repeat",
+    stars: m.stars ?? (priority === "High" ? 10 : priority === "Medium" ? 7 : 3),
+    reminderChannels: m.reminderChannels?.length ? m.reminderChannels : ["Email", "WhatsApp"],
+    messageTemplate: m.messageTemplate || "No template — plain text",
+    messageBody: m.messageBody || "",
+    reminderFrequency: Array.isArray(m.reminderFrequency)
+      ? m.reminderFrequency[0] || "On day of task"
+      : m.reminderFrequency || "On day of task",
+    checklist: Array.isArray(m.checklist) ? m.checklist : [],
+    attachment: m.attachment || m.attachments?.[0]?.name || "",
+    referenceLink: m.referenceLink || "",
+    specialInstructions: m.specialInstructions || "",
     stage: m.stage || "New",
   };
 }
@@ -675,15 +698,19 @@ function CalendarItemDetails({ item }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
           <DetailField label="Title">{item.title}</DetailField>
           <DetailField label="Priority">
-            <span style={{ color: priorityStyle.color }}>{m.priority || "Medium"}</span>
+            <span style={{ color: priorityStyle.color }}>{m.priority || "Low"}</span>
           </DetailField>
+          <DetailField label="Task Type">{m.taskType || "—"}</DetailField>
+          <DetailField label="Branch">{m.branch || "—"}</DetailField>
           <DetailField label="Client Related">{m.clientRelated ? "Yes" : "No"}</DetailField>
           <DetailField label="Client">{m.clientRelated && m.client ? m.client : "—"}</DetailField>
           <DetailField label="Assignees"><ChipList items={assignees} /></DetailField>
           <DetailField label="Stage">{m.stage || "New"}</DetailField>
           <DetailField label="Start Date">{fmtDate(item.date)}</DetailField>
-          <DetailField label="Due Date">{fmtDate(m.dueDate || addDays(item.date, 3))}</DetailField>
-          <DetailField label="Stars (XP)">{m.stars ?? 10}</DetailField>
+          <DetailField label="Due Date">{fmtDate(m.dueDate || addDays(item.date, 1))}</DetailField>
+          <DetailField label="Due Time">{m.dueTime || fmtTime(item.startH)}</DetailField>
+          <DetailField label="Repeats">{m.repeats || "Does not repeat"}</DetailField>
+          <DetailField label="Stars (XP)">{m.stars ?? 3}</DetailField>
           <DetailField label="Scheduled Time">
             {fmtTime(item.startH)} – {fmtTime(item.endH)}
           </DetailField>
@@ -1243,30 +1270,48 @@ export default function CalendarPage() {
     const date = parseIsoDate(form.startDate);
     const existing = existingId ? events.find((e) => e.id === existingId) : null;
     const prevMeta = existing?.meta || {};
+    const startH = parseTimeHour(form.dueTime, existing?.startH ?? 11);
+    const effortHours = { "15 mins": 1, "30 mins": 1, "45 mins": 1, "1 hour": 1, "2 hours": 2 }[form.estimatedEffort] ?? 1;
+    const attachments = form.attachment
+      ? [{ name: form.attachment, size: prevMeta.attachments?.[0]?.size || "" }]
+      : prevMeta.attachments || [];
     return {
       id: existingId || `task-${Date.now()}`,
       date,
-      startH: existing ? existing.startH : 9,
-      endH: existing ? existing.endH : 10,
+      startH,
+      endH: Math.min(startH + effortHours, 18),
       title: form.title,
       category: "task",
       meta: {
-        priority: form.priority || "Medium",
+        priority: form.priority || "Low",
+        taskType: form.taskType || "Client visit",
+        branch: form.branch || "Rajouri Garden",
         clientRelated: Boolean(form.isClientRelated),
         client: form.client || "",
-        assignees: form.assignees?.length ? form.assignees : ["Priya Sharma"],
+        assignees: form.assignees?.length ? form.assignees : [],
         stage: form.stage || prevMeta.stage || "New",
-        dueDate: parseIsoDate(form.dueDate, addDays(date, 3)),
-        stars: form.stars ?? 7,
+        dueDate: parseIsoDate(form.dueDate, addDays(date, 1)),
+        dueTime: form.dueTime || hourToTimeStr(startH),
+        startTime: form.dueTime || hourToTimeStr(startH),
+        estimatedEffort: form.estimatedEffort || "30 mins",
+        repeats: form.repeats || "Does not repeat",
+        stars: form.stars ?? 3,
         description: form.description || "",
+        specialInstructions: form.specialInstructions || "",
+        reminderChannels: form.reminderChannels || [],
+        messageTemplate: form.messageTemplate || "",
+        messageBody: form.messageBody || "",
+        reminderFrequency: form.reminderFrequency || "On day of task",
+        referenceLink: form.referenceLink || "",
+        attachment: form.attachment || "",
         project: prevMeta.project || "Sales Pipeline",
         milestone: prevMeta.milestone || "Planning",
         progress: prevMeta.progress ?? 20,
         acknowledgedAt: prevMeta.acknowledgedAt || date,
         assignedAt: prevMeta.assignedAt || date,
         comments: prevMeta.comments || [],
-        checklist: prevMeta.checklist || [],
-        attachments: prevMeta.attachments || [],
+        checklist: form.checklist?.length ? form.checklist : prevMeta.checklist || [],
+        attachments,
       },
     };
   };

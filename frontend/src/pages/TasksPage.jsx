@@ -250,8 +250,11 @@ function taskToForm(task) {
   if (!task) return null;
   return {
     title: task.title || "",
-    description: task.description || "",
-    priority: task.priority || "Medium",
+    description: task.description || "Follow up on pending response",
+    customDescription: task.customDescription || "",
+    priority: task.priority === "Critical" ? "High" : task.priority || "Low",
+    taskType: task.taskType || "Client visit",
+    branch: task.branch || "Rajouri Garden",
     assignees: task.assignees?.length
       ? [...task.assignees]
       : task.assignee && task.assignee !== "Unassigned"
@@ -261,7 +264,20 @@ function taskToForm(task) {
     client: task.client || "",
     startDate: task.startDate || "",
     dueDate: task.dueDate || "",
-    stars: task.stars ?? 7,
+    dueTime: task.dueTime || "11:00",
+    estimatedEffort: task.estimatedEffort || "30 mins",
+    repeats: task.repeats || "Does not repeat",
+    stars: task.stars ?? 3,
+    reminderChannels: task.reminderChannels?.length ? task.reminderChannels : ["Email", "WhatsApp"],
+    messageTemplate: task.messageTemplate || "No template — plain text",
+    messageBody: task.messageBody || "",
+    reminderFrequency: Array.isArray(task.reminderFrequency)
+      ? task.reminderFrequency[0] || "On day of task"
+      : task.reminderFrequency || "On day of task",
+    checklist: Array.isArray(task.checklist) ? task.checklist : [],
+    attachment: task.attachment || task.attachments?.[0]?.name || "",
+    referenceLink: task.referenceLink || "",
+    specialInstructions: task.specialInstructions || "",
     stage: task.stage || "New",
   };
 }
@@ -271,22 +287,37 @@ function applyFormToTask(existing, form) {
   const columnId = COLUMN_BY_STAGE[stage] || existing?.columnId || "new";
   const assignees = form.assignees?.length ? form.assignees : [];
   const assignee = assignees[0] || "";
+  const attachments = form.attachment
+    ? [{ name: form.attachment, size: existing?.attachments?.[0]?.size || "" }]
+    : existing?.attachments || [];
   return {
     ...(existing || {}),
     id: existing?.id || `task-${Date.now()}`,
     title: form.title.trim(),
     description: form.description || "",
-    priority: form.priority || "Medium",
+    priority: form.priority || "Low",
+    taskType: form.taskType || "Client visit",
+    branch: form.branch || "Rajouri Garden",
     assignees,
     assignee,
     isClientRelated: Boolean(form.isClientRelated),
     client: form.client || "",
     startDate: form.startDate,
     dueDate: form.dueDate,
+    dueTime: form.dueTime || "11:00",
+    estimatedEffort: form.estimatedEffort || "30 mins",
+    repeats: form.repeats || "Does not repeat",
     date: form.dueDate
       ? form.dueDate.split("-").reverse().map((p, i) => (i === 2 ? p.slice(-2) : p)).join("-")
       : existing?.date || "",
-    stars: form.stars ?? 7,
+    stars: form.stars ?? 3,
+    reminderChannels: form.reminderChannels || [],
+    messageTemplate: form.messageTemplate || "",
+    messageBody: form.messageBody || "",
+    reminderFrequency: form.reminderFrequency || "On day of task",
+    specialInstructions: form.specialInstructions || "",
+    referenceLink: form.referenceLink || "",
+    attachment: form.attachment || "",
     stage,
     columnId,
     project: existing?.project || "Sales Pipeline",
@@ -295,8 +326,8 @@ function applyFormToTask(existing, form) {
     acknowledgedAt: existing?.acknowledgedAt || form.startDate,
     assignedAt: existing?.assignedAt || form.startDate,
     comments: existing?.comments || [],
-    checklist: existing?.checklist || [],
-    attachments: existing?.attachments || [],
+    checklist: form.checklist?.length ? form.checklist : existing?.checklist || [],
+    attachments,
     overdue: existing?.overdue || false,
   };
 }
@@ -887,6 +918,7 @@ export default function TasksPage() {
         open={createOpen}
         onClose={closeFormModal}
         mode={editing ? "edit" : "create"}
+        defaultDate={new Date()}
         initial={editing ? taskToForm(editing) : null}
         onSave={handleSaveForm}
       />

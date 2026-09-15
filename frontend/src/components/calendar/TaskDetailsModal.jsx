@@ -106,6 +106,13 @@ export function calendarEventToTaskView(ev) {
     comments: Array.isArray(m.comments) ? m.comments : [],
     checklist: Array.isArray(m.checklist) ? m.checklist : [],
     attachments: Array.isArray(m.attachments) ? m.attachments : [],
+    taskType: m.taskType || "",
+    branch: m.branch || "",
+    dueTime: m.dueTime || m.startTime || "",
+    estimatedEffort: m.estimatedEffort || "",
+    repeats: m.repeats || "",
+    specialInstructions: m.specialInstructions || "",
+    reminderChannels: m.reminderChannels || [],
     startH: ev.startH,
     endH: ev.endH,
   };
@@ -217,6 +224,8 @@ export default function TaskDetailsModal({
               </span>
             </DetailItem>
             <DetailItem label="Assignee" icon={UserCheck}>{assigneeLabel}</DetailItem>
+            <DetailItem label="Task Type" icon={ClipboardList}>{task.taskType || "—"}</DetailItem>
+            <DetailItem label="Branch" icon={Layers}>{task.branch || "—"}</DetailItem>
             <DetailItem label="Project" icon={ClipboardList}>{task.project || "—"}</DetailItem>
             <DetailItem label="Acknowledged At" icon={CalendarClock}>
               {fmtDate(task.acknowledgedAt)}
@@ -224,6 +233,12 @@ export default function TaskDetailsModal({
             <DetailItem label="Assigned At" icon={CalendarClock}>
               {fmtDate(task.assignedAt)}
             </DetailItem>
+            {task.dueTime ? (
+              <DetailItem label="Due Time" icon={CalendarClock}>{task.dueTime}</DetailItem>
+            ) : null}
+            {task.repeats ? (
+              <DetailItem label="Repeats" icon={CalendarDays}>{task.repeats}</DetailItem>
+            ) : null}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -249,6 +264,12 @@ export default function TaskDetailsModal({
               {task.description || "No description added."}
             </p>
           </div>
+
+          {task.specialInstructions ? (
+            <DetailItem label="Special Instructions" icon={FileText}>
+              <span className="font-medium text-[#374151]">{task.specialInstructions}</span>
+            </DetailItem>
+          ) : null}
         </div>
       )}
 
