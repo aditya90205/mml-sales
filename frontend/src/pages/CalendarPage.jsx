@@ -76,6 +76,9 @@ function fmtTime(h, m = 0) {
   const hour12 = h % 12 === 0 ? 12 : h % 12;
   return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
 }
+function hourToTimeStr(h) {
+  return `${String(h).padStart(2, "0")}:00`;
+}
 function fmtDate(d) {
   if (!d) return "â€”";
   const date = d instanceof Date ? d : new Date(d);
