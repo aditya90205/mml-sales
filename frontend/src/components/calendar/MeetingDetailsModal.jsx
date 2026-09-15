@@ -92,7 +92,7 @@ export function calendarEventToMeetingView(ev) {
   const endDay = new Date(end);
   endDay.setHours(0, 0, 0, 0);
 
-  const eventType = m.eventType || m.formDescription || "";
+  const eventType = m.eventCategory || m.eventType || m.formDescription || "";
   const bodyDescription =
     m.notes ||
     (m.description && m.description !== eventType && m.description !== m.specialInstructions
@@ -127,6 +127,17 @@ export function calendarEventToMeetingView(ev) {
     specialInstructions: m.specialInstructions || "",
     description: bodyDescription,
     venue: m.venue || m.location || "",
+    priority: m.priority || "",
+    eventMode: m.eventMode || (modeLabels.length ? modeLabels.join(", ") : ""),
+    visibility: m.visibility || "",
+    branches: Array.isArray(m.branches) ? m.branches : [],
+    clients: Array.isArray(m.clients) ? m.clients : [],
+    logisticsRequired: Boolean(m.logisticsRequired),
+    reminderChannels: Array.isArray(m.reminderChannels) ? m.reminderChannels : [],
+    reminderFrequency: m.reminderFrequency || "",
+    messageTemplate: m.messageTemplate || "",
+    vendors: Array.isArray(m.vendors) ? m.vendors : [],
+    referenceLink: m.referenceLink || "",
   };
 }
 
@@ -134,42 +145,51 @@ function EventDetailsBody({ meeting }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
       <DetailItem label="Event Title">{meeting.eventTitle}</DetailItem>
-      <DetailItem label="Event Type">{meeting.eventType}</DetailItem>
+      <DetailItem label="Event Category">{meeting.eventType}</DetailItem>
 
-      <DetailItem label="Attendees List">{meeting.attendeesList}</DetailItem>
+      <DetailItem label="Priority">{meeting.priority || "—"}</DetailItem>
+      <DetailItem label="Event Mode">{meeting.eventMode || "—"}</DetailItem>
+
+      <DetailItem label="Visibility">{meeting.visibility || "—"}</DetailItem>
       <DetailItem label="Activation Status">{meeting.activationStatus}</DetailItem>
 
       <DetailItem label="Start Date">{fmtDate(meeting.startDate)}</DetailItem>
       <DetailItem label="End Date">{fmtDate(meeting.endDate)}</DetailItem>
 
-      <DetailItem label="Event Status">{meeting.status}</DetailItem>
-      <DetailItem label="Duration">{meeting.duration || "—"}</DetailItem>
-
       <DetailItem label="Start Time">{meeting.startTime}</DetailItem>
       <DetailItem label="End Time">{meeting.endTime}</DetailItem>
 
-      <DetailItem label="Event Link">
-        <LinkValue href={meeting.link} />
-      </DetailItem>
+      <DetailItem label="Duration">{meeting.duration || "—"}</DetailItem>
       <DetailItem label="Venue">{meeting.venue || "—"}</DetailItem>
 
-      <DetailItem label="People">
+      <DetailItem label="Branches">
+        <ChipList items={meeting.branches} />
+      </DetailItem>
+      <DetailItem label="Company Vehicle / Logistics">{meeting.logisticsRequired ? "Required" : "Not required"}</DetailItem>
+
+      <DetailItem label="Employees Invited">
         <ChipList items={meeting.people} />
       </DetailItem>
-      <DetailItem label="Event Modes">
-        <ChipList items={meeting.modes} />
+      <DetailItem label="Clients / Families Invited">
+        <ChipList items={meeting.clients} />
       </DetailItem>
 
-      <DetailItem label="Email Ids" className="sm:col-span-2">
-        {meeting.emailIds}
+      <DetailItem label="Send Reminders Via">
+        <ChipList items={meeting.reminderChannels} />
+      </DetailItem>
+      <DetailItem label="Reminder Frequency">{meeting.reminderFrequency || "—"}</DetailItem>
+
+      <DetailItem label="Message Template">{meeting.messageTemplate || "—"}</DetailItem>
+      <DetailItem label="Vendors & Arrangements">
+        <ChipList items={meeting.vendors} />
+      </DetailItem>
+
+      <DetailItem label="Reference Link" className="sm:col-span-2">
+        <LinkValue href={meeting.referenceLink} />
       </DetailItem>
 
       <DetailItem label="Special Instructions" className="sm:col-span-2">
         {meeting.specialInstructions || "—"}
-      </DetailItem>
-
-      <DetailItem label="Description" className="sm:col-span-2">
-        {meeting.description || "—"}
       </DetailItem>
     </div>
   );

@@ -23,6 +23,7 @@ import {
 import { toast } from "react-toastify";
 import Modal from "../components/ui/Modal";
 import CreateMeetingEventModal from "../components/calendar/CreateMeetingEventModal";
+import CreateEventModal from "../components/calendar/CreateEventModal";
 import CreateTaskModal from "../components/calendar/CreateTaskModal";
 import CreateOtherModal from "../components/calendar/CreateOtherModal";
 import TaskDetailsModal, { calendarEventToTaskView } from "../components/calendar/TaskDetailsModal";
@@ -493,6 +494,33 @@ function eventToMeetingForm(ev) {
     attachment: m.attachment || "",
     requirements: m.requirements?.length ? m.requirements : ["Transcripts"],
     notesTo: m.notesTo || [],
+  };
+}
+
+function eventToEventForm(ev) {
+  const m = ev.meta || {};
+  return {
+    title: ev.title || "",
+    category: m.eventCategory || m.eventType || m.formDescription || "Internal meeting",
+    priority: m.priority || "High",
+    mode: m.eventMode || "In-person",
+    visibility: m.visibility || "Branch only",
+    venue: m.venue || m.location || "",
+    logisticsRequired: Boolean(m.logisticsRequired),
+    branches: Array.isArray(m.branches) ? m.branches : [],
+    employees: Array.isArray(m.people) ? m.people : Array.isArray(m.assignees) ? m.assignees : [],
+    clients: Array.isArray(m.clients) ? m.clients : [],
+    startDate: toDateInput(ev.date),
+    endDate: toDateInput(m.dueDate || ev.date),
+    startTime: m.startTime || hourToTimeStr(ev.startH),
+    duration: m.duration || "5 hours",
+    reminderChannels: m.reminderChannels?.length ? m.reminderChannels : ["Email", "WhatsApp"],
+    messageTemplate: m.messageTemplate || "No template — plain text",
+    reminderFrequency: m.reminderFrequency || "On day of event",
+    vendors: Array.isArray(m.vendors) ? m.vendors : [],
+    attachment: m.attachment || "",
+    referenceLink: m.referenceLink || "",
+    specialInstructions: m.specialInstructions || "",
   };
 }
 
@@ -1028,6 +1056,65 @@ export default function CalendarPage() {
     setEditingItem(null);
   };
 
+  const buildEventItem = (form, existingId = null) => {
+    const date = parseIsoDate(form.startDate);
+    const startH = parseTimeHour(form.startTime, 10);
+    const durationHours = { "30 minutes": 0.5, "1 hour": 1, "2 hours": 2, "3 hours": 3, "5 hours": 5, "Full day": 8 }[
+      form.duration
+    ] ?? 1;
+    let endH = Math.min(startH + Math.ceil(durationHours), 23);
+    if (endH <= startH) endH = Math.min(startH + 1, 23);
+    return {
+      id: existingId || `event-${Date.now()}`,
+      date,
+      startH,
+      endH,
+      title: form.title?.trim() || "New Event",
+      category: "event",
+      meta: {
+        priority: form.priority || "High",
+        eventCategory: form.category || "Internal meeting",
+        eventType: form.category || "Internal meeting",
+        eventMode: form.mode || "In-person",
+        meetingTypes: form.mode ? [form.mode] : [],
+        visibility: form.visibility || "Branch only",
+        venue: form.venue || "",
+        location: form.venue || "",
+        logisticsRequired: Boolean(form.logisticsRequired),
+        branches: form.branches || [],
+        people: form.employees || [],
+        assignees: form.employees?.length ? form.employees : ["Priya Sharma"],
+        clients: form.clients || [],
+        clientRelated: (form.clients || []).length > 0,
+        attendeesList: [...(form.employees || []), ...(form.clients || [])].join(", "),
+        dueDate: parseIsoDate(form.endDate || form.startDate, addDays(date, 1)),
+        startTime: form.startTime || "",
+        endTime: form.endTime || "",
+        duration: form.duration || "",
+        reminderChannels: form.reminderChannels || [],
+        messageTemplate: form.messageTemplate || "",
+        reminderFrequency: form.reminderFrequency || "",
+        vendors: form.vendors || [],
+        attachment: form.attachment || "",
+        referenceLink: form.referenceLink || "",
+        specialInstructions: form.specialInstructions || "",
+        activationStatus: "Active",
+        stage: "New",
+        stars: 10,
+      },
+    };
+  };
+
+  const handleCreateEvent = (form) => {
+    addCalendarItem(buildEventItem(form));
+  };
+
+  const handleUpdateEvent = (form) => {
+    if (!editingItem) return;
+    upsertCalendarItem(buildEventItem(form, editingItem.id));
+    setEditingItem(null);
+  };
+
   const buildTaskItem = (form, existingId = null) => {
     const date = parseIsoDate(form.startDate);
     const existing = existingId ? events.find((e) => e.id === existingId) : null;
@@ -1511,18 +1598,13 @@ export default function CalendarPage() {
         onEdit={() => selectedTaskEvent && openEditItem(selectedTaskEvent)}
         onUpdateTask={syncTaskViewToEvent}
       />
-      <CreateMeetingEventModal
+      <CreateEventModal
         open={createEventOpen}
         onClose={closeEventModal}
-        entityLabel="Event"
         defaultDate={anchorDate}
         mode={editingItem?.category === "event" ? "edit" : "create"}
-        initial={editingItem?.category === "event" ? eventToMeetingForm(editingItem) : null}
-        onSave={(form) =>
-          editingItem?.category === "event"
-            ? handleUpdateMeetingOrEvent(form, "event")
-            : handleCreateMeetingOrEvent(form, "event")
-        }
+        initial={editingItem?.category === "event" ? eventToEventForm(editingItem) : null}
+        onSave={(form) => (editingItem?.category === "event" ? handleUpdateEvent(form) : handleCreateEvent(form))}
       />
       <CreateMeetingEventModal
         open={createMeetingOpen}
