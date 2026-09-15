@@ -7,7 +7,6 @@ import {
   Filter,
   MousePointerClick,
   Plus,
-  Search,
   Trash2,
   UserRoundCheck,
   Users,
@@ -16,6 +15,7 @@ import {
 import { toast } from "react-toastify";
 import CampaignViewModal from "../components/campaign/CampaignViewModal.jsx";
 import CampaignEditModal from "../components/campaign/CampaignEditModal.jsx";
+import SearchField from "../components/common/SearchField.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import biPlayCircle from "../assets/bi_play-circle.png";
 import biStopCircle from "../assets/bi_stop-circle.png";
@@ -151,15 +151,14 @@ const CAMPAIGN_COLS = [
 
 function usePagedTable(rows, searchKeys) {
   const [search, setSearch] = useState("");
-  const [query, setQuery] = useState("");
   const [perPage, setPerPage] = useState(10);
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = search.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter((row) => searchKeys.some((key) => String(row[key] ?? "").toLowerCase().includes(q)));
-  }, [rows, query, searchKeys]);
+  }, [rows, search, searchKeys]);
 
   const { sorted, sort, toggle } = useTableSort(filtered, { defaultKey: "name" });
 
@@ -169,8 +168,7 @@ function usePagedTable(rows, searchKeys) {
 
   return {
     search,
-    setSearch,
-    applySearch: () => { setQuery(search); setPage(1); },
+    setSearch: (v) => { setSearch(v); setPage(1); },
     perPage,
     setPerPage: (n) => { setPerPage(n); setPage(1); },
     page: safePage,
@@ -256,24 +254,11 @@ export default function CampaignManagementPage() {
 
         <section className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 flex-1 basis-[240px] max-w-[520px] focus-within:border-[#7A0A17]/40 transition-colors">
-              <Search size={15} className="text-[#9CA3AF] shrink-0" />
-              <input
-                value={table.search}
-                onChange={(e) => table.setSearch(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && table.applySearch()}
-                placeholder="Search..."
-                className="bg-transparent text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none w-full min-w-0"
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={table.applySearch}
-              className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors shrink-0"
-            >
-              <Search size={14} /> Search
-            </button>
+            <SearchField
+              value={table.search}
+              onChange={table.setSearch}
+              className="w-full max-w-[280px]"
+            />
 
             <button
               type="button"

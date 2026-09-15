@@ -142,9 +142,13 @@ export default function TaskDetailsModal({
   const attachments = task.attachments || [];
   const doneCount = checklist.filter((i) => i.done).length;
   const checklistPct = checklist.length ? Math.round((doneCount / checklist.length) * 100) : 0;
-  const assigneeLabel = task.assignees?.length
-    ? task.assignees.join(", ")
-    : task.assignee || "Unassigned";
+  const assigneeNames = (task.assignees?.length
+    ? task.assignees
+    : task.assignee
+      ? [task.assignee]
+      : []
+  ).filter((name) => name && name !== "Unassigned");
+  const assigneeLabel = assigneeNames.length ? assigneeNames.join(", ") : "—";
 
   const patch = (updater) => {
     const next = typeof updater === "function" ? updater(task) : { ...task, ...updater };

@@ -2,9 +2,9 @@ import { useMemo, useState } from "react";
 import Modal from "../components/ui/Modal";
 import MediaDetailsModal from "../components/MediaDetailsModal";
 import { toast } from "react-toastify";
+import SearchField from "../components/common/SearchField.jsx";
 import {
   Upload,
-  Search,
   LayoutGrid,
   List,
   ChevronDown,
@@ -290,15 +290,12 @@ export default function MediaLibraryPage({ embedded = false }) {
         {/* Main content */}
         <div className="flex-1 min-w-0 flex flex-col gap-5">
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="relative flex-1 min-w-[220px]">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9aa0ab]" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search media files..."
-                className="w-full h-11 pl-9 pr-3 rounded-lg border border-black/10 text-sm outline-none focus:border-[#7A0A17] bg-white"
-              />
-            </div>
+            <SearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Search media files..."
+              className="flex-1 min-w-[220px] !h-11 !rounded-lg"
+            />
 
             <div className="flex items-center rounded-lg border border-black/10 overflow-hidden bg-white">
               <button

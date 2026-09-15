@@ -109,7 +109,7 @@ export default function IntakeFormTab({ empty = false }) {
   const [personalBaseline, setPersonalBaseline] = useState(() =>
     snapshotPersonalValues(empty ? {} : SECTION_DEMO_VALUES)
   );
-  const [personalUnlocked, setPersonalUnlocked] = useState(false);
+  const [personalUnlocked, setPersonalUnlocked] = useState(true);
   const [changeLog, setChangeLog] = useState(() => (empty ? [] : DEMO_CHANGE_LOG));
   const [otpState, setOtpState] = useState({
     open: false,

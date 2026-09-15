@@ -19,7 +19,6 @@ import {
   Phone,
   PhoneOff,
   Plus,
-  Search,
   SlidersHorizontal,
   Star,
   Video,
@@ -33,6 +32,7 @@ import eyeIcon from "../assets/eye.png";
 import AddP0ProspectPage from "./pipeline/AddP0ProspectPage";
 import DealDetailPage from "./pipeline/DealDetailPage";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
+import SearchField from "../components/common/SearchField.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 
 /* ───────────────────────── Data ───────────────────────── */
@@ -237,22 +237,11 @@ function BoardToolbar({ search, onSearchChange, perPage, onPerPageChange, view, 
 
   return (
     <div className="flex items-center gap-2.5 flex-wrap">
-      <div className="flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 flex-1 basis-[240px] max-w-[520px] focus-within:border-[#7A0A17]/40 transition-colors">
-        <Search size={15} className="text-[#9CA3AF] shrink-0" />
-        <input
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search..."
-          className="bg-transparent text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none w-full min-w-0"
-        />
-      </div>
-
-      <button
-        type="button"
-        className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors shrink-0"
-      >
-        <Search size={14} /> Search
-      </button>
+      <SearchField
+        value={search}
+        onChange={onSearchChange}
+        className="w-full max-w-[280px]"
+      />
 
       <button
         type="button"
@@ -448,7 +437,7 @@ function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal
             e.stopPropagation();
             onMoveStage?.(lead, stageKey);
           }}
-          className="w-full inline-flex items-center justify-center gap-1.5 h-9 rounded-lg border border-[#7A0A17]/25 text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#FCF5F6] transition-colors"
+          className="w-full inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-[#F8E8EA] border border-[#7A0A17]/20 text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#F0D4D8] transition-colors"
         >
           {stageKey === "P0" ? (
             "Edit / Move to P1"

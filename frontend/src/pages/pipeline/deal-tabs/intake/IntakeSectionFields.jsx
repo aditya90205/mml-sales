@@ -1,6 +1,6 @@
 import { Check, X } from "lucide-react";
 import { toast } from "react-toastify";
-import { INPUT, isFieldFilled } from "./intakeFormData";
+import { INPUT, isFieldFilled, isFieldVisible } from "./intakeFormData";
 
 function FieldLabel({ label, required }) {
   return (
@@ -182,8 +182,9 @@ function IntakeField({ def, value, chips, onChange, onRemoveChip }) {
 }
 
 export function FormBlock({ block, values, chipValues, onFieldChange, onRemoveChip, locked }) {
-  const filled = block.fields.filter((f) => isFieldFilled(f, values, chipValues)).length;
-  const total = block.fields.length;
+  const visibleFields = block.fields.filter((f) => isFieldVisible(f, values));
+  const filled = visibleFields.filter((f) => isFieldFilled(f, values, chipValues)).length;
+  const total = visibleFields.length;
   const colClass = block.columns === 1 ? "" : block.columns === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3";
 
   return (
@@ -205,7 +206,7 @@ export function FormBlock({ block, values, chipValues, onFieldChange, onRemoveCh
         className={`grid grid-cols-1 ${colClass} gap-x-6 gap-y-4 ${locked ? "pointer-events-none select-none" : ""}`}
         aria-disabled={locked || undefined}
       >
-        {block.fields.map((f) => (
+        {visibleFields.map((f) => (
           <div
             key={f.key}
             className={f.type === "textarea" || f.type === "rows" || f.type === "checklist" || f.fullWidth ? "sm:col-span-full" : ""}

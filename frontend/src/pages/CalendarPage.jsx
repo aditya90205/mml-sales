@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   ChevronLeft,
@@ -25,6 +25,7 @@ import Modal from "../components/ui/Modal";
 import CreateMeetingEventModal from "../components/calendar/CreateMeetingEventModal";
 import CreateEventModal from "../components/calendar/CreateEventModal";
 import CreateTaskModal from "../components/calendar/CreateTaskModal";
+import SearchField from "../components/common/SearchField.jsx";
 import CreateOtherModal from "../components/calendar/CreateOtherModal";
 import TaskDetailsModal, { calendarEventToTaskView } from "../components/calendar/TaskDetailsModal";
 import MeetingDetailsModal, { calendarEventToMeetingView } from "../components/calendar/MeetingDetailsModal";
@@ -389,8 +390,8 @@ function CategoryChip({ id, checked, onToggle, count }) {
     <button
       type="button"
       onClick={() => onToggle(id)}
-      className={`inline-flex items-center gap-1.5 text-[12.5px] font-medium whitespace-nowrap transition-opacity ${
-        checked ? "opacity-100" : "opacity-40"
+      className={`inline-flex items-center gap-1.5 text-[12.5px] whitespace-nowrap transition-colors ${
+        checked ? "font-semibold" : "font-medium"
       }`}
     >
       <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: cat.dot }} />
@@ -402,21 +403,43 @@ function CategoryChip({ id, checked, onToggle, count }) {
   );
 }
 
-function EventBlock({ ev, onClick, dense }) {
+function EventBlock({ ev, onClick, dense, draggable: canDrag = false, onDragStart, onDragEnd }) {
   const cat = CATEGORIES[ev.category] || CATEGORIES.other;
   const meetingUrl = ev.category === "meeting" ? getMeetingJoinUrl(ev.meta) : null;
+  const didDrag = useRef(false);
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => onClick(ev)}
+      draggable={canDrag}
+      onDragStart={(e) => {
+        if (!canDrag) return;
+        didDrag.current = true;
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", ev.id);
+        onDragStart?.(ev);
+      }}
+      onDragEnd={() => {
+        if (!canDrag) return;
+        onDragEnd?.(ev);
+        // Swallow the click that browsers fire after a drag, then re-enable clicks
+        setTimeout(() => {
+          didDrag.current = false;
+        }, 50);
+      }}
+      onClick={() => {
+        if (didDrag.current) return;
+        onClick(ev);
+      }}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           onClick(ev);
         }
       }}
-      className="w-full text-left rounded-lg px-2.5 py-2 hover:brightness-[0.97] transition-[filter] shrink-0 cursor-pointer"
+      className={`w-full text-left rounded-lg px-2.5 py-2 hover:brightness-[0.97] transition-[filter] shrink-0 ${
+        canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+      }`}
       style={{ backgroundColor: cat.bg, border: `1px solid ${cat.border}` }}
     >
       {!dense && (
@@ -477,12 +500,15 @@ function eventToMeetingForm(ev) {
   const m = ev.meta || {};
   return {
     title: ev.title || "",
+    meetingWith: m.meetingWith || (m.clientRelated ? "client" : "employee"),
     inviteGroups: m.inviteGroups || (m.clientRelated ? ["client", "employees"] : ["employees"]),
     people: Array.isArray(m.people) ? m.people : Array.isArray(m.assignees) ? m.assignees : [],
-    emailIds: m.emailIds || "team@mmlcompany.com;",
+    emails: Array.isArray(m.emails) ? m.emails : String(m.emailIds || "").split(/[;,]/).map((x) => x.trim()).filter(Boolean),
+    emailIds: m.emailIds || "",
     specialInstructions: m.specialInstructions || "",
     notes: m.description && m.description !== (m.eventType || m.formDescription) ? m.description : "",
     description: m.eventType || m.formDescription || "",
+    meetingType: m.meetingType || m.meetingTypes?.[0] || "video",
     meetingTypes: m.meetingTypes?.length ? m.meetingTypes : ["video"],
     meetingLink: m.meetingLink || m.link || "",
     venue: m.venue || m.location || "",
@@ -491,8 +517,16 @@ function eventToMeetingForm(ev) {
     startTime: m.startTime || hourToTimeStr(ev.startH),
     endTime: m.endTime || hourToTimeStr(ev.endH),
     duration: m.duration || "",
+    reminderChannels: m.reminderChannels || ["email"],
+    messageTemplate: m.messageTemplate || "",
+    messageBody: m.messageBody || "",
+    reminderFrequency: m.reminderFrequency || ["on_day"],
+    customReminders: m.customReminders || [],
+    priority: m.priority || "High",
     attachment: m.attachment || "",
-    requirements: m.requirements?.length ? m.requirements : ["Transcripts"],
+    referenceLink: m.referenceLink || "",
+    referenceLinkDescription: m.referenceLinkDescription || "",
+    requirements: m.requirements || [],
     notesTo: m.notesTo || [],
   };
 }
@@ -556,7 +590,7 @@ function eventToOtherForm(ev) {
   };
 }
 
-const MEETING_TYPE_LABELS = { video: "Virtual/Video", telephonic: "Telephonic", face: "Face to Face" };
+const MEETING_TYPE_LABELS = { video: "Virtual / Online", telephonic: "Telephone", face: "Face to Face" };
 const INVITE_GROUP_LABELS = { others: "Others/External", employees: "Employees", client: "Client" };
 
 function CalendarItemDetails({ item }) {
@@ -838,6 +872,27 @@ export default function CalendarPage() {
   const [createOtherOpen, setCreateOtherOpen] = useState(false);
   const [taskPrefill, setTaskPrefill] = useState(null);
   const [dragOverCell, setDragOverCell] = useState(null);
+  const dragPayloadRef = useRef(null);
+
+  const beginDrag = (payload) => {
+    dragPayloadRef.current = payload;
+    setDragOverCell(payload);
+  };
+
+  const clearDrag = () => {
+    dragPayloadRef.current = null;
+    setDragOverCell(null);
+  };
+
+  const updateDragCell = (day, hour) => {
+    setDragOverCell((c) => {
+      const base = c || dragPayloadRef.current;
+      if (!base) return c;
+      const next = { ...base, day, hour };
+      dragPayloadRef.current = next;
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (searchParams.get("createTask") !== "1") return;
@@ -933,9 +988,55 @@ export default function CalendarPage() {
   }, [events]);
 
   const handleDrop = (day, hour) => {
-    if (!dragOverCell?.itemId) return;
-    const item = unscheduled.find((u) => u.id === dragOverCell.itemId);
-    if (!item) return;
+    const payload = dragPayloadRef.current || dragOverCell;
+    if (!payload) return;
+
+    // Reschedule an existing calendar event to a new day/time
+    if (payload.eventId) {
+      const event = events.find((e) => e.id === payload.eventId);
+      if (!event) {
+        clearDrag();
+        return;
+      }
+      const duration = Math.max(1, (event.endH ?? hour + 1) - event.startH);
+      const newStart = hour;
+      const newEnd = newStart + duration;
+      const sameSlot = sameDay(event.date, day) && event.startH === newStart;
+      if (sameSlot) {
+        clearDrag();
+        return;
+      }
+      setEvents((prev) =>
+        prev.map((ev) =>
+          ev.id !== event.id
+            ? ev
+            : {
+                ...ev,
+                date: day,
+                startH: newStart,
+                endH: newEnd,
+                meta: {
+                  ...ev.meta,
+                  startTime: hourToTimeStr(newStart),
+                  endTime: hourToTimeStr(newEnd),
+                },
+              }
+        )
+      );
+      clearDrag();
+      toast.success(`"${event.title}" moved to ${fmtTime(newStart)}.`);
+      return;
+    }
+
+    if (!payload.itemId) {
+      clearDrag();
+      return;
+    }
+    const item = unscheduled.find((u) => u.id === payload.itemId);
+    if (!item) {
+      clearDrag();
+      return;
+    }
     setEvents((prev) => [
       ...prev,
       {
@@ -958,7 +1059,7 @@ export default function CalendarPage() {
       },
     ]);
     setUnscheduled((prev) => prev.filter((u) => u.id !== item.id));
-    setDragOverCell(null);
+    clearDrag();
     toast.success(`"${item.title}" scheduled.`);
   };
 
@@ -995,9 +1096,22 @@ export default function CalendarPage() {
     const startH = parseTimeHour(form.startTime, 10);
     let endH = parseTimeHour(form.endTime, startH + 1);
     if (endH <= startH) endH = Math.min(startH + 1, 18);
-    const client = form.inviteGroups?.includes("client")
-      ? form.people.find((p) => ["Sethi Family", "Agarwal Family", "Malhotra Family", "Kapoor Family", "Mehta Family"].includes(p)) || ""
-      : "";
+    const clientNames = [
+      "Sethi Family",
+      "Agarwal Family",
+      "Malhotra Family",
+      "Kapoor Family",
+      "Mehta Family",
+      "Rajouri Family",
+      "Sharma Family",
+      "Gupta Family",
+      "Verma Family",
+      "Nair Family",
+    ];
+    const client =
+      form.people?.find((p) => clientNames.includes(p)) ||
+      (form.meetingWith === "client" ? form.people?.[0] || "" : "") ||
+      "";
     return {
       id: existingId || `${category}-${Date.now()}`,
       date,
@@ -1006,9 +1120,10 @@ export default function CalendarPage() {
       title: form.title?.trim() || form.description || (category === "event" ? "New Event" : "New Meeting"),
       category,
       meta: {
-        priority: "Medium",
-        clientRelated: Boolean(client) || form.inviteGroups?.includes("client"),
+        priority: form.priority || "Medium",
+        clientRelated: Boolean(client) || form.meetingWith === "client" || form.inviteGroups?.includes("client"),
         client,
+        meetingWith: form.meetingWith || "",
         assignees: form.people?.length ? form.people : ["Priya Sharma"],
         people: form.people || [],
         inviteGroups: form.inviteGroups || [],
@@ -1026,9 +1141,18 @@ export default function CalendarPage() {
         venue: form.venue || "",
         link: form.meetingLink || "",
         meetingLink: form.meetingLink || "",
-        meetingTypes: form.meetingTypes || [],
+        meetingType: form.meetingType || form.meetingTypes?.[0] || "",
+        meetingTypes: form.meetingTypes || (form.meetingType ? [form.meetingType] : []),
+        emails: form.emails || [],
         emailIds: form.emailIds || "",
         duration: form.duration || "",
+        reminderChannels: form.reminderChannels || [],
+        messageTemplate: form.messageTemplate || "",
+        messageBody: form.messageBody || "",
+        reminderFrequency: form.reminderFrequency || [],
+        customReminders: form.customReminders || [],
+        referenceLink: form.referenceLink || "",
+        referenceLinkDescription: form.referenceLinkDescription || "",
         requirements: form.requirements || [],
         notesTo: form.notesTo || [],
         attachment: form.attachment || "",
@@ -1377,16 +1501,17 @@ export default function CalendarPage() {
         </button>
 
         {upNext && (
-          <div className="bg-white border border-black/8 rounded-2xl p-3.5">
-            <div className="flex items-center justify-between">
-              <p className="text-[10.5px] font-bold text-[#9CA3AF] tracking-wide">
+          <div className="relative overflow-hidden rounded-2xl border border-[#7A0A17]/15 bg-gradient-to-br from-[#FFF5F6] to-[#FDECEE] p-3.5 shadow-[0_1px_2px_rgba(122,10,23,0.06)]">
+            <div className="absolute inset-y-0 left-0 w-1 bg-[#7A0A17]" />
+            <div className="flex items-center justify-between pl-1.5">
+              <p className="text-[10.5px] font-bold text-[#7A0A17] tracking-wide">
                 UP NEXT · {fmtTime(upNext.startH).toUpperCase()}
               </p>
-              <span className="text-[10px] font-bold text-[#E8395B] bg-[#FDECEE] px-1.5 py-0.5 rounded-md">
+              <span className="text-[10px] font-bold text-white bg-[#7A0A17] px-1.5 py-0.5 rounded-md">
                 {sameDay(upNext.date, TODAY) ? "Today" : upNext.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
               </span>
             </div>
-            <div className="flex items-center justify-between gap-2 mt-2">
+            <div className="flex items-center justify-between gap-2 mt-2 pl-1.5">
               <p className="text-[13px] font-bold text-[#111] leading-snug">{upNext.title}</p>
               <button
                 type="button"
@@ -1396,7 +1521,7 @@ export default function CalendarPage() {
                 Details
               </button>
             </div>
-            <p className="text-[11.5px] text-[#9CA3AF] mt-1">
+            <p className="inline-flex items-center mt-2 ml-1.5 text-[11.5px] font-semibold text-[#7A0A17] bg-white/70 border border-[#7A0A17]/12 px-2 py-0.5 rounded-md">
               {fmtTime(upNext.startH)} – {fmtTime(upNext.endH)}
             </p>
           </div>
@@ -1416,8 +1541,8 @@ export default function CalendarPage() {
               <div
                 key={item.id}
                 draggable
-                onDragStart={() => setDragOverCell({ itemId: item.id })}
-                onDragEnd={() => setDragOverCell((c) => (c?.itemId ? null : c))}
+                onDragStart={() => beginDrag({ itemId: item.id })}
+                onDragEnd={clearDrag}
                 className="flex items-start gap-2.5 rounded-xl border border-black/8 p-2.5 cursor-grab active:cursor-grabbing hover:bg-[#FAFAFB] transition-colors"
               >
                 <span className="size-1.5 rounded-full bg-[#E8395B] mt-1.5 shrink-0" />
@@ -1443,13 +1568,6 @@ export default function CalendarPage() {
               <ChevronRight size={17} />
             </button>
             <h1 className="text-[19px] font-bold text-[#111] tracking-tight ml-1">{rangeLabel}</h1>
-            <button
-              type="button"
-              onClick={() => jumpTo(new Date())}
-              className="ml-1 text-[11.5px] font-semibold text-[#7A0A17] border border-[#7A0A17]/20 rounded-lg px-2.5 py-1 hover:bg-[#FCF5F6] transition-colors"
-            >
-              Today
-            </button>
           </div>
 
           <div className="flex items-center gap-3.5 flex-wrap flex-1 min-w-[280px]">
@@ -1480,12 +1598,12 @@ export default function CalendarPage() {
               </button>
               {searchOpen && (
                 <div className="absolute right-0 top-[calc(100%+8px)] w-[220px] bg-white border border-black/10 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] p-2 z-30">
-                  <input
-                    autoFocus
+                  <SearchField
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={setSearch}
                     placeholder="Search events..."
-                    className="w-full h-9 px-3 rounded-lg bg-[#F7F8FA] text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none"
+                    size="sm"
+                    className="w-full !bg-[#F7F8FA] !border-transparent"
                   />
                 </div>
               )}
@@ -1567,7 +1685,9 @@ export default function CalendarPage() {
             eventsFor={eventsFor}
             onEventClick={openCalendarItem}
             dragOverCell={dragOverCell}
-            setDragOverCell={setDragOverCell}
+            updateDragCell={updateDragCell}
+            beginDrag={beginDrag}
+            clearDrag={clearDrag}
             onDrop={handleDrop}
           />
         )}
@@ -1832,9 +1952,73 @@ function EventListView({ events, onEventClick, onEdit, onDelete }) {
   );
 }
 
+/* ───────────────────────── Slot overflow modal ───────────────────────── */
+
+function SlotEventsModal({ slot, onClose, onEventClick }) {
+  if (!slot) return null;
+  const { day, hour, events } = slot;
+  const dateLabel = day.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+
+  return (
+    <Modal
+      open={!!slot}
+      onClose={onClose}
+      title={`${fmtTime(hour)} · ${dateLabel}`}
+      subtitle={`${events.length} item${events.length === 1 ? "" : "s"} in this slot`}
+      icon={<CalendarDays size={18} />}
+      iconBg="#FCF5F6"
+      iconColor="#7A0A17"
+      width="max-w-md"
+    >
+      <div className="flex flex-col gap-2.5">
+        {events.map((ev) => {
+          const cat = CATEGORIES[ev.category] || CATEGORIES.other;
+          return (
+            <button
+              key={ev.id}
+              type="button"
+              onClick={() => {
+                onClose();
+                onEventClick(ev);
+              }}
+              className="w-full text-left rounded-xl px-3.5 py-3 hover:brightness-[0.97] transition-[filter] border"
+              style={{ backgroundColor: cat.bg, borderColor: cat.border }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-semibold" style={{ color: cat.text }}>
+                  {fmtTime(ev.startH)} – {fmtTime(ev.endH)}
+                </p>
+                <span
+                  className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md"
+                  style={{ color: cat.text, backgroundColor: "rgba(255,255,255,0.65)" }}
+                >
+                  {cat.label}
+                </span>
+              </div>
+              <p className="text-[13.5px] font-bold leading-snug mt-1" style={{ color: cat.text }}>
+                {ev.title}
+              </p>
+              {ev.meta?.client && (
+                <p className="text-[11.5px] text-[#6B7280] mt-1">{ev.meta.client}</p>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </Modal>
+  );
+}
+
 /* ───────────────────────── Week / Day grid ───────────────────────── */
 
-function WeekDayGrid({ days, eventsFor, onEventClick, dragOverCell, setDragOverCell, onDrop }) {
+function WeekDayGrid({ days, eventsFor, onEventClick, dragOverCell, updateDragCell, beginDrag, clearDrag, onDrop }) {
+  const [slotModal, setSlotModal] = useState(null);
+  const MAX_VISIBLE = 2;
+
   return (
     <div className="flex-1 overflow-auto scrollbar-thin">
       <div className="min-w-[720px]">
@@ -1905,18 +2089,40 @@ function WeekDayGrid({ days, eventsFor, onEventClick, dragOverCell, setDragOverC
               {days.map((d) => {
                 const isDrag = dragOverCell?.day && sameDay(dragOverCell.day, d) && dragOverCell.hour === h;
                 const cellEvents = eventsFor(d).filter((e) => e.startH === h);
+                const cellKey = `${d.toISOString()}-${h}`;
+                const overflow = cellEvents.length - MAX_VISIBLE;
+                const visibleEvents = overflow > 0 ? cellEvents.slice(0, MAX_VISIBLE) : cellEvents;
                 return (
                   <div
-                    key={`${d.toISOString()}-${h}`}
-                    onDragOver={(e) => { e.preventDefault(); setDragOverCell((c) => (c ? { ...c, day: d, hour: h } : c)); }}
+                    key={cellKey}
+                    onDragOver={(e) => { e.preventDefault(); updateDragCell(d, h); }}
                     onDrop={(e) => { e.preventDefault(); onDrop(d, h); }}
                     className={`relative border-r border-b border-black/8 last:border-r-0 min-h-[62px] px-1.5 py-1 flex flex-col gap-1 transition-colors ${
                       isDrag ? "bg-[#FCF5F6]" : "hover:bg-[#FAFAFB]"
                     }`}
                   >
-                    {cellEvents.map((ev) => (
-                      <EventBlock key={ev.id} ev={ev} onClick={onEventClick} />
+                    {visibleEvents.map((ev) => (
+                      <EventBlock
+                        key={ev.id}
+                        ev={ev}
+                        onClick={onEventClick}
+                        draggable
+                        onDragStart={(event) => beginDrag({ eventId: event.id })}
+                        onDragEnd={clearDrag}
+                      />
                     ))}
+                    {overflow > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSlotModal({ day: d, hour: h, events: cellEvents });
+                        }}
+                        className="self-start text-[11px] font-bold text-[#7A0A17] px-1.5 py-0.5 rounded-md bg-[#FCF5F6] border border-[#7A0A17]/15 hover:bg-[#F8E8EB] transition-colors"
+                      >
+                        +{overflow} more
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -1924,6 +2130,12 @@ function WeekDayGrid({ days, eventsFor, onEventClick, dragOverCell, setDragOverC
           ))}
         </div>
       </div>
+
+      <SlotEventsModal
+        slot={slotModal}
+        onClose={() => setSlotModal(null)}
+        onEventClick={onEventClick}
+      />
     </div>
   );
 }

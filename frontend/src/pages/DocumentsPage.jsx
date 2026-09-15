@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Download, Eye, Filter, MoreVertical, Search } from "lucide-react";
+import { Download, Eye, Filter, MoreVertical } from "lucide-react";
 import { toast } from "react-toastify";
+import SearchField from "../components/common/SearchField.jsx";
 import MediaLibraryPage from "./MediaLibraryPage";
 import TutorialsTab from "../components/TutorialsTab";
 
@@ -85,24 +86,15 @@ function DocumentsTab() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2 flex-1 max-w-md">
-        <div className="relative flex-1">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search..."
-            className="w-full bg-white border border-black/12 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-[#7A0A17]"
-          />
-        </div>
-        <button
-          type="button"
-          className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-2xs flex items-center gap-1"
-        >
-          <Search size={14} /> Search
-        </button>
+        <SearchField
+          value={search}
+          onChange={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
+          size="sm"
+          className="flex-1"
+        />
         <button
           type="button"
           className="bg-white border border-black/12 hover:bg-[#FAFAFB] text-[#374151] text-xs font-bold px-3.5 py-2 rounded-xl shadow-2xs flex items-center gap-1.5"

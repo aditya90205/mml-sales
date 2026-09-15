@@ -14,6 +14,7 @@ import {
   MoreVertical,
   Phone,
   PhoneOff,
+  Sparkles,
   Star,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -27,6 +28,7 @@ import DealTabs from "../../components/pipeline/DealTabs";
 import EmailActivityButton from "../../components/common/EmailActivityButton.jsx";
 import SendMessageModal from "../../components/common/SendMessageModal.jsx";
 import Modal from "../../components/ui/Modal.jsx";
+import CreateTaskModal from "../../components/calendar/CreateTaskModal";
 import OverviewTab from "./deal-tabs/OverviewTab";
 import IntakeFormTab from "./deal-tabs/IntakeFormTab";
 import VisitsMeetingsTab from "./deal-tabs/VisitsMeetingsTab";
@@ -128,6 +130,47 @@ function initials(name = "") {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 }
 
+function summaryValue(value) {
+  if (value == null) return "not yet captured";
+  const text = String(value).trim();
+  if (!text || text === "-" || text === "—" || text === "–") return "not yet captured";
+  return text;
+}
+
+function buildClientSummaryPoints(deal) {
+  const points = [
+    `Current stage is ${summaryValue(deal.stageLabel)}.`,
+    `Deal value stands at ${summaryValue(deal.dealValue)}.`,
+    `Package interest: ${summaryValue(deal.packageInterest)}.`,
+    `Lead score: ${summaryValue(deal.leadScore)}.`,
+    `Looking for: ${summaryValue(deal.lookingFor)}.`,
+  ];
+
+  const nextAction = summaryValue(deal.nextAction);
+  if (nextAction === "not yet captured") {
+    points.push("Next action has not been set yet.");
+  } else {
+    points.push(
+      deal.nextActionUrgency
+        ? `Next action: ${nextAction} (${deal.nextActionUrgency}).`
+        : `Next action: ${nextAction}.`
+    );
+  }
+
+  return points;
+}
+
+function getDealContact(lead, name) {
+  const parts = (name || lead?.name || "client").trim().split(/\s+/);
+  const first = (parts[0] || "client").toLowerCase();
+  const last = (parts.slice(1).join("") || "user").toLowerCase();
+  const digits = String(lead?.id || "10471").replace(/\D/g, "").slice(-5).padStart(5, "4");
+  return {
+    email: lead?.email || `${first}.${last}@gmail.com`,
+    phone: lead?.phone || lead?.mobile || `+91 98765 ${digits}`,
+  };
+}
+
 /**
  * Deal detail opened by clicking any pipeline card (P0–P6).
  * Tab data fills in by stage. Payments and P6 Checklist stay blurred until P5.
@@ -153,6 +196,8 @@ export default function DealDetailPage({
   const [serviceAssignOpen, setServiceAssignOpen] = useState(false);
   const [serviceAssigned, setServiceAssigned] = useState(null);
   const [savedDetails, setSavedDetails] = useState(null);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [followUpOpen, setFollowUpOpen] = useState(false);
   const lateTabsUnlocked = atLeast(currentStage, "P5");
   const nextStage = NEXT_STAGE[currentStage];
   const tabs = BASE_TABS.map((tab) =>
@@ -163,6 +208,10 @@ export default function DealDetailPage({
   useEffect(() => {
     setIsPremium(Boolean(lead?.starred));
   }, [lead?.id, lead?.starred]);
+
+  useEffect(() => {
+    setSelectedPackage(null);
+  }, [lead?.id]);
 
   // Keep the open tab aligned with the current pipeline stage (Move to P2 → Profile Create, etc.).
   useEffect(() => {
@@ -179,11 +228,15 @@ export default function DealDetailPage({
     const dealCode = (lead?.mmlId || "MML - D - 10471").replace(/\s*-\s*/g, "-");
     const detailsFilled = atLeast(currentStage, "P1") || Boolean(savedDetails);
     const flagsFilled = atLeast(currentStage, "P2");
+    const name = lead?.name || "Ananya Gupta";
+    const contact = getDealContact(lead, name);
     const base = {
       ...DEAL_DEFAULTS,
       dealCode,
       stageLabel: STAGE_LABELS[currentStage] || STAGE_LABELS.P4,
-      name: lead?.name || "Ananya Gupta",
+      name,
+      email: contact.email,
+      phone: contact.phone,
       premium: isPremium,
       dealValue: currentStage === "P0" && !savedDetails ? "₹25,000" : DEAL_DEFAULTS.dealValue,
       packageInterest: maybeDash(detailsFilled, DEAL_DEFAULTS.packageInterest),
@@ -272,6 +325,11 @@ export default function DealDetailPage({
 
   const handleConfirmMove = () => {
     if (!nextStage) return;
+    if (currentStage === "P4" && !selectedPackage) {
+      setActiveTab("package");
+      toast.error("Select a package before moving to P5.");
+      return;
+    }
     const tabForNext = STAGE_TO_TAB[nextStage];
     if (tabForNext) setActiveTab(tabForNext);
     onAdvance?.(lead, currentStage);
@@ -301,7 +359,13 @@ export default function DealDetailPage({
       case "visits":
         return <VisitsMeetingsTab empty={!atLeast(currentStage, "P3")} />;
       case "package":
-        return <PackageQuoteTab empty={!atLeast(currentStage, "P4")} />;
+        return (
+          <PackageQuoteTab
+            empty={!atLeast(currentStage, "P4")}
+            selectedKey={selectedPackage?.key ?? null}
+            onPackageSelect={setSelectedPackage}
+          />
+        );
       case "discounts":
         return <DiscountApprovalsTab empty={!atLeast(currentStage, "P4")} />;
       case "documents":
@@ -471,6 +535,11 @@ export default function DealDetailPage({
                     <Minus size={10} /> interest
                   </span>
                 </div>
+                <p className="text-[11px] text-[#6B7280] mt-0.5 truncate">
+                  <span className="lowercase">{deal.email}</span>
+                  <span className="text-[#D1D5DB]"> · </span>
+                  <span>{deal.phone}</span>
+                </p>
                 <p className="text-[12px] text-[#9CA3AF] mt-0.5">
                   {deal.dealCode} · Source: {deal.leadSource} · Created 24 Jun 2026 · Owner: Rohit K.
                 </p>
@@ -480,12 +549,7 @@ export default function DealDetailPage({
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => {
-                  const client = deal.name || lead?.name || "";
-                  const params = new URLSearchParams({ createTask: "1" });
-                  if (client) params.set("client", client);
-                  navigate(`/calendar?${params.toString()}`);
-                }}
+                onClick={() => setFollowUpOpen(true)}
                 className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[12.5px] font-medium leading-none text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
               >
                 <CheckSquare size={14} className="shrink-0 block" aria-hidden />
@@ -602,13 +666,22 @@ export default function DealDetailPage({
         iconColor="#7A0A17"
         width="max-w-md"
         footer={
-          <button
-            type="button"
-            onClick={() => setSummaryOpen(false)}
-            className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#5F0812] transition-colors"
-          >
-            Close
-          </button>
+          <div className="flex items-center justify-end gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setSummaryOpen(false)}
+              className="h-9 px-4 rounded-xl bg-white border border-black/12 text-[#374151] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => toast.info("Ask AI is drafting a deeper client summary…")}
+              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#5F0812] transition-colors"
+            >
+              <Sparkles size={14} /> Ask AI
+            </button>
+          </div>
         }
       >
         <div className="space-y-4">
@@ -618,43 +691,48 @@ export default function DealDetailPage({
             </span>
             <div className="min-w-0">
               <p className="text-[15px] font-bold text-[#111] truncate">{deal.name}</p>
+              <p className="text-[11px] text-[#6B7280] mt-0.5 truncate">
+                <span className="lowercase">{deal.email}</span>
+                <span className="text-[#D1D5DB]"> · </span>
+                <span>{deal.phone}</span>
+              </p>
               <p className="text-[12px] text-[#6B7280] mt-0.5">Owner: Rohit K. · Source: {deal.leadSource}</p>
             </div>
           </div>
 
-          <div className="rounded-xl border border-black/8 bg-[#FAFAFB] px-3.5 py-3">
-            <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Current Stage</p>
-            <p className="text-[14px] font-bold text-[#7A0A17] mt-1">{deal.stageLabel}</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="rounded-xl border border-black/8 px-3 py-2.5">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Deal Value</p>
-              <p className="text-[13px] font-semibold text-[#111] mt-1">{deal.dealValue}</p>
-            </div>
-            <div className="rounded-xl border border-black/8 px-3 py-2.5">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Package</p>
-              <p className="text-[13px] font-semibold text-[#111] mt-1">{deal.packageInterest}</p>
-            </div>
-            <div className="rounded-xl border border-black/8 px-3 py-2.5">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Lead Score</p>
-              <p className="text-[13px] font-semibold text-[#111] mt-1">{deal.leadScore}</p>
-            </div>
-            <div className="rounded-xl border border-black/8 px-3 py-2.5">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Looking For</p>
-              <p className="text-[13px] font-semibold text-[#111] mt-1">{deal.lookingFor}</p>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-black/8 px-3.5 py-3">
-            <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#9CA3AF]">Next Action</p>
-            <p className="text-[13px] font-medium text-[#111] mt-1 leading-snug">{deal.nextAction}</p>
-            {deal.nextActionUrgency && (
-              <p className="text-[11.5px] font-semibold text-[#DC2626] mt-1.5">{deal.nextActionUrgency}</p>
-            )}
+          <div className="rounded-xl border border-black/8 bg-[#FAFAFB] px-4 py-3.5">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#7A0A17] mb-2.5">
+              AI summary
+            </p>
+            <p className="text-[13px] text-[#374151] leading-relaxed">
+              Here is a quick point-wise summary for{" "}
+              <span className="font-semibold text-[#111]">{deal.name}</span> (
+              {deal.dealCode}):
+            </p>
+            <ul className="mt-3 flex flex-col gap-2">
+              {buildClientSummaryPoints(deal).map((point) => (
+                <li key={point} className="flex items-start gap-2 text-[13px] text-[#374151] leading-relaxed">
+                  <span className="mt-2 size-1.5 rounded-full bg-[#7A0A17] shrink-0" />
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </Modal>
+
+      <CreateTaskModal
+        open={followUpOpen}
+        onClose={() => setFollowUpOpen(false)}
+        defaultDate={new Date()}
+        initial={{
+          isClientRelated: true,
+          client: deal.name || lead?.name || "",
+          title: `Follow up — ${deal.name || lead?.name || "client"}`,
+          description: `Follow-up task from pipeline for ${deal.name || lead?.name || "client"}.`,
+        }}
+        onSave={() => {}}
+      />
     </div>
   );
 }

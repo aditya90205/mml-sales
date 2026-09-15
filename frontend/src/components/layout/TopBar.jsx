@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { Clock, Bell, ArrowUpRight, CheckCheck, User, LogOut, Search, CircleDot, ChevronRight } from "lucide-react";
+import { Clock, Bell, ArrowUpRight, CheckCheck, User, LogOut, CircleDot, ChevronRight } from "lucide-react";
+import SearchField from "../common/SearchField.jsx";
 import Avatar from "../ui/Avatar";
 import TimesheetDetailsModal from "../hrms/TimesheetDetailsModal";
 import { logout } from "../../utils/auth";
@@ -309,6 +310,7 @@ function ProfileMenu() {
  * notifications + profile on the right.
  */
 export default function TopBar({ page = "Dashboard" }) {
+  const [headerSearch, setHeaderSearch] = useState("");
   const location = useLocation();
   const [regularizeOpen, setRegularizeOpen] = useState(false);
 
@@ -420,13 +422,12 @@ export default function TopBar({ page = "Dashboard" }) {
       {/* Right: search + bell + profile */}
       <div className="flex items-center gap-2 shrink-0">
         {/* Search bar — same design as Dashboard */}
-        <div className="flex items-center gap-2 h-[38px] px-3.5 rounded-xl bg-white border border-black/10 w-[230px] focus-within:border-[#7A0A17]/40 transition-colors">
-          <Search size={15} className="text-[#9CA3AF] shrink-0" />
-          <input
-            placeholder="Search here..."
-            className="bg-transparent text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none w-full"
-          />
-        </div>
+        <SearchField
+          value={headerSearch}
+          onChange={setHeaderSearch}
+          placeholder="Search here..."
+          className="w-[230px] !h-[38px]"
+        />
 
         <NotificationBell />
         <ProfileMenu />

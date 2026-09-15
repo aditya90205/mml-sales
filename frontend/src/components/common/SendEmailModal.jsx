@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Mail, Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Image as ImageIcon, Mail, Plus } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
 
@@ -19,16 +19,20 @@ export default function SendEmailModal({
   recipientName = "Client",
   recipientEmail,
 }) {
+  const fileInputRef = useRef(null);
   const toEmail = recipientEmail || emailFromName(recipientName);
   const [ccList, setCcList] = useState([""]);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [file, setFile] = useState(null);
 
   useEffect(() => {
     if (!open) return;
     setCcList([""]);
     setSubject("");
     setMessage("");
+    setFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }, [open]);
 
   const handleSend = (e) => {
@@ -41,7 +45,11 @@ export default function SendEmailModal({
       toast.error("Please write your message.");
       return;
     }
-    toast.success(`Email sent to ${recipientName}.`);
+    toast.success(
+      file
+        ? `Email sent to ${recipientName} with ${file.name}.`
+        : `Email sent to ${recipientName}.`
+    );
     onClose?.();
   };
 
@@ -138,6 +146,34 @@ export default function SendEmailModal({
             placeholder="Write your message here..."
             className="w-full border border-black/12 rounded-xl px-3.5 py-3 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#3B82F6] resize-none"
           />
+        </div>
+
+        <div>
+          <label className="block text-[13px] font-bold text-[#111] mb-1.5">Attachment</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              readOnly
+              value={file?.name || ""}
+              placeholder="Attach PDF, image, or document"
+              className="flex-1 min-w-0 h-11 border border-black/12 rounded-xl px-3.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none bg-white"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="shrink-0 inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-white border border-black/12 text-[13px] font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors"
+            >
+              <ImageIcon size={15} className="text-[#6B7280]" />
+              Browse
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,image/*,.doc,.docx"
+              className="hidden"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+            />
+          </div>
         </div>
       </form>
     </Modal>

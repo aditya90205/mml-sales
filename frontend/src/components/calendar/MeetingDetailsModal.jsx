@@ -2,9 +2,29 @@ import { CalendarDays, Pencil, Users2 } from "lucide-react";
 import Modal from "../ui/Modal";
 
 const MEETING_TYPE_LABELS = {
-  video: "Virtual/Video",
-  telephonic: "Telephonic",
+  video: "Virtual / Online",
+  telephonic: "Telephone",
   face: "Face to Face",
+};
+
+const MEETING_WITH_LABELS = {
+  employee: "Employee",
+  client: "Client",
+  others: "Others",
+};
+
+const REMINDER_CHANNEL_LABELS = {
+  email: "Email",
+  whatsapp: "WhatsApp",
+  sms: "SMS",
+  inapp: "In-app",
+};
+
+const REMINDER_FREQUENCY_LABELS = {
+  every_day: "Every day till meeting",
+  on_day: "On day of meeting",
+  hour_before: "1 hour before",
+  every_15: "Every 15 minutes",
 };
 
 const INVITE_GROUP_LABELS = {
@@ -118,7 +138,17 @@ export function calendarEventToMeetingView(ev) {
     endTime: fmtClock(m.endTime, ev.endH),
     people,
     modes: modeLabels,
-    meetingTypes: modeLabels.length ? modeLabels : ["Virtual/Video"],
+    meetingTypes: modeLabels.length ? modeLabels : ["Virtual / Online"],
+    meetingWith: MEETING_WITH_LABELS[m.meetingWith] || m.meetingWith || "",
+    priority: m.priority || "—",
+    reminderChannels: (m.reminderChannels || []).map((k) => REMINDER_CHANNEL_LABELS[k] || k),
+    reminderFrequency: [
+      ...(m.reminderFrequency || []).map((k) => REMINDER_FREQUENCY_LABELS[k] || k),
+      ...(m.customReminders || []),
+    ],
+    referenceLink: m.referenceLink || "",
+    referenceLinkDescription: m.referenceLinkDescription || "",
+    attachment: m.attachment || "",
     emailIds: m.emailIds || "—",
     link: m.meetingLink || m.link || "",
     meetingLink: m.meetingLink || m.link || "",
@@ -201,6 +231,9 @@ function MeetingDetailsBody({ meeting }) {
       <DetailItem label="Meet Description">{meeting.meetDescription}</DetailItem>
       <DetailItem label="Type">{meeting.type}</DetailItem>
 
+      <DetailItem label="Meeting With">{meeting.meetingWith || "—"}</DetailItem>
+      <DetailItem label="Priority">{meeting.priority}</DetailItem>
+
       <DetailItem label="Attendees List">{meeting.attendeesList}</DetailItem>
       <DetailItem label="Activation Status">{meeting.activationStatus}</DetailItem>
 
@@ -240,6 +273,23 @@ function MeetingDetailsBody({ meeting }) {
       <DetailItem label="Notes To">
         <ChipList items={meeting.notesTo} />
       </DetailItem>
+
+      <DetailItem label="Reminders Via">
+        <ChipList items={meeting.reminderChannels} />
+      </DetailItem>
+      <DetailItem label="Reminder Frequency">
+        <ChipList items={meeting.reminderFrequency} />
+      </DetailItem>
+
+      {meeting.attachment ? <DetailItem label="Attachment">{meeting.attachment}</DetailItem> : null}
+      {meeting.referenceLink ? (
+        <DetailItem label="Reference Link" className={meeting.attachment ? "" : "sm:col-span-2"}>
+          <LinkValue href={meeting.referenceLink} />
+          {meeting.referenceLinkDescription ? (
+            <p className="text-[12px] text-[#6B7280] mt-1 font-normal">{meeting.referenceLinkDescription}</p>
+          ) : null}
+        </DetailItem>
+      ) : null}
 
       <DetailItem label="Special Instructions" className="sm:col-span-2">
         {meeting.specialInstructions || "—"}

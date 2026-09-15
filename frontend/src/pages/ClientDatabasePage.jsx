@@ -8,11 +8,11 @@ import {
   MessageSquare,
   Phone,
   Plus,
-  Search,
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import ClientStatusBadge from "../components/common/ClientStatusBadge.jsx";
+import SearchField from "../components/common/SearchField.jsx";
 import SendEmailModal from "../components/common/SendEmailModal.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
@@ -121,7 +121,6 @@ export default function ClientDatabasePage() {
   const filterRef = useRef(null);
   const perPageRef = useRef(null);
   const [search, setSearch] = useState("");
-  const [query, setQuery] = useState("");
   const [savedGroups, setSavedGroups] = useState([]);
   const [activeGroupIds, setActiveGroupIds] = useState([]);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -182,7 +181,7 @@ export default function ClientDatabasePage() {
 
   const filtered = useMemo(() => {
     let rows = CLIENTS;
-    const q = query.trim().toLowerCase();
+    const q = search.trim().toLowerCase();
     if (q) {
       rows = rows.filter((c) =>
         [c.name, c.clientId, c.phone, c.status, c.branch, c.reason, c.owner, c.address].some((v) =>
@@ -212,7 +211,7 @@ export default function ClientDatabasePage() {
       }
     }
     return rows;
-  }, [query, statusFilter, branchFilter, genderFilter, probFilter, marriedFilter, activeGroupIds, savedGroups]);
+  }, [search, statusFilter, branchFilter, genderFilter, probFilter, marriedFilter, activeGroupIds, savedGroups]);
 
   const { sorted, sort, toggle } = useTableSort(filtered, { defaultKey: null, defaultDir: "asc" });
 
@@ -222,7 +221,7 @@ export default function ClientDatabasePage() {
 
   useEffect(() => {
     setPage(1);
-  }, [query, statusFilter, branchFilter, genderFilter, probFilter, marriedFilter, activeGroupIds, perPage, grouping]);
+  }, [search, statusFilter, branchFilter, genderFilter, probFilter, marriedFilter, activeGroupIds, perPage, grouping]);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -265,8 +264,6 @@ export default function ClientDatabasePage() {
       return { group: g.name, clients, ...statsFromClients(clients) };
     });
   }, [chartGroups]);
-
-  const applySearch = () => setQuery(search);
 
   const toggleGroup = (id) => {
     setActiveGroupIds((prev) => (prev.includes(id) ? prev.filter((gid) => gid !== id) : [...prev, id]));
@@ -332,24 +329,11 @@ export default function ClientDatabasePage() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white border border-black/10 flex-1 basis-[240px] max-w-[360px] focus-within:border-[#7A0A17]/40 transition-colors">
-            <Search size={15} className="text-[#9CA3AF] shrink-0" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && applySearch()}
-              placeholder="Search..."
-              className="bg-transparent text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none w-full min-w-0"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={applySearch}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors shrink-0"
-          >
-            <Search size={14} /> Search
-          </button>
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            className="w-full max-w-[280px]"
+          />
 
           <div className="relative shrink-0" ref={filterRef}>
             <button

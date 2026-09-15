@@ -114,6 +114,42 @@ function SectionsSidebar({ sections, activeKey, onSelect }) {
   );
 }
 
+function SelectedDocumentsCard({ documents }) {
+  if (!documents?.length) return null;
+
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl overflow-hidden">
+      <div className="flex items-center justify-between gap-2 px-5 pt-4 pb-3">
+        <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wide">Selected documents</p>
+        <span className="text-[11px] font-semibold text-[#7A0A17]">{documents.length}</span>
+      </div>
+      <div className="flex flex-col border-t border-black/6">
+        {documents.map((doc) => (
+          <div
+            key={doc.id}
+            className="flex items-start gap-2.5 px-5 py-3 border-b border-black/5 last:border-0"
+          >
+            <span className="mt-0.5 size-4 rounded border border-[#16A34A] bg-[#E7F8EF] grid place-items-center shrink-0">
+              <span className="text-[9px] font-bold text-[#16A34A]">✓</span>
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12.5px] font-semibold text-[#111] leading-snug">
+                {doc.label}
+                {doc.mandatory ? <span className="text-[#E8395B]"> *</span> : null}
+              </p>
+              {doc.fileName ? (
+                <p className="text-[11px] text-[#16A34A] mt-0.5 truncate">{doc.fileName}</p>
+              ) : (
+                <p className="text-[11px] text-[#9CA3AF] mt-0.5">Selected · file pending</p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /**
  * "Fill the form" view — section header, field blocks, progress rail.
  */
@@ -125,19 +161,32 @@ export default function IntakeFillFormView({
   setField,
   chips,
   removeChip,
-  personalUnlocked = false,
-  onRequestPersonalUnlock,
+  personalUnlocked: _personalUnlocked = false,
+  onRequestPersonalUnlock: _onRequestPersonalUnlock,
   onRequestPersonalSave,
   onFinishToRecord,
 }) {
   const [documentsKycOpen, setDocumentsKycOpen] = useState(false);
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
   const biodataInputRef = useRef(null);
+  const documentsKycRef = useRef(null);
 
   const handleBiodataUpload = (e) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
     toast.success(`Biodata uploaded: ${file.name}`);
+  };
+
+  const handleDocumentsKycDone = () => {
+    const selected = documentsKycRef.current?.getSelectedDocs?.() || [];
+    setSelectedDocuments(selected);
+    setDocumentsKycOpen(false);
+    if (selected.length) {
+      toast.success(`${selected.length} document${selected.length === 1 ? "" : "s"} saved.`);
+    } else {
+      toast.info("No documents selected.");
+    }
   };
 
   const activeIndex = SECTIONS_META.findIndex((s) => s.key === activeKey);
@@ -153,7 +202,8 @@ export default function IntakeFillFormView({
 
   const overallPercent = empty ? 0 : Math.round((OVERALL_FILLED_FIELDS / OVERALL_TOTAL_FIELDS) * 100);
   const isPersonal = activeKey === "personal";
-  const personalLocked = isPersonal && !personalUnlocked;
+  // Fill-the-form fields stay editable at P2; OTP is only required when committing to the client record.
+  const personalLocked = false;
 
   const handleNext = () => {
     if (isPersonal) {
@@ -206,46 +256,16 @@ export default function IntakeFillFormView({
         />
 
         {isPersonal && (
-          <div
-            className={`rounded-xl border px-4 py-3 flex items-start justify-between gap-3 flex-wrap ${
-              personalLocked
-                ? "bg-[#FFFBEB] border-[#FDE68A]"
-                : "bg-[#E7F8EF] border-[#BBF7D0]"
-            }`}
-          >
+          <div className="rounded-xl border px-4 py-3 flex items-start justify-between gap-3 flex-wrap bg-[#E7F8EF] border-[#BBF7D0]">
             <div className="min-w-0">
-              <p
-                className={`text-[13px] font-semibold ${
-                  personalLocked ? "text-[#92400E]" : "text-[#166534]"
-                }`}
-              >
-                {personalLocked
-                  ? "Personal details are locked"
-                  : "Personal details unlocked for editing"}
-              </p>
-              <p
-                className={`text-[12.5px] mt-0.5 ${
-                  personalLocked ? "text-[#92400E]/90" : "text-[#166534]/90"
-                }`}
-              >
-                {personalLocked
-                  ? "Verify OTP before changing any field. Saved changes appear in the client-record summary."
-                  : "Edit freely, then save — OTP will confirm before changes are committed to the summary."}
+              <p className="text-[13px] font-semibold text-[#166534]">Personal details are editable</p>
+              <p className="text-[12.5px] mt-0.5 text-[#166534]/90">
+                Update fields freely here. When you save, OTP confirms before changes are written to the client-record summary.
               </p>
             </div>
-            {personalLocked ? (
-              <button
-                type="button"
-                onClick={onRequestPersonalUnlock}
-                className="h-9 px-3.5 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors shrink-0"
-              >
-                Verify OTP to edit
-              </button>
-            ) : (
-              <span className="inline-flex items-center h-9 px-3 rounded-full bg-white/80 text-[12px] font-semibold text-[#166534] shrink-0">
-                Editing unlocked
-              </span>
-            )}
+            <span className="inline-flex items-center h-9 px-3 rounded-full bg-white/80 text-[12px] font-semibold text-[#166534] shrink-0">
+              Editing unlocked
+            </span>
           </div>
         )}
 
@@ -293,6 +313,7 @@ export default function IntakeFillFormView({
       <div className="flex flex-col gap-5">
         <FormFilledCard percent={overallPercent} filled={empty ? 0 : OVERALL_FILLED_FIELDS} total={OVERALL_TOTAL_FIELDS} />
         <SectionsSidebar sections={sections} activeKey={activeKey} onSelect={setActiveKey} />
+        <SelectedDocumentsCard documents={selectedDocuments} />
       </div>
 
       <Modal
@@ -323,14 +344,14 @@ export default function IntakeFillFormView({
         footer={
           <button
             type="button"
-            onClick={() => setDocumentsKycOpen(false)}
+            onClick={handleDocumentsKycDone}
             className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
           >
             Done
           </button>
         }
       >
-        <DocumentsKycTab empty={empty} embedded />
+        <DocumentsKycTab ref={documentsKycRef} empty={empty} embedded />
       </Modal>
     </div>
   );
