@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+﻿import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   ChevronLeft,
@@ -9,7 +9,6 @@ import {
   Sparkles,
   CheckSquare,
   Users2,
-  Pencil,
   CalendarDays,
   CircleDot,
   LayoutGrid,
@@ -28,10 +27,11 @@ import CreateTaskModal from "../components/calendar/CreateTaskModal";
 import SearchField from "../components/common/SearchField.jsx";
 import CreateOtherModal from "../components/calendar/CreateOtherModal";
 import TaskDetailsModal, { calendarEventToTaskView } from "../components/calendar/TaskDetailsModal";
+import EventDetailsModal, { calendarEventToEventView } from "../components/calendar/EventDetailsModal";
 import MeetingDetailsModal, { calendarEventToMeetingView } from "../components/calendar/MeetingDetailsModal";
 import OthersDetailsModal, { calendarEventToOtherView } from "../components/calendar/OthersDetailsModal";
 
-/* ───────────────────────── Categories ───────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 const CATEGORIES = {
   event: { label: "Event", dot: "#A02868", bg: "#FDECF3", text: "#A02868", border: "#BB8D5833" },
@@ -40,14 +40,14 @@ const CATEGORIES = {
   other: { label: "Others", dot: "#6F7886", bg: "#F3F4F6", text: "#6F7886", border: "#6F788633" },
 };
 
-/* ───────────────────────── Date helpers ───────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Date helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 const DAY_LABELS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MONTH_LABELS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
-const HOURS = Array.from({ length: 10 }, (_, i) => 9 + i); // 9 AM – 6 PM
+const HOURS = Array.from({ length: 10 }, (_, i) => 9 + i); // 9 AM â€“ 6 PM
 
 function sameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -77,9 +77,9 @@ function fmtTime(h, m = 0) {
   return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
 }
 function fmtDate(d) {
-  if (!d) return "—";
+  if (!d) return "â€”";
   const date = d instanceof Date ? d : new Date(d);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "â€”";
   return `${String(date.getDate()).padStart(2, "0")}-${String(date.getMonth() + 1).padStart(2, "0")}-${date.getFullYear()}`;
 }
 function toDateInput(d) {
@@ -103,7 +103,7 @@ const PRIORITY_STYLES = {
   Low: { color: "#16A34A", bg: "#E7F8EF" },
 };
 
-/* ───────────────────────── Mock data ───────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Mock data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 const TODAY = new Date();
 const ANCHOR = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
@@ -132,7 +132,7 @@ function mk(dayOffset, startH, endH, title, category, meta = {}) {
 }
 
 const INITIAL_EVENTS = [
-  mk(0, 13, 15, "Video Call — Kapoor Family", "meeting", {
+  mk(0, 13, 15, "Video Call â€” Kapoor Family", "meeting", {
     link: "https://meet.google.com/mml-kapoor",
     meetingLink: "https://meet.google.com/mml-kapoor",
     clientRelated: true,
@@ -164,7 +164,7 @@ const INITIAL_EVENTS = [
     project: "Sales Pipeline",
     milestone: "Weekly Sync",
     progress: 55,
-    description: "Align on open follow-ups from yesterday’s home visits and video calls.",
+    description: "Align on open follow-ups from yesterdayâ€™s home visits and video calls.",
     comments: [
       { author: "Priya Sharma", text: "Please cover Sethi Family follow-up first.", date: new Date().toISOString() },
     ],
@@ -190,7 +190,7 @@ const INITIAL_EVENTS = [
     project: "Matchmaking",
     milestone: "Planning",
     progress: 20,
-    description: "Review yesterday’s P0–P3 movement and flag stuck prospects.",
+    description: "Review yesterdayâ€™s P0â€“P3 movement and flag stuck prospects.",
     comments: [],
     checklist: [
       { text: "Check P0/P1 stuck prospects", done: false, assignee: "Priya Sharma", dueDate: addDays(ANCHOR, 2) },
@@ -225,23 +225,33 @@ const INITIAL_EVENTS = [
     checklist: [],
     attachments: [],
   }),
-  mk(1, 14, 16, "Branch All-Hands — Ankur Mishra", "event", {
+  mk(1, 14, 16, "Branch All-Hands â€” Ankur Mishra", "event", {
     location: "Rajouri Garden Branch",
     venue: "Rajouri Garden Branch",
     assignees: ["Anjali Gupta", "Abhinav Pandey"],
     people: ["Anjali Gupta", "Abhinav Pandey"],
     inviteGroups: ["employees"],
     attendeesList: "Anjali Gupta, Abhinav Pandey",
-    eventType: "Company Event",
-    formDescription: "Branch Event",
+    eventCategory: "Internal meeting",
+    eventType: "Internal meeting",
+    eventMode: "In-person",
+    visibility: "Branch only",
+    branches: ["Rajouri Garden"],
+    clients: [],
+    logisticsRequired: false,
+    reminderChannels: ["Email", "WhatsApp"],
+    messageTemplate: "Standard reminder",
+    reminderFrequency: "On day of event",
+    vendors: [],
+    formDescription: "Internal meeting",
     meetingTypes: [],
     emailIds: "ankur.mishra@makemylagan.com;",
-    duration: "",
+    duration: "2 hours",
     startTime: "14:00",
-    endTime: "17:00",
+    endTime: "16:00",
     meetingLink: "",
     link: "",
-    specialInstructions: "",
+    specialInstructions: "Staff to reach 15 minutes early; bring weekly closure numbers.",
     activationStatus: "Active",
     priority: "High",
     stage: "In Progress",
@@ -306,21 +316,31 @@ const INITIAL_EVENTS = [
     people: ["Ishaan Roy", "Priya Sharma"],
     inviteGroups: ["employees"],
     attendeesList: "Ishaan Roy, Priya Sharma",
-    eventType: "Company Event",
-    formDescription: "Community Event",
+    eventCategory: "Celebration",
+    eventType: "Celebration",
+    eventMode: "In-person",
+    visibility: "All branches",
+    branches: ["Rajouri Garden", "Pitampura"],
+    clients: ["Kapoor Family", "Malhotra Family"],
+    logisticsRequired: true,
+    reminderChannels: ["Email", "WhatsApp"],
+    messageTemplate: "Warm client nudge",
+    reminderFrequency: "2 hours before",
+    vendors: ["Catering", "Photography"],
+    formDescription: "Celebration",
     meetingTypes: ["face"],
     emailIds: "events@makemylagan.com;",
     duration: "2 hours",
     startTime: "11:00",
     endTime: "13:00",
-    specialInstructions: "",
+    specialInstructions: "Staff to reach two hours before guests; carry branded backdrop.",
     activationStatus: "Active",
     priority: "High",
     stage: "In Progress",
     stars: 25,
     description: "Host the Meet the Parents evening for shortlisted families in the main hall.",
   }),
-  mk(4, 13, 15, "Office Visit — Malhotra Family", "meeting", {
+  mk(4, 13, 15, "Office Visit â€” Malhotra Family", "meeting", {
     link: "https://meet.google.com/mml-malhotra",
     meetingLink: "https://meet.google.com/mml-malhotra",
     clientRelated: true,
@@ -330,14 +350,14 @@ const INITIAL_EVENTS = [
   }),
   mk(4, 17, 18, "Update Visit Notes", "other", {
     assignees: ["Priya Sharma"],
-    description: "Capture and share notes from today’s home and office visits.",
+    description: "Capture and share notes from todayâ€™s home and office visits.",
   }),
   mk(5, 9, 10, "Check Family Feedback", "task", {
     clientRelated: true,
     client: "Sethi Family",
     assignees: ["Rahul Verma"],
     stage: "In Progress",
-    description: "Review feedback forms submitted after last week’s profile shares.",
+    description: "Review feedback forms submitted after last weekâ€™s profile shares.",
   }),
   mk(5, 11, 13, "Community Campaign Sync", "meeting", {
     link: "https://meet.google.com/mml-campaign-fri",
@@ -350,7 +370,7 @@ const INITIAL_EVENTS = [
     client: "Multiple",
     assignees: ["Neha Kapoor"],
     stars: 14,
-    description: "Send invites for next week’s Meet the Parents evening.",
+    description: "Send invites for next weekâ€™s Meet the Parents evening.",
   }),
   mk(6, 9, 10, "Prepare Package Proposal", "task", {
     clientRelated: true,
@@ -382,7 +402,7 @@ const INITIAL_UNSCHEDULED = [
 
 const DAY_STATUS = { 3: "free", 9: "free", 11: "filling", 17: "busy", 26: "busy" };
 
-/* ───────────────────────── Small pieces ───────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Small pieces â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function CategoryChip({ id, checked, onToggle, count }) {
   const cat = CATEGORIES[id];
@@ -467,334 +487,8 @@ function EventBlock({ ev, onClick, dense, draggable: canDrag = false, onDragStar
   );
 }
 
-function DetailField({ label, children }) {
-  return (
-    <div className="min-w-0">
-      <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{label}</p>
-      <div className="text-[13px] font-semibold text-[#111] mt-1.5 break-words">{children}</div>
-    </div>
-  );
-}
 
-function ChipList({ items }) {
-  if (!items?.length) return <span className="text-[#9CA3AF] font-medium">—</span>;
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {items.map((item) => (
-        <span
-          key={item}
-          className="inline-flex items-center px-2.5 py-1 rounded-lg bg-[#F1F2F4] text-[12px] font-semibold text-[#374151]"
-        >
-          {item}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function hourToTimeStr(h) {
-  return `${String(h).padStart(2, "0")}:00`;
-}
-
-function eventToMeetingForm(ev) {
-  const m = ev.meta || {};
-  return {
-    title: ev.title || "",
-    meetingWith: m.meetingWith || (m.clientRelated ? "client" : "employee"),
-    inviteGroups: m.inviteGroups || (m.clientRelated ? ["client", "employees"] : ["employees"]),
-    people: Array.isArray(m.people) ? m.people : Array.isArray(m.assignees) ? m.assignees : [],
-    emails: Array.isArray(m.emails) ? m.emails : String(m.emailIds || "").split(/[;,]/).map((x) => x.trim()).filter(Boolean),
-    emailIds: m.emailIds || "",
-    specialInstructions: m.specialInstructions || "",
-    notes: m.description && m.description !== (m.eventType || m.formDescription) ? m.description : "",
-    description: m.eventType || m.formDescription || "",
-    meetingType: m.meetingType || m.meetingTypes?.[0] || "video",
-    meetingTypes: m.meetingTypes?.length ? m.meetingTypes : ["video"],
-    meetingLink: m.meetingLink || m.link || "",
-    venue: m.venue || m.location || "",
-    startDate: toDateInput(ev.date),
-    endDate: toDateInput(m.dueDate || ev.date),
-    startTime: m.startTime || hourToTimeStr(ev.startH),
-    endTime: m.endTime || hourToTimeStr(ev.endH),
-    duration: m.duration || "",
-    reminderChannels: m.reminderChannels || ["email"],
-    messageTemplate: m.messageTemplate || "",
-    messageBody: m.messageBody || "",
-    reminderFrequency: m.reminderFrequency || ["on_day"],
-    customReminders: m.customReminders || [],
-    priority: m.priority || "High",
-    attachment: m.attachment || "",
-    referenceLink: m.referenceLink || "",
-    referenceLinkDescription: m.referenceLinkDescription || "",
-    requirements: m.requirements || [],
-    notesTo: m.notesTo || [],
-  };
-}
-
-function eventToEventForm(ev) {
-  const m = ev.meta || {};
-  return {
-    title: ev.title || "",
-    category: m.eventCategory || m.eventType || m.formDescription || "Internal meeting",
-    priority: m.priority || "High",
-    mode: m.eventMode || "In-person",
-    visibility: m.visibility || "Branch only",
-    venue: m.venue || m.location || "",
-    logisticsRequired: Boolean(m.logisticsRequired),
-    branches: Array.isArray(m.branches) ? m.branches : [],
-    employees: Array.isArray(m.people) ? m.people : Array.isArray(m.assignees) ? m.assignees : [],
-    clients: Array.isArray(m.clients) ? m.clients : [],
-    startDate: toDateInput(ev.date),
-    endDate: toDateInput(m.dueDate || ev.date),
-    startTime: m.startTime || hourToTimeStr(ev.startH),
-    duration: m.duration || "5 hours",
-    reminderChannels: m.reminderChannels?.length ? m.reminderChannels : ["Email", "WhatsApp"],
-    messageTemplate: m.messageTemplate || "No template — plain text",
-    reminderFrequency: m.reminderFrequency || "On day of event",
-    vendors: Array.isArray(m.vendors) ? m.vendors : [],
-    attachment: m.attachment || "",
-    referenceLink: m.referenceLink || "",
-    specialInstructions: m.specialInstructions || "",
-  };
-}
-
-function effortFromHours(hours) {
-  if (hours >= 2) return "2 hours";
-  if (hours >= 1) return "1 hour";
-  return "30 mins";
-}
-
-function eventToTaskForm(ev) {
-  const m = ev.meta || {};
-  const priority = m.priority === "Critical" ? "High" : m.priority || "Low";
-  return {
-    title: ev.title || "",
-    description: m.description || "Follow up on pending response",
-    customDescription: m.customDescription || "",
-    priority,
-    taskType: m.taskType || "Client visit",
-    branch: m.branch || "Rajouri Garden",
-    assignees: Array.isArray(m.assignees) ? m.assignees : [],
-    isClientRelated: Boolean(m.clientRelated),
-    client: m.client || "",
-    startDate: toDateInput(ev.date),
-    dueDate: toDateInput(m.dueDate || addDays(ev.date, 1)),
-    dueTime: m.dueTime || m.startTime || hourToTimeStr(ev.startH),
-    estimatedEffort: m.estimatedEffort || effortFromHours(Math.max(1, (ev.endH ?? ev.startH + 1) - ev.startH)),
-    repeats: m.repeats || "Does not repeat",
-    stars: m.stars ?? (priority === "High" ? 10 : priority === "Medium" ? 7 : 3),
-    reminderChannels: m.reminderChannels?.length ? m.reminderChannels : ["Email", "WhatsApp"],
-    messageTemplate: m.messageTemplate || "No template — plain text",
-    messageBody: m.messageBody || "",
-    reminderFrequency: Array.isArray(m.reminderFrequency)
-      ? m.reminderFrequency[0] || "On day of task"
-      : m.reminderFrequency || "On day of task",
-    checklist: Array.isArray(m.checklist) ? m.checklist : [],
-    attachment: m.attachment || m.attachments?.[0]?.name || "",
-    referenceLink: m.referenceLink || "",
-    specialInstructions: m.specialInstructions || "",
-    stage: m.stage || "New",
-  };
-}
-
-function eventToOtherForm(ev) {
-  const m = ev.meta || {};
-  return {
-    title: ev.title || "",
-    description: m.description || "",
-    priority: m.priority || "Medium",
-    assignees: Array.isArray(m.assignees) ? m.assignees : [],
-    isClientRelated: Boolean(m.clientRelated),
-    client: m.client || "",
-    date: toDateInput(ev.date),
-    startTime: m.startTime || hourToTimeStr(ev.startH),
-    endTime: m.endTime || hourToTimeStr(ev.endH),
-    stars: m.stars ?? 7,
-  };
-}
-
-const MEETING_TYPE_LABELS = { video: "Virtual / Online", telephonic: "Telephone", face: "Face to Face" };
-const INVITE_GROUP_LABELS = { others: "Others/External", employees: "Employees", client: "Client" };
-
-function CalendarItemDetails({ item }) {
-  if (!item) return null;
-  const cat = CATEGORIES[item.category] || CATEGORIES.other;
-  const m = item.meta || {};
-  const assignees = Array.isArray(m.assignees) ? m.assignees : [];
-  const people = Array.isArray(m.people) ? m.people : assignees;
-  const inviteLabels = (m.inviteGroups || []).map((k) => INVITE_GROUP_LABELS[k] || k);
-  const meetingTypeLabels = (m.meetingTypes || []).map((t) => MEETING_TYPE_LABELS[t] || t);
-  const priorityStyle = PRIORITY_STYLES[m.priority] || PRIORITY_STYLES.Medium;
-
-  return (
-    <div className="flex flex-col gap-5">
-      <div className="inline-flex items-center gap-1.5">
-        <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: cat.dot }} />
-        <span className="text-[13px] font-semibold" style={{ color: cat.text }}>{cat.label}</span>
-      </div>
-
-      {item.category === "event" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
-          <DetailField label="Title">{item.title}</DetailField>
-          <DetailField label="Event Type">{m.eventType || m.formDescription || item.title}</DetailField>
-          <DetailField label="Date">{fmtDate(item.date)}</DetailField>
-          <DetailField label="Time">{fmtTime(item.startH)} – {fmtTime(item.endH)}</DetailField>
-          <DetailField label="Invite"><ChipList items={inviteLabels} /></DetailField>
-          <DetailField label="People"><ChipList items={people} /></DetailField>
-          <div className="sm:col-span-2">
-            <DetailField label="Email Ids">{m.emailIds || "—"}</DetailField>
-          </div>
-          <DetailField label="Duration">{m.duration || "—"}</DetailField>
-          <DetailField label="Venue">{m.venue || m.location || "—"}</DetailField>
-          {m.link || m.meetingLink ? (
-            <div className="sm:col-span-2">
-              <DetailField label="Event Link">
-                <span className="text-[#3B82F6]">{m.meetingLink || m.link}</span>
-              </DetailField>
-            </div>
-          ) : null}
-          <div className="sm:col-span-2">
-            <DetailField label="Description">
-              <span className="font-medium text-[#374151]">{m.specialInstructions || m.description || "No description added."}</span>
-            </DetailField>
-          </div>
-        </div>
-      )}
-
-      {item.category === "meeting" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
-          <DetailField label="Title">{item.title}</DetailField>
-          <DetailField label="Description">{m.formDescription || m.description || item.title}</DetailField>
-          <DetailField label="Invite"><ChipList items={inviteLabels} /></DetailField>
-          <DetailField label="People"><ChipList items={people} /></DetailField>
-          <div className="sm:col-span-2">
-            <DetailField label="Email Ids">{m.emailIds || "—"}</DetailField>
-          </div>
-          <DetailField label="Meeting Type"><ChipList items={meetingTypeLabels} /></DetailField>
-          <DetailField label="Duration">{m.duration || "—"}</DetailField>
-          <DetailField label="Start Date">{fmtDate(item.date)}</DetailField>
-          <DetailField label="End Date">{fmtDate(m.dueDate || item.date)}</DetailField>
-          <DetailField label="Start Time">{fmtTime(item.startH)}</DetailField>
-          <DetailField label="End Time">{fmtTime(item.endH)}</DetailField>
-          {(m.meetingLink || m.link) && (
-            <div className="sm:col-span-2">
-              <DetailField label="Meeting Link">
-                <span className="text-[#3B82F6]">{m.meetingLink || m.link}</span>
-              </DetailField>
-            </div>
-          )}
-          {(m.venue || m.location) && <DetailField label="Venue">{m.venue || m.location}</DetailField>}
-          <DetailField label="Requirements"><ChipList items={m.requirements} /></DetailField>
-          <DetailField label="Notes To"><ChipList items={m.notesTo} /></DetailField>
-          <div className="sm:col-span-2">
-            <DetailField label="Special Instructions">
-              <span className="font-medium text-[#374151]">{m.specialInstructions || "—"}</span>
-            </DetailField>
-          </div>
-        </div>
-      )}
-
-      {item.category === "task" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
-          <DetailField label="Title">{item.title}</DetailField>
-          <DetailField label="Priority">
-            <span style={{ color: priorityStyle.color }}>{m.priority || "Low"}</span>
-          </DetailField>
-          <DetailField label="Task Type">{m.taskType || "—"}</DetailField>
-          <DetailField label="Branch">{m.branch || "—"}</DetailField>
-          <DetailField label="Client Related">{m.clientRelated ? "Yes" : "No"}</DetailField>
-          <DetailField label="Client">{m.clientRelated && m.client ? m.client : "—"}</DetailField>
-          <DetailField label="Assignees"><ChipList items={assignees} /></DetailField>
-          <DetailField label="Stage">{m.stage || "New"}</DetailField>
-          <DetailField label="Start Date">{fmtDate(item.date)}</DetailField>
-          <DetailField label="Due Date">{fmtDate(m.dueDate || addDays(item.date, 1))}</DetailField>
-          <DetailField label="Due Time">{m.dueTime || fmtTime(item.startH)}</DetailField>
-          <DetailField label="Repeats">{m.repeats || "Does not repeat"}</DetailField>
-          <DetailField label="Stars (XP)">{m.stars ?? 3}</DetailField>
-          <DetailField label="Scheduled Time">
-            {fmtTime(item.startH)} – {fmtTime(item.endH)}
-          </DetailField>
-          <div className="sm:col-span-2">
-            <DetailField label="Description">
-              <span className="font-medium text-[#374151]">{m.description || "No description added."}</span>
-            </DetailField>
-          </div>
-        </div>
-      )}
-
-      {(item.category === "other" || !["event", "meeting", "task"].includes(item.category)) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
-          <DetailField label="Title">{item.title}</DetailField>
-          <DetailField label="Category">{cat.label}</DetailField>
-          <DetailField label="Date">{fmtDate(item.date)}</DetailField>
-          <DetailField label="Time">{fmtTime(item.startH)} – {fmtTime(item.endH)}</DetailField>
-          <DetailField label="Assignees"><ChipList items={assignees} /></DetailField>
-          <DetailField label="Priority">
-            <span style={{ color: priorityStyle.color }}>{m.priority || "Medium"}</span>
-          </DetailField>
-          <div className="sm:col-span-2">
-            <DetailField label="Description">
-              <span className="font-medium text-[#374151]">{m.description || "No description added."}</span>
-            </DetailField>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function EventDetailModal({ event, onClose, onEdit }) {
-  if (!event) return null;
-  const cat = CATEGORIES[event.category] || CATEGORIES.other;
-  const titleMap = {
-    event: "Event Details",
-    meeting: "Meeting Details",
-    task: "Task Details",
-    other: "Others Details",
-  };
-
-  return (
-    <Modal
-      open={!!event}
-      onClose={onClose}
-      title={titleMap[event.category] || "Details"}
-      subtitle={event.title}
-      icon={
-        event.category === "task" ? <CheckSquare size={16} />
-          : event.category === "meeting" ? <Users2 size={16} />
-            : event.category === "event" ? <CalendarDays size={16} />
-              : <CircleDot size={16} />
-      }
-      iconBg={cat.bg}
-      iconColor={cat.text}
-      width="max-w-2xl"
-      footer={
-        <>
-          {["event", "meeting", "task", "other"].includes(event.category) && (
-            <button
-              type="button"
-              onClick={() => onEdit?.(event)}
-              className="h-9 px-4 rounded-xl border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors inline-flex items-center gap-1.5"
-            >
-              <Pencil size={13} /> Edit
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-          >
-            Close
-          </button>
-        </>
-      }
-    >
-      <CalendarItemDetails item={event} />
-    </Modal>
-  );
-}
-
-/* ───────────────────────── Mini calendar ───────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Mini calendar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function MiniCalendar({ cursor, onCursorChange, selected, onSelect }) {
   const monthStart = startOfMonth(cursor);
@@ -873,7 +567,7 @@ function MiniCalendar({ cursor, onCursorChange, selected, onSelect }) {
   );
 }
 
-/* ───────────────────────── Page ───────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 export default function CalendarPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -930,7 +624,7 @@ export default function CalendarPage() {
         ? {
             isClientRelated: true,
             client,
-            title: `Follow up — ${client}`,
+            title: `Follow up â€” ${client}`,
             description: `Follow-up task from pipeline for ${client}.`,
           }
         : { isClientRelated: true }
@@ -1081,7 +775,7 @@ export default function CalendarPage() {
           stage: "New",
           dueDate: addDays(day, 3),
           stars: 10,
-          description: `Scheduled from unscheduled: ${item.type} · ${item.duration}`,
+          description: `Scheduled from unscheduled: ${item.type} Â· ${item.duration}`,
         },
       },
     ]);
@@ -1247,8 +941,10 @@ export default function CalendarPage() {
         reminderFrequency: form.reminderFrequency || "",
         vendors: form.vendors || [],
         attachment: form.attachment || "",
+        attachments: form.attachment ? [{ name: form.attachment, size: "â€”" }] : [],
         referenceLink: form.referenceLink || "",
         specialInstructions: form.specialInstructions || "",
+        comments: existingId ? events.find((e) => e.id === existingId)?.meta?.comments || [] : [],
         activationStatus: "Active",
         stage: "New",
         stars: 10,
@@ -1371,7 +1067,14 @@ export default function CalendarPage() {
       setSelectedTaskEvent(ev);
       return;
     }
-    if (ev?.category === "meeting" || ev?.category === "event") {
+    if (ev?.category === "event") {
+      setSelectedMeetingEvent(null);
+      setSelectedTaskEvent(null);
+      setSelectedOtherEvent(null);
+      setSelectedEvent(ev);
+      return;
+    }
+    if (ev?.category === "meeting") {
       setSelectedEvent(null);
       setSelectedTaskEvent(null);
       setSelectedOtherEvent(null);
@@ -1454,6 +1157,38 @@ export default function CalendarPage() {
     );
   };
 
+  const syncEventViewToEvent = (eventView) => {
+    setEvents((prev) =>
+      prev.map((ev) => {
+        if (ev.id !== eventView.id) return ev;
+        return {
+          ...ev,
+          title: eventView.title,
+          meta: {
+            ...ev.meta,
+            comments: eventView.comments,
+            attachments: eventView.attachments,
+            attachment: eventView.attachments?.[0]?.name || ev.meta?.attachment || "",
+          },
+        };
+      })
+    );
+    setSelectedEvent((prev) =>
+      prev && prev.id === eventView.id
+        ? {
+            ...prev,
+            title: eventView.title,
+            meta: {
+              ...prev.meta,
+              comments: eventView.comments,
+              attachments: eventView.attachments,
+              attachment: eventView.attachments?.[0]?.name || prev.meta?.attachment || "",
+            },
+          }
+        : prev
+    );
+  };
+
   const closeEventModal = () => {
     setCreateEventOpen(false);
     setEditingItem((prev) => (prev?.category === "event" ? null : prev));
@@ -1494,7 +1229,7 @@ export default function CalendarPage() {
 
   return (
     <div className="flex flex-1 min-h-0" style={{ height: "calc(100vh - 56px)" }}>
-      {/* ── Left utility rail (page-local, sits beside the app sidebar) ── */}
+      {/* â”€â”€ Left utility rail (page-local, sits beside the app sidebar) â”€â”€ */}
       <aside className="w-[236px] shrink-0 border-r border-black/8 bg-white flex flex-col gap-4 p-4 overflow-y-auto scrollbar-thin">
         <div className="relative">
           <button
@@ -1531,7 +1266,7 @@ export default function CalendarPage() {
 
         <button
           type="button"
-          onClick={() => toast.info("Ask AI: try “find me a free slot tomorrow”.")}
+          onClick={() => toast.info("Ask AI: try â€œfind me a free slot tomorrowâ€.")}
           className="text-left bg-[#FCF5F6] border border-[#7A0A17]/12 rounded-2xl p-3.5 hover:bg-[#F9ECEE] transition-colors"
         >
           <div className="flex items-center justify-between">
@@ -1550,7 +1285,7 @@ export default function CalendarPage() {
             <div className="absolute inset-y-0 left-0 w-1 bg-[#7A0A17]" />
             <div className="flex items-center justify-between pl-1.5">
               <p className="text-[10.5px] font-bold text-[#7A0A17] tracking-wide">
-                UP NEXT · {fmtTime(upNext.startH).toUpperCase()}
+                UP NEXT Â· {fmtTime(upNext.startH).toUpperCase()}
               </p>
               <span className="text-[10px] font-bold text-white bg-[#7A0A17] px-1.5 py-0.5 rounded-md">
                 {sameDay(upNext.date, TODAY) ? "Today" : upNext.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
@@ -1567,7 +1302,7 @@ export default function CalendarPage() {
               </button>
             </div>
             <p className="inline-flex items-center mt-2 ml-1.5 text-[11.5px] font-semibold text-[#7A0A17] bg-white/70 border border-[#7A0A17]/12 px-2 py-0.5 rounded-md">
-              {fmtTime(upNext.startH)} – {fmtTime(upNext.endH)}
+              {fmtTime(upNext.startH)} â€“ {fmtTime(upNext.endH)}
             </p>
           </div>
         )}
@@ -1593,7 +1328,7 @@ export default function CalendarPage() {
                 <span className="size-1.5 rounded-full bg-[#E8395B] mt-1.5 shrink-0" />
                 <div className="min-w-0">
                   <p className="text-[12.5px] font-semibold text-[#111] leading-snug">{item.title}</p>
-                  <p className="text-[11px] text-[#9CA3AF] mt-0.5">{item.type} · {item.duration}</p>
+                  <p className="text-[11px] text-[#9CA3AF] mt-0.5">{item.type} Â· {item.duration}</p>
                 </div>
               </div>
             ))
@@ -1601,7 +1336,7 @@ export default function CalendarPage() {
         </div>
       </aside>
 
-      {/* ── Main calendar ── */}
+      {/* â”€â”€ Main calendar â”€â”€ */}
       <div className="flex flex-col flex-1 min-w-0 min-h-0">
         {/* Toolbar */}
         <div className="flex items-center gap-4 px-5 py-3.5 border-b border-black/8 bg-white flex-wrap">
@@ -1681,7 +1416,7 @@ export default function CalendarPage() {
               )}
             </div>
 
-            {/* View toggle — same control as Pipeline */}
+            {/* View toggle â€” same control as Pipeline */}
             <div className="flex items-center h-10 rounded-xl border border-black/10 bg-white overflow-hidden shrink-0">
               <button
                 type="button"
@@ -1738,10 +1473,12 @@ export default function CalendarPage() {
         )}
       </div>
 
-      <EventDetailModal
-        event={selectedEvent}
+      <EventDetailsModal
+        open={!!selectedEvent}
+        event={calendarEventToEventView(selectedEvent)}
         onClose={() => setSelectedEvent(null)}
-        onEdit={openEditItem}
+        onEdit={() => selectedEvent && openEditItem(selectedEvent)}
+        onUpdateEvent={syncEventViewToEvent}
       />
       <OthersDetailsModal
         open={!!selectedOtherEvent}
@@ -1752,7 +1489,7 @@ export default function CalendarPage() {
       <MeetingDetailsModal
         open={!!selectedMeetingEvent}
         meeting={calendarEventToMeetingView(selectedMeetingEvent)}
-        entityLabel={selectedMeetingEvent?.category === "event" ? "Event" : "Meeting"}
+        entityLabel="Meeting"
         onClose={() => setSelectedMeetingEvent(null)}
         onEdit={() => selectedMeetingEvent && openEditItem(selectedMeetingEvent)}
       />
@@ -1822,7 +1559,7 @@ export default function CalendarPage() {
   );
 }
 
-/* ───────────────────────── List view ───────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ List view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function InitialsAvatar({ name, size = 26 }) {
   const initials = String(name || "?")
@@ -1906,13 +1643,13 @@ function EventListView({ events, onEventClick, onEdit, onDelete }) {
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`text-[12px] ${isToday ? "text-[#7A0A17] font-semibold" : "text-[#374151]"}`}>
                         {fmtDate(ev.date)}
-                        {isToday ? " · Today" : ""}
+                        {isToday ? " Â· Today" : ""}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-[12px] text-[#6B7280]">
-                          {fmtTime(ev.startH)} – {fmtTime(ev.endH)}
+                          {fmtTime(ev.startH)} â€“ {fmtTime(ev.endH)}
                         </span>
                         {meetingUrl ? (
                           <a
@@ -1935,7 +1672,7 @@ function EventListView({ events, onEventClick, onEdit, onDelete }) {
                         {priority}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-[12px] text-[#374151] whitespace-nowrap">{ev.meta?.stage || "—"}</td>
+                    <td className="px-4 py-3 text-[12px] text-[#374151] whitespace-nowrap">{ev.meta?.stage || "â€”"}</td>
                     <td className="px-4 py-3 text-[12px] text-[#6B7280] whitespace-nowrap">{fmtDate(ev.meta?.dueDate)}</td>
                     <td className="px-4 py-3">
                       {assignees.length ? (
@@ -1947,7 +1684,7 @@ function EventListView({ events, onEventClick, onEdit, onDelete }) {
                           </span>
                         </span>
                       ) : (
-                        <span className="text-[12px] text-[#9CA3AF]">—</span>
+                        <span className="text-[12px] text-[#9CA3AF]">â€”</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -1997,7 +1734,7 @@ function EventListView({ events, onEventClick, onEdit, onDelete }) {
   );
 }
 
-/* ───────────────────────── Slot overflow modal ───────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Slot overflow modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function SlotEventsModal({ slot, onClose, onEventClick }) {
   if (!slot) return null;
@@ -2012,7 +1749,7 @@ function SlotEventsModal({ slot, onClose, onEventClick }) {
     <Modal
       open={!!slot}
       onClose={onClose}
-      title={`${fmtTime(hour)} · ${dateLabel}`}
+      title={`${fmtTime(hour)} Â· ${dateLabel}`}
       subtitle={`${events.length} item${events.length === 1 ? "" : "s"} in this slot`}
       icon={<CalendarDays size={18} />}
       iconBg="#FCF5F6"
@@ -2035,7 +1772,7 @@ function SlotEventsModal({ slot, onClose, onEventClick }) {
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[11px] font-semibold" style={{ color: cat.text }}>
-                  {fmtTime(ev.startH)} – {fmtTime(ev.endH)}
+                  {fmtTime(ev.startH)} â€“ {fmtTime(ev.endH)}
                 </p>
                 <span
                   className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md"
@@ -2058,7 +1795,7 @@ function SlotEventsModal({ slot, onClose, onEventClick }) {
   );
 }
 
-/* ───────────────────────── Week / Day grid ───────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Week / Day grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function WeekDayGrid({ days, eventsFor, onEventClick, dragOverCell, updateDragCell, beginDrag, clearDrag, onDrop }) {
   const [slotModal, setSlotModal] = useState(null);
@@ -2185,7 +1922,7 @@ function WeekDayGrid({ days, eventsFor, onEventClick, dragOverCell, updateDragCe
   );
 }
 
-/* ───────────────────────── Month grid ───────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Month grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function MonthGrid({ days, anchorDate, eventsFor, onEventClick, onDayClick }) {
   return (

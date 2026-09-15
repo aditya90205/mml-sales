@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, Sparkles, Image as ImageIcon, X } from "lucide-react";
+import { ClipboardList, Search, Sparkles, X } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
 
@@ -18,14 +18,12 @@ const MODES = ["In-person", "Hybrid", "Virtual"];
 const VISIBILITY_OPTIONS = ["Branch only", "All branches", "Company-wide", "Private"];
 const BRANCHES = ["Rajouri Garden", "Pitampura", "Noida Sector 18", "Gurugram"];
 
-const EMPLOYEES = [
-  "Priya Sharma",
-  "Aditya Sharma",
-  "Rahul Verma",
-  "Sana Iqbal",
-  "Dev Malhotra",
-  "Neha Kapoor",
-];
+const BRANCH_STAFF = {
+  "Rajouri Garden": ["Priya Sharma", "Rahul Verma", "Anjali Gupta"],
+  Pitampura: ["Aditya Sharma", "Sana Iqbal"],
+  "Noida Sector 18": ["Dev Malhotra", "Ishaan Roy"],
+  Gurugram: ["Neha Kapoor", "Karan Mehta"],
+};
 
 const CLIENTS = ["Sethi Family", "Agarwal Family", "Malhotra Family", "Kapoor Family", "Mehta Family"];
 
@@ -54,6 +52,9 @@ const VENDOR_OPTIONS = ["Catering", "Decor / florals", "Photography", "Sound & l
 
 const INPUT =
   "w-full h-10 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40 transition-colors";
+
+const PILL_ACTIVE = "border-[#E8395B]/50 text-[#E8395B] bg-[#FDECEE]";
+const PILL_IDLE = "border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]";
 
 function computeEndTime(startTime, durationLabel) {
   if (!startTime || !durationLabel) return "";
@@ -115,14 +116,14 @@ function Field({ label, required, children, danger, hint }) {
   );
 }
 
-function Pill({ active, onClick, children }) {
+function Pill({ active, onClick, children, className = "" }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`h-10 px-4 rounded-xl border text-[13px] font-semibold transition-colors ${
-        active ? "border-[#7A0A17] text-[#7A0A17] bg-[#FCF5F6]" : "border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]"
-      }`}
+        active ? PILL_ACTIVE : PILL_IDLE
+      } ${className}`}
     >
       {children}
     </button>
@@ -140,7 +141,9 @@ export default function CreateEventModal({ open, onClose, onSave, defaultDate, i
       return;
     }
     setForm(emptyForm(defaultDate));
-  }, [open, defaultDate, initial]);
+    // Seed once per open so parent re-renders don't reset in-progress edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const set = (field) => (val) => setForm((f) => ({ ...f, [field]: val }));
 
@@ -157,15 +160,21 @@ export default function CreateEventModal({ open, onClose, onSave, defaultDate, i
     }));
   };
 
-  const selectAllBranches = () =>
-    setForm((f) => ({ ...f, branches: f.branches.length === BRANCHES.length ? [] : [...BRANCHES] }));
+  const pooledEmployees = useMemo(() => {
+    const source = form.branches.length ? form.branches : BRANCHES;
+    return [...new Set(source.flatMap((b) => BRANCH_STAFF[b] || []))];
+  }, [form.branches]);
 
   const addEmployee = (name) => {
     if (name === "__all__") {
-      set("employees")([...new Set([...form.employees, ...EMPLOYEES])]);
+      set("employees")([...new Set([...form.employees, ...pooledEmployees])]);
       return;
     }
     if (name && !form.employees.includes(name)) set("employees")([...form.employees, name]);
+  };
+  const addBranchStaff = (branch) => {
+    const names = BRANCH_STAFF[branch] || [];
+    set("employees")([...new Set([...form.employees, ...names])]);
   };
   const removeEmployee = (name) => set("employees")(form.employees.filter((e) => e !== name));
 
@@ -234,8 +243,8 @@ export default function CreateEventModal({ open, onClose, onSave, defaultDate, i
       title={isEdit ? "Edit Event" : "Create Event"}
       subtitle="An internal event — review, training, town hall or offsite"
       icon={<ClipboardList size={16} />}
-      iconBg="#FDECF3"
-      iconColor="#A02868"
+      iconBg="#FDECEE"
+      iconColor="#E8395B"
       width="max-w-[640px]"
       footer={
         <div className="flex items-center justify-between gap-3 w-full">
@@ -283,9 +292,9 @@ export default function CreateEventModal({ open, onClose, onSave, defaultDate, i
         </Field>
 
         <Field label="Priority" required>
-          <div className="flex items-center gap-2.5">
+          <div className="grid grid-cols-3 gap-2.5">
             {PRIORITIES.map((p) => (
-              <Pill key={p} active={form.priority === p} onClick={() => set("priority")(p)}>
+              <Pill key={p} active={form.priority === p} onClick={() => set("priority")(p)} className="w-full">
                 {p}
               </Pill>
             ))}
@@ -293,11 +302,18 @@ export default function CreateEventModal({ open, onClose, onSave, defaultDate, i
         </Field>
 
         <Field label="Event Mode" required>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
             {MODES.map((m) => (
-              <Pill key={m} active={form.mode === m} onClick={() => set("mode")(m)}>
+              <button
+                key={m}
+                type="button"
+                onClick={() => set("mode")(m)}
+                className={`h-9 px-4 rounded-full border text-[13px] font-semibold transition-colors ${
+                  form.mode === m ? PILL_ACTIVE : PILL_IDLE
+                }`}
+              >
                 {m}
-              </Pill>
+              </button>
             ))}
           </div>
         </Field>
@@ -338,16 +354,25 @@ export default function CreateEventModal({ open, onClose, onSave, defaultDate, i
           hint="Pick any number of branches — the employee list pools across all of them."
         >
           <div className="flex items-center gap-2.5 flex-wrap">
-            {BRANCHES.map((b, i) => (
+            {BRANCHES.map((b) => (
               <div key={b} className="relative">
-                <Pill active={form.branches.includes(b)} onClick={() => toggleBranch(b)}>
+                <button
+                  type="button"
+                  onClick={() => toggleBranch(b)}
+                  className={`h-9 px-4 rounded-full border text-[13px] font-semibold transition-colors ${
+                    form.branches.includes(b) ? PILL_ACTIVE : PILL_IDLE
+                  }`}
+                >
                   {b}
-                </Pill>
-                {i === 0 && (
+                </button>
+                {form.branches.includes(b) && (
                   <button
                     type="button"
-                    onClick={selectAllBranches}
-                    className="absolute -right-2 -top-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[#7A0A17] text-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addBranchStaff(b);
+                    }}
+                    className="absolute -right-2 -top-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[#E8395B] text-white"
                   >
                     + all
                   </button>
@@ -370,11 +395,13 @@ export default function CreateEventModal({ open, onClose, onSave, defaultDate, i
             <option value="__all__" className="text-[#111] font-semibold">
               All
             </option>
-            {EMPLOYEES.filter((e) => !form.employees.includes(e)).map((e) => (
-              <option key={e} value={e} className="text-[#111]">
-                {e}
-              </option>
-            ))}
+            {pooledEmployees
+              .filter((e) => !form.employees.includes(e))
+              .map((e) => (
+                <option key={e} value={e} className="text-[#111]">
+                  {e}
+                </option>
+              ))}
           </select>
           {form.employees.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
@@ -395,13 +422,16 @@ export default function CreateEventModal({ open, onClose, onSave, defaultDate, i
 
         <Field label="Clients / Families Invited">
           <div className="relative">
-            <input
-              type="text"
-              value={clientQuery}
-              onChange={(e) => setClientQuery(e.target.value)}
-              placeholder="Search a client..."
-              className={INPUT}
-            />
+            <div className={`${INPUT} flex items-center gap-2 pr-3`}>
+              <Search size={14} className="text-[#9CA3AF] shrink-0" />
+              <input
+                type="text"
+                value={clientQuery}
+                onChange={(e) => setClientQuery(e.target.value)}
+                placeholder="Search a client..."
+                className="flex-1 min-w-0 bg-transparent outline-none text-[13px] text-[#111] placeholder:text-[#9CA3AF]"
+              />
+            </div>
             {clientMatches.length > 0 && (
               <div className="absolute z-10 mt-1 w-full rounded-xl border border-black/10 bg-white shadow-lg overflow-hidden">
                 {clientMatches.map((c) => (
@@ -471,9 +501,16 @@ export default function CreateEventModal({ open, onClose, onSave, defaultDate, i
         <Field label="Send Reminders Via" required hint={reminderHint}>
           <div className="flex items-center gap-2.5 flex-wrap">
             {REMINDER_CHANNELS.map((c) => (
-              <Pill key={c} active={form.reminderChannels.includes(c)} onClick={() => toggleInArray("reminderChannels")(c)}>
+              <button
+                key={c}
+                type="button"
+                onClick={() => toggleInArray("reminderChannels")(c)}
+                className={`h-9 px-4 rounded-full border text-[13px] font-semibold transition-colors ${
+                  form.reminderChannels.includes(c) ? PILL_ACTIVE : PILL_IDLE
+                }`}
+              >
                 {c}
-              </Pill>
+              </button>
             ))}
           </div>
         </Field>
@@ -494,7 +531,7 @@ export default function CreateEventModal({ open, onClose, onSave, defaultDate, i
             <button
               type="button"
               onClick={() => toast.info("AI message drafting is coming soon.")}
-              className="h-10 px-3.5 rounded-xl border border-[#7A0A17]/35 text-[#7A0A17] text-[12.5px] font-semibold inline-flex items-center gap-1.5 whitespace-nowrap hover:bg-[#FDECEE]"
+              className="h-10 px-3.5 rounded-xl border border-[#E8395B]/40 text-[#E8395B] text-[12.5px] font-semibold inline-flex items-center gap-1.5 whitespace-nowrap hover:bg-[#FDECEE]"
             >
               <Sparkles size={14} /> Make with AI
             </button>
@@ -505,9 +542,16 @@ export default function CreateEventModal({ open, onClose, onSave, defaultDate, i
         <Field label="Reminder Frequency">
           <div className="flex items-center gap-2.5 flex-wrap">
             {REMINDER_FREQUENCIES.map((f) => (
-              <Pill key={f} active={form.reminderFrequency === f} onClick={() => set("reminderFrequency")(f)}>
+              <button
+                key={f}
+                type="button"
+                onClick={() => set("reminderFrequency")(f)}
+                className={`h-9 px-3.5 rounded-full border text-[12.5px] font-semibold whitespace-nowrap transition-colors ${
+                  form.reminderFrequency === f ? PILL_ACTIVE : PILL_IDLE
+                }`}
+              >
                 {f}
-              </Pill>
+              </button>
             ))}
           </div>
         </Field>
@@ -529,16 +573,16 @@ export default function CreateEventModal({ open, onClose, onSave, defaultDate, i
         </Field>
 
         <Field label="Attachments">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center">
             <input
               type="text"
               value={form.attachment}
               readOnly
               placeholder="Select file"
-              className={`${INPUT} flex-1 bg-[#FAFAFB]`}
+              className={`${INPUT} flex-1 rounded-r-none bg-[#FAFAFB]`}
             />
-            <label className="h-10 px-3.5 rounded-none border border-black/10 inline-flex items-center gap-2 text-[12.5px] font-medium text-[#374151] hover:bg-[#FAFAFB] cursor-pointer whitespace-nowrap">
-              <ImageIcon size={14} /> Browse
+            <label className="h-10 px-4 rounded-r-xl border border-l-0 border-black/10 inline-flex items-center text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] cursor-pointer whitespace-nowrap">
+              Browse
               <input
                 type="file"
                 className="hidden"
