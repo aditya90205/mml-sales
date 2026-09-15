@@ -99,6 +99,128 @@ function getMeetingJoinUrl(meta = {}) {
   return null;
 }
 
+function eventToMeetingForm(ev) {
+  const m = ev.meta || {};
+  return {
+    title: ev.title || "",
+    meetingWith: m.meetingWith || (m.clientRelated ? "client" : "employee"),
+    inviteGroups: m.inviteGroups || (m.clientRelated ? ["client", "employees"] : ["employees"]),
+    people: Array.isArray(m.people) ? m.people : Array.isArray(m.assignees) ? m.assignees : [],
+    emails: Array.isArray(m.emails)
+      ? m.emails
+      : String(m.emailIds || "")
+          .split(/[;,]/)
+          .map((x) => x.trim())
+          .filter(Boolean),
+    emailIds: m.emailIds || "",
+    specialInstructions: m.specialInstructions || "",
+    notes: m.description && m.description !== (m.eventType || m.formDescription) ? m.description : "",
+    description: m.eventType || m.formDescription || "",
+    meetingType: m.meetingType || m.meetingTypes?.[0] || "video",
+    meetingTypes: m.meetingTypes?.length ? m.meetingTypes : ["video"],
+    meetingLink: m.meetingLink || m.link || "",
+    venue: m.venue || m.location || "",
+    startDate: toDateInput(ev.date),
+    endDate: toDateInput(m.dueDate || ev.date),
+    startTime: m.startTime || hourToTimeStr(ev.startH),
+    endTime: m.endTime || hourToTimeStr(ev.endH),
+    duration: m.duration || "",
+    reminderChannels: m.reminderChannels || ["email"],
+    messageTemplate: m.messageTemplate || "",
+    messageBody: m.messageBody || "",
+    reminderFrequency: m.reminderFrequency || ["on_day"],
+    customReminders: m.customReminders || [],
+    priority: m.priority || "High",
+    attachment: m.attachment || "",
+    referenceLink: m.referenceLink || "",
+    referenceLinkDescription: m.referenceLinkDescription || "",
+    requirements: m.requirements || [],
+    notesTo: m.notesTo || [],
+  };
+}
+
+function eventToEventForm(ev) {
+  const m = ev.meta || {};
+  return {
+    title: ev.title || "",
+    category: m.eventCategory || m.eventType || m.formDescription || "Internal meeting",
+    priority: m.priority || "High",
+    mode: m.eventMode || "In-person",
+    visibility: m.visibility || "Branch only",
+    venue: m.venue || m.location || "",
+    logisticsRequired: Boolean(m.logisticsRequired),
+    branches: Array.isArray(m.branches) ? m.branches : [],
+    employees: Array.isArray(m.people) ? m.people : Array.isArray(m.assignees) ? m.assignees : [],
+    clients: Array.isArray(m.clients) ? m.clients : [],
+    startDate: toDateInput(ev.date),
+    endDate: toDateInput(m.dueDate || ev.date),
+    startTime: m.startTime || hourToTimeStr(ev.startH),
+    duration: m.duration || "5 hours",
+    reminderChannels: m.reminderChannels?.length ? m.reminderChannels : ["Email", "WhatsApp"],
+    messageTemplate: m.messageTemplate || "No template — plain text",
+    reminderFrequency: m.reminderFrequency || "On day of event",
+    vendors: Array.isArray(m.vendors) ? m.vendors : [],
+    attachment: m.attachment || "",
+    referenceLink: m.referenceLink || "",
+    specialInstructions: m.specialInstructions || "",
+  };
+}
+
+function effortFromHours(hours) {
+  if (hours >= 2) return "2 hours";
+  if (hours >= 1) return "1 hour";
+  return "30 mins";
+}
+
+function eventToTaskForm(ev) {
+  const m = ev.meta || {};
+  const priority = m.priority === "Critical" ? "High" : m.priority || "Low";
+  return {
+    title: ev.title || "",
+    description: m.description || "Follow up on pending response",
+    customDescription: m.customDescription || "",
+    priority,
+    taskType: m.taskType || "Client visit",
+    branch: m.branch || "Rajouri Garden",
+    assignees: Array.isArray(m.assignees) ? m.assignees : [],
+    isClientRelated: Boolean(m.clientRelated),
+    client: m.client || "",
+    startDate: toDateInput(ev.date),
+    dueDate: toDateInput(m.dueDate || addDays(ev.date, 1)),
+    dueTime: m.dueTime || m.startTime || hourToTimeStr(ev.startH),
+    estimatedEffort: m.estimatedEffort || effortFromHours(Math.max(1, (ev.endH ?? ev.startH + 1) - ev.startH)),
+    repeats: m.repeats || "Does not repeat",
+    stars: m.stars ?? (priority === "High" ? 10 : priority === "Medium" ? 7 : 3),
+    reminderChannels: m.reminderChannels?.length ? m.reminderChannels : ["Email", "WhatsApp"],
+    messageTemplate: m.messageTemplate || "No template — plain text",
+    messageBody: m.messageBody || "",
+    reminderFrequency: Array.isArray(m.reminderFrequency)
+      ? m.reminderFrequency[0] || "On day of task"
+      : m.reminderFrequency || "On day of task",
+    checklist: Array.isArray(m.checklist) ? m.checklist : [],
+    attachment: m.attachment || m.attachments?.[0]?.name || "",
+    referenceLink: m.referenceLink || "",
+    specialInstructions: m.specialInstructions || "",
+    stage: m.stage || "New",
+  };
+}
+
+function eventToOtherForm(ev) {
+  const m = ev.meta || {};
+  return {
+    title: ev.title || "",
+    description: m.description || "",
+    priority: m.priority || "Medium",
+    assignees: Array.isArray(m.assignees) ? m.assignees : [],
+    isClientRelated: Boolean(m.clientRelated),
+    client: m.client || "",
+    date: toDateInput(ev.date),
+    startTime: m.startTime || hourToTimeStr(ev.startH),
+    endTime: m.endTime || hourToTimeStr(ev.endH),
+    stars: m.stars ?? 7,
+  };
+}
+
 const PRIORITY_STYLES = {
   Critical: { color: "#E8395B", bg: "#FDECEE" },
   High: { color: "#F59E0B", bg: "#FFF3E4" },
