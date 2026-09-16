@@ -12,6 +12,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
+    --app-scale: 1;
+    --app-vh: 100vh;
   }
 
   body {

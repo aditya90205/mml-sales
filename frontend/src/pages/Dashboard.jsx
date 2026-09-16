@@ -215,14 +215,14 @@ const LEAD_HEALTH = [
 ];
 
 const FUNNEL_ROWS = [
-  { key: "new",         stageId: "P0", label: "New",                stat: "P0 - 482", pct: "100%", to: "to P1", top: "9%",    height: "12.5%", width: "92%", color: "#84A8DE" },
-  { key: "contacted",   stageId: "P0", label: "Contacted",          stat: "P0 - 482", pct: "100%", to: "to P1", top: "21.8%", height: "11.5%", width: "86%", color: "#6394D7" },
-  { key: "qualified",   stageId: "P1", label: "Qualified",          stat: "P1 - 395", pct: "82%",  to: "to P2", dropPct: "18%", dropCount: "87", top: "33.5%", height: "11.2%", width: "80%", color: "#386FB8" },
-  { key: "profile",     stageId: "P2", label: "Profile Creation",   stat: "P2 - 351", pct: "75%",  to: "to P3", dropPct: "11%", dropCount: "87", top: "44.8%", height: "10.8%", width: "72%", color: "#D7AB77" },
-  { key: "video",       stageId: "P3", label: "Video call / Visit", stat: "P3 - 295", pct: "60%",  to: "to P4", dropPct: "16%", dropCount: "87", top: "55.6%", height: "10.5%", width: "64%", color: "#BB8D58" },
-  { key: "negotiation", stageId: "P4", label: "Negotiation",        stat: "P4 - 260", pct: "52%",  to: "to P5", dropPct: "14%", dropCount: "87", top: "66.2%", height: "10.2%", width: "56%", color: "#8A909C" },
-  { key: "payment",     stageId: "P5", label: "Payment",            stat: "P5 - 224", pct: "44%",  to: "to P6", dropPct: "8%",  dropCount: "118", top: "76.5%", height: "10.5%", width: "48%", color: "#A11620" },
-  { key: "handover",    stageId: "P6", label: "Handover",           stat: "P6 - 224", pct: "43%",  to: "Final Conversion", dropCount: "87", isFinal: true, top: "87%", height: "11.5%", width: "40%", color: "#6E0F16" },
+  { key: "new",         stageId: "P0", label: "New",                stat: "P0 - 482", pct: "100%", to: "to P1", top: "7.8%",  height: "13.2%", width: "92%", color: "#84A8DE" },
+  { key: "contacted",   stageId: "P0", label: "Contacted",          stat: "P0 - 482", pct: "100%", to: "to P1", top: "21.2%", height: "12.2%", width: "86%", color: "#6394D7" },
+  { key: "qualified",   stageId: "P1", label: "Qualified",          stat: "P1 - 395", pct: "82%",  to: "to P2", dropPct: "18%", dropCount: "87", top: "33.4%", height: "11.4%", width: "80%", color: "#386FB8" },
+  { key: "profile",     stageId: "P2", label: "Profile Creation",   stat: "P2 - 351", pct: "75%",  to: "to P3", dropPct: "11%", dropCount: "87", top: "44.8%", height: "11.0%", width: "72%", color: "#D7AB77" },
+  { key: "video",       stageId: "P3", label: "Video call / Visit", stat: "P3 - 295", pct: "60%",  to: "to P4", dropPct: "16%", dropCount: "87", top: "55.6%", height: "10.6%", width: "64%", color: "#BB8D58" },
+  { key: "negotiation", stageId: "P4", label: "Negotiation",        stat: "P4 - 260", pct: "52%",  to: "to P5", dropPct: "14%", dropCount: "87", top: "65.8%", height: "10.4%", width: "56%", color: "#8A909C" },
+  { key: "payment",     stageId: "P5", label: "Payment",            stat: "P5 - 224", pct: "44%",  to: "to P6", dropPct: "8%",  dropCount: "118", top: "76.0%", height: "10.6%", width: "48%", color: "#A11620" },
+  { key: "handover",    stageId: "P6", label: "Handover",           stat: "P6 - 224", pct: "43%",  to: "Final Conversion", dropCount: "87", isFinal: true, top: "86.2%", height: "11.2%", width: "42%", color: "#6E0F16" },
 ];
 
 const AI_ACTIONS = [
@@ -772,7 +772,7 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
   };
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-5 flex flex-col h-full">
+    <div className="bg-white border border-black/8 rounded-2xl p-4 sm:p-5 flex flex-col h-full min-w-0 [container-type:inline-size]">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-[16px] font-bold text-[#111] flex items-center gap-2">
           <Filter size={16} className="text-[#7A0A17]" fill="#7A0A17" strokeWidth={2} />
@@ -806,9 +806,12 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
         </div>
       </div>
 
-      <div className="flex items-stretch gap-3 mt-3 flex-1 min-h-[400px]">
-        <div className="flex-1 flex items-center justify-center min-w-0">
-          <div className="relative w-full max-w-[260px]" style={{ aspectRatio: "301 / 386" }}>
+      <div className="flex items-center justify-center mt-4 flex-1 min-h-[380px] [@container(min-width:420px)]:min-h-[440px]">
+        <div className="flex items-stretch gap-3 sm:gap-5 w-full">
+          <div
+            className="relative w-full max-w-[230px] [@container(min-width:420px)]:max-w-[270px] [@container(min-width:520px)]:max-w-[300px] shrink-0"
+            style={{ aspectRatio: "301 / 386" }}
+          >
             <img
               src={salesFunnelSvg}
               alt=""
@@ -848,55 +851,59 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
               );
             })}
           </div>
-        </div>
 
-        <div className="shrink-0 flex flex-col justify-between py-[8%] min-w-[168px]">
-          {FUNNEL_ROWS.map((row) => {
-            const isActive = activeStage === row.stageId;
-            const dimOthers = Boolean(activeStage) && !isActive;
-            return (
-              <button
-                key={row.key}
-                type="button"
-                onClick={() => selectStage(row.stageId)}
-                aria-pressed={isActive}
-                className="flex items-center gap-2 text-left transition-opacity duration-150"
-                style={{ opacity: dimOthers ? 0.4 : 1 }}
-              >
-                <span
-                  className="text-[12.5px] leading-none whitespace-nowrap tabular-nums transition-colors duration-150"
+          <div className="relative flex-1 min-w-0 max-w-[52%] [@container(min-width:420px)]:min-w-[148px] [@container(min-width:520px)]:min-w-[168px]">
+            {FUNNEL_ROWS.map((row) => {
+              const isActive = activeStage === row.stageId;
+              const dimOthers = Boolean(activeStage) && !isActive;
+              return (
+                <button
+                  key={row.key}
+                  type="button"
+                  onClick={() => selectStage(row.stageId)}
+                  aria-pressed={isActive}
+                  className="absolute inset-x-0 flex items-center gap-2 text-left transition-opacity duration-150"
                   style={{
-                    fontWeight: isActive ? 800 : 700,
-                    color: isActive ? "#111" : "#111",
+                    top: row.top,
+                    height: row.height,
+                    opacity: dimOthers ? 0.4 : 1,
                   }}
                 >
-                  {row.stat}
-                </span>
-                <span className="text-[#D1D5DB] text-[12px] leading-none">→</span>
-                <div className="min-w-0">
-                  {row.isFinal ? (
-                    <p className="text-[11.5px] leading-tight whitespace-nowrap">
-                      <span className={`font-medium ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}>Final </span>
-                      <span className={`tabular-nums ${isActive ? "font-extrabold text-[#111]" : "font-bold text-[#111]"}`}>{row.pct}</span>
-                      <span className={`font-medium ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}> ({row.dropCount})</span>
-                    </p>
-                  ) : (
-                    <p className="text-[11.5px] leading-tight whitespace-nowrap">
-                      <span className={`tabular-nums ${isActive ? "font-extrabold text-[#111]" : "font-bold text-[#111]"}`}>{row.pct}</span>
-                      <span className={`font-medium ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}> {row.to}</span>
-                      {row.dropPct && (
-                        <span className="ml-1.5 pl-1.5 border-l border-[#E5E7EB]">
-                          <span className={isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}>Drop </span>
-                          <span className={`tabular-nums ${isActive ? "font-extrabold text-[#E11D48]" : "font-bold text-[#E11D48]"}`}>{row.dropPct}</span>
-                          <span className={isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}> ({row.dropCount})</span>
-                        </span>
-                      )}
-                    </p>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+                  <span
+                    className="text-[12.5px] leading-none whitespace-nowrap tabular-nums transition-colors duration-150"
+                    style={{
+                      fontWeight: isActive ? 800 : 700,
+                      color: isActive ? "#111" : "#111",
+                    }}
+                  >
+                    {row.stat}
+                  </span>
+                  <span className="text-[#D1D5DB] text-[12px] leading-none">→</span>
+                  <div className="min-w-0">
+                    {row.isFinal ? (
+                      <p className="text-[11.5px] leading-tight whitespace-nowrap">
+                        <span className={`font-medium ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}>Final </span>
+                        <span className={`tabular-nums ${isActive ? "font-extrabold text-[#111]" : "font-bold text-[#111]"}`}>{row.pct}</span>
+                        <span className={`font-medium ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}> ({row.dropCount})</span>
+                      </p>
+                    ) : (
+                      <p className="text-[11.5px] leading-tight whitespace-nowrap">
+                        <span className={`tabular-nums ${isActive ? "font-extrabold text-[#111]" : "font-bold text-[#111]"}`}>{row.pct}</span>
+                        <span className={`font-medium ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}> {row.to}</span>
+                        {row.dropPct && (
+                          <span className="ml-1.5 pl-1.5 border-l border-[#E5E7EB]">
+                            <span className={isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}>Drop </span>
+                            <span className={`tabular-nums ${isActive ? "font-extrabold text-[#E11D48]" : "font-bold text-[#E11D48]"}`}>{row.dropPct}</span>
+                            <span className={isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}> ({row.dropCount})</span>
+                          </span>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
@@ -963,7 +970,7 @@ function MyLeadsCard({
   };
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-5 flex flex-col min-w-0">
+    <div className="bg-white border border-black/8 rounded-2xl p-4 sm:p-5 flex flex-col min-w-0 h-full">
       <LeadScoreModal lead={scoreLead} onClose={() => setScoreLead(null)} />
       <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
 
@@ -1092,7 +1099,7 @@ function MyLeadsCard({
       </div>
 
       <div className="border border-black/8 rounded-xl overflow-x-auto scrollbar-thin">
-        <table className="w-full text-left border-collapse min-w-[920px]">
+        <table className="w-full text-left border-collapse min-w-[760px]">
           <thead>
             <tr className="border-b border-black/6 bg-[#FAFAFB]/80">
               {[
@@ -1459,7 +1466,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,1fr)] gap-4 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.55fr)_minmax(400px,1.05fr)] gap-4 items-stretch">
           <div className="min-w-0">
             <MyLeadsCard
               leads={visibleLeads}

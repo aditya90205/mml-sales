@@ -1429,7 +1429,7 @@ export default function CalendarPage() {
   }, [visibleEvents, days, view, anchorDate]);
 
   return (
-    <div className="flex flex-1 min-h-0" style={{ height: "calc(100vh - 56px)" }}>
+    <div className="flex flex-1 min-h-0" style={{ height: "calc(var(--app-vh, 100vh) - 56px)" }}>
       {/* â”€â”€ Left utility rail (page-local, sits beside the app sidebar) â”€â”€ */}
       <aside className="w-[236px] shrink-0 border-r border-black/8 bg-white flex flex-col gap-4 p-4 overflow-y-auto scrollbar-thin">
         <div className="relative">
