@@ -59,7 +59,7 @@ import {
   unscheduledToMeetingForm,
 } from "../utils/calendarStore.js";
 import { CLIENTS } from "../utils/clientsData.js";
-import { addP0Lead, countStageLeads, subscribePipeline } from "../utils/pipelineStore.js";
+import { addP0Lead, countStageLeads, readLeads, subscribePipeline } from "../utils/pipelineStore.js";
 import { addTaskFromForm, getTodayTaskStats, subscribeTasks } from "../utils/tasksStore.js";
 import salesFunnelSvg from "../assets/sales-funnel.svg";
 import salesPersonProfile from "../assets/sale-person-profile.jpg";
@@ -244,16 +244,65 @@ const LEAD_HEALTH = [
   { key: "cold", label: "Cold Leads", count: 18, icon: Snowflake, bg: "#E8F2FE", fg: "#3B82F6" },
 ];
 
-const FUNNEL_ROWS = [
-  { key: "new",         stageId: "P0", label: "New",                stat: "P0 - 482", pct: "100%", to: "to P1", top: "7.8%",  height: "13.2%", width: "92%", color: "#84A8DE" },
-  { key: "contacted",   stageId: "P0", label: "Contacted",          stat: "P0 - 482", pct: "100%", to: "to P1", top: "21.2%", height: "12.2%", width: "86%", color: "#6394D7" },
-  { key: "qualified",   stageId: "P1", label: "Qualified",          stat: "P1 - 395", pct: "82%",  to: "to P2", dropPct: "18%", dropCount: "87", top: "33.4%", height: "11.4%", width: "80%", color: "#386FB8" },
-  { key: "profile",     stageId: "P2", label: "Profile Creation",   stat: "P2 - 351", pct: "75%",  to: "to P3", dropPct: "11%", dropCount: "87", top: "44.8%", height: "11.0%", width: "72%", color: "#D7AB77" },
-  { key: "video",       stageId: "P3", label: "Video call / Visit", stat: "P3 - 295", pct: "60%",  to: "to P4", dropPct: "16%", dropCount: "87", top: "55.6%", height: "10.6%", width: "64%", color: "#BB8D58" },
-  { key: "negotiation", stageId: "P4", label: "Negotiation",        stat: "P4 - 260", pct: "52%",  to: "to P5", dropPct: "14%", dropCount: "87", top: "65.8%", height: "10.4%", width: "56%", color: "#8A909C" },
-  { key: "payment",     stageId: "P5", label: "Payment",            stat: "P5 - 224", pct: "44%",  to: "to P6", dropPct: "8%",  dropCount: "118", top: "76.0%", height: "10.6%", width: "48%", color: "#A11620" },
-  { key: "handover",    stageId: "P6", label: "Handover",           stat: "P6 - 224", pct: "43%",  to: "Final Conversion", dropCount: "87", isFinal: true, top: "86.2%", height: "11.2%", width: "42%", color: "#6E0F16" },
+const FUNNEL_STAGE_IDS = ["P0", "P1", "P2", "P3", "P4", "P5", "P6"];
+
+const FUNNEL_ROW_META = [
+  { key: "new",         stageId: "P0", label: "New",                to: "to P1", top: "7.8%",  height: "13.2%", width: "92%", color: "#84A8DE" },
+  { key: "contacted",   stageId: "P0", label: "Contacted",          to: "to P1", top: "21.2%", height: "12.2%", width: "86%", color: "#6394D7" },
+  { key: "qualified",   stageId: "P1", label: "Qualified",          to: "to P2", top: "33.4%", height: "11.4%", width: "80%", color: "#386FB8" },
+  { key: "profile",     stageId: "P2", label: "Profile Creation",   to: "to P3", top: "44.8%", height: "11.0%", width: "72%", color: "#D7AB77" },
+  { key: "video",       stageId: "P3", label: "Video call / Visit", to: "to P4", top: "55.6%", height: "10.6%", width: "64%", color: "#BB8D58" },
+  { key: "negotiation", stageId: "P4", label: "Negotiation",        to: "to P5", top: "65.8%", height: "10.4%", width: "56%", color: "#8A909C" },
+  { key: "payment",     stageId: "P5", label: "Payment",            to: "to P6", top: "76.0%", height: "10.6%", width: "48%", color: "#A11620" },
+  { key: "handover",    stageId: "P6", label: "Handover",           to: "Final Conversion", isFinal: true, top: "86.2%", height: "11.2%", width: "42%", color: "#6E0F16" },
 ];
+
+function meanDays(leads) {
+  const nums = (leads || []).map((lead) => Number(lead.days)).filter((n) => Number.isFinite(n));
+  if (!nums.length) return 0;
+  return nums.reduce((sum, n) => sum + n, 0) / nums.length;
+}
+
+function formatAvgDays(value) {
+  if (!value) return "—";
+  return `${value.toFixed(1)} Days`;
+}
+
+/** Cumulative funnel + avg conversion time from live pipeline leads. */
+function buildPipelineFunnel(leadsByStage) {
+  const current = FUNNEL_STAGE_IDS.map((id) => (leadsByStage[id] || []).length);
+  const reached = FUNNEL_STAGE_IDS.map((_, i) => current.slice(i).reduce((sum, n) => sum + n, 0));
+  const laterThanP0 = current.slice(1).reduce((sum, n) => sum + n, 0);
+  const p0Contacted = (leadsByStage.P0 || []).filter((lead) => lead.lastDiscussion || lead.nextAction).length;
+  const contacted = p0Contacted + laterThanP0;
+
+  const counts = FUNNEL_ROW_META.map((row) => (
+    row.key === "contacted" ? contacted : (reached[FUNNEL_STAGE_IDS.indexOf(row.stageId)] || 0)
+  ));
+  const total = counts[0] || 0;
+
+  const rows = FUNNEL_ROW_META.map((row, i) => {
+    const count = counts[i];
+    const prev = i === 0 ? count : counts[i - 1];
+    const dropped = Math.max(0, prev - count);
+    const pct = total ? `${Math.round((count / total) * 100)}%` : "0%";
+    const dropPct = prev ? `${Math.round((dropped / prev) * 100)}%` : "0%";
+    return {
+      ...row,
+      stat: `${row.stageId} - ${count}`,
+      pct,
+      dropPct: i >= 2 && dropped > 0 ? dropPct : undefined,
+      dropCount: String(row.isFinal ? count : dropped),
+    };
+  });
+
+  const dwell = FUNNEL_STAGE_IDS.map((id) => meanDays(leadsByStage[id]));
+  return {
+    rows,
+    toPayment: formatAvgDays(dwell.slice(0, 5).reduce((sum, n) => sum + n, 0)),
+    toOnboarding: formatAvgDays(dwell.slice(0, 6).reduce((sum, n) => sum + n, 0)),
+  };
+}
 
 const AI_ACTIONS = [
   { label: "Create",   icon: Plus,      color: "#16A34A" },
@@ -795,10 +844,43 @@ function AIAssistant() {
   );
 }
 
+function ConvertTimeBar({ toPayment, toOnboarding }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[28px] border border-[#E6E8EE] mt-5 bg-[#F7F8FC] px-3 py-2 sm:px-3.5">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <span className="size-9 rounded-full bg-[#EEF0FE] grid place-items-center shrink-0">
+          <History size={16} className="text-[#6366F1]" strokeWidth={2} />
+        </span>
+        <p className="text-[12.5px] font-semibold text-[#374151] leading-tight">
+          Avg. Time to Convert Lead
+        </p>
+      </div>
+      <div className="flex-1 flex items-stretch min-w-[240px]">
+        <div className="flex-1 px-2 min-w-0">
+          <p className="text-[15px] font-bold text-[#1E3A8A] leading-tight tabular-nums">{toPayment}</p>
+          <p className="text-[10.5px] text-[#9CA3AF] leading-tight mt-0.5 whitespace-nowrap">P0 to P5 (Payment Done)</p>
+        </div>
+        <div className="w-px bg-[#D8DCE6] my-0.5" />
+        <div className="flex-1 px-2 min-w-0">
+          <p className="text-[15px] font-bold text-[#2563EB] leading-tight tabular-nums">{toOnboarding}</p>
+          <p className="text-[10.5px] text-[#9CA3AF] leading-tight mt-0.5 whitespace-nowrap">P0 to P6 (Onboarding)</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SalesFunnelCard({ activeStage, onSelectStage }) {
   const [period, setPeriod] = useState("Daily");
   const [open, setOpen] = useState(false);
+  const [leadsByStage, setLeadsByStage] = useState(readLeads);
   const ref = useRef(null);
+  const { rows: FUNNEL_ROWS, toPayment, toOnboarding } = useMemo(
+    () => buildPipelineFunnel(leadsByStage),
+    [leadsByStage]
+  );
+
+  useEffect(() => subscribePipeline(() => setLeadsByStage(readLeads())), []);
 
   useEffect(() => {
     const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -811,8 +893,9 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
   };
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 sm:p-5 flex flex-col h-full min-w-0 [container-type:inline-size]">
-      <div className="flex items-center justify-between gap-3">
+    <div className="bg-white border border-black/8 rounded-2xl p-4 sm:p-5 pb-3 flex flex-col h-full min-w-0 [container-type:inline-size]">
+
+      <div className="flex items-center justify-between gap-3 mt-4">
         <h2 className="text-[16px] font-bold text-[#111] flex items-center gap-2">
           <Filter size={16} className="text-[#7A0A17]" fill="#7A0A17" strokeWidth={2} />
           Sales Funnel (P0 - P6)
@@ -845,7 +928,7 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
         </div>
       </div>
 
-      <div className="flex items-center justify-center mt-4 flex-1 min-h-[380px] [@container(min-width:420px)]:min-h-[440px]">
+      <div className="flex items-end justify-center mt-auto pt-3 flex-1 min-h-[380px] [@container(min-width:420px)]:min-h-[440px]">
         <div className="flex items-stretch gap-3 sm:gap-5 w-full">
           <div
             className="relative w-full max-w-[230px] [@container(min-width:420px)]:max-w-[270px] [@container(min-width:520px)]:max-w-[300px] shrink-0"
@@ -890,6 +973,7 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
               );
             })}
           </div>
+          
 
           <div className="relative flex-1 min-w-0 max-w-[52%] [@container(min-width:420px)]:min-w-[148px] [@container(min-width:520px)]:min-w-[168px]">
             {FUNNEL_ROWS.map((row) => {
@@ -943,8 +1027,10 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
               );
             })}
           </div>
+          
         </div>
       </div>
+      <ConvertTimeBar toPayment={toPayment} toOnboarding={toOnboarding} />
     </div>
   );
 }
