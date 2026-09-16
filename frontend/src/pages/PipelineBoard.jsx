@@ -94,6 +94,12 @@ const LEADS_BY_STAGE = {
 };
 
 const PER_PAGE_OPTIONS = [10, 25, 50];
+const PIPELINE_STAGE_IDS = new Set(PIPELINE_STAGES.map((s) => s.id));
+
+function stageFromSearch(searchParams) {
+  const raw = String(searchParams.get("stage") || "").toUpperCase();
+  return PIPELINE_STAGE_IDS.has(raw) ? raw : null;
+}
 
 /* ───────────────────────── Small pieces ───────────────────────── */
 
@@ -747,7 +753,7 @@ export default function PipelineBoard() {
   const [search, setSearch]             = useState("");
   const [perPage, setPerPage]           = useState(10);
   const [view,   setView]               = useState("table"); // "board" | "table"
-  const [stageFilter, setStageFilter]   = useState(null); // stage id, or null for all stages (table view)
+  const [stageFilter, setStageFilter]   = useState(() => stageFromSearch(searchParams)); // stage id, or null for all stages (table view)
   const [selectedScoreLead, setSelectedScoreLead] = useState(null);
 
   // Dynamic state for pipeline lead items
@@ -756,6 +762,14 @@ export default function PipelineBoard() {
   const [activeLead, setActiveLead]     = useState(deepLinkedLead?.lead ?? null);
   const [dealTargetStage, setDealTargetStage] = useState(deepLinkedLead?.stageId ?? "P5");
   const [dealInitialTab, setDealInitialTab] = useState(deepLinkedLead ? deepLinkedTab : "overview");
+
+  const stageParam = searchParams.get("stage");
+  useEffect(() => {
+    const next = stageFromSearch(searchParams);
+    setStageFilter(next);
+    if (next) setView("table");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stageParam]);
 
   useEffect(() => {
     if (!deepLinkedLead) return;
@@ -1062,7 +1076,17 @@ export default function PipelineBoard() {
           <PipelineStageStrip
             leadsData={leadsData}
             activeStageId={stageFilter}
-            onToggleStage={(stageId) => setStageFilter((prev) => (prev === stageId ? null : stageId))}
+            onToggleStage={(stageId) => {
+              const next = stageFilter === stageId ? null : stageId;
+              setStageFilter(next);
+              setView("table");
+              setSearchParams((prev) => {
+                const p = new URLSearchParams(prev);
+                if (next) p.set("stage", next);
+                else p.delete("stage");
+                return p;
+              }, { replace: true });
+            }}
           />
         )}
 

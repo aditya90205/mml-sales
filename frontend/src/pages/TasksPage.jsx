@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   ChevronDown,
   Edit2,
@@ -12,12 +13,30 @@ import {
   UserPlus,
   Users,
   UserX,
+  X,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import CreateTaskModal from "../components/calendar/CreateTaskModal";
 import TaskDetailsModal from "../components/calendar/TaskDetailsModal";
 import SearchField from "../components/common/SearchField.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+function toIsoDate(d = new Date()) {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+function toDisplayDate(iso) {
+  const [y, m, d] = String(iso || "").split("-");
+  if (!y || !m || !d) return "07-12-26";
+  return `${d}-${m}-${String(y).slice(-2)}`;
+}
+
+const TODAY_ISO = toIsoDate();
+const TODAY_DISPLAY = toDisplayDate(TODAY_ISO);
 
 /* ───────────────────────── Data ───────────────────────── */
 
@@ -64,6 +83,17 @@ function matchesKpiFilter(task, kpiFilter) {
   return true;
 }
 
+function isDueToday(task) {
+  if (task?.dueDate === TODAY_ISO) return true;
+  return String(task?.date || "") === TODAY_DISPLAY;
+}
+
+function sortTasksByPriority(list) {
+  return [...list].sort(
+    (a, b) => (PRIORITY_RANK[a.priority] ?? 99) - (PRIORITY_RANK[b.priority] ?? 99)
+  );
+}
+
 const PRIORITY_STYLES = {
   Critical: { color: "#E8395B", bg: "#FDECEE" },
   High: { color: "#E8395B", bg: "#FDECEE" },
@@ -71,18 +101,21 @@ const PRIORITY_STYLES = {
   Low: { color: "#16A34A", bg: "#E7F8EF" },
 };
 
+const PRIORITY_RANK = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+
 function makeTask(partial, columnId) {
   const stage = STAGE_BY_COLUMN[columnId] || "New";
   const rawAssignee = partial.assignee;
   const assignee =
     !rawAssignee || rawAssignee === "Unassigned" ? "" : rawAssignee;
+  const dueDate = partial.dueDate || TODAY_ISO;
   return {
     id: partial.id || `task-${columnId}-${Math.random().toString(36).slice(2, 9)}`,
     title: partial.title,
     priority: partial.priority || "Medium",
     progress: partial.progress ?? 0,
     project: partial.project || "Sales Pipeline",
-    date: partial.date || "07-12-26",
+    date: partial.date || toDisplayDate(dueDate),
     overdue: Boolean(partial.overdue),
     assignee,
     assignees: partial.assignees?.length
@@ -98,8 +131,8 @@ function makeTask(partial, columnId) {
     milestone: partial.milestone || "Planning",
     isClientRelated: partial.isClientRelated ?? true,
     client: partial.client || "",
-    startDate: partial.startDate || "2026-07-12",
-    dueDate: partial.dueDate || "2026-07-12",
+    startDate: partial.startDate || dueDate,
+    dueDate,
     stars: partial.stars ?? 7,
     acknowledgedAt: partial.acknowledgedAt || "12-07-2026",
     assignedAt: partial.assignedAt || "12-07-2026",
@@ -125,7 +158,7 @@ const INITIAL_TASKS = [
     {
       id: "t1",
       title: "Visit client — initial consultation",
-      priority: "Medium",
+      priority: "Critical",
       progress: 20,
       project: "South Delhi leads",
       assignee: "Rahul Verma",
@@ -149,7 +182,7 @@ const INITIAL_TASKS = [
     {
       id: "t3",
       title: "Matchmaking shortlist for Ananya",
-      priority: "Medium",
+      priority: "Critical",
       progress: 60,
       project: "Premium package",
       assignee: "Sana Iqbal",
@@ -227,6 +260,7 @@ const INITIAL_TASKS = [
       project: "P6 Onboarding",
       assignee: "Ishaan Roy",
       milestone: "Handover",
+      dueDate: "2026-07-12",
     },
     "done"
   ),
@@ -234,7 +268,7 @@ const INITIAL_TASKS = [
     {
       id: "t10",
       title: "Confirm meeting & send biodata pack",
-      priority: "Medium",
+      priority: "Low",
       progress: 100,
       project: "Matchmaking",
       assignee: "Ishaan Roy",
@@ -602,8 +636,6 @@ function TaskColumn({ column, tasks, onView, onEdit, onDelete }) {
 const LIST_TH =
   "text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3";
 
-const PRIORITY_RANK = { Critical: 0, High: 1, Medium: 2, Low: 3 };
-
 function getTaskListValue(row, key) {
   const task = row?.task || {};
   const column = row?.column || {};
@@ -635,9 +667,10 @@ function getTaskListValue(row, key) {
 
 /* ───────────────────────── List view ───────────────────────── */
 
-function TaskListView({ rows, onView, onEdit, onDelete }) {
+function TaskListView({ rows, onView, onEdit, onDelete, defaultSortKey = "title", defaultSortDir = "asc" }) {
   const { sorted, sort, toggle } = useTableSort(rows, {
-    defaultKey: "title",
+    defaultKey: defaultSortKey,
+    defaultDir: defaultSortDir,
     getValue: getTaskListValue,
   });
 
@@ -769,14 +802,22 @@ function TaskListView({ rows, onView, onEdit, onDelete }) {
 /* ─────────────────────── Page ─────────────────────── */
 
 export default function TasksPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const todayOnly = searchParams.get("today") === "1";
+  const sortByPriority = searchParams.get("sort") === "priority";
+
   const [tasks, setTasks] = useState(INITIAL_TASKS);
   const [search, setSearch] = useState("");
   const [perPage, setPerPage] = useState(10);
-  const [view, setView] = useState("grid");
+  const [view, setView] = useState(() => (todayOnly || sortByPriority ? "list" : "grid"));
   const [kpiFilter, setKpiFilter] = useState("total");
   const [viewing, setViewing] = useState(null);
   const [editing, setEditing] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
+
+  useEffect(() => {
+    if (todayOnly || sortByPriority) setView("list");
+  }, [todayOnly, sortByPriority]);
 
   const kpiStats = useMemo(() => {
     const unassigned = tasks.filter(isTaskUnassigned).length;
@@ -786,10 +827,12 @@ export default function TasksPage() {
     return STAT_DEFS.map((def) => ({ ...def, value: counts[def.id] }));
   }, [tasks]);
 
-  const filteredTasks = useMemo(
-    () => tasks.filter((t) => matchesKpiFilter(t, kpiFilter)),
-    [tasks, kpiFilter]
-  );
+  const filteredTasks = useMemo(() => {
+    let list = tasks.filter((t) => matchesKpiFilter(t, kpiFilter));
+    if (todayOnly) list = list.filter(isDueToday);
+    if (sortByPriority) list = sortTasksByPriority(list);
+    return list;
+  }, [tasks, kpiFilter, todayOnly, sortByPriority]);
 
   const columns = useMemo(
     () =>
@@ -798,9 +841,10 @@ export default function TasksPage() {
         const searched = search
           ? all.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
           : all;
-        return { column, tasks: searched.slice(0, perPage) };
+        const ordered = sortByPriority ? sortTasksByPriority(searched) : searched;
+        return { column, tasks: ordered.slice(0, perPage) };
       }),
-    [filteredTasks, search, perPage]
+    [filteredTasks, search, perPage, sortByPriority]
   );
 
   const listRows = useMemo(() => {
@@ -810,8 +854,21 @@ export default function TasksPage() {
     const searched = search
       ? rows.filter((r) => r.task.title.toLowerCase().includes(search.toLowerCase()))
       : rows;
-    return searched.slice(0, perPage);
-  }, [filteredTasks, search, perPage]);
+    const ordered = sortByPriority
+      ? [...searched].sort(
+          (a, b) =>
+            (PRIORITY_RANK[a.task.priority] ?? 99) - (PRIORITY_RANK[b.task.priority] ?? 99)
+        )
+      : searched;
+    return ordered.slice(0, perPage);
+  }, [filteredTasks, search, perPage, sortByPriority]);
+
+  const clearTodayFilter = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("today");
+    next.delete("sort");
+    setSearchParams(next, { replace: true });
+  };
 
   const handleKpiSelect = (id) => {
     setKpiFilter((prev) => (id === "total" || prev === id ? "total" : id));
@@ -859,7 +916,22 @@ export default function TasksPage() {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-between gap-4 px-5 pt-5 pb-4 flex-wrap">
-        <h1 className="text-[22px] font-bold text-[#111] tracking-tight">Tasks</h1>
+        <div className="flex items-center gap-3 min-w-0 flex-wrap">
+          <h1 className="text-[22px] font-bold text-[#111] tracking-tight">
+            {todayOnly ? "Today's Tasks" : "Tasks"}
+          </h1>
+          {todayOnly && (
+            <button
+              type="button"
+              onClick={clearTodayFilter}
+              className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-[#FFF3E4] text-[#F59E0B] text-[12px] font-semibold hover:brightness-[0.97] transition-[filter]"
+            >
+              Due today
+              {sortByPriority && <span className="text-[#9CA3AF] font-medium">· Critical → Low</span>}
+              <X size={13} strokeWidth={2.2} />
+            </button>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => {
@@ -898,10 +970,13 @@ export default function TasksPage() {
           </div>
         ) : (
           <TaskListView
+            key={`${todayOnly ? "today" : "all"}-${sortByPriority ? "priority" : "title"}`}
             rows={listRows}
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            defaultSortKey={sortByPriority ? "priority" : "title"}
+            defaultSortDir="asc"
           />
         )}
       </div>

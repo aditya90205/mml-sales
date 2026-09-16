@@ -942,22 +942,15 @@ export default function CalendarPage() {
     const startH = parseTimeHour(form.startTime, 10);
     let endH = parseTimeHour(form.endTime, startH + 1);
     if (endH <= startH) endH = Math.min(startH + 1, 18);
-    const clientNames = [
-      "Sethi Family",
-      "Agarwal Family",
-      "Malhotra Family",
-      "Kapoor Family",
-      "Mehta Family",
-      "Rajouri Family",
-      "Sharma Family",
-      "Gupta Family",
-      "Verma Family",
-      "Nair Family",
-    ];
+    const displayName = (label) => {
+      if (!label) return "";
+      const parts = String(label).split(" · ");
+      return parts.length > 1 ? parts.slice(1).join(" · ").trim() : String(label);
+    };
     const client =
-      form.people?.find((p) => clientNames.includes(p)) ||
-      (form.meetingWith === "client" ? form.people?.[0] || "" : "") ||
-      "";
+      form.meetingWith === "client"
+        ? displayName(form.people?.[0] || "")
+        : displayName(form.people?.find((p) => String(p).includes("MML-D-")) || "");
     return {
       id: existingId || `${category}-${Date.now()}`,
       date,

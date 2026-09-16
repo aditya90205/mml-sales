@@ -41,11 +41,13 @@ import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import DealDetailPage from "./pipeline/DealDetailPage";
-import AddP0ProspectPage from "./pipeline/AddP0ProspectPage";
+import CreateLeadModal from "../components/pipeline/CreateLeadModal";
+import CreateMeetingEventModal from "../components/calendar/CreateMeetingEventModal";
+import CreateTaskModal from "../components/calendar/CreateTaskModal";
 import SearchField from "../components/common/SearchField.jsx";
 import { toast } from "react-toastify";
 import { USER } from "../components/layout/TopBar";
-import salesFunnelImg from "../assets/seles-funnel.png";
+import salesFunnelSvg from "../assets/sales-funnel.svg";
 import salesPersonProfile from "../assets/sale-person-profile.jpg";
 import visitsArrow from "../assets/Monthly-visits-  Meetings-arrow.png";
 import revenueArrow from "../assets/Revenue-arrow.png";
@@ -71,15 +73,15 @@ const PERIOD_OPTIONS = [
 ];
 
 const STATS = [
-  { label: "Total Clients", value: "34", note: "+10% vs Month",   noteTone: "green", icon: Users,          bg: "#FDECEE", fg: "#E8395B" },
-  { label: "New Leads",     value: "12", note: "+10% Last Month", noteTone: "green", icon: UserPlus,       bg: "#EEF0FE", fg: "#6366F1" },
-  { label: "Today's tasks", value: "12", note: "3 high priority", noteTone: "red",   icon: ClipboardList,  bg: "#FFF3E4", fg: "#F59E0B" },
+  { label: "Total Clients", value: "34", note: "+10% vs Month",   noteTone: "green", icon: Users,          bg: "#FDECEE", fg: "#E8395B", to: "/clients" },
+  { label: "New Leads",     value: "12", note: "+10% Last Month", noteTone: "green", icon: UserPlus,       bg: "#EEF0FE", fg: "#6366F1", to: "/pipeline?stage=P0" },
+  { label: "Today's tasks", value: "12", note: "3 high priority", noteTone: "red",   icon: ClipboardList,  bg: "#FFF3E4", fg: "#F59E0B", to: "/tasks?today=1&sort=priority" },
 ];
 
 const QUICK_ACTIONS = [
   { label: "Create Lead",     icon: UserPlus,   bg: "#FDECEE", fg: "#E8395B", action: "lead" },
-  { label: "Create Task",     icon: SquareCheck, bg: "#E8F2FE", fg: "#3B82F6", to: "/tasks" },
-  { label: "Create Meeting",  icon: Calendar,   bg: "#F0EBFE", fg: "#8B5CF6", to: "/calendar" },
+  { label: "Create Task",     icon: SquareCheck, bg: "#E8F2FE", fg: "#3B82F6", action: "task" },
+  { label: "Create Meeting",  icon: Calendar,   bg: "#F0EBFE", fg: "#8B5CF6", action: "meeting" },
   { label: "Upload Biodata",  icon: FileText,   bg: "#E7F8EF", fg: "#16A34A", to: "/documents" },
 ];
 
@@ -202,14 +204,14 @@ const LEAD_HEALTH = [
 ];
 
 const FUNNEL_ROWS = [
-  { key: "new",         stat: "P0 - 482", pct: "100%", to: "to P1" },
-  { key: "contacted",   stat: "P0 - 482", pct: "100%", to: "to P1" },
-  { key: "qualified",   stat: "P1 - 395", pct: "82%",  to: "to P2", dropPct: "18%", dropCount: "87" },
-  { key: "profile",     stat: "P2 - 351", pct: "75%",  to: "to P3", dropPct: "11%", dropCount: "87" },
-  { key: "video",       stat: "P3 - 295", pct: "60%",  to: "to P4", dropPct: "16%", dropCount: "87" },
-  { key: "negotiation", stat: "P4 - 260", pct: "52%",  to: "to P5", dropPct: "14%", dropCount: "87" },
-  { key: "payment",     stat: "P5 - 224", pct: "44%",  to: "to P6", dropPct: "8%",  dropCount: "118" },
-  { key: "handover",    stat: "P6 - 224", pct: "43%",  to: "Final Conversion", dropCount: "87", isFinal: true },
+  { key: "new",         stageId: "P0", label: "New",                stat: "P0 - 482", pct: "100%", to: "to P1", top: "9%",    height: "12.5%", width: "92%", color: "#84A8DE" },
+  { key: "contacted",   stageId: "P0", label: "Contacted",          stat: "P0 - 482", pct: "100%", to: "to P1", top: "21.8%", height: "11.5%", width: "86%", color: "#6394D7" },
+  { key: "qualified",   stageId: "P1", label: "Qualified",          stat: "P1 - 395", pct: "82%",  to: "to P2", dropPct: "18%", dropCount: "87", top: "33.5%", height: "11.2%", width: "80%", color: "#386FB8" },
+  { key: "profile",     stageId: "P2", label: "Profile Creation",   stat: "P2 - 351", pct: "75%",  to: "to P3", dropPct: "11%", dropCount: "87", top: "44.8%", height: "10.8%", width: "72%", color: "#D7AB77" },
+  { key: "video",       stageId: "P3", label: "Video call / Visit", stat: "P3 - 295", pct: "60%",  to: "to P4", dropPct: "16%", dropCount: "87", top: "55.6%", height: "10.5%", width: "64%", color: "#BB8D58" },
+  { key: "negotiation", stageId: "P4", label: "Negotiation",        stat: "P4 - 260", pct: "52%",  to: "to P5", dropPct: "14%", dropCount: "87", top: "66.2%", height: "10.2%", width: "56%", color: "#8A909C" },
+  { key: "payment",     stageId: "P5", label: "Payment",            stat: "P5 - 224", pct: "44%",  to: "to P6", dropPct: "8%",  dropCount: "118", top: "76.5%", height: "10.5%", width: "48%", color: "#A11620" },
+  { key: "handover",    stageId: "P6", label: "Handover",           stat: "P6 - 224", pct: "43%",  to: "Final Conversion", dropCount: "87", isFinal: true, top: "87%", height: "11.5%", width: "40%", color: "#6E0F16" },
 ];
 
 const AI_ACTIONS = [
@@ -276,12 +278,12 @@ const PRIORITY_STYLES = {
 const LEAD_DOT_COLORS = ["#E8395B", "#F59E0B", "#3B82F6", "#E8395B", "#E8395B", "#E8395B"];
 
 const MY_LEADS = [
-  { id: "MML-ID-D-10428", name: "Kuhu Sharma",    starred: true,  stage: "P0 - New",              stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Outbound follow-up call" },
-  { id: "MML-ID-D-10428", name: "Harshit Sharma", starred: false, stage: "P1 - Qualified",        stageTone: "Lost", priority: "High",   leadScore: 8.5, profileCompletion: 50,  source: "Brand Walking",    followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: true,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Re-engagement call" },
-  { id: "MML-ID-D-10428", name: "Aditya Sharma",  starred: false, stage: "P3 - Video Call/Visit", stageTone: "Cold", priority: "Medium", leadScore: 8.5, profileCompletion: 85,  source: "Channel Partner",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm video call slot" },
-  { id: "MML-ID-D-10428", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
-  { id: "MML-ID-D-10429", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
-  { id: "MML-ID-D-10428", name: "Virat Sharma",   starred: false, stage: "P6 - Service Handover", stageTone: null,   priority: "Low",    leadScore: 8.5, profileCompletion: 90,  source: "Online - Insta",   followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm handover checklist" },
+  { id: "MML-ID-D-10428", name: "Kuhu Sharma",    starred: true,  stage: "P0 - New",              temperature: "Hot",  stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Outbound follow-up call" },
+  { id: "MML-ID-D-10428", name: "Harshit Sharma", starred: false, stage: "P1 - Qualified",        temperature: "Hot",  stageTone: "Lost", priority: "High",   leadScore: 8.5, profileCompletion: 50,  source: "Brand Walking",    followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: true,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Re-engagement call" },
+  { id: "MML-ID-D-10428", name: "Aditya Sharma",  starred: false, stage: "P3 - Video Call/Visit", temperature: "Cold", stageTone: "Cold", priority: "Medium", leadScore: 8.5, profileCompletion: 85,  source: "Channel Partner",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm video call slot" },
+  { id: "MML-ID-D-10428", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      temperature: "Cold", stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
+  { id: "MML-ID-D-10429", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      temperature: "Warm", stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
+  { id: "MML-ID-D-10428", name: "Virat Sharma",   starred: false, stage: "P6 - Service Handover", temperature: "Warm", stageTone: null,   priority: "Low",    leadScore: 8.5, profileCompletion: 90,  source: "Online - Insta",   followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm handover checklist" },
 ];
 
 /* ───────────────────────── Header controls ───────────────────────── */
@@ -332,9 +334,26 @@ function PeriodSelect({ value, onChange, compact = false }) {
 /* ───────────────────────── Cards ───────────────────────── */
 
 function StatCard({ stat }) {
+  const navigate = useNavigate();
   const Icon = stat.icon;
+  const clickable = Boolean(stat.to);
+
   return (
-    <div className="bg-white border border-black/8 rounded-2xl px-3.5 py-3 flex items-center gap-3 min-w-0">
+    <div
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onClick={() => clickable && navigate(stat.to)}
+      onKeyDown={(e) => {
+        if (!clickable) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          navigate(stat.to);
+        }
+      }}
+      className={`bg-white border border-black/8 rounded-2xl px-3.5 py-3 flex items-center gap-3 min-w-0 ${
+        clickable ? "cursor-pointer hover:border-black/15 hover:shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-[border-color,box-shadow] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A0A17]/35" : ""
+      }`}
+    >
       <span className="size-10 rounded-[10px] grid place-items-center shrink-0" style={{ backgroundColor: stat.bg }}>
         <Icon size={18} style={{ color: stat.fg }} strokeWidth={1.7} />
       </span>
@@ -357,7 +376,7 @@ function StatCard({ stat }) {
   );
 }
 
-function QuickActionsCard({ onCreateLead }) {
+function QuickActionsCard({ onCreateLead, onCreateTask, onCreateMeeting }) {
   const navigate = useNavigate();
 
   return (
@@ -373,6 +392,8 @@ function QuickActionsCard({ onCreateLead }) {
             type="button"
             onClick={() => {
               if (action === "lead") onCreateLead?.();
+              else if (action === "task") onCreateTask?.();
+              else if (action === "meeting") onCreateMeeting?.();
               else if (to) navigate(to);
             }}
             className="inline-flex items-center justify-center gap-1.5 h-9 px-2.5 rounded-xl flex-1 min-w-0 transition-opacity hover:opacity-85"
@@ -715,7 +736,7 @@ function AIAssistant() {
   );
 }
 
-function SalesFunnelCard() {
+function SalesFunnelCard({ activeStage, onSelectStage }) {
   const [period, setPeriod] = useState("Daily");
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -726,18 +747,22 @@ function SalesFunnelCard() {
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
+  const selectStage = (stageId) => {
+    onSelectStage?.(activeStage === stageId ? null : stageId);
+  };
+
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col h-full">
-      <div className="flex items-center justify-between gap-3 px-1">
-        <h2 className="text-[17px] font-bold text-[#111] flex items-center gap-2">
-          <Filter size={18} className="text-[#7A0A17]" fill="#7A0A17" strokeWidth={2} />
+    <div className="bg-white border border-black/8 rounded-2xl p-5 flex flex-col h-full">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-[16px] font-bold text-[#111] flex items-center gap-2">
+          <Filter size={16} className="text-[#7A0A17]" fill="#7A0A17" strokeWidth={2} />
           Sales Funnel (P0 - P6)
         </h2>
         <div className="relative" ref={ref}>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-white border border-black/12 text-[12px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-white border border-black/10 text-[12px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
           >
             {period}
             <ChevronDown size={13} className={`text-[#9CA3AF] transition-transform ${open ? "rotate-180" : ""}`} />
@@ -761,58 +786,97 @@ function SalesFunnelCard() {
         </div>
       </div>
 
-      <div className="flex items-stretch gap-1 mt-1 flex-1 min-h-[420px]">
+      <div className="flex items-stretch gap-3 mt-3 flex-1 min-h-[400px]">
         <div className="flex-1 flex items-center justify-center min-w-0">
-          <img
-            src={salesFunnelImg}
-            alt="Sales funnel from New to Handover"
-            className="h-full w-full object-contain object-center select-none pointer-events-none"
-          />
+          <div className="relative w-full max-w-[260px]" style={{ aspectRatio: "301 / 386" }}>
+            <img
+              src={salesFunnelSvg}
+              alt=""
+              className="absolute inset-0 w-full h-full object-contain object-center select-none pointer-events-none"
+            />
+            {FUNNEL_ROWS.map((row) => {
+              const isActive = activeStage === row.stageId;
+              const dimOthers = Boolean(activeStage) && !isActive;
+              return (
+                <button
+                  key={row.key}
+                  type="button"
+                  onClick={() => selectStage(row.stageId)}
+                  title={`Filter My Leads by ${row.label}`}
+                  aria-pressed={isActive}
+                  className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center rounded-sm transition-opacity duration-150"
+                  style={{
+                    top: row.top,
+                    height: row.height,
+                    width: row.width,
+                    opacity: dimOthers ? 0.45 : 1,
+                  }}
+                >
+                  <span
+                    className="text-white leading-tight text-center whitespace-nowrap drop-shadow-[0_1px_2px_rgba(0,0,0,0.28)] transition-[font-weight,text-shadow] duration-150"
+                    style={{
+                      fontSize: row.key === "video" || row.key === "profile" ? 11.5 : 12.5,
+                      fontWeight: isActive ? 800 : 600,
+                      textShadow: isActive
+                        ? "0 0 10px rgba(255,255,255,0.55), 0 1px 2px rgba(0,0,0,0.35)"
+                        : "0 1px 2px rgba(0,0,0,0.28)",
+                    }}
+                  >
+                    {row.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <div className="shrink-0 flex flex-col pt-[9%] pb-[2%] pr-2">
-          {FUNNEL_ROWS.map((row) => (
-            <div key={row.key} className="flex-1 flex items-center min-h-0">
-              <div className="flex items-start gap-1.5">
-                <span className="text-[13px] font-bold text-[#111] leading-[1.25] whitespace-nowrap tabular-nums">
-                  {row.stat} →
+
+        <div className="shrink-0 flex flex-col justify-between py-[8%] min-w-[168px]">
+          {FUNNEL_ROWS.map((row) => {
+            const isActive = activeStage === row.stageId;
+            const dimOthers = Boolean(activeStage) && !isActive;
+            return (
+              <button
+                key={row.key}
+                type="button"
+                onClick={() => selectStage(row.stageId)}
+                aria-pressed={isActive}
+                className="flex items-center gap-2 text-left transition-opacity duration-150"
+                style={{ opacity: dimOthers ? 0.4 : 1 }}
+              >
+                <span
+                  className="text-[12.5px] leading-none whitespace-nowrap tabular-nums transition-colors duration-150"
+                  style={{
+                    fontWeight: isActive ? 800 : 700,
+                    color: isActive ? "#111" : "#111",
+                  }}
+                >
+                  {row.stat}
                 </span>
-                <div className="flex items-start">
-                  <div className={row.isFinal ? "" : "min-w-[2.6rem]"}>
-                    {row.isFinal ? (
-                      <>
-                        <p className="text-[13px] font-medium text-[#9CA3AF] leading-[1.25] whitespace-nowrap">
-                          Final Conversion
-                        </p>
-                        <p className="text-[13px] font-bold text-[#111] leading-[1.25] mt-px whitespace-nowrap tabular-nums">
-                          {row.pct}{" "}
-                          <span className="text-[12px] font-medium text-[#9CA3AF]">({row.dropCount})</span>
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-[13px] font-bold text-[#111] leading-[1.25] tabular-nums">{row.pct}</p>
-                        <p className="text-[11.5px] font-medium text-[#9CA3AF] leading-[1.25] mt-px">{row.to}</p>
-                      </>
-                    )}
-                  </div>
-                  {row.dropPct && (
-                    <div className="flex items-start ml-2 pl-2.5 border-l border-[#D1D5DB]">
-                      <div>
-                        <p className="text-[11.5px] font-medium text-[#6B7280] leading-[1.25] whitespace-nowrap">
-                          Drop off
-                        </p>
-                        <p className="leading-[1.25] mt-px whitespace-nowrap tabular-nums">
-                          <span className="text-[13px] font-bold text-[#E11D48]">{row.dropPct}</span>
-                          {" "}
-                          <span className="text-[12px] font-medium text-[#9CA3AF]">({row.dropCount})</span>
-                        </p>
-                      </div>
-                    </div>
+                <span className="text-[#D1D5DB] text-[12px] leading-none">→</span>
+                <div className="min-w-0">
+                  {row.isFinal ? (
+                    <p className="text-[11.5px] leading-tight whitespace-nowrap">
+                      <span className={`font-medium ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}>Final </span>
+                      <span className={`tabular-nums ${isActive ? "font-extrabold text-[#111]" : "font-bold text-[#111]"}`}>{row.pct}</span>
+                      <span className={`font-medium ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}> ({row.dropCount})</span>
+                    </p>
+                  ) : (
+                    <p className="text-[11.5px] leading-tight whitespace-nowrap">
+                      <span className={`tabular-nums ${isActive ? "font-extrabold text-[#111]" : "font-bold text-[#111]"}`}>{row.pct}</span>
+                      <span className={`font-medium ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}> {row.to}</span>
+                      {row.dropPct && (
+                        <span className="ml-1.5 pl-1.5 border-l border-[#E5E7EB]">
+                          <span className={isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}>Drop </span>
+                          <span className={`tabular-nums ${isActive ? "font-extrabold text-[#E11D48]" : "font-bold text-[#E11D48]"}`}>{row.dropPct}</span>
+                          <span className={isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}> ({row.dropCount})</span>
+                        </span>
+                      )}
+                    </p>
                   )}
                 </div>
-              </div>
-            </div>
-          ))}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -848,7 +912,16 @@ const NEXT_STAGE_DASH = {
   P5: "P6",
 };
 
-function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
+function MyLeadsCard({
+  leads,
+  healthFilter,
+  onHealthFilter,
+  healthCounts,
+  stageFilter,
+  onClearStageFilter,
+  onOpenDeal,
+  onMoveStage,
+}) {
   const [period, setPeriod] = useState("today");
   const [leadsView, setLeadsView] = useState("team");
   const [leadsViewOpen, setLeadsViewOpen] = useState(false);
@@ -865,76 +938,131 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
+  const toggleHealth = (key) => {
+    onHealthFilter?.(healthFilter === key ? null : key);
+  };
+
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col min-w-0">
+    <div className="bg-white border border-black/8 rounded-2xl p-5 flex flex-col min-w-0">
       <LeadScoreModal lead={scoreLead} onClose={() => setScoreLead(null)} />
       <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
 
-      <div className="flex items-center justify-between gap-3 mb-4 px-1 flex-wrap">
-        <h2 className="text-[17px] font-bold text-[#111] flex items-center gap-2">
-          <Heart size={16} className="text-[#E8395B]" fill="#E8395B" strokeWidth={0} />
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <h2 className="text-[16px] font-bold text-[#111] flex items-center gap-2 shrink-0">
+          <Heart size={15} className="text-[#E8395B]" fill="#E8395B" strokeWidth={0} />
           Lead Health
         </h2>
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {LEAD_HEALTH.map((h) => (
-            <span
-              key={h.key}
-              className="inline-flex items-center gap-1.5 text-[12px] font-semibold rounded-xl px-3 py-1.5"
-              style={{ backgroundColor: h.bg, color: h.fg }}
-            >
-              <h.icon size={13} fill={h.fg} strokeWidth={0} />
-              {h.label}
-              <span className="font-bold">{h.count}</span>
-            </span>
-          ))}
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          {LEAD_HEALTH.map((h) => {
+            const active = healthFilter === h.key;
+            const count = healthCounts?.[h.key] ?? h.count;
+            return (
+              <button
+                key={h.key}
+                type="button"
+                onClick={() => toggleHealth(h.key)}
+                aria-pressed={active}
+                title={`Filter table by ${h.label}`}
+                className="inline-flex items-center gap-1.5 text-[12px] font-semibold rounded-lg px-2.5 py-1.5 border-2 transition-[background-color,color,border-color,box-shadow] duration-150"
+                style={
+                  active
+                    ? {
+                        backgroundColor: h.fg,
+                        color: "#fff",
+                        borderColor: h.fg,
+                        boxShadow: `0 4px 12px ${h.fg}40`,
+                      }
+                    : {
+                        backgroundColor: h.bg,
+                        color: h.fg,
+                        borderColor: "transparent",
+                      }
+                }
+                onMouseEnter={(e) => {
+                  if (active) return;
+                  e.currentTarget.style.borderColor = h.fg;
+                  e.currentTarget.style.backgroundColor = h.bg;
+                }}
+                onMouseLeave={(e) => {
+                  if (active) return;
+                  e.currentTarget.style.borderColor = "transparent";
+                  e.currentTarget.style.backgroundColor = h.bg;
+                }}
+              >
+                <h.icon size={12} fill={active ? "#fff" : h.fg} strokeWidth={0} />
+                {h.label}
+                <span
+                  className="font-bold tabular-nums min-w-[1.25rem] text-center rounded-md px-1"
+                  style={{
+                    backgroundColor: active ? "rgba(255,255,255,0.22)" : `${h.fg}18`,
+                  }}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3 mb-3 px-1 flex-wrap">
-        <div className="relative" ref={leadsViewRef}>
-          <button
-            type="button"
-            onClick={() => setLeadsViewOpen((v) => !v)}
-            className="inline-flex items-center gap-1.5 text-[17px] font-bold text-[#111]"
-          >
-            My Leads
-            <ChevronDown
-              size={16}
-              className={`text-[#9CA3AF] transition-transform ${leadsViewOpen ? "rotate-180" : ""}`}
-            />
-          </button>
-          {leadsViewOpen && (
-            <div className="absolute left-0 top-[calc(100%+6px)] min-w-[160px] bg-white border border-black/8 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-40 py-1 overflow-hidden">
-              {MY_LEADS_VIEWS.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    setLeadsView(opt.id);
-                    setLeadsViewOpen(false);
-                  }}
-                  className={`w-full text-left px-3.5 py-2 text-[13px] transition-colors ${
-                    opt.id === leadsView
-                      ? "bg-[#FCF5F6] text-[#7A0A17] font-semibold"
-                      : "text-[#4B5563] hover:bg-[#FAFAFB]"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="relative" ref={leadsViewRef}>
+            <button
+              type="button"
+              onClick={() => setLeadsViewOpen((v) => !v)}
+              className="inline-flex items-center gap-1.5 text-[16px] font-bold text-[#111]"
+            >
+              My Leads
+              <ChevronDown
+                size={15}
+                className={`text-[#9CA3AF] transition-transform ${leadsViewOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {leadsViewOpen && (
+              <div className="absolute left-0 top-[calc(100%+6px)] min-w-[160px] bg-white border border-black/8 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-40 py-1 overflow-hidden">
+                {MY_LEADS_VIEWS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => {
+                      setLeadsView(opt.id);
+                      setLeadsViewOpen(false);
+                    }}
+                    className={`w-full text-left px-3.5 py-2 text-[13px] transition-colors ${
+                      opt.id === leadsView
+                        ? "bg-[#FCF5F6] text-[#7A0A17] font-semibold"
+                        : "text-[#4B5563] hover:bg-[#FAFAFB]"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {stageFilter && (
+            <button
+              type="button"
+              onClick={() => onClearStageFilter?.()}
+              className="inline-flex items-center gap-1 h-7 pl-2.5 pr-1.5 rounded-lg bg-[#FCF5F6] text-[11px] font-semibold text-[#7A0A17] border border-[#7A0A17]/15 hover:bg-[#F9EDEF] transition-colors"
+              title="Clear stage filter"
+            >
+              {stageFilter}
+              <X size={12} className="opacity-70" />
+            </button>
           )}
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-3.5 flex-wrap">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="hidden sm:flex items-center gap-3">
             {[
               { label: "Low Probability", color: "#E8395B" },
               { label: "Medium",           color: "#F59E0B" },
               { label: "High",             color: "#16A34A" },
             ].map((f) => (
-              <span key={f.label} className="inline-flex items-center gap-1.5 text-[11px] text-[#6B7280]">
-                <Flag size={12} style={{ color: f.color }} fill={f.color} strokeWidth={0} />
+              <span key={f.label} className="inline-flex items-center gap-1 text-[11px] text-[#6B7280]">
+                <Flag size={11} style={{ color: f.color }} fill={f.color} strokeWidth={0} />
                 {f.label}
               </span>
             ))}
@@ -944,18 +1072,18 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
       </div>
 
       <div className="border border-black/8 rounded-xl overflow-x-auto scrollbar-thin">
-        <table className="w-full text-left border-collapse min-w-[1080px]">
+        <table className="w-full text-left border-collapse min-w-[920px]">
           <thead>
-            <tr className="border-b border-black/8">
+            <tr className="border-b border-black/6 bg-[#FAFAFB]/80">
               {[
-                { label: "Client Name", key: "name", className: "pl-3 pr-3 min-w-[160px]" },
-                { label: "Stage", key: "stage", className: "px-3 min-w-[150px]" },
-                { label: "Priority", key: "priority", className: "px-3 min-w-[90px]" },
-                { label: "Lead\nScore", key: "leadScore", className: "px-3 min-w-[90px]" },
-                { label: "Profile\nCompletion", key: "profileCompletion", className: "px-3 min-w-[110px]" },
-                { label: "Source", key: "source", className: "px-3 min-w-[120px]" },
-                { label: "Follow Up\nTime Left", key: "followUp", className: "px-3 min-w-[130px]" },
-                { label: "Actions", key: "actions", unsortable: true, className: "px-3 min-w-[110px]" },
+                { label: "Client Name", key: "name", className: "pl-3 pr-2 w-[18%]" },
+                { label: "Stage", key: "stage", className: "px-2 w-[14%]" },
+                { label: "Priority", key: "priority", className: "px-2 w-[9%]" },
+                { label: "Lead\nScore", key: "leadScore", className: "px-2 w-[9%]" },
+                { label: "Profile\nCompletion", key: "profileCompletion", className: "px-2 w-[10%]" },
+                { label: "Source", key: "source", className: "px-2 w-[12%]" },
+                { label: "Follow Up\nTime Left", key: "followUp", className: "px-2 w-[14%]" },
+                { label: "Actions", key: "actions", unsortable: true, className: "px-2 w-[10%]" },
               ].map((h) => (
                 <SortableTh
                   key={h.key}
@@ -970,7 +1098,13 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
             </tr>
           </thead>
           <tbody>
-            {sorted.map((lead, i) => {
+            {sorted.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="px-3 py-10 text-center text-[13px] text-[#9CA3AF]">
+                  No leads match the selected filters.
+                </td>
+              </tr>
+            ) : sorted.map((lead, i) => {
               const priority = PRIORITY_STYLES[lead.priority];
               const stageKey = stageKeyFromLead(lead);
               const canMove = stageKey === "P0" || stageKey === "P1";
@@ -988,9 +1122,9 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
                 <tr
                   key={`${lead.id}-${lead.name}-${i}`}
                   onClick={() => onOpenDeal?.(lead)}
-                  className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
+                  className="border-b border-black/6 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
                 >
-                  <td className="pl-3 pr-3 py-3 min-w-[160px]">
+                  <td className="pl-3 pr-2 py-2.5">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: LEAD_DOT_COLORS[i % LEAD_DOT_COLORS.length] }} />
                       <div className="min-w-0">
@@ -1002,7 +1136,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 py-3 min-w-[150px]">
+                  <td className="px-2 py-2.5">
                     {canMove ? (
                       <button
                         type="button"
@@ -1019,12 +1153,12 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
                       <p className="text-[12px] text-[#374151] leading-tight">{stageBody}</p>
                     )}
                   </td>
-                  <td className="px-3 py-3 min-w-[90px]">
+                  <td className="px-2 py-2.5">
                     <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md whitespace-nowrap ${priority.bg}`} style={{ color: priority.color }}>
                       {lead.priority}
                     </span>
                   </td>
-                  <td className="px-3 py-3 min-w-[90px]">
+                  <td className="px-2 py-2.5">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -1038,9 +1172,9 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
                       <Flag size={11} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} />
                     </button>
                   </td>
-                  <td className="px-3 py-3 text-[12px] text-[#6B7280] min-w-[110px] whitespace-nowrap">{lead.profileCompletion}%</td>
-                  <td className="px-3 py-3 text-[12px] text-[#6B7280] leading-tight min-w-[120px] whitespace-nowrap">{lead.source}</td>
-                  <td className="px-3 py-3 min-w-[130px] whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-2 py-2.5 text-[12px] text-[#6B7280] whitespace-nowrap">{lead.profileCompletion}%</td>
+                  <td className="px-2 py-2.5 text-[12px] text-[#6B7280] leading-tight whitespace-nowrap">{lead.source}</td>
+                  <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <FollowUpHoverCard
                       lastDiscussionAt={lead.lastDiscussion}
                       nextActionAt={lead.nextAction}
@@ -1054,7 +1188,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
                       <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.followUpNote}</p>
                     </FollowUpHoverCard>
                   </td>
-                  <td className="px-3 py-3 min-w-[110px] whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-0 flex-nowrap">
                       <button
                         type="button"
@@ -1092,8 +1226,12 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [dealLead, setDealLead] = useState(null);
   const [dealStage, setDealStage] = useState(null);
-  const [showAddProspect, setShowAddProspect] = useState(false);
+  const [showCreateLead, setShowCreateLead] = useState(false);
+  const [showCreateTask, setShowCreateTask] = useState(false);
+  const [showCreateMeeting, setShowCreateMeeting] = useState(false);
   const [myLeads, setMyLeads] = useState(MY_LEADS);
+  const [stageFilter, setStageFilter] = useState(null);
+  const [healthFilter, setHealthFilter] = useState(null);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
@@ -1102,11 +1240,27 @@ export default function Dashboard() {
     return "Good Evening";
   }, []);
 
+  const healthCounts = useMemo(() => {
+    const counts = { hot: 0, warm: 0, cold: 0 };
+    myLeads.forEach((l) => {
+      const key = String(l.temperature || "").toLowerCase();
+      if (key in counts) counts[key] += 1;
+    });
+    return counts;
+  }, [myLeads]);
+
   const visibleLeads = useMemo(() => {
+    let list = myLeads;
+    if (stageFilter) {
+      list = list.filter((l) => stageKeyFromLead(l) === stageFilter);
+    }
+    if (healthFilter) {
+      list = list.filter((l) => String(l.temperature || "").toLowerCase() === healthFilter);
+    }
     const q = search.trim().toLowerCase();
-    if (!q) return myLeads;
-    return myLeads.filter((l) => `${l.name} ${l.id} ${l.stage} ${l.source}`.toLowerCase().includes(q));
-  }, [myLeads, search]);
+    if (!q) return list;
+    return list.filter((l) => `${l.name} ${l.id} ${l.stage} ${l.source}`.toLowerCase().includes(q));
+  }, [myLeads, search, stageFilter, healthFilter]);
 
   const openDeal = (lead, stageKey) => {
     setDealLead(lead);
@@ -1125,17 +1279,6 @@ export default function Dashboard() {
     setDealLead((prev) => (prev ? { ...prev, ...patch, stage: stageLabel } : prev));
     setDealStage(nextStage);
   };
-
-  if (showAddProspect) {
-    return (
-      <AddP0ProspectPage
-        onBack={() => setShowAddProspect(false)}
-        onAddProspect={(newLead) => {
-          toast.success(`Prospect "${newLead.name}" created successfully in P0 Prospect!`);
-        }}
-      />
-    );
-  }
 
   if (dealLead) {
     return (
@@ -1170,6 +1313,58 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
+      <CreateLeadModal
+        open={showCreateLead}
+        onClose={() => setShowCreateLead(false)}
+        onCreate={(lead) => {
+          const nextAction =
+            lead.meeting === "Meeting Agreed"
+              ? "Schedule meeting"
+              : lead.meeting === "Call Agreed"
+                ? "Follow-up call"
+                : lead.meeting === "Callback Later"
+                  ? "Callback"
+                  : "Initial Contact";
+          setMyLeads((prev) => [
+            {
+              id: `MML-ID-D-${Math.floor(10000 + Math.random() * 90000)}`,
+              name: lead.name,
+              starred: false,
+              stage: "P0 - New",
+              temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
+              stageTone: null,
+              priority: "High",
+              leadScore: 8.0,
+              profileCompletion: 25,
+              source: lead.source,
+              followUp: "24 HRS Left",
+              followUpTone: "text-[#6B7280]",
+              followUpNote: "Start Time: —",
+              lost: false,
+              lastDiscussion: "Just now",
+              nextAction,
+              nextActionNote: [lead.city, lead.area].filter(Boolean).join(" · ") || "Initial contact",
+              mobile: lead.mobile,
+              email: lead.email,
+            },
+            ...prev,
+          ]);
+          toast.success(`Lead "${lead.name}" created and assigned to sales.`);
+        }}
+      />
+      <CreateMeetingEventModal
+        open={showCreateMeeting}
+        onClose={() => setShowCreateMeeting(false)}
+        entityLabel="Meeting"
+        defaultDate={new Date()}
+        onSave={() => {}}
+      />
+      <CreateTaskModal
+        open={showCreateTask}
+        onClose={() => setShowCreateTask(false)}
+        defaultDate={new Date()}
+        onSave={() => {}}
+      />
       <div className="flex items-center justify-between gap-4 px-5 pt-5 pb-4 flex-wrap">
         <h1 className="text-[22px] font-bold text-[#111] tracking-tight">
           {greeting}, {USER.name}
@@ -1194,7 +1389,11 @@ export default function Dashboard() {
             ))}
           </div>
           <div className="lg:flex-1 min-w-0">
-            <QuickActionsCard onCreateLead={() => setShowAddProspect(true)} />
+            <QuickActionsCard
+              onCreateLead={() => setShowCreateLead(true)}
+              onCreateTask={() => setShowCreateTask(true)}
+              onCreateMeeting={() => setShowCreateMeeting(true)}
+            />
           </div>
         </div>
 
@@ -1210,15 +1409,23 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-4 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,1fr)] gap-4 items-start">
           <div className="min-w-0">
             <MyLeadsCard
               leads={visibleLeads}
+              healthFilter={healthFilter}
+              onHealthFilter={setHealthFilter}
+              healthCounts={healthCounts}
+              stageFilter={stageFilter}
+              onClearStageFilter={() => setStageFilter(null)}
               onOpenDeal={(lead) => openDeal(lead)}
               onMoveStage={(lead, stageKey) => openDeal(lead, stageKey)}
             />
           </div>
-          <SalesFunnelCard />
+          <SalesFunnelCard
+            activeStage={stageFilter}
+            onSelectStage={setStageFilter}
+          />
         </div>
       </div>
     </div>

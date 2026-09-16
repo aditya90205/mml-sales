@@ -4,58 +4,70 @@ import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
 
 const EMPLOYEES = [
-  "Priya Sharma",
-  "Aditya Sharma",
-  "Rahul Verma",
-  "Sana Iqbal",
-  "Dev Malhotra",
-  "Neha Kapoor",
+  { id: "MML-E-1001", name: "Priya Sharma" },
+  { id: "MML-E-1002", name: "Aditya Sharma" },
+  { id: "MML-E-1003", name: "Rahul Verma" },
+  { id: "MML-E-1004", name: "Sana Iqbal" },
+  { id: "MML-E-1005", name: "Dev Malhotra" },
+  { id: "MML-E-1006", name: "Neha Kapoor" },
+  { id: "MML-E-1007", name: "Anjali Gupta" },
+  { id: "MML-E-1008", name: "Ishaan Roy" },
+  { id: "MML-E-1009", name: "Karan Mehta" },
 ];
 
-const CLIENTS = [
-  "Sethi Family",
-  "Agarwal Family",
-  "Malhotra Family",
-  "Kapoor Family",
-  "Mehta Family",
-  "Rajouri Family",
-  "Sharma Family",
-  "Gupta Family",
-  "Verma Family",
-  "Nair Family",
+const LEADS = [
+  { id: "MML-D-10428", name: "Kuhu Sharma" },
+  { id: "MML-D-10429", name: "Ankit Sharma" },
+  { id: "MML-D-10430", name: "Harshit Sharma" },
+  { id: "MML-D-10431", name: "Arjun Rampal" },
+  { id: "MML-D-10432", name: "Ankur Sharma" },
+  { id: "MML-D-10433", name: "Priya Raheja" },
+  { id: "MML-D-10434", name: "Aditya Sharma" },
+  { id: "MML-D-10436", name: "Vivek Sharma" },
+  { id: "MML-D-10438", name: "Rohit Sharma" },
+  { id: "MML-D-10440", name: "Virat Sharma" },
 ];
 
 const OTHERS = [
-  "Anjali Gupta",
-  "Abhinav Pandey",
-  "Ankur Mishra",
-  "External Vendor",
-  "Guest Speaker",
+  { name: "Abhinav Pandey" },
+  { name: "Ankur Mishra" },
+  { name: "External Vendor" },
+  { name: "Guest Speaker" },
 ];
 
-const PROFILE_EMAILS = {
-  "Priya Sharma": "priya.sharma@mmlcompany.com",
-  "Aditya Sharma": "aditya.sharma@mmlcompany.com",
-  "Rahul Verma": "rahul.verma@mmlcompany.com",
-  "Sana Iqbal": "sana.iqbal@mmlcompany.com",
-  "Dev Malhotra": "dev.malhotra@mmlcompany.com",
-  "Neha Kapoor": "neha.kapoor@mmlcompany.com",
-  "Sethi Family": "sethi.family@thecompany.com",
-  "Agarwal Family": "agarwal.family@thecompany.com",
-  "Malhotra Family": "malhotra.family@thecompany.com",
-  "Kapoor Family": "kapoor.family@thecompany.com",
-  "Mehta Family": "mehta.family@thecompany.com",
-  "Rajouri Family": "rajouri.family@thecompany.com",
-  "Sharma Family": "sharma.family@thecompany.com",
-  "Gupta Family": "gupta.family@thecompany.com",
-  "Verma Family": "verma.family@thecompany.com",
-  "Nair Family": "nair.family@thecompany.com",
-  "Anjali Gupta": "anjali.gupta@thecompany.com",
-  "Abhinav Pandey": "abhinav.pandey@thecompany.com",
-  "Ankur Mishra": "ankur@thecompany.com",
-  "External Vendor": "vendor@thecompany.com",
-  "Guest Speaker": "speaker@thecompany.com",
-};
+function formatPerson(person) {
+  if (!person) return "";
+  if (typeof person === "string") return person;
+  return person.id ? `${person.id} · ${person.name}` : person.name;
+}
+
+function personName(label) {
+  if (!label) return "";
+  const parts = String(label).split(" · ");
+  return parts.length > 1 ? parts.slice(1).join(" · ").trim() : String(label);
+}
+
+function emailFromName(name, domain) {
+  const local = String(name || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/^\.|\.$/g, "");
+  return `${local || "guest"}@${domain}`;
+}
+
+function emailForPerson(label) {
+  const name = personName(label);
+  const employee = EMPLOYEES.find((e) => formatPerson(e) === label || e.name === name || e.id === label);
+  if (employee) return emailFromName(employee.name, "mmlcompany.com");
+  const lead = LEADS.find((e) => formatPerson(e) === label || e.name === name || e.id === label);
+  if (lead) return emailFromName(lead.name, "thecompany.com");
+  return emailFromName(name || label, "thecompany.com");
+}
+
+function belongsToList(label, list) {
+  const name = personName(label);
+  return list.some((item) => formatPerson(item) === label || item.name === name || (item.id && (item.id === label || String(label).includes(item.id))));
+}
 
 const INVITE_GROUPS = [
   { key: "all", label: "All" },
@@ -220,6 +232,36 @@ function addMinutesToTime(time, minutes) {
   return `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`;
 }
 
+function timeToMinutes(time) {
+  const [h, m] = String(time || "00:00").split(":").map(Number);
+  return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+}
+
+function isoDateDiffDays(startIso, endIso) {
+  if (!startIso || !endIso) return 0;
+  const [sy, sm, sd] = String(startIso).split("-").map(Number);
+  const [ey, em, ed] = String(endIso).split("-").map(Number);
+  if (!sy || !sm || !sd || !ey || !em || !ed) return 0;
+  const start = new Date(sy, sm - 1, sd).getTime();
+  const end = new Date(ey, em - 1, ed).getTime();
+  return Math.round((end - start) / (24 * 60 * 60 * 1000));
+}
+
+function minutesToDurationLabel(mins) {
+  if (!Number.isFinite(mins) || mins <= 0) return "";
+  const hours = Math.floor(mins / 60);
+  const minutes = mins % 60;
+  const hourPart = hours === 0 ? "" : hours === 1 ? "1 hour" : `${hours} hours`;
+  const minPart = minutes === 0 ? "" : minutes === 1 ? "1 minute" : `${minutes} minutes`;
+  return [hourPart, minPart].filter(Boolean).join(" ");
+}
+
+function computeDurationFromRange(startTime, endTime, startDate, endDate) {
+  const days = isoDateDiffDays(startDate, endDate);
+  const diff = days * 24 * 60 + (timeToMinutes(endTime) - timeToMinutes(startTime));
+  return minutesToDurationLabel(diff);
+}
+
 function formatTime12(time) {
   const [h, m] = String(time || "11:00").split(":").map(Number);
   const hour = Number.isFinite(h) ? h : 11;
@@ -248,9 +290,9 @@ function inviteGroupsFromPeople(people, meetingWith) {
   if (meetingWith === "employee") groups.add("employees");
   else if (meetingWith) groups.add(meetingWith);
   (people || []).forEach((p) => {
-    if (CLIENTS.includes(p)) groups.add("client");
-    if (EMPLOYEES.includes(p)) groups.add("employees");
-    if (OTHERS.includes(p)) groups.add("others");
+    if (belongsToList(p, LEADS)) groups.add("client");
+    if (belongsToList(p, EMPLOYEES)) groups.add("employees");
+    if (belongsToList(p, OTHERS)) groups.add("others");
   });
   return [...groups];
 }
@@ -303,14 +345,30 @@ function AttendeePicker({ group, people, onAdd, onRemove }) {
   const rootRef = useRef(null);
 
   const config = {
-    employee: { heading: "Employees — search or pick", placeholder: "Type an employee name...", options: EMPLOYEES },
-    client: { heading: "Clients — search or pick", placeholder: "Type a client name...", options: CLIENTS },
+    employee: {
+      heading: "Employees — search by ID or name",
+      placeholder: "Type an employee ID or name...",
+      options: EMPLOYEES,
+    },
+    client: {
+      heading: "Leads — search or pick",
+      placeholder: "Type a lead name or ID...",
+      options: LEADS,
+    },
     others: { heading: "Others — search or pick", placeholder: "Type a name...", options: OTHERS },
   }[group] || { heading: "Search or pick", placeholder: "Type a name...", options: [] };
 
-  const matches = config.options.filter(
-    (name) => name.toLowerCase().includes(query.trim().toLowerCase()) && !people.includes(name)
-  );
+  const matches = config.options.filter((person) => {
+    const label = formatPerson(person);
+    const q = query.trim().toLowerCase();
+    const haystack = `${person.id || ""} ${person.name} ${label}`.toLowerCase();
+    return (!q || haystack.includes(q)) && !people.includes(label);
+  });
+
+  useEffect(() => {
+    setQuery("");
+    setOpen(false);
+  }, [group]);
 
   useEffect(() => {
     const onDoc = (e) => {
@@ -320,8 +378,8 @@ function AttendeePicker({ group, people, onAdd, onRemove }) {
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  const pick = (name) => {
-    onAdd(name);
+  const pick = (person) => {
+    onAdd(formatPerson(person));
     setQuery("");
     setOpen(false);
   };
@@ -356,16 +414,26 @@ function AttendeePicker({ group, people, onAdd, onRemove }) {
             {matches.length === 0 ? (
               <p className="px-3.5 py-2.5 text-[13px] text-[#9CA3AF]">No matches</p>
             ) : (
-              matches.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => pick(name)}
-                  className="w-full text-left px-3.5 py-2 text-[13px] text-[#111] hover:bg-[#FDECEE]"
-                >
-                  {name}
-                </button>
-              ))
+              matches.map((person) => {
+                const label = formatPerson(person);
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => pick(person)}
+                    className="w-full text-left px-3.5 py-2 text-[13px] text-[#111] hover:bg-[#FDECEE]"
+                  >
+                    {person.id ? (
+                      <span className="flex items-center justify-between gap-3">
+                        <span>{person.name}</span>
+                        <span className="text-[11.5px] font-medium text-[#9CA3AF]">{person.id}</span>
+                      </span>
+                    ) : (
+                      label
+                    )}
+                  </button>
+                );
+              })
             )}
           </div>
         )}
@@ -378,7 +446,11 @@ function AttendeePicker({ group, people, onAdd, onRemove }) {
         </div>
       )}
       <p className="text-[11.5px] text-[#9CA3AF]">
-        Add as many clients and employees as you need; a meeting can have both.
+        {group === "client"
+          ? "Pick from current pipeline leads."
+          : group === "employee"
+            ? "Pick employees by name or employee ID."
+            : "Add as many attendees as you need."}
       </p>
     </div>
   );
@@ -420,7 +492,19 @@ export default function CreateMeetingEventModal({
         meetingType,
         meetingTypes: initial.meetingTypes?.length ? initial.meetingTypes : meetingType ? [meetingType] : [],
         meetingWith: initial.meetingWith || deriveMeetingWith(initial.inviteGroups),
-        duration: isEvent ? initial.duration || "60 min" : normalizeDuration(initial.duration),
+        startTime: initial.startTime || "10:00",
+        endTime:
+          initial.endTime ||
+          addMinutesToTime(initial.startTime || "10:00", durationToMinutes(initial.duration || (isEvent ? "60 min" : "1 hour"))),
+        duration: isEvent
+          ? initial.duration || "60 min"
+          : computeDurationFromRange(
+              initial.startTime || "10:00",
+              initial.endTime ||
+                addMinutesToTime(initial.startTime || "10:00", durationToMinutes(initial.duration || "1 hour")),
+              initial.startDate,
+              initial.endDate
+            ) || normalizeDuration(initial.duration),
         reminderChannels: initial.reminderChannels?.length ? initial.reminderChannels : ["email"],
         reminderFrequency: initial.reminderFrequency?.length ? initial.reminderFrequency : ["on_day"],
         customReminders: initial.customReminders || [],
@@ -453,6 +537,7 @@ export default function CreateMeetingEventModal({
         startDate: dateStr,
         endDate: dateStr,
         startTime: "10:00",
+        endTime: "11:00",
         duration: "1 hour",
         meetingWith: "client",
         description: "General / internal discussions",
@@ -473,13 +558,13 @@ export default function CreateMeetingEventModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultDate, initial, isEvent]);
 
-  const computedEndTime = useMemo(
-    () => addMinutesToTime(form.startTime || "10:00", durationToMinutes(form.duration || "1 hour")),
-    [form.startTime, form.duration]
+  const computedDuration = useMemo(
+    () => computeDurationFromRange(form.startTime, form.endTime, form.startDate, form.endDate),
+    [form.startTime, form.endTime, form.startDate, form.endDate]
   );
 
   const recipientEmails = useMemo(() => {
-    const fromPeople = (form.people || []).map((p) => PROFILE_EMAILS[p]).filter(Boolean);
+    const fromPeople = (form.people || []).map((p) => emailForPerson(p)).filter(Boolean);
     return [...new Set([...fromPeople, ...(form.emails || [])])];
   }, [form.people, form.emails]);
 
@@ -521,9 +606,9 @@ export default function CreateMeetingEventModal({
   const inviteAllChecked = GROUP_KEYS.every((k) => form.inviteGroups.includes(k));
 
   const peopleOptions = [
-    ...(form.inviteGroups.includes("others") ? OTHERS : []),
-    ...(form.inviteGroups.includes("employees") ? EMPLOYEES : []),
-    ...(form.inviteGroups.includes("client") ? CLIENTS : []),
+    ...(form.inviteGroups.includes("others") ? OTHERS.map(formatPerson) : []),
+    ...(form.inviteGroups.includes("employees") ? EMPLOYEES.map(formatPerson) : []),
+    ...(form.inviteGroups.includes("client") ? LEADS.map(formatPerson) : []),
   ].filter((v, i, arr) => arr.indexOf(v) === i);
 
   const addPerson = (name) => {
@@ -590,7 +675,7 @@ export default function CreateMeetingEventModal({
   const handleMakeWithAI = () => {
     const title = form.title.trim() || "this meeting";
     const when = `${formatDateLabel(form.startDate)} at ${formatTime12(form.startTime || "10:00")}`;
-    const body = `Reminder: ${title} is scheduled on ${when} (${form.duration || "1 hour"}). Please join on time.`;
+    const body = `Reminder: ${title} is scheduled on ${when} (${computedDuration || form.duration || "1 hour"}). Please join on time.`;
     setForm((f) => ({ ...f, messageTemplate: f.messageTemplate || "reminder", messageBody: body }));
     toast.success("Message drafted with AI from the title, date and time.");
   };
@@ -660,6 +745,14 @@ export default function CreateMeetingEventModal({
       toast.error("Start date and end date are required.");
       return;
     }
+    if (!form.startTime || !form.endTime) {
+      toast.error("Start time and end time are required.");
+      return;
+    }
+    if (!computedDuration) {
+      toast.error("End date and time must be after the start date and time.");
+      return;
+    }
     if (form.reminderChannels.length === 0) {
       toast.error("Please select how reminders should be sent.");
       return;
@@ -679,8 +772,8 @@ export default function CreateMeetingEventModal({
       inviteGroups,
       meetingTypes: [form.meetingType],
       emailIds: form.emails.join("; "),
-      endTime: computedEndTime,
-      duration: form.duration || "1 hour",
+      endTime: form.endTime,
+      duration: computedDuration,
     });
     toast.success(isEdit ? "Meeting updated successfully." : "Meeting created successfully.");
     setForm(emptyForm);
@@ -1011,7 +1104,13 @@ export default function CreateMeetingEventModal({
                   <PillButton
                     key={opt.key}
                     active={form.meetingWith === opt.key}
-                    onClick={() => set("meetingWith")(opt.key)}
+                    onClick={() =>
+                      setForm((s) => ({
+                        ...s,
+                        meetingWith: opt.key,
+                        people: s.meetingWith === opt.key ? s.people : [],
+                      }))
+                    }
                   >
                     {opt.label}
                   </PillButton>
@@ -1147,23 +1246,32 @@ export default function CreateMeetingEventModal({
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Start Time">
-                <input type="time" value={form.startTime} onChange={(e) => set("startTime")(e.target.value)} className={INPUT} />
+                <input
+                  type="time"
+                  value={form.startTime}
+                  onChange={(e) => {
+                    const startTime = e.target.value;
+                    setForm((f) => {
+                      const days = isoDateDiffDays(f.startDate, f.endDate);
+                      const next = { ...f, startTime };
+                      if (days <= 0 && timeToMinutes(f.endTime) <= timeToMinutes(startTime)) {
+                        next.endTime = addMinutesToTime(startTime, 60);
+                      }
+                      return next;
+                    });
+                  }}
+                  className={INPUT}
+                />
               </Field>
-              <Field label="Duration">
-                <select value={form.duration} onChange={(e) => set("duration")(e.target.value)} className={INPUT}>
-                  {DURATION_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
+              <Field label="End Time">
+                <input type="time" value={form.endTime} onChange={(e) => set("endTime")(e.target.value)} className={INPUT} />
               </Field>
             </div>
 
-            <Field label="End Time — set automatically from start time + duration">
+            <Field label="Duration — set automatically from start time + end time">
               <input
                 readOnly
-                value={formatTime12(computedEndTime)}
+                value={computedDuration || "—"}
                 className={`${INPUT} bg-[#FDECEE]/40 text-[#6B7280]`}
               />
             </Field>
