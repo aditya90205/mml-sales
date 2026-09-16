@@ -52,10 +52,6 @@ function monthWeekBuckets(ref = PERIOD_REF) {
 
 const WEEK_BUCKETS = monthWeekBuckets(PERIOD_REF);
 
-/** Share of the month that lands in each week so all 4 weeks always plot. */
-const WEEK_WEIGHTS = [14, 18, 22, 26];
-const WEEK_WEIGHT_SUM = WEEK_WEIGHTS.reduce((a, b) => a + b, 0);
-
 function parseLastContact(str) {
   if (!str || typeof str !== "string") return null;
   const parts = str.split("/").map(Number);
@@ -64,11 +60,25 @@ function parseLastContact(str) {
   return new Date(2000 + yy, mm - 1, dd);
 }
 
+function currentBounds(periodId, ref = PERIOD_REF) {
+  if (periodId === "this_week") {
+    return WEEK_BUCKETS.find((b) => ref >= b.start && ref <= b.end) || WEEK_BUCKETS[WEEK_BUCKETS.length - 1];
+  }
+  const start = new Date(ref.getFullYear(), ref.getMonth(), 1);
+  const end = new Date(ref.getFullYear(), ref.getMonth() + 1, 0, 23, 59, 59, 999);
+  return { start, end };
+}
+
 function previousBounds(periodId, ref = PERIOD_REF) {
   if (periodId === "this_week") {
-    const end = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() - 7);
+    const current = currentBounds("this_week", ref);
+    const idx = WEEK_BUCKETS.findIndex((b) => b.week === current.week);
+    if (idx > 0) return WEEK_BUCKETS[idx - 1];
+    const end = new Date(current.start);
+    end.setDate(end.getDate() - 1);
     end.setHours(23, 59, 59, 999);
-    const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 6);
+    const start = new Date(end);
+    start.setDate(start.getDate() - 6);
     start.setHours(0, 0, 0, 0);
     return { start, end };
   }
@@ -108,29 +118,16 @@ function sumRowStats(rows) {
   );
 }
 
-/** Spread group stats across 4 weeks so the chart stays full, totals follow the saved group. */
-function weeksFromStats(stats) {
-  const total = Math.max(0, Number(stats.total) || 0);
-  const chartTotal = total > 0 ? Math.max(total, WEEK_WEIGHTS.length) : 0;
-  const activeR = total > 0 ? (stats.active || 0) / total : 0;
-  const poolR = total > 0 ? (stats.commonPool || 0) / total : 0;
-  const inactiveR = total > 0 ? (stats.inactive || 0) / total : 0;
-
-  return WEEK_BUCKETS.map((b, i) => {
-    const weekTotal = chartTotal === 0 ? 0 : Math.max(1, Math.round((chartTotal * WEEK_WEIGHTS[i]) / WEEK_WEIGHT_SUM));
-    return {
-      week: b.week,
-      range: b.range,
-      total: weekTotal,
-      active: Math.round(weekTotal * activeR),
-      commonPool: Math.round(weekTotal * poolR),
-      inactive: Math.round(weekTotal * inactiveR),
-    };
-  });
+function weeksFromClients(clients) {
+  return WEEK_BUCKETS.map((b) => ({
+    week: b.week,
+    range: b.range,
+    ...statsFromClients(clients.filter((c) => inBounds(c, b))),
+  }));
 }
 
 function pctChange(current, previous) {
-  if (previous <= 0) return current > 0 ? 100 : 0;
+  if (previous == null || previous <= 0) return null;
   return Math.round(((current - previous) / previous) * 1000) / 10;
 }
 
@@ -236,32 +233,30 @@ function formatNum(n) {
  * data: [{ group, total, active, commonPool, inactive }]  OR
  *       [{ group, clients: Client[] }]  (preferred — scales weeks from group clients)
  */
-export default function ClientGroupsChart({ data = [], title = "Client Groups Overview" }) {
-  const [period, setPeriod] = useState("this_week");
+export default function ClientGroupsChart({
+  data = [],
+  title = "Client Overview",
+  sourceLabel,
+}) {
+  const [period, setPeriod] = useState("this_month");
 
-  const { weekRows, prevTotals, kpiStats } = useMemo(() => {
+  const { weekRows, prevTotals, kpiStats, clientCount } = useMemo(() => {
     const hasClientLists = data.some((row) => Array.isArray(row.clients));
     const allClients = hasClientLists ? uniqueClients(data) : [];
-    const monthStats = hasClientLists ? statsFromClients(allClients) : sumRowStats(data);
-    const weeks = weeksFromStats(monthStats);
+    const weeks = hasClientLists
+      ? weeksFromClients(allClients)
+      : WEEK_BUCKETS.map((b) => ({ week: b.week, range: b.range, ...sumRowStats(data) }));
 
+    const current = currentBounds(period);
     const previous = previousBounds(period);
-    const kpis = period === "this_week" ? weeks[3] : monthStats;
-
-    const prevReal = hasClientLists
+    const kpis = hasClientLists
+      ? statsFromClients(allClients.filter((c) => inBounds(c, current)))
+      : sumRowStats(data);
+    const prev = hasClientLists
       ? statsFromClients(allClients.filter((c) => inBounds(c, previous)))
       : { total: 0, active: 0, commonPool: 0, inactive: 0 };
-    const prev =
-      prevReal.total > 0
-        ? prevReal
-        : {
-            total: Math.round((kpis.total || 0) * 0.72),
-            active: Math.round((kpis.active || 0) * 0.72),
-            commonPool: Math.round((kpis.commonPool || 0) * 0.72),
-            inactive: Math.round((kpis.inactive || 0) * 0.72),
-          };
 
-    return { weekRows: weeks, prevTotals: prev, kpiStats: kpis };
+    return { weekRows: weeks, prevTotals: prev, kpiStats: kpis, clientCount: allClients.length || kpis.total };
   }, [data, period]);
 
   if (!data.length) {
@@ -270,9 +265,9 @@ export default function ClientGroupsChart({ data = [], title = "Client Groups Ov
         <span className="mx-auto size-12 rounded-2xl bg-[#EEF0FE] grid place-items-center mb-3">
           <BarChart3 size={22} className="text-[#6366F1]" strokeWidth={1.8} />
         </span>
-        <p className="text-[15px] font-bold text-[#111]">No groups to chart yet</p>
+        <p className="text-[15px] font-bold text-[#111]">No clients to chart yet</p>
         <p className="text-[13px] text-[#9CA3AF] mt-1 max-w-sm mx-auto">
-          Create and save a client group to compare totals, active, pool, and inactive clients here.
+          Clients from the database appear here with totals, active, pool, and inactive counts.
         </p>
       </div>
     );
@@ -306,7 +301,7 @@ export default function ClientGroupsChart({ data = [], title = "Client Groups Ov
           <div>
             <h2 className="text-[15px] font-bold text-[#111] leading-tight">{title}</h2>
             <p className="text-[11px] text-[#9CA3AF]">
-              {data.length} group{data.length === 1 ? "" : "s"} · {periodLabel.toLowerCase()}
+              {sourceLabel || "All clients"} · {formatNum(clientCount)} client{clientCount === 1 ? "" : "s"} · {periodLabel.toLowerCase()}
             </p>
           </div>
         </div>
@@ -333,7 +328,7 @@ export default function ClientGroupsChart({ data = [], title = "Client Groups Ov
                   s.change == null ? "text-[#9CA3AF]" : s.change >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"
                 }`}
               >
-                {s.change == null ? noteSuffix : `${s.change}% ${noteSuffix}`}
+                {s.change == null ? `No prior ${period === "this_week" ? "week" : "month"}` : `${s.change}% ${noteSuffix}`}
               </p>
             </div>
           ))}

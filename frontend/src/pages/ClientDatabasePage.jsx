@@ -243,27 +243,10 @@ export default function ClientDatabasePage() {
     return [...map.entries()].map(([label, rows]) => ({ key: label, label, rows }));
   }, [paged, grouping]);
 
-  const chartGroups = useMemo(() => {
-    if (activeGroupIds.length > 0) {
-      return savedGroups.filter((g) => activeGroupIds.includes(g.id));
-    }
-    return savedGroups;
-  }, [savedGroups, activeGroupIds]);
-
-  const chartData = useMemo(() => {
-    return chartGroups.map((g) => {
-      let clients;
-      if (Array.isArray(g.clientIds) && g.clientIds.length > 0) {
-        const idSet = new Set(g.clientIds);
-        clients = CLIENTS.filter((c) => idSet.has(c.id));
-      } else {
-        const { conditions, matchMode } = groupQuery(g);
-        clients = CLIENTS.filter((c) => matchesAll(c, conditions, matchMode));
-      }
-      // Pass clients so ClientGroupsChart can apply week/month period filters
-      return { group: g.name, clients, ...statsFromClients(clients) };
-    });
-  }, [chartGroups]);
+  const chartData = useMemo(
+    () => [{ group: "Clients", clients: filtered, ...statsFromClients(filtered) }],
+    [filtered]
+  );
 
   const toggleGroup = (id) => {
     setActiveGroupIds((prev) => (prev.includes(id) ? prev.filter((gid) => gid !== id) : [...prev, id]));
@@ -528,18 +511,21 @@ export default function ClientDatabasePage() {
           )}
         </div>
 
-        {savedGroups.length > 0 && (
-          <div ref={chartRef}>
-            <ClientGroupsChart
-              data={chartData}
-              title={
-                activeGroupIds.length > 0
-                  ? "Selected Groups — Client Overview"
-                  : "Saved Groups — Client Overview"
-              }
-            />
-          </div>
-        )}
+        <div ref={chartRef}>
+          <ClientGroupsChart
+            data={chartData}
+            title={
+              activeGroupIds.length > 0
+                ? "Selected Groups — Client Overview"
+                : "Client Overview"
+            }
+            sourceLabel={
+              activeGroupIds.length > 0
+                ? `${activeGroupIds.length} group${activeGroupIds.length === 1 ? "" : "s"}`
+                : "All clients"
+            }
+          />
+        </div>
 
         <div className="flex items-center gap-6 flex-wrap text-[13px] font-medium text-[#374151]">
           {Object.entries(PROBABILITY_META).map(([key, meta]) => (

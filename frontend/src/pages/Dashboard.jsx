@@ -58,6 +58,9 @@ import {
   subscribeCalendar,
   unscheduledToMeetingForm,
 } from "../utils/calendarStore.js";
+import { CLIENTS } from "../utils/clientsData.js";
+import { addP0Lead, countStageLeads, subscribePipeline } from "../utils/pipelineStore.js";
+import { addTaskFromForm, getTodayTaskStats, subscribeTasks } from "../utils/tasksStore.js";
 import salesFunnelSvg from "../assets/sales-funnel.svg";
 import salesPersonProfile from "../assets/sale-person-profile.jpg";
 import visitsArrow from "../assets/Monthly-visits-  Meetings-arrow.png";
@@ -83,11 +86,38 @@ const PERIOD_OPTIONS = [
   { id: "this_year",    label: "This Year" },
 ];
 
-const STATS = [
-  { label: "Total Clients", value: "34", note: "+10% vs Month",   noteTone: "green", icon: Users,          bg: "#FDECEE", fg: "#E8395B", to: "/clients" },
-  { label: "New Leads",     value: "12", note: "+10% Last Month", noteTone: "green", icon: UserPlus,       bg: "#EEF0FE", fg: "#6366F1", to: "/pipeline?stage=P0" },
-  { label: "Today's tasks", value: "12", note: "3 high priority", noteTone: "red",   icon: ClipboardList,  bg: "#FFF3E4", fg: "#F59E0B", to: "/tasks?today=1&sort=priority" },
+const STAT_CARD_META = [
+  { label: "Total Clients", icon: Users,         bg: "#FDECEE", fg: "#E8395B", to: "/clients" },
+  { label: "New Leads",     icon: UserPlus,      bg: "#EEF0FE", fg: "#6366F1", to: "/pipeline?stage=P0" },
+  { label: "Today's tasks", icon: ClipboardList, bg: "#FFF3E4", fg: "#F59E0B", to: "/tasks?today=1&sort=priority" },
 ];
+
+function buildDashboardStats() {
+  const totalClients = CLIENTS.length;
+  const activeClients = CLIENTS.filter((c) => c.status === "Active").length;
+  const p0Count = countStageLeads("P0");
+  const today = getTodayTaskStats();
+  return [
+    {
+      ...STAT_CARD_META[0],
+      value: String(totalClients),
+      note: `${activeClients} Active`,
+      noteTone: "green",
+    },
+    {
+      ...STAT_CARD_META[1],
+      value: String(p0Count),
+      note: "P0 · New",
+      noteTone: "green",
+    },
+    {
+      ...STAT_CARD_META[2],
+      value: String(today.total),
+      note: `${today.high} high priority`,
+      noteTone: today.high > 0 ? "red" : "gray",
+    },
+  ];
+}
 
 const QUICK_ACTIONS = [
   { label: "Create Lead",     icon: UserPlus,   bg: "#FDECEE", fg: "#E8395B", action: "lead" },
@@ -286,7 +316,16 @@ const PRIORITY_STYLES = {
   Low:    { color: "#16A34A", bg: "bg-[#E7F8EF]" },
 };
 
-const LEAD_DOT_COLORS = ["#E8395B", "#F59E0B", "#3B82F6", "#E8395B", "#E8395B", "#E8395B"];
+const TEMP_DOT_COLORS = {
+  hot:  "#E8395B",
+  warm: "#F59E0B",
+  cold: "#3B82F6",
+};
+
+function tempDotColor(temperature) {
+  const key = String(temperature || "").toLowerCase();
+  return TEMP_DOT_COLORS[key] || "#9CA3AF";
+}
 
 const MY_LEADS = [
   { id: "MML-ID-D-10428", name: "Kuhu Sharma",    starred: true,  stage: "P0 - New",              temperature: "Hot",  stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Outbound follow-up call" },
@@ -980,6 +1019,47 @@ function MyLeadsCard({
           Lead Health
         </h2>
         <div className="flex items-center gap-2 flex-wrap justify-end">
+          {(() => {
+            const allCount =
+              (healthCounts?.hot ?? 0) + (healthCounts?.warm ?? 0) + (healthCounts?.cold ?? 0);
+            const allActive = !healthFilter && !stageFilter;
+            return (
+              <button
+                type="button"
+                onClick={() => {
+                  onHealthFilter?.(null);
+                  onClearStageFilter?.();
+                }}
+                aria-pressed={allActive}
+                title="Show all leads (clear Hot / Warm / Cold and funnel filters)"
+                className="inline-flex items-center gap-1.5 text-[12px] font-semibold rounded-lg px-2.5 py-1.5 border-2 transition-[background-color,color,border-color,box-shadow] duration-150"
+                style={
+                  allActive
+                    ? {
+                        backgroundColor: "#7A0A17",
+                        color: "#fff",
+                        borderColor: "#7A0A17",
+                        boxShadow: "0 4px 12px #7A0A1740",
+                      }
+                    : {
+                        backgroundColor: "#F3F4F6",
+                        color: "#4B5563",
+                        borderColor: "transparent",
+                      }
+                }
+              >
+                All
+                <span
+                  className="font-bold tabular-nums min-w-[1.25rem] text-center rounded-md px-1"
+                  style={{
+                    backgroundColor: allActive ? "rgba(255,255,255,0.22)" : "rgba(75,85,99,0.12)",
+                  }}
+                >
+                  {allCount}
+                </span>
+              </button>
+            );
+          })()}
           {LEAD_HEALTH.map((h) => {
             const active = healthFilter === h.key;
             const count = healthCounts?.[h.key] ?? h.count;
@@ -1153,7 +1233,11 @@ function MyLeadsCard({
                 >
                   <td className="pl-3 pr-2 py-2.5">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: LEAD_DOT_COLORS[i % LEAD_DOT_COLORS.length] }} />
+                      <span
+                        className="size-2 rounded-full shrink-0"
+                        style={{ backgroundColor: tempDotColor(lead.temperature) }}
+                        title={lead.temperature || "Unknown"}
+                      />
                       <div className="min-w-0">
                         <span className="inline-flex items-center gap-1.5 min-w-0">
                           <p className="text-[13px] font-bold text-[#111] truncate">{lead.name}</p>
@@ -1260,11 +1344,21 @@ export default function Dashboard() {
   const [meetingPrefill, setMeetingPrefill] = useState(null);
   const [schedulingUnscheduledId, setSchedulingUnscheduledId] = useState(null);
   const [unscheduledItems, setUnscheduledItems] = useState(readUnscheduled);
+  const [stats, setStats] = useState(buildDashboardStats);
   const [myLeads, setMyLeads] = useState(MY_LEADS);
   const [stageFilter, setStageFilter] = useState(null);
   const [healthFilter, setHealthFilter] = useState(null);
 
   useEffect(() => subscribeCalendar(() => setUnscheduledItems(readUnscheduled())), []);
+  useEffect(() => {
+    const refresh = () => setStats(buildDashboardStats());
+    const unsubPipeline = subscribePipeline(refresh);
+    const unsubTasks = subscribeTasks(refresh);
+    return () => {
+      unsubPipeline();
+      unsubTasks();
+    };
+  }, []);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
@@ -1358,6 +1452,20 @@ export default function Dashboard() {
                 : lead.meeting === "Callback Later"
                   ? "Callback"
                   : "Initial Contact";
+          addP0Lead({
+            name: lead.name,
+            starred: false,
+            mmlId: `MML - D - ${Math.floor(10000 + Math.random() * 90000)}`,
+            temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
+            score: 8.0,
+            priority: "High",
+            completion: 25,
+            days: 0,
+            hrs: 24,
+            source: lead.source,
+            lastDiscussion: "Just now",
+            nextAction,
+          });
           setMyLeads((prev) => [
             {
               id: `MML-ID-D-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -1409,7 +1517,7 @@ export default function Dashboard() {
         open={showCreateTask}
         onClose={() => setShowCreateTask(false)}
         defaultDate={new Date()}
-        onSave={() => {}}
+        onSave={(form) => addTaskFromForm(form)}
       />
       <div className="flex items-center justify-between gap-4 px-5 pt-5 pb-4 flex-wrap">
         <h1 className="text-[22px] font-bold text-[#111] tracking-tight">
@@ -1430,7 +1538,7 @@ export default function Dashboard() {
       <div className="px-5 pb-8 flex flex-col gap-4">
         <div className="flex flex-col lg:flex-row gap-3 items-stretch">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:w-[44%] lg:shrink-0">
-            {STATS.map((stat) => (
+            {stats.map((stat) => (
               <StatCard key={stat.label} stat={stat} />
             ))}
           </div>
