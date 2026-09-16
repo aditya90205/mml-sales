@@ -50,6 +50,14 @@ import {
   readNotifications,
   subscribeNotifications,
 } from "../utils/notifications.js";
+import {
+  addExtraEvent,
+  meetingFormToCalendarItem,
+  readUnscheduled,
+  removeUnscheduled,
+  subscribeCalendar,
+  unscheduledToMeetingForm,
+} from "../utils/calendarStore.js";
 import salesFunnelSvg from "../assets/sales-funnel.svg";
 import salesPersonProfile from "../assets/sale-person-profile.jpg";
 import visitsArrow from "../assets/Monthly-visits-  Meetings-arrow.png";
@@ -85,7 +93,7 @@ const QUICK_ACTIONS = [
   { label: "Create Lead",     icon: UserPlus,   bg: "#FDECEE", fg: "#E8395B", action: "lead" },
   { label: "Create Task",     icon: SquareCheck, bg: "#E8F2FE", fg: "#3B82F6", action: "task" },
   { label: "Create Meeting",  icon: Calendar,   bg: "#F0EBFE", fg: "#8B5CF6", action: "meeting" },
-  { label: "Upload Biodata",  icon: FileText,   bg: "#E7F8EF", fg: "#16A34A", to: "/documents" },
+  { label: "Upload Biodata",  icon: FileText,   bg: "#E7F8EF", fg: "#16A34A", to: "#" },
 ];
 
 const PERFORMANCE_SEGMENTS = [
@@ -199,10 +207,6 @@ const UP_NEXT = {
   time: "11:00 AM – 12:00 PM",
 };
 
-const UNSCHEDULED_ITEM = {
-  title: "Call back Sethi",
-  note: "Lead • 30 min",
-};
 
 const LEAD_HEALTH = [
   { key: "hot",  label: "Hot Leads",  count: 18, icon: Flame,     bg: "#FDECEE", fg: "#E8395B" },
@@ -550,17 +554,27 @@ function UpNextCard() {
   );
 }
 
-function UnscheduledCard() {
+function UnscheduledCard({ item, onSchedule }) {
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-3.5 flex-1 min-w-0">
       <p className="text-[10.5px] font-bold text-[#9CA3AF] tracking-wide">UNSCHEDULED</p>
-      <div className="flex items-start gap-2 mt-3">
-        <span className="size-2 rounded-full bg-[#E8395B] shrink-0 mt-1.5" />
-        <div className="min-w-0">
-          <p className="text-[13.5px] font-bold text-[#111] leading-snug truncate">{UNSCHEDULED_ITEM.title}</p>
-          <p className="text-[11px] text-[#9CA3AF] mt-0.5">{UNSCHEDULED_ITEM.note}</p>
-        </div>
-      </div>
+      {!item ? (
+        <p className="text-[12px] text-[#9CA3AF] mt-3">All caught up.</p>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onSchedule?.(item)}
+          className="flex items-start gap-2 mt-3 w-full text-left rounded-xl hover:bg-[#FAFAFB] transition-colors -mx-1 px-1 py-1"
+        >
+          <span className="size-2 rounded-full bg-[#E8395B] shrink-0 mt-1.5" />
+          <div className="min-w-0">
+            <p className="text-[13.5px] font-bold text-[#111] leading-snug truncate">{item.title}</p>
+            <p className="text-[11px] text-[#9CA3AF] mt-0.5">
+              {item.type} • {item.duration}
+            </p>
+          </div>
+        </button>
+      )}
     </div>
   );
 }
@@ -1228,6 +1242,7 @@ function MyLeadsCard({
 /* ───────────────────────── Page ───────────────────────── */
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [period, setPeriod] = useState("this_month");
   const [search, setSearch] = useState("");
   const [dealLead, setDealLead] = useState(null);
@@ -1235,9 +1250,14 @@ export default function Dashboard() {
   const [showCreateLead, setShowCreateLead] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showCreateMeeting, setShowCreateMeeting] = useState(false);
+  const [meetingPrefill, setMeetingPrefill] = useState(null);
+  const [schedulingUnscheduledId, setSchedulingUnscheduledId] = useState(null);
+  const [unscheduledItems, setUnscheduledItems] = useState(readUnscheduled);
   const [myLeads, setMyLeads] = useState(MY_LEADS);
   const [stageFilter, setStageFilter] = useState(null);
   const [healthFilter, setHealthFilter] = useState(null);
+
+  useEffect(() => subscribeCalendar(() => setUnscheduledItems(readUnscheduled())), []);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
@@ -1360,10 +1380,23 @@ export default function Dashboard() {
       />
       <CreateMeetingEventModal
         open={showCreateMeeting}
-        onClose={() => setShowCreateMeeting(false)}
+        onClose={() => {
+          setShowCreateMeeting(false);
+          setMeetingPrefill(null);
+          setSchedulingUnscheduledId(null);
+        }}
         entityLabel="Meeting"
         defaultDate={new Date()}
-        onSave={() => {}}
+        initial={meetingPrefill}
+        onSave={(form) => {
+          const item = addExtraEvent(meetingFormToCalendarItem(form, "meeting"));
+          if (schedulingUnscheduledId) {
+            removeUnscheduled(schedulingUnscheduledId);
+            setSchedulingUnscheduledId(null);
+            setMeetingPrefill(null);
+            navigate(`/calendar?focus=${encodeURIComponent(item.id)}`);
+          }
+        }}
       />
       <CreateTaskModal
         open={showCreateTask}
@@ -1398,7 +1431,11 @@ export default function Dashboard() {
             <QuickActionsCard
               onCreateLead={() => setShowCreateLead(true)}
               onCreateTask={() => setShowCreateTask(true)}
-              onCreateMeeting={() => setShowCreateMeeting(true)}
+              onCreateMeeting={() => {
+                setMeetingPrefill(null);
+                setSchedulingUnscheduledId(null);
+                setShowCreateMeeting(true);
+              }}
             />
           </div>
         </div>
@@ -1409,7 +1446,14 @@ export default function Dashboard() {
           <div className="flex flex-col gap-4 min-h-0">
             <div className="flex items-stretch gap-3">
               <UpNextCard />
-              <UnscheduledCard />
+              <UnscheduledCard
+                item={unscheduledItems[0] || null}
+                onSchedule={(item) => {
+                  setSchedulingUnscheduledId(item.id);
+                  setMeetingPrefill(unscheduledToMeetingForm(item));
+                  setShowCreateMeeting(true);
+                }}
+              />
             </div>
             <RecentUpdatesCard />
           </div>

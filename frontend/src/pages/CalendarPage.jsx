@@ -30,6 +30,16 @@ import TaskDetailsModal, { calendarEventToTaskView } from "../components/calenda
 import EventDetailsModal, { calendarEventToEventView } from "../components/calendar/EventDetailsModal";
 import MeetingDetailsModal, { calendarEventToMeetingView } from "../components/calendar/MeetingDetailsModal";
 import OthersDetailsModal, { calendarEventToOtherView } from "../components/calendar/OthersDetailsModal";
+import {
+  addExtraEvent,
+  hydrateCalendarItem,
+  mergeCalendarEvents,
+  readExtraEvents,
+  readUnscheduled,
+  removeUnscheduled,
+  subscribeCalendar,
+  unscheduledToMeetingForm,
+} from "../utils/calendarStore.js";
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
@@ -518,12 +528,6 @@ const INITIAL_EVENTS = [
   }),
 ];
 
-const INITIAL_UNSCHEDULED = [
-  { id: "u1", title: "Call back Sethi Family", type: "Prospect", duration: "30 min" },
-  { id: "u2", title: "Draft Agarwal Package Quote", type: "Prospect", duration: "30 min" },
-  { id: "u3", title: "Follow up with Mehta Family", type: "Prospect", duration: "30 min" },
-  { id: "u4", title: "Prepare Sharma Match Shortlist", type: "Prospect", duration: "45 min" },
-];
 
 const DAY_STATUS = { 3: "free", 9: "free", 11: "filling", 17: "busy", 26: "busy" };
 
@@ -545,6 +549,44 @@ function CategoryChip({ id, checked, onToggle, count }) {
         {count != null && <span className="text-[#9CA3AF]">({count})</span>}
       </span>
     </button>
+  );
+}
+
+function UnscheduledItem({ item, onDragStart, onDragEnd, onClick }) {
+  const didDrag = useRef(false);
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      draggable
+      onDragStart={() => {
+        didDrag.current = true;
+        onDragStart?.();
+      }}
+      onDragEnd={() => {
+        onDragEnd?.();
+        setTimeout(() => {
+          didDrag.current = false;
+        }, 50);
+      }}
+      onClick={() => {
+        if (didDrag.current) return;
+        onClick?.();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+      className="flex items-start gap-2.5 rounded-xl border border-black/8 p-2.5 cursor-grab active:cursor-grabbing hover:bg-[#FAFAFB] transition-colors"
+    >
+      <span className="size-1.5 rounded-full bg-[#E8395B] mt-1.5 shrink-0" />
+      <div className="min-w-0">
+        <p className="text-[12.5px] font-semibold text-[#111] leading-snug">{item.title}</p>
+        <p className="text-[11px] text-[#9CA3AF] mt-0.5">{item.type} · {item.duration}</p>
+      </div>
+    </div>
   );
 }
 
@@ -704,8 +746,8 @@ export default function CalendarPage() {
   const [activeCats, setActiveCats] = useState(new Set(Object.keys(CATEGORIES)));
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
-  const [events, setEvents] = useState(INITIAL_EVENTS);
-  const [unscheduled, setUnscheduled] = useState(INITIAL_UNSCHEDULED);
+  const [events, setEvents] = useState(() => mergeCalendarEvents(INITIAL_EVENTS, readExtraEvents().map(hydrateCalendarItem)));
+  const [unscheduled, setUnscheduled] = useState(readUnscheduled);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedMeetingEvent, setSelectedMeetingEvent] = useState(null);
   const [selectedTaskEvent, setSelectedTaskEvent] = useState(null);
@@ -717,6 +759,8 @@ export default function CalendarPage() {
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [createOtherOpen, setCreateOtherOpen] = useState(false);
   const [taskPrefill, setTaskPrefill] = useState(null);
+  const [meetingPrefill, setMeetingPrefill] = useState(null);
+  const [schedulingUnscheduledId, setSchedulingUnscheduledId] = useState(null);
   const [dragOverCell, setDragOverCell] = useState(null);
   const dragPayloadRef = useRef(null);
 
@@ -760,6 +804,11 @@ export default function CalendarPage() {
     next.delete("client");
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
+
+  useEffect(() => subscribeCalendar(() => {
+    setUnscheduled(readUnscheduled());
+    setEvents((prev) => mergeCalendarEvents(prev, readExtraEvents().map(hydrateCalendarItem)));
+  }), []);
 
   const allChecked = activeCats.size === Object.keys(CATEGORIES).length;
 
@@ -883,28 +932,33 @@ export default function CalendarPage() {
       clearDrag();
       return;
     }
-    setEvents((prev) => [
-      ...prev,
-      {
-        id: `sched-${item.id}-${Date.now()}`,
-        date: day,
-        startH: hour,
-        endH: hour + 1,
-        title: item.title,
-        category: "task",
-        meta: {
-          priority: "Medium",
-          clientRelated: false,
-          client: "",
-          assignees: ["Priya Sharma"],
-          stage: "New",
-          dueDate: addDays(day, 3),
-          stars: 10,
-          description: `Scheduled from unscheduled: ${item.type} Â· ${item.duration}`,
-        },
+    const scheduled = {
+      id: `sched-${item.id}-${Date.now()}`,
+      date: day,
+      startH: hour,
+      endH: hour + 1,
+      title: item.title,
+      category: "meeting",
+      meta: {
+        priority: "Medium",
+        clientRelated: true,
+        client: String(item.title || "").replace(/^(?:call back|follow up with)\s+/i, ""),
+        meetingWith: "client",
+        meetingType: /call/i.test(item.title) ? "telephonic" : "video",
+        assignees: ["Priya Sharma"],
+        people: [String(item.title || "").replace(/^(?:call back|follow up with)\s+/i, "")].filter(Boolean),
+        stage: "New",
+        dueDate: addDays(day, 3),
+        stars: 10,
+        duration: item.duration,
+        startTime: hourToTimeStr(hour),
+        endTime: hourToTimeStr(hour + 1),
+        description: `Scheduled from unscheduled: ${item.type} · ${item.duration}`,
       },
-    ]);
-    setUnscheduled((prev) => prev.filter((u) => u.id !== item.id));
+    };
+    setEvents((prev) => [...prev, scheduled]);
+    addExtraEvent(scheduled);
+    removeUnscheduled(item.id);
     clearDrag();
     toast.success(`"${item.title}" scheduled.`);
   };
@@ -1010,7 +1064,14 @@ export default function CalendarPage() {
   };
 
   const handleCreateMeetingOrEvent = (form, category) => {
-    addCalendarItem(buildMeetingOrEventItem(form, category));
+    const item = buildMeetingOrEventItem(form, category);
+    addCalendarItem(item);
+    addExtraEvent(item);
+    if (schedulingUnscheduledId) {
+      removeUnscheduled(schedulingUnscheduledId);
+      setSchedulingUnscheduledId(null);
+      setMeetingPrefill(null);
+    }
   };
 
   const handleUpdateMeetingOrEvent = (form, category) => {
@@ -1205,6 +1266,26 @@ export default function CalendarPage() {
     setSelectedOtherEvent(ev);
   };
 
+  useEffect(() => {
+    const focusId = searchParams.get("focus");
+    if (!focusId) return;
+    const ev = events.find((item) => item.id === focusId);
+    if (ev) {
+      jumpTo(ev.date);
+      openCalendarItem(ev);
+    }
+    const next = new URLSearchParams(searchParams);
+    next.delete("focus");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, events, setSearchParams]);
+
+  const openUnscheduledMeeting = (item) => {
+    setEditingItem(null);
+    setSchedulingUnscheduledId(item.id);
+    setMeetingPrefill(unscheduledToMeetingForm(item, anchorDate));
+    setCreateMeetingOpen(true);
+  };
+
   const openEditItem = (item) => {
     setSelectedEvent(null);
     setSelectedMeetingEvent(null);
@@ -1314,6 +1395,8 @@ export default function CalendarPage() {
 
   const closeMeetingModal = () => {
     setCreateMeetingOpen(false);
+    setMeetingPrefill(null);
+    setSchedulingUnscheduledId(null);
     setEditingItem((prev) => (prev?.category === "meeting" ? null : prev));
   };
 
@@ -1362,7 +1445,7 @@ export default function CalendarPage() {
               {[
                 { label: "Event", icon: CalendarCheck2, color: "#A02868", onClick: () => { setEditingItem(null); setCreateEventOpen(true); } },
                 { label: "Task", icon: ListTodo, color: "#7C6CB0", onClick: () => { setEditingItem(null); setTaskPrefill(null); setCreateTaskOpen(true); } },
-                { label: "Meeting", icon: Users2, color: "#41703D", onClick: () => { setEditingItem(null); setCreateMeetingOpen(true); } },
+                { label: "Meeting", icon: Users2, color: "#41703D", onClick: () => { setEditingItem(null); setMeetingPrefill(null); setSchedulingUnscheduledId(null); setCreateMeetingOpen(true); } },
                 { label: "Others", icon: CircleDot, color: "#6F7886", onClick: () => { setEditingItem(null); setCreateOtherOpen(true); } },
               ].map((item) => (
                 <button
@@ -1430,25 +1513,19 @@ export default function CalendarPage() {
         <div className="bg-white border border-black/8 rounded-2xl p-3.5 flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
             <p className="text-[10.5px] font-bold text-[#9CA3AF] tracking-wide">UNSCHEDULED</p>
-            <p className="text-[10.5px] text-[#9CA3AF]">drag onto grid</p>
+            <p className="text-[10.5px] text-[#9CA3AF]">click or drag onto grid</p>
           </div>
           {unscheduled.length === 0 ? (
             <p className="text-[12px] text-[#9CA3AF] py-2">All caught up.</p>
           ) : (
             unscheduled.map((item) => (
-              <div
+              <UnscheduledItem
                 key={item.id}
-                draggable
+                item={item}
                 onDragStart={() => beginDrag({ itemId: item.id })}
                 onDragEnd={clearDrag}
-                className="flex items-start gap-2.5 rounded-xl border border-black/8 p-2.5 cursor-grab active:cursor-grabbing hover:bg-[#FAFAFB] transition-colors"
-              >
-                <span className="size-1.5 rounded-full bg-[#E8395B] mt-1.5 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-[12.5px] font-semibold text-[#111] leading-snug">{item.title}</p>
-                  <p className="text-[11px] text-[#9CA3AF] mt-0.5">{item.type} Â· {item.duration}</p>
-                </div>
-              </div>
+                onClick={() => openUnscheduledMeeting(item)}
+              />
             ))
           )}
         </div>
@@ -1632,7 +1709,7 @@ export default function CalendarPage() {
         entityLabel="Meeting"
         defaultDate={anchorDate}
         mode={editingItem?.category === "meeting" ? "edit" : "create"}
-        initial={editingItem?.category === "meeting" ? eventToMeetingForm(editingItem) : null}
+        initial={editingItem?.category === "meeting" ? eventToMeetingForm(editingItem) : meetingPrefill}
         onSave={(form) =>
           editingItem?.category === "meeting"
             ? handleUpdateMeetingOrEvent(form, "meeting")
