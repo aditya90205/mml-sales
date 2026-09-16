@@ -31,11 +31,12 @@ const SOURCES = [
   "Cold Call",
 ];
 const INCOME = [
-  "Under ₹5 Lakh",
-  "₹5 Lakh to ₹10 Lakh",
-  "₹10 Lakh to ₹25 Lakh",
-  "₹25 Lakh to ₹50 Lakh",
+  "Under ₹15 Lakh",
+  "₹15 Lakh to ₹30 Lakh",
+  "₹30 Lakh to ₹50 Lakh",
   "₹50 Lakh to ₹1 Crore",
+  "₹1 Crore to ₹5 Crore",
+  "Above ₹5 Crore",
 ];
 const CITIES = [
   "Mumbai, Maharashtra",
@@ -56,6 +57,17 @@ const MEETINGS = [
   { id: "Callback Later", label: "Callback Later", icon: Clock },
   { id: "Not Yet", label: "Not Yet", icon: Ban },
 ];
+const COUNTRIES = ["India", "USA", "UK", "Canada", "UAE", "Australia", "Singapore", "Other"];
+const COUNTRY_DIAL = {
+  India: "+91",
+  USA: "+1",
+  UK: "+44",
+  Canada: "+1",
+  UAE: "+971",
+  Australia: "+61",
+  Singapore: "+65",
+  Other: "+",
+};
 
 const INPUT =
   "w-full h-10 px-3.5 rounded-xl bg-white border border-black/12 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/45 transition-colors";
@@ -63,6 +75,7 @@ const INPUT =
 function emptyForm() {
   return {
     lookingFor: "yes",
+    nri: "no",
     relation: "Self / Prospect",
     firstName: "",
     lastName: "",
@@ -71,11 +84,40 @@ function emptyForm() {
     mobile: "",
     email: "",
     source: "Website Inquiry",
+    country: "India",
     city: "",
     area: "",
     income: "₹5 Lakh to ₹10 Lakh",
     meeting: "Meeting Agreed",
   };
+}
+
+function YesNoToggle({ value, onChange }) {
+  return (
+    <div className="flex items-center gap-2">
+      {[
+        { id: "yes", label: "Yes" },
+        { id: "no", label: "No" },
+      ].map((opt) => {
+        const active = value === opt.id;
+        return (
+          <button
+            key={opt.id}
+            type="button"
+            onClick={() => onChange(opt.id)}
+            className={`inline-flex items-center gap-1.5 h-8 px-4 rounded-full text-[13px] font-semibold border transition-colors ${
+              active
+                ? "bg-[#7A0A17] text-white border-[#7A0A17]"
+                : "bg-white text-[#374151] border-black/12 hover:bg-[#FAFAFB]"
+            }`}
+          >
+            {active ? <Check size={13} strokeWidth={2.6} /> : null}
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function Field({ label, required, extra, children }) {
@@ -174,6 +216,8 @@ export default function CreateLeadModal({ open, onClose, onCreate }) {
     return CITIES.filter((c) => c.toLowerCase().includes(q));
   }, [form.city]);
 
+  const dialCode = COUNTRY_DIAL[form.country] || "+91";
+
   const takeFile = (next) => {
     if (!next) return;
     setFile(next);
@@ -183,7 +227,7 @@ export default function CreateLeadModal({ open, onClose, onCreate }) {
     if (!form.firstName.trim()) return "Prospect's first name is required.";
     if (!form.lastName.trim()) return "Prospect's last name is required.";
     const digits = form.mobile.replace(/\D/g, "");
-    if (digits.length < 10) return "Enter a valid 10-digit mobile number.";
+    if (digits.length < 8) return "Enter a valid mobile number.";
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "Enter a valid email address.";
     if (!form.city.trim()) return "City is required.";
     return "";
@@ -196,11 +240,11 @@ export default function CreateLeadModal({ open, onClose, onCreate }) {
       setError(msg);
       return;
     }
-    const digits = form.mobile.replace(/\D/g, "").slice(-10);
+    const digits = form.mobile.replace(/\D/g, "");
     onCreate?.({
       ...form,
       name: `${form.firstName.trim()} ${form.lastName.trim()}`.replace(/\s+/g, " "),
-      mobile: `+91 ${digits}`,
+      mobile: `${dialCode} ${digits}`,
       fileName: file?.name || "",
     });
     onClose?.();
@@ -296,36 +340,30 @@ export default function CreateLeadModal({ open, onClose, onCreate }) {
               </button>
             </div>
 
-            <Field label="Looking for a bride or groom" required>
-              <div className="flex items-center gap-2">
-                {[
-                  { id: "yes", label: "Yes" },
-                  { id: "no", label: "No" },
-                ].map((opt) => {
-                  const active = form.lookingFor === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => set("lookingFor")(opt.id)}
-                      className={`inline-flex items-center gap-1.5 h-8 px-4 rounded-full text-[13px] font-semibold border transition-colors ${
-                        active
-                          ? "bg-[#7A0A17] text-white border-[#7A0A17]"
-                          : "bg-white text-[#374151] border-black/12 hover:bg-[#FAFAFB]"
-                      }`}
-                    >
-                      {active ? <Check size={13} strokeWidth={2.6} /> : null}
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <Field label="Looking for a bride or groom" required>
+                <YesNoToggle value={form.lookingFor} onChange={set("lookingFor")} />
+              </Field>
+              <Field label="NRI" required>
+                <YesNoToggle
+                  value={form.nri}
+                  onChange={(value) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      nri: value,
+                      country: value === "no" ? "India" : prev.country,
+                    }));
+                    setError("");
+                  }}
+                />
+              </Field>
+            </div>
+
+            <Field label="Relation to Prospect" required>
+              <NativeSelect value={form.relation} onChange={set("relation")} options={RELATIONS} />
             </Field>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-              <Field label="Relation to Prospect" required>
-                <NativeSelect value={form.relation} onChange={set("relation")} options={RELATIONS} />
-              </Field>
               <Field label="Prospect's First Name" required>
                 <input
                   value={form.firstName}
@@ -356,10 +394,20 @@ export default function CreateLeadModal({ open, onClose, onCreate }) {
                   <Calendar size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
                 </div>
               </Field>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <Field label="Country" required>
+                <NativeSelect
+                  value={form.country}
+                  onChange={set("country")}
+                  options={form.nri === "yes" ? COUNTRIES : ["India"]}
+                />
+              </Field>
               <Field label="Mobile Number" required>
                 <div className="flex h-10 rounded-xl border border-black/12 overflow-hidden focus-within:border-[#7A0A17]/45">
-                  <span className="px-3 grid place-items-center text-[13px] font-medium text-[#6B7280] bg-[#F7F7F8] border-r border-black/10 shrink-0">
-                    +91
+                  <span className="min-w-[3.25rem] px-2.5 grid place-items-center text-[13px] font-medium text-[#6B7280] bg-[#F7F7F8] border-r border-black/10 shrink-0">
+                    {dialCode}
                   </span>
                   <input
                     value={form.mobile}
@@ -371,29 +419,6 @@ export default function CreateLeadModal({ open, onClose, onCreate }) {
                 </div>
               </Field>
             </div>
-
-            <Field label="Email">
-              <div className="relative">
-                <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => set("email")(e.target.value)}
-                  placeholder="kabir.vaidya@enterprise-group.in"
-                  className={`${INPUT} pl-10`}
-                />
-              </div>
-            </Field>
-
-            <Field label="Source" required>
-              <div className="flex flex-wrap gap-2">
-                {SOURCES.map((source) => (
-                  <Chip key={source} active={form.source === source} onClick={() => set("source")(source)}>
-                    {source}
-                  </Chip>
-                ))}
-              </div>
-            </Field>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <Field label="City" required>
@@ -442,6 +467,29 @@ export default function CreateLeadModal({ open, onClose, onCreate }) {
                 </div>
               </Field>
             </div>
+
+            <Field label="Email">
+              <div className="relative">
+                <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => set("email")(e.target.value)}
+                  placeholder="kabir.vaidya@enterprise-group.in"
+                  className={`${INPUT} pl-10`}
+                />
+              </div>
+            </Field>
+
+            <Field label="Source" required>
+              <div className="flex flex-wrap gap-2">
+                {SOURCES.map((source) => (
+                  <Chip key={source} active={form.source === source} onClick={() => set("source")(source)}>
+                    {source}
+                  </Chip>
+                ))}
+              </div>
+            </Field>
 
             <Field
               label="Family Income Bracket"
