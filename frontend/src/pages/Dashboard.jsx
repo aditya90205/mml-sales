@@ -19,8 +19,6 @@ import {
   Mic,
   Send,
   CalendarClock,
-  History as HistoryIcon,
-  ScanFace,
   Target,
   Star,
   Flag,
@@ -31,7 +29,6 @@ import {
   Clock,
   MoreVertical,
   SlidersHorizontal,
-  TrendingUp,
   PieChart as PieChartIcon,
   Megaphone,
   ArrowUpRight,
@@ -40,6 +37,17 @@ import {
   Share2,
   Smartphone,
   Store,
+  Zap,
+  Flame,
+  Snowflake,
+  UserPlus,
+  ClipboardList,
+  UploadCloud,
+  IndianRupee,
+  BadgePercent,
+  FileCheck2,
+  Heart,
+  Bell,
 } from "lucide-react";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
@@ -68,13 +76,13 @@ import {
   Cell,
 } from "recharts";
 import { USER } from "../components/layout/TopBar";
-import funnelImg from "../assets/pipeline.png";
 import contestIcon from "../assets/contest.png";
 import leaderboardIcon from "../assets/leaderboard.png";
 
 /* ───────────────────────── Data ───────────────────────── */
 
 const PERIOD_OPTIONS = [
+  { id: "today",        label: "Today" },
   { id: "this_week",    label: "This Week" },
   { id: "this_month",   label: "This Month" },
   { id: "this_quarter", label: "This Quarter" },
@@ -82,12 +90,66 @@ const PERIOD_OPTIONS = [
 ];
 
 const STATS = [
-  { label: "Total Clients",             value: "34",  note: "+10% vs Month",          noteTone: "green", icon: Users,           bg: "#FDECEE", fg: "#E8395B" },
-  { label: "Total Google Reviews",      value: "12",  note: "+10% Last Month",        noteTone: "green", icon: Users,           bg: "#EEF0FE", fg: "#6366F1" },
-  { label: "Biodata Captured",          value: "148", note: "+15.3% this Month",      noteTone: "green", icon: Users,           bg: "#FDECEE", fg: "#E8395B" },
-  { label: "Client Testimonial Videos", value: "7",   note: "18.4% Conversion",       noteTone: "green", icon: UserRoundCheck,  bg: "#E7F8EF", fg: "#16A34A" },
-  { label: "Wedding Pictures Uploaded", value: "6",   note: null,                     noteTone: null,    icon: UserRoundCheck,  bg: "#E7F8EF", fg: "#16A34A" },
-  { label: "Total Meetings Conducted",  value: "56",  note: "14 Calls  |  12 Video Calls", noteTone: "grey", icon: Users,       bg: "#FFF3E4", fg: "#F59E0B" },
+  { label: "Total Clients", value: "34", note: "+10% vs Month",   noteTone: "green", icon: Users,          bg: "#FDECEE", fg: "#E8395B" },
+  { label: "New Leads",     value: "12", note: "+10% Last Month", noteTone: "green", icon: UserPlus,       bg: "#EEF0FE", fg: "#6366F1" },
+  { label: "Today's tasks", value: "12", note: "3 high priority", noteTone: "red",   icon: ClipboardList,  bg: "#FFF3E4", fg: "#F59E0B" },
+];
+
+const QUICK_ACTIONS = [
+  { label: "Create Lead",     icon: UserPlus,      bg: "#FDECEE", fg: "#E8395B" },
+  { label: "Create Task",     icon: ClipboardList, bg: "#E8F2FE", fg: "#3B82F6" },
+  { label: "Create Meeting",  icon: Calendar,      bg: "#F0EBFE", fg: "#8B5CF6" },
+  { label: "Upload Biodata",  icon: UploadCloud,   bg: "#E7F8EF", fg: "#16A34A" },
+];
+
+/** Six-segment performance ring: value, target, color and clock position. */
+const PERFORMANCE_SEGMENTS = [
+  { key: "visits",        label: "Monthly visits /\nMeetings", value: "12", target: "15",  color: "#16A34A" },
+  { key: "revenue",       label: "Revenue",                    value: "₹4.8L", target: "8L", color: "#D6336C" },
+  { key: "calls",         label: "Calls per Day",              value: "68", target: "80",  color: "#EC4899" },
+  { key: "conversion",    label: "Conversion Rate",            value: "24%", target: null,  color: "#3B82F6" },
+  { key: "registrations", label: "No. of\nregistrations",      value: "14", target: "50",  note: "28% of target", color: "#F97316" },
+  { key: "followup",      label: "Follow-up\nDiscipline",      value: "92", target: "100", color: "#F59E0B" },
+];
+
+const PERFORMANCE_OVERALL_SCORE = 87;
+
+const UP_NEXT = {
+  dateLabel: "UP NEXT - NOV 10:35 AM",
+  badge: "Today",
+  title: "Follow up on Payment",
+  time: "11:00 AM – 12:00 PM",
+};
+
+const UNSCHEDULED_ITEM = {
+  title: "Call back Sethi",
+  note: "Lead · 30 min",
+};
+
+const RECENT_UPDATES = [
+  { id: 1, icon: UserPlus,      bg: "#FDECEE", fg: "#E8395B", title: "Rahul Sharma",     desc: "A new client is registered",       time: "2 min ago" },
+  { id: 2, icon: IndianRupee,   bg: "#E7F8EF", fg: "#16A34A", title: "Payment Received", desc: "Payment of ₹40,000 recieved.",      time: "30 min ago" },
+  { id: 3, icon: BadgePercent,  bg: "#E8F2FE", fg: "#3B82F6", title: "Discount Approval", desc: "10% discount approved for Neha Kapoor", time: "1 day ago" },
+  { id: 4, icon: UserRoundCheck, bg: "#FDECEE", fg: "#E8395B", title: "Lead Converted",  desc: "Rohit Sharma has been successfully converted into a client", time: "2 days ago" },
+  { id: 5, icon: FileCheck2,    bg: "#E7F8EF", fg: "#16A34A", title: "Bio Data Recieved", desc: "Bio data received from Amit Verma", time: "2 days ago" },
+];
+
+const LEAD_HEALTH = [
+  { key: "hot",  label: "Hot Leads",  count: 18, icon: Flame,     bg: "#FDECEE", fg: "#E8395B" },
+  { key: "warm", label: "Warm Leads", count: 18, icon: Flame,     bg: "#FFF3E4", fg: "#F59E0B" },
+  { key: "cold", label: "Cold Leads", count: 18, icon: Snowflake, bg: "#E8F2FE", fg: "#3B82F6" },
+];
+
+/** Sales funnel rows: pipeline count, conversion % from P0, and drop-off to the next stage. */
+const FUNNEL_ROWS = [
+  { key: "new",         label: "New",              icon: Users,          color: "#2F6FE0", stat: "P0 - 482", pct: "100%", to: "to P1",              width: "100%" },
+  { key: "contacted",   label: "Contacted",         icon: Phone,          color: "#2A5FD1", stat: "P0 - 482", pct: "100%", to: "to P1",              width: "92%" },
+  { key: "qualified",   label: "Qualified",         icon: SlidersHorizontal, color: "#3B4FBF", stat: "P1 - 395", pct: "82%",  to: "to P2", drop: "18% (87)", width: "84%" },
+  { key: "profile",     label: "Profile Creation",  icon: UserRoundCheck, color: "#5A4CB0", stat: "P2 - 351", pct: "75%",  to: "to P3", drop: "11% (87)", width: "76%" },
+  { key: "video",       label: "Video call / Visit", icon: Video,         color: "#7A4A9E", stat: "P3 - 295", pct: "60%",  to: "to P4", drop: "16% (87)", width: "68%" },
+  { key: "negotiation", label: "Negotiation",       icon: Users,          color: "#8B4B8C", stat: "P4 - 260", pct: "52%",  to: "to P5", drop: "14% (87)", width: "60%" },
+  { key: "payment",     label: "Payment",           icon: IndianRupee,    color: "#A94A6B", stat: "P5 - 224", pct: "44%",  to: "to P6", drop: "8% (118)", width: "52%" },
+  { key: "handover",    label: "Handover",          icon: Heart,          color: "#7A0A17", stat: "P6 - 224", pct: "43%",  to: "Final Conversion", drop: "(87)", width: "44%" },
 ];
 
 const AI_ACTIONS = [
@@ -117,25 +179,23 @@ const PRIORITY_ITEMS = [
   },
   {
     parts: [
-      { text: "₹18,400 in discount approvals pending for " },
-      { text: "Vivek Sharma", to: "/pipeline?openLead=p4-1&tab=discounts" },
-      { text: ", " },
-      { text: "Rohit Sharma", to: "/pipeline?openLead=p5-1&tab=discounts" },
-      { text: " and " },
-      { text: "Virat Sharma", to: "/pipeline?openLead=p6-1&tab=discounts" },
+      { text: "₹18,400 in " },
+      { text: "discount", to: "/pipeline?openLead=p4-1&tab=discounts" },
+      { text: " approvals pending across 3 requests" },
     ],
   },
   {
     parts: [
-      { text: "2 client profiles awaiting completion before their " },
+      { text: "2 " },
+      { text: "client", to: "/clients" },
+      { text: " profiles awaiting completion before their " },
       { text: "meetings", to: "/calendar" },
     ],
   },
   {
     parts: [
-      { text: "You're at 74% of this month, and your " },
-      { text: "incentive", to: "/hrms?tab=Incentives" },
-      { text: " payout this month." },
+      { text: "You're at 74% of this month's ₹25L " },
+      { text: "target", to: "/hrms?tab=Incentives" },
     ],
   },
   {
@@ -156,33 +216,6 @@ const PRIORITY_ITEMS = [
   },
 ];
 
-/**
- * Funnel stage counts. Percentages are derived from P0 at render time,
- * so changing a `value` here (or feeding these from the API) updates the
- * labels drawn over the funnel artwork automatically.
- */
-const FUNNEL_STAGES = [
-  { id: "P0", label: "New",                   value: 1248 },
-  { id: "P1", label: "Qualified",             value: 842 },
-  { id: "P2", label: "Profile Creation",      value: 421 },
-  { id: "P3", label: "Video call/Visit",      value: 218 },
-  { id: "P4", label: "Negotiation",           value: 96 },
-  { id: "P5", label: "Closed - Payment Done", value: 42 },
-  { id: "P6", label: "Post Sale Onboarding",  value: 24 },
-];
-
-/**
- * Geometry measured directly off `pipeline.png` (733 × 482).
- * Each cone band's vertical centre, as a % of image height. The horizontal
- * centre of the cone to the right of the white slash is a constant 66.6%.
- */
-const BAND_TOP_PCT = [18.26, 30.6, 42.84, 55.19, 67.74, 80.29, 93.26];
-const BAND_LEFT_PCT = 66.6;
-
-const CONVERT_TIMES = [
-  { days: "18.6", scope: "P0 to P5 (Payment Done)" },
-  { days: "23.4", scope: "P0 to P6 (Onboarding)" },
-];
 
 const PENDING_TASKS = [
   { type: "Leave Request",    description: "Casual Leave (2 Days)",          requestedOn: "01 Jun 2026", dueDate: "01 Jun 2026", status: "pending",  statusLabel: "Pending",            comment: "We can't give you leave on that particular date. Please choose another slot and resubmit." },
@@ -348,7 +381,7 @@ const RECENT_ANNOUNCEMENTS = [
 function PeriodSelect({ value, onChange, compact = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const selected = PERIOD_OPTIONS.find((o) => o.id === value) ?? PERIOD_OPTIONS[1];
+  const selected = PERIOD_OPTIONS.find((o) => o.id === value) ?? PERIOD_OPTIONS.find((o) => o.id === "this_month") ?? PERIOD_OPTIONS[0];
 
   useEffect(() => {
     const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -390,35 +423,6 @@ function PeriodSelect({ value, onChange, compact = false }) {
 
 /* ───────────────────────── Cards ───────────────────────── */
 
-function AssessmentBanner() {
-  return (
-    <div className="bg-[#F6F9FF] border border-[#DCE7FB] rounded-2xl px-4 py-3 flex items-start gap-3.5">
-      <div className="flex items-center gap-2 shrink-0 pt-px">
-        <span className="size-7 rounded-lg bg-[#E4EDFD] grid place-items-center">
-          <ScanFace size={15} className="text-[#3B82F6]" strokeWidth={1.8} />
-        </span>
-        <span className="text-[13px] font-bold text-[#2563EB] whitespace-nowrap">
-          My Overall Assessment
-        </span>
-      </div>
-
-      <span className="w-px self-stretch bg-[#DCE7FB] shrink-0" />
-
-      <p className="text-[13px] text-[#4B5563] leading-relaxed">
-        You are pacing well against target and currently{" "}
-        <Link to="/leaderboard" className="text-[#2563EB] underline underline-offset-2 hover:text-[#1D4ED8]">
-          holding #2
-        </Link>{" "}
-        on the leaderboard, showing strong and consistent performance. However,{" "}
-        <Link to="/pipeline" className="text-[#2563EB] underline underline-offset-2 hover:text-[#1D4ED8]">
-          2 high-value
-        </Link>{" "}
-        leads are approaching their 24-hour reassignment window. Prioritize those calls before anything else today.
-      </p>
-    </div>
-  );
-}
-
 function StatCard({ stat }) {
   const Icon = stat.icon;
   return (
@@ -431,12 +435,170 @@ function StatCard({ stat }) {
         <p className="text-[22px] font-bold text-[#111] leading-tight mt-0.5">{stat.value}</p>
         {stat.note && (
           <p className={`text-[10px] mt-0.5 leading-tight ${
-            stat.noteTone === "green" ? "text-[#16A34A] font-medium" : "text-[#6B7280]"
+            stat.noteTone === "green"
+              ? "text-[#16A34A] font-medium"
+              : stat.noteTone === "red"
+                ? "text-[#E8395B] font-semibold"
+                : "text-[#6B7280]"
           }`}>
             {stat.note}
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+function QuickActionsCard() {
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl px-4 py-3.5 flex items-center gap-4 flex-wrap">
+      <div className="flex items-center gap-2 shrink-0">
+        <span className="size-8 rounded-lg bg-[#FFF3E4] grid place-items-center">
+          <Zap size={15} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />
+        </span>
+        <p className="text-[14px] font-bold text-[#111] whitespace-nowrap">Quick Actions</p>
+      </div>
+      <div className="flex items-center gap-2.5 flex-wrap">
+        {QUICK_ACTIONS.map(({ label, icon: Icon, bg, fg }) => (
+          <button
+            key={label}
+            type="button"
+            className="inline-flex items-center gap-2 h-10 pl-2 pr-3.5 rounded-xl bg-white border border-black/8 hover:bg-[#FAFAFB] transition-colors"
+          >
+            <span className="size-6 rounded-lg grid place-items-center shrink-0" style={{ backgroundColor: bg }}>
+              <Icon size={13} style={{ color: fg }} strokeWidth={1.8} />
+            </span>
+            <span className="text-[12.5px] font-semibold text-[#374151] whitespace-nowrap">{label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const SEGMENT_POSITIONS = [
+  { top: "-2%", left: "50%" },
+  { top: "18%", left: "94%" },
+  { top: "64%", left: "94%" },
+  { top: "84%", left: "50%" },
+  { top: "64%", left: "6%" },
+  { top: "18%", left: "6%" },
+];
+
+function PerformanceScoreCard() {
+  const n = PERFORMANCE_SEGMENTS.length;
+  const gradient = PERFORMANCE_SEGMENTS.map((s, i) => `${s.color} ${(i * 360) / n}deg ${((i + 1) * 360) / n}deg`).join(", ");
+
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col h-full">
+      <h2 className="text-[17px] font-bold text-[#111] px-1 flex items-center gap-2">
+        <Star size={16} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />
+        My Performance Score
+      </h2>
+
+      <div className="relative mx-auto mt-8 mb-6 size-[220px] shrink-0">
+        <div className="absolute inset-0 rounded-full" style={{ background: `conic-gradient(${gradient})` }} />
+        <div className="absolute inset-[14px] rounded-full bg-white border border-black/6 grid place-items-center overflow-hidden">
+          <div className="text-center px-3">
+            <p className="text-[11px] font-bold text-[#7A0A17] uppercase tracking-wide">Overall Score</p>
+            <p className="text-[26px] font-extrabold text-[#111] leading-tight mt-0.5">
+              {PERFORMANCE_OVERALL_SCORE}<span className="text-[14px] text-[#9CA3AF] font-semibold">/100</span>
+            </p>
+          </div>
+        </div>
+
+        {PERFORMANCE_SEGMENTS.map((s, i) => (
+          <div
+            key={s.key}
+            className="absolute -translate-x-1/2 -translate-y-1/2 bg-white border border-black/8 rounded-xl px-2.5 py-1.5 shadow-sm text-center whitespace-pre-line"
+            style={{ top: SEGMENT_POSITIONS[i].top, left: SEGMENT_POSITIONS[i].left, minWidth: "92px" }}
+          >
+            <p className="text-[9.5px] font-semibold text-[#6B7280] leading-tight">{s.label}</p>
+            <p className="text-[13px] font-bold leading-tight mt-0.5" style={{ color: s.color }}>
+              {s.value}
+              {s.target && <span className="text-[10px] text-[#9CA3AF] font-medium"> / {s.target}</span>}
+            </p>
+            {s.note && <p className="text-[9px] text-[#9CA3AF] leading-tight">{s.note}</p>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UpNextCard() {
+  return (
+    <div className="bg-[#FDECEE] border border-[#F6C7CF] rounded-2xl p-3.5 flex-1 min-w-0">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <p className="text-[10px] font-bold text-[#E8395B] uppercase tracking-wide whitespace-nowrap">{UP_NEXT.dateLabel}</p>
+        <span className="text-[9px] font-bold text-white bg-[#E8395B] rounded-md px-2 py-0.5">{UP_NEXT.badge}</span>
+      </div>
+      <div className="flex items-center justify-between gap-2 mt-1.5 flex-wrap">
+        <p className="text-[13.5px] font-bold text-[#111]">{UP_NEXT.title}</p>
+        <Link to="/calendar" className="text-[11px] font-semibold text-[#3B82F6] hover:underline shrink-0">
+          Details
+        </Link>
+      </div>
+      <p className="text-[11.5px] font-semibold text-[#374151] mt-1">{UP_NEXT.time}</p>
+    </div>
+  );
+}
+
+function UnscheduledCard() {
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl p-3.5 flex-1 min-w-0">
+      <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wide">Unscheduled</p>
+      <div className="flex items-center gap-2 mt-2">
+        <span className="size-2 rounded-full bg-[#E8395B] shrink-0" />
+        <p className="text-[13.5px] font-bold text-[#111] truncate">{UNSCHEDULED_ITEM.title}</p>
+      </div>
+      <p className="text-[11px] text-[#9CA3AF] mt-1">{UNSCHEDULED_ITEM.note}</p>
+    </div>
+  );
+}
+
+function RecentUpdatesCard() {
+  const [items, setItems] = useState(RECENT_UPDATES);
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col flex-1 min-h-0">
+      <div className="flex items-center justify-between gap-3 mb-3 px-1">
+        <div className="flex items-center gap-2.5">
+          <span className="size-8 rounded-lg bg-[#FFF3E4] grid place-items-center">
+            <Bell size={14} className="text-[#F59E0B]" strokeWidth={1.8} />
+          </span>
+          <h2 className="text-[15px] font-bold text-[#111]">Recent Updates</h2>
+        </div>
+        <button
+          type="button"
+          onClick={() => setItems([])}
+          className="text-[11px] font-semibold text-[#7A0A17] hover:underline"
+        >
+          Mark all read
+        </button>
+      </div>
+
+      <div className="flex flex-col divide-y divide-black/6 overflow-y-auto">
+        {items.map((u) => (
+          <div key={u.id} className="flex items-start gap-3 py-2.5">
+            <span className="size-8 rounded-lg grid place-items-center shrink-0" style={{ backgroundColor: u.bg }}>
+              <u.icon size={14} style={{ color: u.fg }} strokeWidth={1.8} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12.5px] font-bold text-[#111] leading-tight">{u.title}</p>
+              <p className="text-[11px] text-[#9CA3AF] leading-snug mt-0.5">{u.desc}</p>
+            </div>
+            <span className="text-[10px] text-[#9CA3AF] whitespace-nowrap shrink-0">{u.time}</span>
+          </div>
+        ))}
+        {items.length === 0 && <p className="text-[12px] text-[#9CA3AF] py-4 text-center">All caught up.</p>}
+      </div>
+
+      <Link
+        to="/notifications"
+        className="text-center text-[11.5px] font-semibold text-[#7A0A17] hover:underline mt-2 pt-2 border-t border-black/6"
+      >
+        See all notifications
+      </Link>
     </div>
   );
 }
@@ -467,8 +629,9 @@ function AIAssistant() {
 
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col gap-3.5 h-full">
-      <h2 className="text-[17px] font-bold text-[#111] px-1">
-        Your personal assistant - Ask anything
+      <h2 className="text-[17px] font-bold text-[#111] px-1 flex items-center gap-2">
+        <Star size={16} className="text-[#8B5CF6]" fill="#8B5CF6" strokeWidth={0} />
+        Your Personal Assistant
       </h2>
 
       {/* Conversation starters */}
@@ -650,61 +813,68 @@ function AIAssistant() {
 }
 
 function SalesFunnelCard() {
-  // Percentages are derived live from the P0 count.
-  const stages = useMemo(() => {
-    const base = FUNNEL_STAGES[0]?.value || 0;
-    return FUNNEL_STAGES.map((s, i) => ({
-      ...s,
-      pct: i === 0 || !base ? null : Math.round((s.value / base) * 100),
-    }));
+  const [period, setPeriod] = useState("Daily");
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
   }, []);
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
-      <h2 className="text-[17px] font-bold text-[#111] px-1">Sales Funnel</h2>
-
-      {/* Funnel artwork with live value/percentage overlay */}
-      <div
-        className="relative w-full mt-3 select-none"
-        style={{ containerType: "inline-size" }}
-      >
-        <img src={funnelImg} alt="Sales funnel stages P0 to P6" className="w-full h-auto block" />
-
-        {stages.map((stage, i) => (
-          <span
-            key={stage.id}
-            className="absolute -translate-x-1/2 -translate-y-1/2 font-bold text-white whitespace-nowrap"
-            style={{
-              left: `${BAND_LEFT_PCT}%`,
-              top: `${BAND_TOP_PCT[i]}%`,
-              fontSize: "clamp(10px, 3.1cqw, 17px)",
-              textShadow: "0 1px 2px rgba(0,0,0,0.18)",
-            }}
+    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col h-full">
+      <div className="flex items-center justify-between gap-3 px-1">
+        <h2 className="text-[17px] font-bold text-[#111]">Sales Funnel (P0 - P6)</h2>
+        <div className="relative" ref={ref}>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-white border border-black/10 text-[12px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
           >
-            {stage.value.toLocaleString("en-IN")}
-            {stage.pct !== null ? ` (${stage.pct}%)` : ""}
-          </span>
-        ))}
+            {period}
+            <ChevronDown size={13} className={`text-[#9CA3AF] transition-transform ${open ? "rotate-180" : ""}`} />
+          </button>
+          {open && (
+            <div className="absolute right-0 top-[calc(100%+6px)] min-w-[120px] bg-white border border-black/8 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-40 py-1 overflow-hidden">
+              {["Daily", "Weekly", "Monthly"].map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => { setPeriod(opt); setOpen(false); }}
+                  className={`w-full text-left px-3.5 py-2 text-[12.5px] transition-colors ${
+                    opt === period ? "bg-[#FCF5F6] text-[#7A0A17] font-semibold" : "text-[#4B5563] hover:bg-[#FAFAFB]"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Conversion time footer */}
-      <div className="mt-3 bg-[#FAFAFC] border border-black/6 rounded-xl px-4 py-3 flex items-center gap-4">
-        <span className="size-9 rounded-full bg-[#EEF0FE] grid place-items-center shrink-0">
-          <HistoryIcon size={16} className="text-[#6366F1]" strokeWidth={1.7} />
-        </span>
-        <p className="text-[12px] font-semibold text-[#111] leading-tight">
-          Avg. Time to Convert Lead
-        </p>
-
-        {CONVERT_TIMES.map((t) => (
-          <div key={t.scope} className="flex items-center gap-4 flex-1 justify-center">
-            <span className="w-px h-8 bg-black/8" />
-            <div className="text-center">
-              <p className="leading-tight">
-                <span className="text-[15px] font-bold text-[#3B82F6]">{t.days}</span>
-                <span className="text-[11px] font-semibold text-[#3B82F6]"> Days</span>
-              </p>
-              <p className="text-[10px] text-[#9CA3AF] mt-0.5">{t.scope}</p>
+      <div className="flex flex-col gap-1.5 mt-4 flex-1">
+        {FUNNEL_ROWS.map((row) => (
+          <div key={row.key} className="flex items-center gap-3">
+            <div
+              className="h-10 rounded-lg flex items-center gap-2 px-3 shrink-0 transition-[width]"
+              style={{ width: row.width, backgroundColor: row.color, maxWidth: "260px" }}
+            >
+              <row.icon size={13} className="text-white shrink-0" strokeWidth={1.8} />
+              <span className="text-[11px] font-semibold text-white truncate">{row.label}</span>
+            </div>
+            <div className="min-w-0 flex-1 flex items-baseline gap-2 flex-wrap">
+              <span className="text-[12.5px] font-bold text-[#111] whitespace-nowrap">{row.stat}</span>
+              <span className="text-[11px] font-semibold text-[#16A34A] whitespace-nowrap">
+                {row.pct} <span className="text-[#9CA3AF] font-medium">{row.to}</span>
+              </span>
+              {row.drop && (
+                <span className="text-[10px] text-[#E8395B] font-medium whitespace-nowrap">
+                  Drop off {row.drop}
+                </span>
+              )}
             </div>
           </div>
         ))}
@@ -1600,7 +1770,7 @@ const NEXT_STAGE_DASH = {
 
 function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
   const navigate = useNavigate();
-  const [period, setPeriod] = useState("this_month");
+  const [period, setPeriod] = useState("today");
   const [leadsView, setLeadsView] = useState("team");
   const [leadsViewOpen, setLeadsViewOpen] = useState(false);
   const [scoreLead, setScoreLead] = useState(null);
@@ -1620,6 +1790,28 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
       <LeadScoreModal lead={scoreLead} onClose={() => setScoreLead(null)} />
       <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
+
+      {/* Lead Health */}
+      <div className="flex items-center justify-between gap-3 mb-4 px-1 flex-wrap">
+        <h2 className="text-[17px] font-bold text-[#111] flex items-center gap-2">
+          <Heart size={16} className="text-[#E8395B]" fill="#E8395B" strokeWidth={0} />
+          Lead Health
+        </h2>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {LEAD_HEALTH.map((h) => (
+            <span
+              key={h.key}
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold rounded-xl px-3 py-1.5"
+              style={{ backgroundColor: h.bg, color: h.fg }}
+            >
+              <h.icon size={13} fill={h.fg} strokeWidth={0} />
+              {h.label}
+              <span className="font-bold">{h.count}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
       <div className="flex items-center justify-between gap-3 mb-3 px-1 flex-wrap">
         <div className="relative" ref={leadsViewRef}>
           <button
@@ -1659,9 +1851,9 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-3.5">
             {[
-              { label: "Low Probability",    color: "#16A34A" },
-              { label: "Medium Probability", color: "#F59E0B" },
-              { label: "High Probability",   color: "#E8395B" },
+              { label: "Low Probability",    color: "#E8395B" },
+              { label: "Medium",              color: "#F59E0B" },
+              { label: "High",                color: "#16A34A" },
             ].map((f) => (
               <span key={f.label} className="inline-flex items-center gap-1.5 text-[11px] text-[#6B7280]">
                 <Flag size={12} style={{ color: f.color }} fill={f.color} strokeWidth={0} />
@@ -1670,19 +1862,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
             ))}
           </div>
 
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-          >
-            <SlidersHorizontal size={13} /> Filter
-          </button>
-
-          <div className="flex items-center gap-2">
-            <PeriodSelect value={period} onChange={setPeriod} compact />
-            <span className="inline-flex items-center gap-0.5 text-[12px] text-[#16A34A] font-semibold">
-              <TrendingUp size={12} /> 12% (34)
-            </span>
-          </div>
+          <PeriodSelect value={period} onChange={setPeriod} compact />
 
           <button
             type="button"
@@ -1992,33 +2172,49 @@ export default function Dashboard() {
 
       {/* Body */}
       <div className="px-5 pb-8 flex flex-col gap-4">
-        <AssessmentBanner />
+        {/* Stats + Quick Actions */}
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)] gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {STATS.map((stat) => (
+              <StatCard key={stat.label} stat={stat} />
+            ))}
+          </div>
+          <QuickActionsCard />
+        </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-          {STATS.map((stat) => (
-            <StatCard key={stat.label} stat={stat} />
-          ))}
+        {/* Performance score / personal assistant / up next + updates */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch">
+          <PerformanceScoreCard />
+          <AIAssistant />
+          <div className="flex flex-col gap-4 min-h-0">
+            <div className="flex items-stretch gap-3">
+              <UpNextCard />
+              <UnscheduledCard />
+            </div>
+            <RecentUpdatesCard />
+          </div>
+        </div>
+
+        {/* Lead health + my leads / sales funnel */}
+        <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-4 items-start">
+          <MyLeadsCard
+            leads={myLeads}
+            onOpenDeal={(lead) => openDeal(lead)}
+            onMoveStage={(lead, stageKey) => openDeal(lead, stageKey)}
+            onAddProspect={() => setShowAddProspect(true)}
+          />
+          <SalesFunnelCard />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-          <AIAssistant />
-          <div className="flex flex-col gap-4">
-            <SalesFunnelCard />
-            <PendingTasksCard />
-          </div>
+          <PendingTasksCard />
+          <RecentAnnouncementsCard />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
           <ActiveContestCard />
           <LeaderboardCard />
         </div>
-
-        <MyLeadsCard
-          leads={myLeads}
-          onOpenDeal={(lead) => openDeal(lead)}
-          onMoveStage={(lead, stageKey) => openDeal(lead, stageKey)}
-          onAddProspect={() => setShowAddProspect(true)}
-        />
 
         <GoalsPerformanceCard />
 
@@ -2028,7 +2224,6 @@ export default function Dashboard() {
           </div>
           <div className="flex flex-col gap-4 min-w-0">
             <ClientAcquisitionCard />
-            <RecentAnnouncementsCard />
           </div>
         </div>
       </div>
