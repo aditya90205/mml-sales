@@ -26,8 +26,6 @@ import {
   UserPlus,
   ClipboardList,
   SquareCheck,
-  IndianRupee,
-  Percent,
   FileText,
   Heart,
   Bell,
@@ -47,6 +45,11 @@ import CreateTaskModal from "../components/calendar/CreateTaskModal";
 import SearchField from "../components/common/SearchField.jsx";
 import { toast } from "react-toastify";
 import { USER } from "../components/layout/TopBar";
+import {
+  markAllNotificationsRead,
+  readNotifications,
+  subscribeNotifications,
+} from "../utils/notifications.js";
 import salesFunnelSvg from "../assets/sales-funnel.svg";
 import salesPersonProfile from "../assets/sale-person-profile.jpg";
 import visitsArrow from "../assets/Monthly-visits-  Meetings-arrow.png";
@@ -92,6 +95,9 @@ const PERFORMANCE_SEGMENTS = [
     value: "12",
     target: "15",
     color: "#7FC9A9",
+    labelColor: "#545454",
+    valueColor: "#288270",
+    targetColor: "#000000",
     capsuleBg: "#E9F6EC",
     iconSrc: visitsIcon,
     layout: "row",
@@ -106,6 +112,9 @@ const PERFORMANCE_SEGMENTS = [
     value: "₹4.8L",
     target: "8L",
     color: "#B86FBE",
+    labelColor: "#545454",
+    valueColor: "#89518E",
+    targetColor: "#000000",
     capsuleBg: "#F6E6F8",
     iconSrc: revenueIcon,
     layout: "row",
@@ -120,6 +129,9 @@ const PERFORMANCE_SEGMENTS = [
     value: "68",
     target: "80",
     color: "#BF4C70",
+    labelColor: "#545454",
+    valueColor: "#811A3A",
+    targetColor: "#000000",
     capsuleBg: "#FEEBEC",
     iconSrc: callsIcon,
     layout: "stack",
@@ -133,6 +145,8 @@ const PERFORMANCE_SEGMENTS = [
     value: "24%",
     target: null,
     color: "#5596CD",
+    labelColor: "#545454",
+    valueColor: "#2C76B5",
     capsuleBg: "#E7EEF8",
     iconSrc: conversionIcon,
     layout: "row",
@@ -147,6 +161,10 @@ const PERFORMANCE_SEGMENTS = [
     target: "50",
     note: "28% of target",
     color: "#E76B3D",
+    labelColor: "#545454",
+    valueColor: "#C94818",
+    targetColor: "#545454",
+    noteColor: "#000000",
     capsuleBg: "#FEE9D8",
     iconSrc: registrationsIcon,
     layout: "row",
@@ -160,6 +178,9 @@ const PERFORMANCE_SEGMENTS = [
     value: "92",
     target: "100",
     color: "#DA9644",
+    labelColor: "#545454",
+    valueColor: "#C27C27",
+    targetColor: "#545454",
     capsuleBg: "#FEF2DD",
     iconSrc: followupIcon,
     layout: "stack",
@@ -182,20 +203,6 @@ const UNSCHEDULED_ITEM = {
   title: "Call back Sethi",
   note: "Lead • 30 min",
 };
-
-const RECENT_UPDATES = [
-  {
-    id: 1,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face",
-    title: "Rahul Sharma",
-    desc: "A new client is registered",
-    time: "2 min ago",
-  },
-  { id: 2, icon: IndianRupee, bg: "#FDECEE", fg: "#E8395B", title: "Payment Received",  desc: "Payment of ₹40,000 recieved.", time: "30 min ago" },
-  { id: 3, icon: Percent,     bg: "#E8F2FE", fg: "#3B82F6", title: "Discount Approval", desc: "10% discount approved for Neha Kapoor", time: "1 day ago" },
-  { id: 4, icon: Users,       bg: "#FFF3E4", fg: "#F59E0B", title: "Lead Converted",    desc: "Rohit Sharma has been successfully converted into a client", time: "2 days ago" },
-  { id: 5, icon: FileText,    bg: "#E7F8EF", fg: "#16A34A", title: "Bio Data Recieved", desc: "Bio data received from Amit Verma", time: "2 days ago" },
-];
 
 const LEAD_HEALTH = [
   { key: "hot",  label: "Hot Leads",  count: 18, icon: Flame,     bg: "#FDECEE", fg: "#E8395B" },
@@ -493,20 +500,20 @@ function PerformanceScoreCard() {
                   <div className={stacked ? "w-full" : "min-w-0"}>
                     <p
                       className="font-semibold leading-tight whitespace-pre-line"
-                      style={{ color: s.color, fontSize: stacked ? 11 : 11.5 }}
+                      style={{ color: s.labelColor, fontSize: stacked ? 11 : 11.5 }}
                     >
                       {s.label}
                     </p>
-                    <p className="text-[15px] font-bold leading-tight mt-0.5" style={{ color: s.color }}>
+                    <p className="text-[15px] font-bold leading-tight mt-0.5" style={{ color: s.valueColor }}>
                       {s.value}
                       {s.target && (
-                        <span className="text-[12.5px] font-semibold" style={{ color: s.color, opacity: 0.55 }}>
+                        <span className="text-[12.5px] font-semibold" style={{ color: s.targetColor }}>
                           {" "}/ {s.target}
                         </span>
                       )}
                     </p>
                     {s.note && (
-                      <p className="text-[10px] leading-tight mt-0.5" style={{ color: s.color, opacity: 0.7 }}>
+                      <p className="text-[10px] leading-tight mt-0.5" style={{ color: s.noteColor }}>
                         {s.note}
                       </p>
                     )}
@@ -559,7 +566,11 @@ function UnscheduledCard() {
 }
 
 function RecentUpdatesCard() {
-  const [unread, setUnread] = useState(true);
+  const [items, setItems] = useState(readNotifications);
+  useEffect(() => subscribeNotifications(setItems), []);
+  const preview = items.slice(0, 5);
+  const unreadCount = items.filter((n) => n.unread).length;
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-between gap-3 mb-1 px-0.5">
@@ -571,28 +582,23 @@ function RecentUpdatesCard() {
         </div>
         <button
           type="button"
-          onClick={() => setUnread(false)}
-          className="text-[11.5px] font-semibold text-[#7A0A17] hover:underline"
+          onClick={() => markAllNotificationsRead()}
+          disabled={unreadCount === 0}
+          className="text-[11.5px] font-semibold text-[#7A0A17] hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Mark all read
         </button>
       </div>
 
       <div className="flex flex-col divide-y divide-black/6">
-        {RECENT_UPDATES.map((u) => (
+        {preview.map((u) => (
           <div key={u.id} className="flex items-start gap-3 py-3">
-            {u.avatar ? (
-              <img src={u.avatar} alt="" className="size-9 rounded-full object-cover shrink-0" />
-            ) : (
-              <span className="size-9 rounded-xl grid place-items-center shrink-0" style={{ backgroundColor: u.bg }}>
-                <u.icon size={16} style={{ color: u.fg }} strokeWidth={2} />
-              </span>
-            )}
+            <img src={u.avatar} alt="" className="size-9 rounded-full object-cover shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className={`text-[13px] leading-tight ${unread ? "font-bold text-[#111]" : "font-semibold text-[#111]"}`}>
+              <p className={`text-[13px] leading-tight ${u.unread ? "font-bold text-[#111]" : "font-semibold text-[#111]"}`}>
                 {u.title}
               </p>
-              <p className="text-[12px] text-[#9CA3AF] leading-snug mt-0.5">{u.desc}</p>
+              <p className="text-[12px] text-[#9CA3AF] leading-snug mt-0.5">{u.message}</p>
             </div>
             <span className="text-[11px] text-[#9CA3AF] whitespace-nowrap shrink-0 pt-0.5">{u.time}</span>
           </div>
@@ -1349,7 +1355,7 @@ export default function Dashboard() {
             },
             ...prev,
           ]);
-          toast.success(`Lead "${lead.name}" created and assigned to sales.`);
+          toast.success(`Lead "${lead.name}" created.`);
         }}
       />
       <CreateMeetingEventModal

@@ -5,6 +5,12 @@ import SearchField from "../common/SearchField.jsx";
 import Avatar from "../ui/Avatar";
 import TimesheetDetailsModal from "../hrms/TimesheetDetailsModal";
 import { logout } from "../../utils/auth";
+import {
+  markAllNotificationsRead,
+  markNotificationRead,
+  readNotifications,
+  subscribeNotifications,
+} from "../../utils/notifications.js";
 
 
 const USER = {
@@ -63,35 +69,6 @@ function StatusToggle({ checked, color }) {
   );
 }
 
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    actor: "Rahul Sharma",
-    title: "New lead assigned",
-    message: "A high-value lead from Delhi has been assigned to you.",
-    time: "2 min ago",
-    unread: true,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face",
-  },
-  {
-    id: 2,
-    actor: "Priya Verma",
-    title: "Follow-up reminder",
-    message: "You have a scheduled follow-up call with Ananya Gupta today.",
-    time: "15 min ago",
-    unread: true,
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face",
-  },
-  {
-    id: 3,
-    actor: "System",
-    title: "Approval required",
-    message: "Discount request from Vikram Chawla is awaiting your approval.",
-    time: "1 hr ago",
-    unread: false,
-    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&crop=face",
-  },
-];
 
 function useOutsideClose(ref, close) {
   useEffect(() => {
@@ -106,10 +83,12 @@ function useOutsideClose(ref, close) {
 function NotificationBell() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState(MOCK_NOTIFICATIONS);
+  const [items, setItems] = useState(readNotifications);
   const ref = useRef(null);
   useOutsideClose(ref, () => setOpen(false));
+  useEffect(() => subscribeNotifications(setItems), []);
   const unread = items.filter((n) => n.unread).length;
+  const preview = items.slice(0, 5);
 
   return (
     <div className="relative" ref={ref}>
@@ -134,7 +113,7 @@ function NotificationBell() {
             {unread > 0 && (
               <button
                 type="button"
-                onClick={() => setItems((p) => p.map((n) => ({ ...n, unread: false })))}
+                onClick={() => markAllNotificationsRead()}
                 className="flex items-center gap-1 text-xs font-medium text-[#7A0A17] hover:underline"
               >
                 <CheckCheck size={13} /> Mark all read
@@ -142,11 +121,16 @@ function NotificationBell() {
             )}
           </div>
           <div className="max-h-[300px] overflow-y-auto divide-y divide-black/5">
-            {items.map((n) => (
+            {preview.map((n) => (
               <button
                 key={n.id}
                 type="button"
-                onClick={() => setItems((p) => p.map((x) => (x.id === n.id ? { ...x, unread: false } : x)))}
+                onClick={() => {
+                  markNotificationRead(n.id);
+                  setOpen(false);
+                  if (n.to) navigate(n.to);
+                  else navigate("/notifications");
+                }}
                 className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${
                   n.unread ? "bg-[#FCF5F6] hover:bg-[#F9ECEE]" : "hover:bg-[#FAFAFB]"
                 }`}
@@ -160,6 +144,7 @@ function NotificationBell() {
                   <p className="text-xs text-[#6B7280] mt-0.5 leading-relaxed">{n.message}</p>
                   <p className="text-[11px] text-[#9CA3AF] mt-1">{n.time}</p>
                 </div>
+                {n.unread && <span className="size-1.5 rounded-full bg-[#E8395B] shrink-0 mt-2" />}
               </button>
             ))}
           </div>

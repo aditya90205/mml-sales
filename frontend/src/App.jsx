@@ -21,6 +21,7 @@ import ColdCommonPoolPage from "./pages/ColdCommonPoolPage";
 import PostSalesPage from "./pages/PostSalesPage";
 import ProfileSettings from "./pages/ProfileSettings";
 import DocumentsPage from "./pages/DocumentsPage";
+import NotificationsPage from "./pages/NotificationsPage";
 import HomeOfficeVisitsPage from "./pages/pipeline/desk/HomeOfficeVisitsPage";
 import CrossBranchFlagsPage from "./pages/pipeline/desk/CrossBranchFlagsPage";
 import QuotationsPage from "./pages/pipeline/desk/QuotationsPage";
@@ -224,7 +225,7 @@ export default function App() {
         />
         <Route
           path="/notifications"
-          element={<LayoutRoute><Placeholder title="Notifications" /></LayoutRoute>}
+          element={<LayoutRoute><NotificationsPage /></LayoutRoute>}
         />
 
         {/* Catch-all */}

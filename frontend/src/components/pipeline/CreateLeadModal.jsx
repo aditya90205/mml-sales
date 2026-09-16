@@ -234,23 +234,14 @@ export default function CreateLeadModal({ open, onClose, onCreate }) {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="submit"
-                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-              >
-                <UserPlus size={14} strokeWidth={2.2} />
-                Assign to Sales
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="size-8 grid place-items-center rounded-lg text-[#6B7280] hover:bg-black/5 transition-colors"
-                aria-label="Close"
-              >
-                <X size={18} />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="size-8 grid place-items-center rounded-lg text-[#6B7280] hover:bg-black/5 transition-colors shrink-0"
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
           </div>
 
           <div className="px-6 pb-5 overflow-y-auto scrollbar-thin flex flex-col gap-5">
@@ -508,8 +499,8 @@ export default function CreateLeadModal({ open, onClose, onCreate }) {
                 type="submit"
                 className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
               >
-                <Sparkles size={14} />
-                Create Lead & Assign
+                <UserPlus size={14} />
+                Create Lead
               </button>
             </div>
           </div>
