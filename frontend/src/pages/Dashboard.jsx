@@ -7,7 +7,6 @@ import {
   History,
   Activity,
   Users,
-  UserRoundCheck,
   ArrowRight,
   X,
   Paperclip,
@@ -26,10 +25,10 @@ import {
   Snowflake,
   UserPlus,
   ClipboardList,
-  UploadCloud,
+  SquareCheck,
   IndianRupee,
-  BadgePercent,
-  FileCheck2,
+  Percent,
+  FileText,
   Heart,
   Bell,
   Crown,
@@ -78,10 +77,10 @@ const STATS = [
 ];
 
 const QUICK_ACTIONS = [
-  { label: "Create Lead",     icon: UserPlus,      bg: "#FDECEE", fg: "#E8395B", action: "lead" },
-  { label: "Create Task",     icon: ClipboardList, bg: "#E8F2FE", fg: "#3B82F6", to: "/tasks" },
-  { label: "Create Meeting",  icon: Calendar,      bg: "#F0EBFE", fg: "#8B5CF6", to: "/calendar" },
-  { label: "Upload Biodata",  icon: UploadCloud,   bg: "#E7F8EF", fg: "#16A34A", to: "/documents" },
+  { label: "Create Lead",     icon: UserPlus,   bg: "#FDECEE", fg: "#E8395B", action: "lead" },
+  { label: "Create Task",     icon: SquareCheck, bg: "#E8F2FE", fg: "#3B82F6", to: "/tasks" },
+  { label: "Create Meeting",  icon: Calendar,   bg: "#F0EBFE", fg: "#8B5CF6", to: "/calendar" },
+  { label: "Upload Biodata",  icon: FileText,   bg: "#E7F8EF", fg: "#16A34A", to: "/documents" },
 ];
 
 const PERFORMANCE_SEGMENTS = [
@@ -179,15 +178,21 @@ const UP_NEXT = {
 
 const UNSCHEDULED_ITEM = {
   title: "Call back Sethi",
-  note: "Lead · 30 min",
+  note: "Lead • 30 min",
 };
 
 const RECENT_UPDATES = [
-  { id: 1, icon: UserPlus,       bg: "#FDECEE", fg: "#E8395B", title: "Rahul Sharma",      desc: "A new client is registered",       time: "2 min ago" },
-  { id: 2, icon: IndianRupee,    bg: "#E7F8EF", fg: "#16A34A", title: "Payment Received",  desc: "Payment of ₹40,000 recieved.",      time: "30 min ago" },
-  { id: 3, icon: BadgePercent,   bg: "#E8F2FE", fg: "#3B82F6", title: "Discount Approval", desc: "10% discount approved for Neha Kapoor", time: "1 day ago" },
-  { id: 4, icon: UserRoundCheck, bg: "#FDECEE", fg: "#E8395B", title: "Lead Converted",    desc: "Rohit Sharma has been successfully converted into a client", time: "2 days ago" },
-  { id: 5, icon: FileCheck2,     bg: "#E7F8EF", fg: "#16A34A", title: "Bio Data Recieved", desc: "Bio data received from Amit Verma", time: "2 days ago" },
+  {
+    id: 1,
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face",
+    title: "Rahul Sharma",
+    desc: "A new client is registered",
+    time: "2 min ago",
+  },
+  { id: 2, icon: IndianRupee, bg: "#FDECEE", fg: "#E8395B", title: "Payment Received",  desc: "Payment of ₹40,000 recieved.", time: "30 min ago" },
+  { id: 3, icon: Percent,     bg: "#E8F2FE", fg: "#3B82F6", title: "Discount Approval", desc: "10% discount approved for Neha Kapoor", time: "1 day ago" },
+  { id: 4, icon: Users,       bg: "#FFF3E4", fg: "#F59E0B", title: "Lead Converted",    desc: "Rohit Sharma has been successfully converted into a client", time: "2 days ago" },
+  { id: 5, icon: FileText,    bg: "#E7F8EF", fg: "#16A34A", title: "Bio Data Recieved", desc: "Bio data received from Amit Verma", time: "2 days ago" },
 ];
 
 const LEAD_HEALTH = [
@@ -329,13 +334,13 @@ function PeriodSelect({ value, onChange, compact = false }) {
 function StatCard({ stat }) {
   const Icon = stat.icon;
   return (
-    <div className="bg-white border border-black/8 rounded-2xl px-4 py-3.5 flex items-center gap-3.5">
-      <span className="size-11 rounded-xl grid place-items-center shrink-0" style={{ backgroundColor: stat.bg }}>
-        <Icon size={21} style={{ color: stat.fg }} strokeWidth={1.7} />
+    <div className="bg-white border border-black/8 rounded-2xl px-3.5 py-3 flex items-center gap-3 min-w-0">
+      <span className="size-10 rounded-[10px] grid place-items-center shrink-0" style={{ backgroundColor: stat.bg }}>
+        <Icon size={18} style={{ color: stat.fg }} strokeWidth={1.7} />
       </span>
       <div className="min-w-0">
-        <p className="text-[11px] text-[#6B7280] leading-snug">{stat.label}</p>
-        <p className="text-[22px] font-bold text-[#111] leading-tight mt-0.5">{stat.value}</p>
+        <p className="text-[11px] text-[#6B7280] leading-snug truncate">{stat.label}</p>
+        <p className="text-[20px] font-bold text-[#111] leading-tight mt-0.5">{stat.value}</p>
         {stat.note && (
           <p className={`text-[10px] mt-0.5 leading-tight ${
             stat.noteTone === "green"
@@ -356,14 +361,12 @@ function QuickActionsCard({ onCreateLead }) {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl px-4 py-3.5 flex items-center gap-4 flex-wrap">
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="size-8 rounded-lg bg-[#FFF3E4] grid place-items-center">
-          <Zap size={15} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />
-        </span>
-        <p className="text-[14px] font-bold text-[#111] whitespace-nowrap">Quick Actions</p>
+    <div className="bg-white border border-black/8 rounded-2xl px-4 py-3 h-full flex flex-col justify-center gap-2 min-w-0">
+      <div className="flex items-center gap-1.5 shrink-0">
+        <Zap size={15} className="text-[#E8395B]" fill="#E8395B" strokeWidth={0} />
+        <p className="text-[13.5px] font-bold text-[#111] whitespace-nowrap">Quick Actions</p>
       </div>
-      <div className="flex items-center gap-2.5 flex-wrap">
+      <div className="flex items-center gap-2 flex-1 min-w-0">
         {QUICK_ACTIONS.map(({ label, icon: Icon, bg, fg, to, action }) => (
           <button
             key={label}
@@ -372,12 +375,11 @@ function QuickActionsCard({ onCreateLead }) {
               if (action === "lead") onCreateLead?.();
               else if (to) navigate(to);
             }}
-            className="inline-flex items-center gap-2 h-10 pl-2 pr-3.5 rounded-xl bg-white border border-black/8 hover:bg-[#FAFAFB] transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 h-9 px-2.5 rounded-xl flex-1 min-w-0 transition-opacity hover:opacity-85"
+            style={{ backgroundColor: bg }}
           >
-            <span className="size-6 rounded-lg grid place-items-center shrink-0" style={{ backgroundColor: bg }}>
-              <Icon size={13} style={{ color: fg }} strokeWidth={1.8} />
-            </span>
-            <span className="text-[12.5px] font-semibold text-[#374151] whitespace-nowrap">{label}</span>
+            <Icon size={14} style={{ color: fg }} strokeWidth={1.9} className="shrink-0" />
+            <span className="text-[12px] font-semibold text-[#111] whitespace-nowrap truncate">{label}</span>
           </button>
         ))}
       </div>
@@ -501,18 +503,21 @@ function PerformanceScoreCard() {
 
 function UpNextCard() {
   return (
-    <div className="bg-[#FDECEE] border border-[#F6C7CF] rounded-2xl p-3.5 flex-1 min-w-0">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <p className="text-[10px] font-bold text-[#E8395B] uppercase tracking-wide whitespace-nowrap">{UP_NEXT.dateLabel}</p>
-        <span className="text-[9px] font-bold text-white bg-[#E8395B] rounded-md px-2 py-0.5">{UP_NEXT.badge}</span>
+    <div className="relative overflow-hidden flex-1 min-w-0 rounded-2xl border border-[#7A0A17]/15 bg-gradient-to-br from-[#FFF5F6] to-[#FDECEE] p-3.5 shadow-[0_1px_2px_rgba(122,10,23,0.06)]">
+      <div className="absolute inset-y-0 left-0 w-1 bg-[#7A0A17]" />
+      <div className="flex items-center justify-between gap-2 pl-1.5">
+        <p className="text-[10.5px] font-bold text-[#7A0A17] tracking-wide whitespace-nowrap">{UP_NEXT.dateLabel}</p>
+        <span className="text-[10px] font-bold text-white bg-[#7A0A17] rounded-md px-1.5 py-0.5">{UP_NEXT.badge}</span>
       </div>
-      <div className="flex items-center justify-between gap-2 mt-1.5 flex-wrap">
-        <p className="text-[13.5px] font-bold text-[#111]">{UP_NEXT.title}</p>
-        <Link to="/calendar" className="text-[11px] font-semibold text-[#3B82F6] hover:underline shrink-0">
+      <div className="flex items-center justify-between gap-2 mt-2 pl-1.5">
+        <p className="text-[13.5px] font-bold text-[#111] leading-snug">{UP_NEXT.title}</p>
+        <Link to="/calendar" className="text-[11.5px] font-semibold text-[#3B82F6] hover:underline shrink-0">
           Details
         </Link>
       </div>
-      <p className="text-[11.5px] font-semibold text-[#374151] mt-1">{UP_NEXT.time}</p>
+      <p className="inline-flex items-center mt-2.5 ml-1.5 text-[11.5px] font-semibold text-[#374151] bg-white px-2.5 py-[3px] rounded-lg">
+        {UP_NEXT.time}
+      </p>
     </div>
   );
 }
@@ -520,55 +525,62 @@ function UpNextCard() {
 function UnscheduledCard() {
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-3.5 flex-1 min-w-0">
-      <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wide">Unscheduled</p>
-      <div className="flex items-center gap-2 mt-2">
-        <span className="size-2 rounded-full bg-[#E8395B] shrink-0" />
-        <p className="text-[13.5px] font-bold text-[#111] truncate">{UNSCHEDULED_ITEM.title}</p>
+      <p className="text-[10.5px] font-bold text-[#9CA3AF] tracking-wide">UNSCHEDULED</p>
+      <div className="flex items-start gap-2 mt-3">
+        <span className="size-2 rounded-full bg-[#E8395B] shrink-0 mt-1.5" />
+        <div className="min-w-0">
+          <p className="text-[13.5px] font-bold text-[#111] leading-snug truncate">{UNSCHEDULED_ITEM.title}</p>
+          <p className="text-[11px] text-[#9CA3AF] mt-0.5">{UNSCHEDULED_ITEM.note}</p>
+        </div>
       </div>
-      <p className="text-[11px] text-[#9CA3AF] mt-1">{UNSCHEDULED_ITEM.note}</p>
     </div>
   );
 }
 
 function RecentUpdatesCard() {
-  const [items, setItems] = useState(RECENT_UPDATES);
+  const [unread, setUnread] = useState(true);
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col flex-1 min-h-0">
-      <div className="flex items-center justify-between gap-3 mb-3 px-1">
+      <div className="flex items-center justify-between gap-3 mb-1 px-0.5">
         <div className="flex items-center gap-2.5">
-          <span className="size-8 rounded-lg bg-[#FFF3E4] grid place-items-center">
-            <Bell size={14} className="text-[#F59E0B]" strokeWidth={1.8} />
+          <span className="size-8 rounded-full bg-[#FFF3E4] grid place-items-center">
+            <Bell size={15} className="text-[#F59E0B]" strokeWidth={2} />
           </span>
           <h2 className="text-[15px] font-bold text-[#111]">Recent Updates</h2>
         </div>
         <button
           type="button"
-          onClick={() => setItems([])}
-          className="text-[11px] font-semibold text-[#7A0A17] hover:underline"
+          onClick={() => setUnread(false)}
+          className="text-[11.5px] font-semibold text-[#7A0A17] hover:underline"
         >
           Mark all read
         </button>
       </div>
 
-      <div className="flex flex-col divide-y divide-black/6 overflow-y-auto">
-        {items.map((u) => (
-          <div key={u.id} className="flex items-start gap-3 py-2.5">
-            <span className="size-8 rounded-lg grid place-items-center shrink-0" style={{ backgroundColor: u.bg }}>
-              <u.icon size={14} style={{ color: u.fg }} strokeWidth={1.8} />
-            </span>
+      <div className="flex flex-col divide-y divide-black/6">
+        {RECENT_UPDATES.map((u) => (
+          <div key={u.id} className="flex items-start gap-3 py-3">
+            {u.avatar ? (
+              <img src={u.avatar} alt="" className="size-9 rounded-full object-cover shrink-0" />
+            ) : (
+              <span className="size-9 rounded-xl grid place-items-center shrink-0" style={{ backgroundColor: u.bg }}>
+                <u.icon size={16} style={{ color: u.fg }} strokeWidth={2} />
+              </span>
+            )}
             <div className="min-w-0 flex-1">
-              <p className="text-[12.5px] font-bold text-[#111] leading-tight">{u.title}</p>
-              <p className="text-[11px] text-[#9CA3AF] leading-snug mt-0.5">{u.desc}</p>
+              <p className={`text-[13px] leading-tight ${unread ? "font-bold text-[#111]" : "font-semibold text-[#111]"}`}>
+                {u.title}
+              </p>
+              <p className="text-[12px] text-[#9CA3AF] leading-snug mt-0.5">{u.desc}</p>
             </div>
-            <span className="text-[10px] text-[#9CA3AF] whitespace-nowrap shrink-0">{u.time}</span>
+            <span className="text-[11px] text-[#9CA3AF] whitespace-nowrap shrink-0 pt-0.5">{u.time}</span>
           </div>
         ))}
-        {items.length === 0 && <p className="text-[12px] text-[#9CA3AF] py-4 text-center">All caught up.</p>}
       </div>
 
       <Link
         to="/notifications"
-        className="text-center text-[11.5px] font-semibold text-[#7A0A17] hover:underline mt-2 pt-2 border-t border-black/6"
+        className="text-center text-[13px] font-semibold text-[#7A0A17] hover:underline mt-auto pt-3 border-t border-black/6"
       >
         See all notifications
       </Link>
@@ -854,7 +866,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
   }, []);
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
+    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col min-w-0">
       <LeadScoreModal lead={scoreLead} onClose={() => setScoreLead(null)} />
       <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
 
@@ -915,7 +927,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
         </div>
 
         <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-3.5">
+          <div className="flex items-center gap-3.5 flex-wrap">
             {[
               { label: "Low Probability", color: "#E8395B" },
               { label: "Medium",           color: "#F59E0B" },
@@ -931,29 +943,19 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
         </div>
       </div>
 
-      <div className="border border-black/8 rounded-xl overflow-hidden">
-        <table className="w-full text-left border-collapse table-fixed">
-          <colgroup>
-            <col style={{ width: "18%" }} />
-            <col style={{ width: "16%" }} />
-            <col style={{ width: "10%" }} />
-            <col style={{ width: "9%" }} />
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "13%" }} />
-            <col style={{ width: "13%" }} />
-            <col style={{ width: "9%" }} />
-          </colgroup>
+      <div className="border border-black/8 rounded-xl overflow-x-auto scrollbar-thin">
+        <table className="w-full text-left border-collapse min-w-[1080px]">
           <thead>
             <tr className="border-b border-black/8">
               {[
-                { label: "Client Name", key: "name" },
-                { label: "Stage", key: "stage" },
-                { label: "Priority", key: "priority" },
-                { label: "Lead\nScore", key: "leadScore" },
-                { label: "Profile\nCompletion", key: "profileCompletion" },
-                { label: "Source", key: "source" },
-                { label: "Follow Up\nTime Left", key: "followUp" },
-                { label: "Actions", key: "actions", unsortable: true },
+                { label: "Client Name", key: "name", className: "pl-3 pr-3 min-w-[160px]" },
+                { label: "Stage", key: "stage", className: "px-3 min-w-[150px]" },
+                { label: "Priority", key: "priority", className: "px-3 min-w-[90px]" },
+                { label: "Lead\nScore", key: "leadScore", className: "px-3 min-w-[90px]" },
+                { label: "Profile\nCompletion", key: "profileCompletion", className: "px-3 min-w-[110px]" },
+                { label: "Source", key: "source", className: "px-3 min-w-[120px]" },
+                { label: "Follow Up\nTime Left", key: "followUp", className: "px-3 min-w-[130px]" },
+                { label: "Actions", key: "actions", unsortable: true, className: "px-3 min-w-[110px]" },
               ].map((h) => (
                 <SortableTh
                   key={h.key}
@@ -962,9 +964,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
                   sort={sort}
                   onSort={toggle}
                   unsortable={h.unsortable}
-                  className={`text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide py-2 align-bottom ${
-                    h.key === "name" ? "pl-2.5 pr-3" : "px-2"
-                  }`}
+                  className={`text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide py-2.5 align-bottom whitespace-pre-line ${h.className}`}
                 />
               ))}
             </tr>
@@ -990,7 +990,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
                   onClick={() => onOpenDeal?.(lead)}
                   className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
                 >
-                  <td className="pl-2.5 pr-3 py-3">
+                  <td className="pl-3 pr-3 py-3 min-w-[160px]">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: LEAD_DOT_COLORS[i % LEAD_DOT_COLORS.length] }} />
                       <div className="min-w-0">
@@ -1002,7 +1002,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
                       </div>
                     </div>
                   </td>
-                  <td className="px-2 py-3">
+                  <td className="px-3 py-3 min-w-[150px]">
                     {canMove ? (
                       <button
                         type="button"
@@ -1019,28 +1019,28 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
                       <p className="text-[12px] text-[#374151] leading-tight">{stageBody}</p>
                     )}
                   </td>
-                  <td className="px-2 py-3">
-                    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md ${priority.bg}`} style={{ color: priority.color }}>
+                  <td className="px-3 py-3 min-w-[90px]">
+                    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md whitespace-nowrap ${priority.bg}`} style={{ color: priority.color }}>
                       {lead.priority}
                     </span>
                   </td>
-                  <td className="px-2 py-3">
+                  <td className="px-3 py-3 min-w-[90px]">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setScoreLead(lead);
                       }}
-                      className="inline-flex items-center gap-1 text-[13px] font-bold text-[#111] hover:bg-[#F3F4F6] px-1.5 py-0.5 rounded transition-colors"
+                      className="inline-flex items-center gap-1 text-[13px] font-bold text-[#111] hover:bg-[#F3F4F6] px-1.5 py-0.5 rounded transition-colors whitespace-nowrap"
                       title="Click to view Lead Score Details"
                     >
                       {lead.leadScore.toFixed(1)}
                       <Flag size={11} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} />
                     </button>
                   </td>
-                  <td className="px-2 py-3 text-[12px] text-[#6B7280]">{lead.profileCompletion}%</td>
-                  <td className="px-2 py-3 text-[12px] text-[#6B7280] leading-tight">{lead.source}</td>
-                  <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-3 py-3 text-[12px] text-[#6B7280] min-w-[110px] whitespace-nowrap">{lead.profileCompletion}%</td>
+                  <td className="px-3 py-3 text-[12px] text-[#6B7280] leading-tight min-w-[120px] whitespace-nowrap">{lead.source}</td>
+                  <td className="px-3 py-3 min-w-[130px] whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <FollowUpHoverCard
                       lastDiscussionAt={lead.lastDiscussion}
                       nextActionAt={lead.nextAction}
@@ -1054,7 +1054,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
                       <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.followUpNote}</p>
                     </FollowUpHoverCard>
                   </td>
-                  <td className="px-2 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-3 py-3 min-w-[110px] whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-0 flex-nowrap">
                       <button
                         type="button"
@@ -1187,13 +1187,15 @@ export default function Dashboard() {
       </div>
 
       <div className="px-5 pb-8 flex flex-col gap-4">
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)] gap-3">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="flex flex-col lg:flex-row gap-3 items-stretch">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:w-[44%] lg:shrink-0">
             {STATS.map((stat) => (
               <StatCard key={stat.label} stat={stat} />
             ))}
           </div>
-          <QuickActionsCard onCreateLead={() => setShowAddProspect(true)} />
+          <div className="lg:flex-1 min-w-0">
+            <QuickActionsCard onCreateLead={() => setShowAddProspect(true)} />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch">
@@ -1209,11 +1211,13 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-4 items-start">
-          <MyLeadsCard
-            leads={visibleLeads}
-            onOpenDeal={(lead) => openDeal(lead)}
-            onMoveStage={(lead, stageKey) => openDeal(lead, stageKey)}
-          />
+          <div className="min-w-0">
+            <MyLeadsCard
+              leads={visibleLeads}
+              onOpenDeal={(lead) => openDeal(lead)}
+              onMoveStage={(lead, stageKey) => openDeal(lead, stageKey)}
+            />
+          </div>
           <SalesFunnelCard />
         </div>
       </div>
