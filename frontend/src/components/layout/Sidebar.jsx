@@ -26,9 +26,9 @@ const NAV_ITEMS = [
   { label: "Client Database", icon: Database,        to: "/clients" },
   { label: "Packages & Plans", icon: PackageSearch,  to: "/packages" },
   { label: "Win / Loss",      icon: BarChart3,       to: "/win-loss" },
-  { label: "Post Sales",      icon: Handshake,       to: "/post-sales" },
+  // { label: "Post Sales",      icon: Handshake,       to: "/post-sales" },
   { label: "HRMS",            icon: Users,           to: "/hrms" },
-  { label: "Leaderboard",     icon: Trophy,          to: "/leaderboard" },
+  // { label: "Leaderboard",     icon: Trophy,          to: "/leaderboard" },
   { label: "Documents & Media", icon: FileText,      to: "/documents" },
 ];
 

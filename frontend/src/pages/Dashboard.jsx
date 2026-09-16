@@ -52,7 +52,7 @@ import visitsArrow from "../assets/Monthly-visits-  Meetings-arrow.png";
 import revenueArrow from "../assets/Revenue-arrow.png";
 import callsArrow from "../assets/Calls per Day-arrow.png";
 import conversionArrow from "../assets/Conversion Rate-arrow.png";
-import registrationsArrow from "../assets/No. of registrations-arrow.png";
+import registrationsArrow from "../assets/No. of registrations-arrow.svg";
 import followupArrow from "../assets/Follow-up Discipline-arrow.png";
 import visitsIcon from "../assets/Monthly- visits- Meetings-icon.png";
 import revenueIcon from "../assets/revenue-icon.png";
@@ -137,7 +137,7 @@ const PERFORMANCE_SEGMENTS = [
     layout: "row",
     arrow: conversionArrow,
     pos: { top: "79%", right: "0%" },
-    arrowStyle: { right: "calc(100% + 6px)", top: "-42%", width: "8.5cqw" },
+    arrowStyle: { right: "calc(100% + 12px)", top: "-32%", width: "16.5cqw" },
   },
   {
     key: "registrations",
@@ -151,7 +151,7 @@ const PERFORMANCE_SEGMENTS = [
     layout: "row",
     arrow: registrationsArrow,
     pos: { top: "74%", left: "0%" },
-    arrowStyle: { left: "82%", top: "-40%", width: "12cqw" },
+    arrowStyle: { left: "50%", bottom: "calc(100% - 4px)", top: "auto", width: "14.5cqw" },
   },
   {
     key: "followup",

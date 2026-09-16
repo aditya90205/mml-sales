@@ -1,0 +1,14 @@
+<svg width="186" height="162" viewBox="0 0 186 162" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path
+    d="M30 146 C16 84 40 34 128 28"
+    stroke="#E08A55"
+    stroke-width="7"
+    stroke-dasharray="15 12"
+    stroke-linecap="round"
+    fill="none"
+  />
+  <path
+    d="M122 22 L150 28.5 L123 36 Z"
+    fill="#E08A55"
+  />
+</svg>
