@@ -8,35 +8,19 @@ import {
   Activity,
   Users,
   UserRoundCheck,
-  Video,
   ArrowRight,
   X,
-  Edit3,
-  Trash2,
   Paperclip,
   Copy,
   Download,
   Mic,
   Send,
-  CalendarClock,
-  Target,
   Star,
   Flag,
-  Phone,
-  PhoneOff,
   MessageSquare,
   Calendar,
   Clock,
   MoreVertical,
-  SlidersHorizontal,
-  PieChart as PieChartIcon,
-  Megaphone,
-  ArrowUpRight,
-  Info,
-  Globe,
-  Share2,
-  Smartphone,
-  Store,
   Zap,
   Flame,
   Snowflake,
@@ -48,6 +32,9 @@ import {
   FileCheck2,
   Heart,
   Bell,
+  Crown,
+  Sparkles,
+  Filter,
 } from "lucide-react";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
@@ -56,28 +43,23 @@ import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import DealDetailPage from "./pipeline/DealDetailPage";
 import AddP0ProspectPage from "./pipeline/AddP0ProspectPage";
+import SearchField from "../components/common/SearchField.jsx";
 import { toast } from "react-toastify";
-import {
-  ResponsiveContainer,
-  ComposedChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Bar,
-  Line,
-  ReferenceLine,
-  LabelList,
-  Label,
-  useYAxisScale,
-  useOffset,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
 import { USER } from "../components/layout/TopBar";
-import contestIcon from "../assets/contest.png";
-import leaderboardIcon from "../assets/leaderboard.png";
+import salesFunnelImg from "../assets/seles-funnel.png";
+import salesPersonProfile from "../assets/sale-person-profile.jpg";
+import visitsArrow from "../assets/Monthly-visits-  Meetings-arrow.png";
+import revenueArrow from "../assets/Revenue-arrow.png";
+import callsArrow from "../assets/Calls per Day-arrow.png";
+import conversionArrow from "../assets/Conversion Rate-arrow.png";
+import registrationsArrow from "../assets/No. of registrations-arrow.png";
+import followupArrow from "../assets/Follow-up Discipline-arrow.png";
+import visitsIcon from "../assets/Monthly- visits- Meetings-icon.png";
+import revenueIcon from "../assets/revenue-icon.png";
+import callsIcon from "../assets/Calls per Day-icon.png";
+import conversionIcon from "../assets/Conversion Rate-icon.png";
+import registrationsIcon from "../assets/No. of registrations-icon.png";
+import followupIcon from "../assets/Follow-up Discipline-icons.png";
 
 /* ───────────────────────── Data ───────────────────────── */
 
@@ -96,20 +78,94 @@ const STATS = [
 ];
 
 const QUICK_ACTIONS = [
-  { label: "Create Lead",     icon: UserPlus,      bg: "#FDECEE", fg: "#E8395B" },
-  { label: "Create Task",     icon: ClipboardList, bg: "#E8F2FE", fg: "#3B82F6" },
-  { label: "Create Meeting",  icon: Calendar,      bg: "#F0EBFE", fg: "#8B5CF6" },
-  { label: "Upload Biodata",  icon: UploadCloud,   bg: "#E7F8EF", fg: "#16A34A" },
+  { label: "Create Lead",     icon: UserPlus,      bg: "#FDECEE", fg: "#E8395B", action: "lead" },
+  { label: "Create Task",     icon: ClipboardList, bg: "#E8F2FE", fg: "#3B82F6", to: "/tasks" },
+  { label: "Create Meeting",  icon: Calendar,      bg: "#F0EBFE", fg: "#8B5CF6", to: "/calendar" },
+  { label: "Upload Biodata",  icon: UploadCloud,   bg: "#E7F8EF", fg: "#16A34A", to: "/documents" },
 ];
 
-/** Six-segment performance ring: value, target, color and clock position. */
 const PERFORMANCE_SEGMENTS = [
-  { key: "visits",        label: "Monthly visits /\nMeetings", value: "12", target: "15",  color: "#16A34A" },
-  { key: "revenue",       label: "Revenue",                    value: "₹4.8L", target: "8L", color: "#D6336C" },
-  { key: "calls",         label: "Calls per Day",              value: "68", target: "80",  color: "#EC4899" },
-  { key: "conversion",    label: "Conversion Rate",            value: "24%", target: null,  color: "#3B82F6" },
-  { key: "registrations", label: "No. of\nregistrations",      value: "14", target: "50",  note: "28% of target", color: "#F97316" },
-  { key: "followup",      label: "Follow-up\nDiscipline",      value: "92", target: "100", color: "#F59E0B" },
+  {
+    key: "visits",
+    label: "Monthly visits /\nMeetings",
+    value: "12",
+    target: "15",
+    color: "#7FC9A9",
+    capsuleBg: "#E9F6EC",
+    iconSrc: visitsIcon,
+    layout: "row",
+    tall: true,
+    arrow: visitsArrow,
+    pos: { top: "0%", left: "0%" },
+    arrowStyle: { left: "86%", top: "30%", width: "15.5cqw" },
+  },
+  {
+    key: "revenue",
+    label: "Revenue",
+    value: "₹4.8L",
+    target: "8L",
+    color: "#B86FBE",
+    capsuleBg: "#F6E6F8",
+    iconSrc: revenueIcon,
+    layout: "row",
+    tall: true,
+    arrow: revenueArrow,
+    pos: { top: "4%", right: "0%" },
+    arrowStyle: { left: "0%", top: "78%", width: "9.5cqw" },
+  },
+  {
+    key: "calls",
+    label: "Calls per\nDay",
+    value: "68",
+    target: "80",
+    color: "#BF4C70",
+    capsuleBg: "#FEEBEC",
+    iconSrc: callsIcon,
+    layout: "stack",
+    arrow: callsArrow,
+    pos: { top: "38%", right: "0%" },
+    arrowStyle: { right: "68%", top: "90%", width: "13cqw" },
+  },
+  {
+    key: "conversion",
+    label: "Conversion Rate",
+    value: "24%",
+    target: null,
+    color: "#5596CD",
+    capsuleBg: "#E7EEF8",
+    iconSrc: conversionIcon,
+    layout: "row",
+    arrow: conversionArrow,
+    pos: { top: "79%", right: "0%" },
+    arrowStyle: { right: "calc(100% + 6px)", top: "-42%", width: "8.5cqw" },
+  },
+  {
+    key: "registrations",
+    label: "No. of\nregistrations",
+    value: "14",
+    target: "50",
+    note: "28% of target",
+    color: "#E76B3D",
+    capsuleBg: "#FEE9D8",
+    iconSrc: registrationsIcon,
+    layout: "row",
+    arrow: registrationsArrow,
+    pos: { top: "74%", left: "0%" },
+    arrowStyle: { left: "82%", top: "-40%", width: "12cqw" },
+  },
+  {
+    key: "followup",
+    label: "Follow-up\nDiscipline",
+    value: "92",
+    target: "100",
+    color: "#DA9644",
+    capsuleBg: "#FEF2DD",
+    iconSrc: followupIcon,
+    layout: "stack",
+    arrow: followupArrow,
+    pos: { top: "31%", left: "0%" },
+    arrowStyle: { left: "66%", top: "-16%", width: "12cqw" },
+  },
 ];
 
 const PERFORMANCE_OVERALL_SCORE = 87;
@@ -127,11 +183,11 @@ const UNSCHEDULED_ITEM = {
 };
 
 const RECENT_UPDATES = [
-  { id: 1, icon: UserPlus,      bg: "#FDECEE", fg: "#E8395B", title: "Rahul Sharma",     desc: "A new client is registered",       time: "2 min ago" },
-  { id: 2, icon: IndianRupee,   bg: "#E7F8EF", fg: "#16A34A", title: "Payment Received", desc: "Payment of ₹40,000 recieved.",      time: "30 min ago" },
-  { id: 3, icon: BadgePercent,  bg: "#E8F2FE", fg: "#3B82F6", title: "Discount Approval", desc: "10% discount approved for Neha Kapoor", time: "1 day ago" },
-  { id: 4, icon: UserRoundCheck, bg: "#FDECEE", fg: "#E8395B", title: "Lead Converted",  desc: "Rohit Sharma has been successfully converted into a client", time: "2 days ago" },
-  { id: 5, icon: FileCheck2,    bg: "#E7F8EF", fg: "#16A34A", title: "Bio Data Recieved", desc: "Bio data received from Amit Verma", time: "2 days ago" },
+  { id: 1, icon: UserPlus,       bg: "#FDECEE", fg: "#E8395B", title: "Rahul Sharma",      desc: "A new client is registered",       time: "2 min ago" },
+  { id: 2, icon: IndianRupee,    bg: "#E7F8EF", fg: "#16A34A", title: "Payment Received",  desc: "Payment of ₹40,000 recieved.",      time: "30 min ago" },
+  { id: 3, icon: BadgePercent,   bg: "#E8F2FE", fg: "#3B82F6", title: "Discount Approval", desc: "10% discount approved for Neha Kapoor", time: "1 day ago" },
+  { id: 4, icon: UserRoundCheck, bg: "#FDECEE", fg: "#E8395B", title: "Lead Converted",    desc: "Rohit Sharma has been successfully converted into a client", time: "2 days ago" },
+  { id: 5, icon: FileCheck2,     bg: "#E7F8EF", fg: "#16A34A", title: "Bio Data Recieved", desc: "Bio data received from Amit Verma", time: "2 days ago" },
 ];
 
 const LEAD_HEALTH = [
@@ -140,16 +196,15 @@ const LEAD_HEALTH = [
   { key: "cold", label: "Cold Leads", count: 18, icon: Snowflake, bg: "#E8F2FE", fg: "#3B82F6" },
 ];
 
-/** Sales funnel rows: pipeline count, conversion % from P0, and drop-off to the next stage. */
 const FUNNEL_ROWS = [
-  { key: "new",         label: "New",              icon: Users,          color: "#2F6FE0", stat: "P0 - 482", pct: "100%", to: "to P1",              width: "100%" },
-  { key: "contacted",   label: "Contacted",         icon: Phone,          color: "#2A5FD1", stat: "P0 - 482", pct: "100%", to: "to P1",              width: "92%" },
-  { key: "qualified",   label: "Qualified",         icon: SlidersHorizontal, color: "#3B4FBF", stat: "P1 - 395", pct: "82%",  to: "to P2", drop: "18% (87)", width: "84%" },
-  { key: "profile",     label: "Profile Creation",  icon: UserRoundCheck, color: "#5A4CB0", stat: "P2 - 351", pct: "75%",  to: "to P3", drop: "11% (87)", width: "76%" },
-  { key: "video",       label: "Video call / Visit", icon: Video,         color: "#7A4A9E", stat: "P3 - 295", pct: "60%",  to: "to P4", drop: "16% (87)", width: "68%" },
-  { key: "negotiation", label: "Negotiation",       icon: Users,          color: "#8B4B8C", stat: "P4 - 260", pct: "52%",  to: "to P5", drop: "14% (87)", width: "60%" },
-  { key: "payment",     label: "Payment",           icon: IndianRupee,    color: "#A94A6B", stat: "P5 - 224", pct: "44%",  to: "to P6", drop: "8% (118)", width: "52%" },
-  { key: "handover",    label: "Handover",          icon: Heart,          color: "#7A0A17", stat: "P6 - 224", pct: "43%",  to: "Final Conversion", drop: "(87)", width: "44%" },
+  { key: "new",         stat: "P0 - 482", pct: "100%", to: "to P1" },
+  { key: "contacted",   stat: "P0 - 482", pct: "100%", to: "to P1" },
+  { key: "qualified",   stat: "P1 - 395", pct: "82%",  to: "to P2", dropPct: "18%", dropCount: "87" },
+  { key: "profile",     stat: "P2 - 351", pct: "75%",  to: "to P3", dropPct: "11%", dropCount: "87" },
+  { key: "video",       stat: "P3 - 295", pct: "60%",  to: "to P4", dropPct: "16%", dropCount: "87" },
+  { key: "negotiation", stat: "P4 - 260", pct: "52%",  to: "to P5", dropPct: "14%", dropCount: "87" },
+  { key: "payment",     stat: "P5 - 224", pct: "44%",  to: "to P6", dropPct: "8%",  dropCount: "118" },
+  { key: "handover",    stat: "P6 - 224", pct: "43%",  to: "Final Conversion", dropCount: "87", isFinal: true },
 ];
 
 const AI_ACTIONS = [
@@ -159,17 +214,8 @@ const AI_ACTIONS = [
   { label: "Activity", icon: Activity,  color: "#8B5CF6" },
 ];
 
-const AI_PROMPTS = [
-  { id: 1, text: "Summary of the week" },
-  { id: 2, text: "Today's top priority" },
-  { id: 3, text: "Make summary notes of attached document" },
-];
+const AI_TAGS = ["Summary of the month", "Tomorrow Meetings"];
 
-const AI_TAGS = ["Summary of the month", "Tomorrow Meetings", "Yesterday Feedbacks"];
-
-// Ananya Verma / Vikram Chawla aren't real pipeline leads — point at two
-// actual P4 (Negotiation) cards from PipelineBoard's LEADS_BY_STAGE instead,
-// via the `openLead` query param PipelineBoard reads to auto-open a deal.
 const PRIORITY_ITEMS = [
   {
     parts: [
@@ -207,43 +253,14 @@ const PRIORITY_ITEMS = [
   },
   {
     parts: [
-      { text: "AI recommends contacting " },
-      { text: "Vivek Sharma", to: "/pipeline?openLead=p4-1" },
+      { text: "AI recommends contacting clients " },
+      { text: "Ananya Verma", to: "/pipeline?openLead=p4-1" },
       { text: " and " },
-      { text: "Priya Raheja", to: "/pipeline?openLead=p4-2" },
+      { text: "Vikram Chawla", to: "/pipeline?openLead=p4-2" },
       { text: " today — both are close to closing" },
     ],
   },
 ];
-
-
-const PENDING_TASKS = [
-  { type: "Leave Request",    description: "Casual Leave (2 Days)",          requestedOn: "01 Jun 2026", dueDate: "01 Jun 2026", status: "pending",  statusLabel: "Pending",            comment: "We can't give you leave on that particular date. Please choose another slot and resubmit." },
-  { type: "Discount Request", description: "Notice Period - 30 Days",        requestedOn: "01 Jun 2026", dueDate: "01 Jun 2026", status: "review",   statusLabel: "HR Review",         comment: "HR is reviewing the discount request. Attach the revised quotation before 01 Jun 2026." },
-  { type: "Send Profiles",    description: "Promotion to Team Lead Letter",  requestedOn: "01 Jun 2026", dueDate: "01 Jun 2026", status: "approved", statusLabel: "Approved Required", comment: "Promotion letter is approved. Confirm the effective date with the reporting manager." },
-];
-
-const STATUS_STYLES = {
-  pending:  "bg-[#FFF1E6] text-[#F97C3B]",
-  review:   "bg-[#E8F2FE] text-[#3B82F6]",
-  approved: "bg-[#E4F8EC] text-[#16A34A]",
-  rejected: "bg-[#FDECEE] text-[#E8395B]",
-};
-
-const ACTIVE_CONTESTS = [
-  { id: 1, title: "Mega Lead Hunter", desc: "Generate maximum qualified leads and top the dashboard", timeLeft: "3d 12h Left", timeTone: "text-[#E8395B]", prize: "₹25,000" },
-  { id: 2, title: "Sales Booster",    desc: "Close more deals and boost your sales numbers this month", timeLeft: "5d 18h Left", timeTone: "text-[#F59E0B]", prize: "₹15,000" },
-  { id: 3, title: "Conversion King",  desc: "Convert your meetings into successful memberships",        timeLeft: "7d 27h Left", timeTone: "text-[#16A34A]", prize: "₹35,000" },
-];
-
-const LEADERBOARD = [
-  { rank: 1, name: "Kuhu Sharma",   role: "Senior Sales Manager", branch: "Rajouri Garden",   xp: 102 },
-  { rank: 2, name: "Satish Pal",    role: "Senior Sales Manager", branch: "Gurugram",         xp: 98 },
-  { rank: 3, name: "Aditya Verma",  role: "Senior Sales Manager", branch: "Rajouri Garden",   xp: 94 },
-  { rank: 5, name: "Ankur Sharma",  role: "Senior Sales Manager", branch: "South Extension",  xp: 90, self: true },
-];
-
-const RANK_MEDAL_COLORS = { 1: "#F59E0B", 2: "#9CA3AF", 3: "#B87333" };
 
 const PRIORITY_STYLES = {
   High:   { color: "#E8395B", bg: "bg-[#FDECEE]" },
@@ -251,129 +268,15 @@ const PRIORITY_STYLES = {
   Low:    { color: "#16A34A", bg: "bg-[#E7F8EF]" },
 };
 
-const LEAD_DOT_COLORS = ["#E8395B", "#F59E0B", "#3B82F6", "#E8395B", "#16A34A", "#F59E0B", "#3B82F6"];
+const LEAD_DOT_COLORS = ["#E8395B", "#F59E0B", "#3B82F6", "#E8395B", "#E8395B", "#E8395B"];
 
 const MY_LEADS = [
-  { id: "MML-ID-D-10428", name: "Kuhu Sharma",    starred: true,  owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P0 - New",              stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, timeAtStage: "2 Days", source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start at 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Outbound follow-up call" },
-  { id: "MML-ID-D-10428", name: "Harshit Sharma", starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P1 - Qualified",        stageTone: "Lost", priority: "High",   leadScore: 7.0, profileCompletion: 50,  timeAtStage: "2 Days", source: "Brand Walking",    followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: true, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Re-engagement call" },
-  { id: "MML-ID-D-10428", name: "Ankur Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P2 - Profile Creation", stageTone: null,   priority: "Medium", leadScore: 7.5, profileCompletion: 75,  timeAtStage: "2 Days", source: "Community Events", followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Complete profile details" },
-  { id: "MML-ID-D-10428", name: "Aditya Sharma",  starred: true,  owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P3 - Video Call/Visit", stageTone: "Cold", priority: "Medium", leadScore: 8.5, profileCompletion: 85,  timeAtStage: "2 Days", source: "Channel Partner",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm video call slot" },
-  { id: "MML-ID-D-10428", name: "Vivek Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P4 - Negotiation",      stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  timeAtStage: "2 Days", source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start at 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
-  { id: "MML-ID-D-10428", name: "Rohit Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P5 - Profile Creation", stageTone: "Won",  priority: "Medium", leadScore: 7.5, profileCompletion: 75,  timeAtStage: "2 Days", source: "Manual Sourcing",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Share payment link" },
-  { id: "MML-ID-D-10428", name: "Virat Sharma",   starred: false, owner: "Aditya Sharma", ownerRole: "Sales Manager | Rajouri Garden", stage: "P6 - Service Handover", stageTone: null,   priority: "Low",    leadScore: 8.5, profileCompletion: 90,  timeAtStage: "2 Days", source: "Online - Insta",   followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start at 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm handover checklist" },
-];
-
-const GOALS_STATS = [
-  { label: "Actual Revenue",    value: "₹1.63 Cr", note: "65% of Target",  noteColor: "#3B82F6" },
-  { label: "Projected Revenue", value: "₹1.55 Cr", note: "102% of Target", noteColor: "#8B5CF6" },
-  { label: "Target (4 Weeks)",  value: "₹2.50 Cr", note: "Total Target",   noteColor: "#0D9488" },
-  { label:  "Incentive (till 4 week)", value: "₹12 Lakh", note: "Total Incentive", noteColor: "#F59E0B" },
-  { label: "Total pack sold",   value: "15",        note: "Subscription Sold", noteColor: "#F59E0B" },
-];
-
-const TIER_COLORS = {
-  basic: "#3B82F6",
-  standard: "#14B8A6",
-  premium: "#8B5CF6",
-  superPremium: "#F59E0B",
-};
-
-const TARGET_LINE_VALUE = 5.9;
-
-/**
- * Weeks 1-4 are closed weeks (actual tier mix); weeks 5-8 are the
- * forward pipeline, drawn as flat grey bars with a dashed projection
- * line layered on top. Segment heights are split evenly per bar —
- * only the printed count label differs — since the source design
- * uses the stack purely to show tier mix, not unit-accurate height.
- */
-const REVENUE_WEEKS = [
-  { week: "Week 1", weekLabel: "Week 1",                current: false, totalLabel: "₹4.8 Lakh",  height: 1.6, counts: { basic: 2, standard: 2, premium: 1, superPremium: 1 } },
-  { week: "Week 2", weekLabel: "Week 2",                current: false, totalLabel: "₹6.0 Lakh",  height: 2.0, counts: { basic: 1, standard: 1, premium: 1, superPremium: 2 } },
-  { week: "Week 3", weekLabel: "Week 3",                current: false, totalLabel: "₹8.0 Lakh",  height: 2.7, counts: { basic: 3, standard: 3, premium: 1, superPremium: 2 } },
-  { week: "Week 4", weekLabel: "Week 4 (Current Week)", current: true,  totalLabel: "₹12.0 Lakh", height: 4.0, counts: { basic: 2, standard: 1, premium: 3, superPremium: 4 } },
-];
-
-const PROJECTED_WEEKS = [
-  { week: "Week 5", barLabel: "₹12.0 Lakh", pipelineLabel: "₹12 Lakh", height: 4.0 },
-  { week: "Week 6", barLabel: "₹15.0 Lakh", pipelineLabel: "₹15 Lakh", height: 4.6 },
-  { week: "Week 7", barLabel: "₹20.0 Lakh", pipelineLabel: "₹20 Lakh", height: 5.2 },
-  { week: "Week 8", barLabel: "₹25.0 Lakh", pipelineLabel: "₹25 Lakh", height: 5.8 },
-];
-
-const REVENUE_CHART_DATA = [
-  ...REVENUE_WEEKS.map((w) => ({
-    week: w.week,
-    weekLabel: w.weekLabel,
-    current: w.current,
-    totalLabel: w.totalLabel,
-    basic: w.height * (w.counts.basic / (w.counts.basic + w.counts.standard + w.counts.premium + w.counts.superPremium)),
-    standard: w.height * (w.counts.standard / (w.counts.basic + w.counts.standard + w.counts.premium + w.counts.superPremium)),
-    premium: w.height * (w.counts.premium / (w.counts.basic + w.counts.standard + w.counts.premium + w.counts.superPremium)),
-    superPremium: w.height * (w.counts.superPremium / (w.counts.basic + w.counts.standard + w.counts.premium + w.counts.superPremium)),
-    basicCount: w.counts.basic,
-    standardCount: w.counts.standard,
-    premiumCount: w.counts.premium,
-    superPremiumCount: w.counts.superPremium,
-    packTotal: w.counts.basic + w.counts.standard + w.counts.premium + w.counts.superPremium,
-    pipeline: null,
-  })),
-  ...PROJECTED_WEEKS.map((w) => ({
-    week: w.week,
-    weekLabel: w.week,
-    projected: w.height,
-    barLabel: w.barLabel,
-    pipeline: w.height + 0.35,
-    pipelineLabel: w.pipelineLabel,
-  })),
-];
-
-const REVENUE_Y_TICKS = [0, 1, 2, 3, 4, 5, 6];
-const revenueYTickFormatter = (v) => (v === 0 ? "₹0" : `₹${(v * 0.5).toFixed(1)} Cr`);
-
-const CONVERSION_STATS = [
-  { label: "Total Leads",     value: "2,842", note: "18.6% vs last 8 weeks" },
-  { label: "Total Calls",     value: "1,896", note: "18.6% vs last 8 weeks" },
-  { label: "Total Converted", value: "642",   note: "18.6% vs last 8 weeks" },
-];
-
-const FUNNEL_LEGEND = [
-  { key: "prospects",      label: "Prospects",       color: "#2A78D6" },
-  { key: "qualifiedLeads", label: "Qualified Leads", color: "#1BAF7A" },
-  { key: "contacted",      label: "Contacted",       color: "#4A3AA7" },
-  { key: "converted",      label: "Converted",       color: "#9CA3AF" },
-];
-
-const WEEKLY_FUNNEL_DATA = [
-  { week: "Week 1", range: "1-7 August",   prospects: 320, qualifiedLeads: 210, contacted: 145, converted: 68 },
-  { week: "Week 2", range: "8-14 August",  prospects: 320, qualifiedLeads: 210, contacted: 145, converted: 68 },
-  { week: "Week 3", range: "15-21 August", prospects: 320, qualifiedLeads: 210, contacted: 145, converted: 68 },
-  { week: "Week 4", range: "22-28 August", prospects: 320, qualifiedLeads: 210, contacted: 145, converted: 68 },
-];
-
-const LEAD_TYPE_BREAKDOWN = [
-  { label: "Hot Leads",  value: 312, pct: "45%", color: "#E8395B" },
-  { label: "Warm Leads", value: 436, pct: "25%", color: "#F59E0B" },
-  { label: "Cold Leads", value: 312, pct: "30%", color: "#3B82F6" },
-];
-
-const ACQUISITION_SOURCES = [
-  { source: "Website",          totalLeads: 3596, conversion: "2%", color: "#6C93D6", icon: "website",   pct: 28 },
-  { source: "Referral",         totalLeads: 2570, conversion: "1%", color: "#26437A", icon: "referral",  pct: 20 },
-  { source: "Mobile App",       totalLeads: 2056, conversion: "3%", color: "#D8BD93", icon: "mobile",    pct: 16 },
-  { source: "Facebook Ads",     totalLeads: 1799, conversion: "2%", color: "#BA6A38", icon: "facebook",  pct: 14 },
-  { source: "Instagram Ads",    totalLeads: 1285, conversion: "1%", color: "#9AA0AC", icon: "instagram", pct: 10 },
-  { source: "Google Ads",       totalLeads: 899,  conversion: "2%", color: "#7A0A17", icon: "google",    pct: 7 },
-  { source: "Walk-in / Others", totalLeads: 640,  conversion: "1%", color: "#26262A", icon: "walkin",    pct: 5 },
-];
-
-const ACQUISITION_TOTAL_LEADS = "12,845";
-
-const RECENT_ANNOUNCEMENTS = [
-  { id: 1, title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High", comment: "Please read the revised leave policy before applying. Casual leave now requires 24 hours notice except in emergencies." },
-  { id: 2, title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High", comment: "Branch heads must brief their teams by Friday. Raise questions in this thread if any clause is unclear." },
-  { id: 3, title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High", comment: "The policy PDF is available under Documents. Acknowledge after you have reviewed it." },
-  { id: 4, title: "New Leave Policy Update", desc: "Updated leave policy effective from June 2026", type: "Policy Update", priority: "High", comment: "HR will run a Q&A session next Monday at 11:00 AM. Join if you need clarification on carry-forward leave." },
+  { id: "MML-ID-D-10428", name: "Kuhu Sharma",    starred: true,  stage: "P0 - New",              stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Outbound follow-up call" },
+  { id: "MML-ID-D-10428", name: "Harshit Sharma", starred: false, stage: "P1 - Qualified",        stageTone: "Lost", priority: "High",   leadScore: 8.5, profileCompletion: 50,  source: "Brand Walking",    followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: true,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Re-engagement call" },
+  { id: "MML-ID-D-10428", name: "Aditya Sharma",  starred: false, stage: "P3 - Video Call/Visit", stageTone: "Cold", priority: "Medium", leadScore: 8.5, profileCompletion: 85,  source: "Channel Partner",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm video call slot" },
+  { id: "MML-ID-D-10428", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
+  { id: "MML-ID-D-10429", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
+  { id: "MML-ID-D-10428", name: "Virat Sharma",   starred: false, stage: "P6 - Service Handover", stageTone: null,   priority: "Low",    leadScore: 8.5, profileCompletion: 90,  source: "Online - Insta",   followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm handover checklist" },
 ];
 
 /* ───────────────────────── Header controls ───────────────────────── */
@@ -449,7 +352,9 @@ function StatCard({ stat }) {
   );
 }
 
-function QuickActionsCard() {
+function QuickActionsCard({ onCreateLead }) {
+  const navigate = useNavigate();
+
   return (
     <div className="bg-white border border-black/8 rounded-2xl px-4 py-3.5 flex items-center gap-4 flex-wrap">
       <div className="flex items-center gap-2 shrink-0">
@@ -459,10 +364,14 @@ function QuickActionsCard() {
         <p className="text-[14px] font-bold text-[#111] whitespace-nowrap">Quick Actions</p>
       </div>
       <div className="flex items-center gap-2.5 flex-wrap">
-        {QUICK_ACTIONS.map(({ label, icon: Icon, bg, fg }) => (
+        {QUICK_ACTIONS.map(({ label, icon: Icon, bg, fg, to, action }) => (
           <button
             key={label}
             type="button"
+            onClick={() => {
+              if (action === "lead") onCreateLead?.();
+              else if (to) navigate(to);
+            }}
             className="inline-flex items-center gap-2 h-10 pl-2 pr-3.5 rounded-xl bg-white border border-black/8 hover:bg-[#FAFAFB] transition-colors"
           >
             <span className="size-6 rounded-lg grid place-items-center shrink-0" style={{ backgroundColor: bg }}>
@@ -476,51 +385,115 @@ function QuickActionsCard() {
   );
 }
 
-const SEGMENT_POSITIONS = [
-  { top: "-2%", left: "50%" },
-  { top: "18%", left: "94%" },
-  { top: "64%", left: "94%" },
-  { top: "84%", left: "50%" },
-  { top: "64%", left: "6%" },
-  { top: "18%", left: "6%" },
-];
-
 function PerformanceScoreCard() {
   const n = PERFORMANCE_SEGMENTS.length;
   const gradient = PERFORMANCE_SEGMENTS.map((s, i) => `${s.color} ${(i * 360) / n}deg ${((i + 1) * 360) / n}deg`).join(", ");
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col h-full">
+    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col h-full overflow-visible">
       <h2 className="text-[17px] font-bold text-[#111] px-1 flex items-center gap-2">
-        <Star size={16} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />
+        <Crown size={16} className="text-[#7A0A17]" fill="#7A0A17" strokeWidth={0} />
         My Performance Score
       </h2>
 
-      <div className="relative mx-auto mt-8 mb-6 size-[220px] shrink-0">
-        <div className="absolute inset-0 rounded-full" style={{ background: `conic-gradient(${gradient})` }} />
-        <div className="absolute inset-[14px] rounded-full bg-white border border-black/6 grid place-items-center overflow-hidden">
-          <div className="text-center px-3">
-            <p className="text-[11px] font-bold text-[#7A0A17] uppercase tracking-wide">Overall Score</p>
-            <p className="text-[26px] font-extrabold text-[#111] leading-tight mt-0.5">
-              {PERFORMANCE_OVERALL_SCORE}<span className="text-[14px] text-[#9CA3AF] font-semibold">/100</span>
+      <div className="flex-1 flex items-center justify-center min-h-0">
+        <div className="relative w-full max-w-[420px] aspect-square [container-type:inline-size]">
+        <div
+          className="absolute inset-[24.5%] rounded-full"
+          style={{ background: `conic-gradient(${gradient})`, transform: "rotate(-30deg)" }}
+        />
+        <div className="absolute inset-[29.5%] rounded-full bg-white" />
+        <div className="absolute inset-[32%] rounded-full overflow-hidden">
+          <img
+            src={salesPersonProfile}
+            alt="Sales person"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: "center 8%" }}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 h-[46%] flex flex-col items-center justify-center"
+            style={{ backgroundColor: "#7A0A17" }}
+          >
+            <p className="text-[11px] font-semibold text-white leading-tight">Overall Score</p>
+            <p className="text-[20px] font-extrabold text-white leading-none mt-0.5">
+              {PERFORMANCE_OVERALL_SCORE}
+              <span className="text-[13px] font-semibold text-white/85"> / 100</span>
             </p>
           </div>
+          <div className="absolute inset-x-0 top-[54%] h-[2px] bg-white" />
         </div>
 
-        {PERFORMANCE_SEGMENTS.map((s, i) => (
-          <div
-            key={s.key}
-            className="absolute -translate-x-1/2 -translate-y-1/2 bg-white border border-black/8 rounded-xl px-2.5 py-1.5 shadow-sm text-center whitespace-pre-line"
-            style={{ top: SEGMENT_POSITIONS[i].top, left: SEGMENT_POSITIONS[i].left, minWidth: "92px" }}
-          >
-            <p className="text-[9.5px] font-semibold text-[#6B7280] leading-tight">{s.label}</p>
-            <p className="text-[13px] font-bold leading-tight mt-0.5" style={{ color: s.color }}>
-              {s.value}
-              {s.target && <span className="text-[10px] text-[#9CA3AF] font-medium"> / {s.target}</span>}
-            </p>
-            {s.note && <p className="text-[9px] text-[#9CA3AF] leading-tight">{s.note}</p>}
-          </div>
-        ))}
+        {PERFORMANCE_SEGMENTS.map((s) => {
+          const stacked = s.layout === "stack";
+          return (
+            <div
+              key={s.key}
+              className="absolute z-[2]"
+              style={{
+                top: s.pos.top,
+                left: s.pos.left,
+                right: s.pos.right,
+              }}
+            >
+              <div className="relative w-max">
+                <img
+                  src={s.arrow}
+                  alt=""
+                  className="absolute pointer-events-none select-none z-[1] max-w-none [@container(max-width:340px)]:hidden"
+                  style={s.arrowStyle}
+                />
+                <div
+                  className="relative z-[2] rounded-[22px]"
+                  style={{
+                    backgroundColor: s.capsuleBg,
+                    display: "flex",
+                    flexDirection: stacked ? "column" : "row",
+                    alignItems: "center",
+                    textAlign: stacked ? "center" : "left",
+                    width: stacked ? 98 : undefined,
+                    minHeight: stacked ? 112 : !stacked && s.tall ? 68 : undefined,
+                    padding: stacked ? "12px 10px 11px" : s.tall ? "11px 14px" : "9px 12px",
+                    gap: stacked ? 7 : 8,
+                  }}
+                >
+                  <span
+                    className="rounded-full bg-white grid place-items-center shrink-0"
+                    style={{ width: stacked ? 28 : 22, height: stacked ? 28 : 22 }}
+                  >
+                    <img
+                      src={s.iconSrc}
+                      alt=""
+                      className="object-contain"
+                      style={{ width: stacked ? 15 : 13, height: stacked ? 15 : 13 }}
+                    />
+                  </span>
+                  <div className={stacked ? "w-full" : "min-w-0"}>
+                    <p
+                      className="font-semibold leading-tight whitespace-pre-line"
+                      style={{ color: s.color, fontSize: stacked ? 11 : 11.5 }}
+                    >
+                      {s.label}
+                    </p>
+                    <p className="text-[15px] font-bold leading-tight mt-0.5" style={{ color: s.color }}>
+                      {s.value}
+                      {s.target && (
+                        <span className="text-[12.5px] font-semibold" style={{ color: s.color, opacity: 0.55 }}>
+                          {" "}/ {s.target}
+                        </span>
+                      )}
+                    </p>
+                    {s.note && (
+                      <p className="text-[10px] leading-tight mt-0.5" style={{ color: s.color, opacity: 0.7 }}>
+                        {s.note}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        </div>
       </div>
     </div>
   );
@@ -605,161 +578,79 @@ function RecentUpdatesCard() {
 
 function AIAssistant() {
   const [message, setMessage] = useState("");
-  const [prompts, setPrompts] = useState(AI_PROMPTS);
   const [tags, setTags] = useState(AI_TAGS);
-  const [activePromptId, setActivePromptId] = useState(2); // Today's top priority
   const [activeTag, setActiveTag] = useState(null);
 
-  const activePrompt = prompts.find((p) => p.id === activePromptId);
-  const contentHeading = activeTag
-    ? activeTag
-    : activePrompt?.text === "Today's top priority"
-      ? "Today's Priority"
-      : activePrompt?.text || "Today's Priority";
-
-  const selectPrompt = (id) => {
-    setActivePromptId(id);
-    setActiveTag(null);
-  };
-
-  const selectTag = (tag) => {
-    setActiveTag(tag);
-    setActivePromptId(null);
-  };
+  const contentHeading = activeTag || "Today's Priority";
 
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col gap-3.5 h-full">
-      <h2 className="text-[17px] font-bold text-[#111] px-1 flex items-center gap-2">
-        <Star size={16} className="text-[#8B5CF6]" fill="#8B5CF6" strokeWidth={0} />
-        Your Personal Assistant
-      </h2>
-
-      {/* Conversation starters */}
-      <div className="bg-[#FAFAFB] border border-black/6 rounded-xl p-3 flex flex-col gap-2.5">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <p className="text-[13px] font-bold text-[#111]">Start a conversation</p>
-          <div className="flex items-center gap-3">
-            {AI_ACTIONS.map(({ label, icon: Icon, color }) => (
-              <button key={label} type="button" className="inline-flex items-center gap-1 text-[11px] text-[#4B5563] hover:text-[#111] transition-colors">
-                <Icon size={13} style={{ color }} /> {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {prompts.map((p) => {
-          const isActive = !activeTag && p.id === activePromptId;
-          return (
-            <div
-              key={p.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => selectPrompt(p.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  selectPrompt(p.id);
-                }
-              }}
-              className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 cursor-pointer transition-colors border ${
-                isActive
-                  ? "bg-[#FDF2F3] border-[#7A0A17]/35 shadow-[inset_3px_0_0_0_#7A0A17]"
-                  : "bg-white border-black/8 hover:bg-[#FAFAFB]"
-              }`}
-              aria-pressed={isActive}
+      <div className="flex items-center justify-between gap-3 px-1">
+        <h2 className="text-[17px] font-bold text-[#111] flex items-center gap-2">
+          <Sparkles size={16} className="text-[#8B5CF6]" fill="#8B5CF6" strokeWidth={0} />
+          Your Personal Assistant
+        </h2>
+        <div className="flex items-center gap-1.5">
+          {AI_ACTIONS.map(({ label, icon: Icon, color }) => (
+            <button
+              key={label}
+              type="button"
+              title={label}
+              className="size-7 rounded-lg grid place-items-center hover:bg-black/4 transition-colors"
             >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="text-[13px] leading-none" aria-hidden>
-                  🚀
-                </span>
-                <span className={`text-[13px] truncate ${isActive ? "font-semibold text-[#7A0A17]" : "text-[#111]"}`}>
-                  {p.text}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-[#3B82F6] hover:opacity-70 transition-opacity"
-                  aria-label="Edit prompt"
-                >
-                  <Edit3 size={14} />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPrompts((prev) => {
-                      const next = prev.filter((x) => x.id !== p.id);
-                      if (p.id === activePromptId && next.length) {
-                        setActivePromptId(next[0].id);
-                        setActiveTag(null);
-                      }
-                      return next;
-                    });
-                  }}
-                  className="text-[#EF4444] hover:opacity-70 transition-opacity"
-                  aria-label="Delete prompt"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-          );
-        })}
-
-        <div className="flex flex-wrap items-center gap-2">
-          {tags.map((tag) => {
-            const isActive = activeTag === tag;
-            return (
-              <span
-                key={tag}
-                role="button"
-                tabIndex={0}
-                onClick={() => selectTag(tag)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    selectTag(tag);
-                  }
-                }}
-                aria-pressed={isActive}
-                className={`inline-flex items-center gap-2 text-[11px] rounded-lg px-2.5 py-1.5 cursor-pointer transition-colors border ${
-                  isActive
-                    ? "bg-[#FDF2F3] border-[#7A0A17]/40 text-[#7A0A17] font-semibold shadow-[inset_0_-2px_0_0_#7A0A17]"
-                    : "text-[#4B5563] bg-[#F1F2F4] border-transparent hover:bg-[#E9EAEC]"
-                }`}
-              >
-                {tag}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setTags((prev) => {
-                      const next = prev.filter((x) => x !== tag);
-                      if (tag === activeTag) {
-                        setActiveTag(null);
-                        if (prompts.length) setActivePromptId(prompts[0].id);
-                      }
-                      return next;
-                    });
-                  }}
-                  className={`hover:opacity-80 ${isActive ? "text-[#7A0A17]" : "text-[#6B7280] hover:text-[#111]"}`}
-                  aria-label={`Remove ${tag}`}
-                >
-                  <X size={11} />
-                </button>
-              </span>
-            );
-          })}
-          <button type="button" className="inline-flex items-center gap-1 text-[11px] text-[#4B5563] bg-[#F1F2F4] rounded-lg px-2.5 py-1.5 hover:bg-[#E9EAEC] transition-colors">
-            See All <ArrowRight size={11} />
-          </button>
+              <Icon size={14} style={{ color }} strokeWidth={2} />
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Active conversation content + composer */}
-      <div className="border border-black/8 rounded-xl p-4 flex flex-col gap-3 flex-1">
+      <div className="flex flex-wrap items-center gap-2">
+        {tags.map((tag) => {
+          const isActive = activeTag === tag;
+          return (
+            <span
+              key={tag}
+              role="button"
+              tabIndex={0}
+              onClick={() => setActiveTag(isActive ? null : tag)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setActiveTag(isActive ? null : tag);
+                }
+              }}
+              aria-pressed={isActive}
+              className={`inline-flex items-center gap-2 text-[11px] rounded-lg px-2.5 py-1.5 cursor-pointer transition-colors border ${
+                isActive
+                  ? "bg-[#FDF2F3] border-[#7A0A17]/40 text-[#7A0A17] font-semibold"
+                  : "text-[#4B5563] bg-[#F1F2F4] border-transparent hover:bg-[#E9EAEC]"
+              }`}
+            >
+              {tag}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTags((prev) => {
+                    const next = prev.filter((x) => x !== tag);
+                    if (tag === activeTag) setActiveTag(null);
+                    return next;
+                  });
+                }}
+                className={`hover:opacity-80 ${isActive ? "text-[#7A0A17]" : "text-[#6B7280] hover:text-[#111]"}`}
+                aria-label={`Remove ${tag}`}
+              >
+                <X size={11} />
+              </button>
+            </span>
+          );
+        })}
+        <button type="button" className="inline-flex items-center gap-1 text-[11px] text-[#4B5563] hover:text-[#111] transition-colors">
+          See All <ArrowRight size={11} />
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-3 flex-1 min-h-0">
         <h3 className="text-[15px] font-bold text-[#111]">{contentHeading}</h3>
 
         <ul className="flex flex-col gap-2 flex-1">
@@ -785,9 +676,9 @@ function AIAssistant() {
           ))}
         </ul>
 
-        <div className="border border-black/10 rounded-xl p-3 mt-1">
+        <div className="border border-black/10 rounded-xl p-3 mt-auto">
           <textarea
-            rows={3}
+            rows={2}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Ask MML anything..."
@@ -826,12 +717,15 @@ function SalesFunnelCard() {
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col h-full">
       <div className="flex items-center justify-between gap-3 px-1">
-        <h2 className="text-[17px] font-bold text-[#111]">Sales Funnel (P0 - P6)</h2>
+        <h2 className="text-[17px] font-bold text-[#111] flex items-center gap-2">
+          <Filter size={18} className="text-[#7A0A17]" fill="#7A0A17" strokeWidth={2} />
+          Sales Funnel (P0 - P6)
+        </h2>
         <div className="relative" ref={ref}>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-white border border-black/10 text-[12px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+            className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-white border border-black/12 text-[12px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
           >
             {period}
             <ChevronDown size={13} className={`text-[#9CA3AF] transition-transform ${open ? "rotate-180" : ""}`} />
@@ -855,885 +749,59 @@ function SalesFunnelCard() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 mt-4 flex-1">
-        {FUNNEL_ROWS.map((row) => (
-          <div key={row.key} className="flex items-center gap-3">
-            <div
-              className="h-10 rounded-lg flex items-center gap-2 px-3 shrink-0 transition-[width]"
-              style={{ width: row.width, backgroundColor: row.color, maxWidth: "260px" }}
-            >
-              <row.icon size={13} className="text-white shrink-0" strokeWidth={1.8} />
-              <span className="text-[11px] font-semibold text-white truncate">{row.label}</span>
-            </div>
-            <div className="min-w-0 flex-1 flex items-baseline gap-2 flex-wrap">
-              <span className="text-[12.5px] font-bold text-[#111] whitespace-nowrap">{row.stat}</span>
-              <span className="text-[11px] font-semibold text-[#16A34A] whitespace-nowrap">
-                {row.pct} <span className="text-[#9CA3AF] font-medium">{row.to}</span>
-              </span>
-              {row.drop && (
-                <span className="text-[10px] text-[#E8395B] font-medium whitespace-nowrap">
-                  Drop off {row.drop}
+      <div className="flex items-stretch gap-1 mt-1 flex-1 min-h-[420px]">
+        <div className="flex-1 flex items-center justify-center min-w-0">
+          <img
+            src={salesFunnelImg}
+            alt="Sales funnel from New to Handover"
+            className="h-full w-full object-contain object-center select-none pointer-events-none"
+          />
+        </div>
+        <div className="shrink-0 flex flex-col pt-[9%] pb-[2%] pr-2">
+          {FUNNEL_ROWS.map((row) => (
+            <div key={row.key} className="flex-1 flex items-center min-h-0">
+              <div className="flex items-start gap-1.5">
+                <span className="text-[13px] font-bold text-[#111] leading-[1.25] whitespace-nowrap tabular-nums">
+                  {row.stat} →
                 </span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PendingTasksCard() {
-  const { sorted, sort, toggle } = useTableSort(PENDING_TASKS, { defaultKey: "type" });
-  const [messageOpen, setMessageOpen] = useState(false);
-
-  return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4">
-      <div className="flex items-center justify-between gap-3 mb-3 px-1">
-        <div className="flex items-center gap-2.5">
-          <CalendarClock size={19} className="text-[#374151]" strokeWidth={1.6} />
-          <h2 className="text-[17px] font-bold text-[#111]">Pending Task &amp; Approvals</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-medium text-[#6B7280] bg-[#F1F2F4] rounded-lg px-2.5 py-1">148</span>
-          <Link to="/tasks" className="text-[11px] font-semibold text-[#3B82F6] bg-[#E8F2FE] rounded-lg px-3 py-1 hover:bg-[#DBE9FD] transition-colors">
-            View All
-          </Link>
-        </div>
-      </div>
-
-      <div className="border border-black/8 rounded-xl overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-black/8">
-              {[
-                { label: "Type", key: "type" },
-                { label: "Description", key: "description" },
-                { label: "Requested On", key: "requestedOn" },
-                { label: "Due Date", key: "dueDate" },
-                { label: "Status", key: "statusLabel" },
-              ].map((h) => (
-                <SortableTh
-                  key={h.key}
-                  label={h.label}
-                  sortKey={h.key}
-                  sort={sort}
-                  onSort={toggle}
-                  className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap"
-                />
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((task) => (
-              <tr key={task.type} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
-                <td className="px-4 py-4 text-[13px] font-bold text-[#111] whitespace-nowrap">{task.type}</td>
-                <td className="px-4 py-4 text-[11px] text-[#6B7280] max-w-[150px]">{task.description}</td>
-                <td className="px-4 py-4 text-[12px] text-[#6B7280] whitespace-nowrap">{task.requestedOn}</td>
-                <td className="px-4 py-4 text-[12px] text-[#6B7280] whitespace-nowrap">{task.dueDate}</td>
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setMessageOpen(true)}
-                      className="text-[#F59E0B] hover:text-[#D97706] p-1 rounded transition-colors shrink-0"
-                      aria-label={`Send message for ${task.type}`}
-                    >
-                      <MessageSquare size={16} />
-                    </button>
-                    <span className={`inline-block text-[10px] font-semibold px-2.5 py-1 rounded-md text-center ${STATUS_STYLES[task.status]}`}>
-                      {task.statusLabel}
-                    </span>
+                <div className="flex items-start">
+                  <div className={row.isFinal ? "" : "min-w-[2.6rem]"}>
+                    {row.isFinal ? (
+                      <>
+                        <p className="text-[13px] font-medium text-[#9CA3AF] leading-[1.25] whitespace-nowrap">
+                          Final Conversion
+                        </p>
+                        <p className="text-[13px] font-bold text-[#111] leading-[1.25] mt-px whitespace-nowrap tabular-nums">
+                          {row.pct}{" "}
+                          <span className="text-[12px] font-medium text-[#9CA3AF]">({row.dropCount})</span>
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-[13px] font-bold text-[#111] leading-[1.25] tabular-nums">{row.pct}</p>
+                        <p className="text-[11.5px] font-medium text-[#9CA3AF] leading-[1.25] mt-px">{row.to}</p>
+                      </>
+                    )}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
-    </div>
-  );
-}
-
-/** Pill label on the left of a Target/Incentive reference line. */
-function ReferenceLineTag({ viewBox, text, bg, color, dy = -14 }) {
-  if (!viewBox) return null;
-  const { x, y } = viewBox;
-  return (
-    <foreignObject x={x + 8} y={y + dy - 14} width={360} height={32} style={{ overflow: "visible" }}>
-      <div
-        className="inline-flex items-center h-[26px] px-3 rounded-lg text-[13px] font-bold whitespace-nowrap shadow-sm"
-        style={{ backgroundColor: bg, color, border: `1.5px solid ${color}` }}
-      >
-        {text}
-      </div>
-    </foreignObject>
-  );
-}
-
-/** Week-4 incentive chip, positioned at the current-week bar without a ReferenceLine. */
-function IncentiveWeekTag() {
-  const yScale = useYAxisScale();
-  const offset = useOffset();
-  const week4 = REVENUE_WEEKS.find((w) => w.current);
-  if (!yScale || !offset || !week4) return null;
-  const y = yScale(week4.height);
-  if (y == null) return null;
-  return (
-    <ReferenceLineTag
-      viewBox={{ x: offset.left, y }}
-      text={`Incentive (till 4 week) ${week4.totalLabel}`}
-      bg="#FFF3E4"
-      color="#F59E0B"
-      dy={-4}
-    />
-  );
-}
-
-function TierCountLabel({ x, y, width, height, value }) {
-  if (!value || height < 12) return null;
-  return (
-    <text x={x + width / 2} y={y + height / 2} textAnchor="middle" dominantBaseline="central" fontSize={10} fontWeight={700} fill="#fff">
-      {value}
-    </text>
-  );
-}
-
-function TotalAboveBarLabel({ x, y, width, value, payload, index }) {
-  if (!value) return null;
-  const cx = x + width / 2;
-  const pack = payload?.packTotal ?? payload?.payload?.packTotal ?? REVENUE_CHART_DATA[index]?.packTotal;
-  return (
-    <g>
-      <text x={cx} y={y - 18} textAnchor="middle" fontSize={11} fontWeight={700} fill="#374151">
-        {value}
-      </text>
-      {pack != null && (
-        <text x={cx} y={y - 5} textAnchor="middle" fontSize={9} fontWeight={500} fill="#9CA3AF">
-          {`(Total pack = ${pack})`}
-        </text>
-      )}
-    </g>
-  );
-}
-
-function GreyBarCenterLabel({ x, y, width, height, value }) {
-  if (!value) return null;
-  return (
-    <text x={x + width / 2} y={y + height / 2} textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={700} fill="#4B5563">
-      {value}
-    </text>
-  );
-}
-
-function PipelinePointLabel({ x, y, value }) {
-  if (!value) return null;
-  return (
-    <text x={x} y={y - 14} textAnchor="middle" fontSize={11} fontWeight={700} fill="#7C3AED">
-      {value}
-    </text>
-  );
-}
-
-function PipelineDot({ cx, cy, payload }) {
-  if (payload.pipeline == null) return null;
-  return <circle cx={cx} cy={cy} r={5} fill="#fff" stroke="#8B5CF6" strokeWidth={2} />;
-}
-
-function RevenueXAxisTick({ x, y, payload }) {
-  const week = REVENUE_CHART_DATA.find((d) => d.week === payload.value);
-  const isCurrent = week?.current;
-  const [line1, line2] = (week?.weekLabel || payload.value).split(" (");
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <text x={0} y={0} dy={14} textAnchor="middle" fontSize={11} fontWeight={isCurrent ? 700 : 500} fill={isCurrent ? "#111" : "#6B7280"}>
-        {line1}
-      </text>
-      {line2 && (
-        <text x={0} y={0} dy={27} textAnchor="middle" fontSize={9} fill="#9CA3AF">
-          ({line2}
-        </text>
-      )}
-    </g>
-  );
-}
-
-function RevenueTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-  const row = payload[0]?.payload;
-  const isProjected = row?.projected != null;
-  return (
-    <div className="bg-white border border-black/10 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] px-3.5 py-3 min-w-[150px]">
-      <p className="text-[11px] font-bold text-[#111] mb-1.5">{label}</p>
-      {isProjected ? (
-        <p className="flex items-center justify-between gap-4 text-[11px] text-[#6B7280]">
-          Pipeline value <span className="font-bold text-[#111]">{row.barLabel}</span>
-        </p>
-      ) : (
-        <div className="flex flex-col gap-1">
-          {[
-            { key: "basicCount", name: "Basic", color: TIER_COLORS.basic },
-            { key: "standardCount", name: "Standard", color: TIER_COLORS.standard },
-            { key: "premiumCount", name: "Premium", color: TIER_COLORS.premium },
-            { key: "superPremiumCount", name: "Super Premium", color: TIER_COLORS.superPremium },
-          ].map((t) => (
-            <p key={t.key} className="flex items-center justify-between gap-4 text-[11px] text-[#6B7280]">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="size-2 rounded-full" style={{ backgroundColor: t.color }} />
-                {t.name}
-              </span>
-              <span className="font-semibold text-[#111]">{row[t.key]}</span>
-            </p>
-          ))}
-          <p className="flex items-center justify-between gap-4 text-[11px] text-[#6B7280] mt-1 pt-1 border-t border-black/6">
-            Revenue <span className="font-bold text-[#111]">{row.totalLabel}</span>
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const REVENUE_LEGEND = [
-  { label: "Basic", type: "swatch", color: TIER_COLORS.basic },
-  { label: "Standard", type: "swatch", color: TIER_COLORS.standard },
-  { label: "Premium", type: "swatch", color: TIER_COLORS.premium },
-  { label: "Super Premium", type: "swatch", color: TIER_COLORS.superPremium },
-  { label: "Projected Revenue Pipeline", type: "line", color: "#8B5CF6", dashed: true },
-  { label: "Target", type: "line", color: "#0D9488", dashed: false },
-];
-
-function GoalsPerformanceCard() {
-  const [period, setPeriod] = useState("this_month");
-
-  return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
-      <div className="flex items-center justify-between gap-3 mb-4 px-1 flex-wrap">
-        <div className="flex items-center gap-2.5">
-          <span className="size-9 rounded-xl bg-[#EEF0FE] grid place-items-center">
-            <Users size={17} className="text-[#6366F1]" strokeWidth={1.8} />
-          </span>
-          <div>
-            <h2 className="text-[17px] font-bold text-[#111] leading-tight">My Goals &amp; Performance</h2>
-            <p className="text-[11px] text-[#9CA3AF]">Total Leads</p>
-          </div>
-        </div>
-        <PeriodSelect value={period} onChange={setPeriod} compact />
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
-        {GOALS_STATS.map((s) => (
-          <div key={s.label} className="border border-black/8 rounded-xl px-3.5 py-3">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="size-7 rounded-lg bg-[#EEF0FE] grid place-items-center shrink-0">
-                <Users size={13} className="text-[#6366F1]" strokeWidth={1.8} />
-              </span>
-              <p className="text-[11px] text-[#9CA3AF] leading-snug">{s.label}</p>
-            </div>
-            <p className="text-[16px] font-bold text-[#111] leading-tight">{s.value}</p>
-            <p className="text-[10px] font-semibold mt-1" style={{ color: s.noteColor }}>{s.note}</p>
-          </div>
-        ))}
-      </div>
-
-      <p className="text-[12px] font-semibold text-[#4B5563] mb-1 px-1">Revenue (INR)</p>
-      <div className="h-[380px] w-full overflow-x-auto">
-      <div className="h-full min-w-[720px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={REVENUE_CHART_DATA} margin={{ top: 48, right: 16, left: 0, bottom: 8 }} barCategoryGap="28%">
-            <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" />
-            <XAxis dataKey="week" axisLine={{ stroke: "rgba(0,0,0,0.08)" }} tickLine={false} tick={<RevenueXAxisTick />} interval={0} />
-            <YAxis
-              domain={[0, 6.4]}
-              ticks={REVENUE_Y_TICKS}
-              tickFormatter={revenueYTickFormatter}
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 10, fill: "#9CA3AF" }}
-              width={56}
-            />
-            <Tooltip content={<RevenueTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
-
-            <Bar dataKey="basic" stackId="tier" fill={TIER_COLORS.basic} barSize={44}>
-              <LabelList dataKey="basicCount" content={TierCountLabel} />
-            </Bar>
-            <Bar dataKey="standard" stackId="tier" fill={TIER_COLORS.standard} barSize={44}>
-              <LabelList dataKey="standardCount" content={TierCountLabel} />
-            </Bar>
-            <Bar dataKey="premium" stackId="tier" fill={TIER_COLORS.premium} barSize={44}>
-              <LabelList dataKey="premiumCount" content={TierCountLabel} />
-            </Bar>
-            <Bar dataKey="superPremium" stackId="tier" fill={TIER_COLORS.superPremium} barSize={44} radius={[4, 4, 0, 0]}>
-              <LabelList dataKey="superPremiumCount" content={TierCountLabel} />
-              <LabelList dataKey="totalLabel" content={TotalAboveBarLabel} />
-            </Bar>
-
-            <Bar dataKey="projected" stackId="tier" fill="#D1D5DB" barSize={44} radius={[4, 4, 0, 0]}>
-              <LabelList dataKey="barLabel" content={GreyBarCenterLabel} />
-            </Bar>
-
-            <ReferenceLine y={TARGET_LINE_VALUE} stroke="#0D9488" strokeWidth={2}>
-              <Label content={(p) => <ReferenceLineTag viewBox={p.viewBox} text="Target ₹2.50 Cr" bg="#E7F8EF" color="#0D9488" dy={-4} />} />
-            </ReferenceLine>
-            <IncentiveWeekTag />
-
-            <Line
-              type="monotone"
-              dataKey="pipeline"
-              stroke="#8B5CF6"
-              strokeWidth={2}
-              strokeDasharray="6 4"
-              dot={<PipelineDot />}
-              activeDot={{ r: 6, fill: "#8B5CF6" }}
-              connectNulls={false}
-              isAnimationActive={false}
-            >
-              <LabelList dataKey="pipelineLabel" content={PipelinePointLabel} />
-            </Line>
-          </ComposedChart>
-        </ResponsiveContainer>
-      </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-2 px-1">
-        {REVENUE_LEGEND.map((l) => (
-          <span key={l.label} className="inline-flex items-center gap-1.5 text-[11px] text-[#4B5563]">
-            {l.type === "swatch" ? (
-              <span className="size-2.5 rounded-[3px]" style={{ backgroundColor: l.color }} />
-            ) : (
-              <svg width="16" height="8" viewBox="0 0 16 8">
-                <line x1="0" y1="4" x2="16" y2="4" stroke={l.color} strokeWidth={2} strokeDasharray={l.dashed ? "4 3" : undefined} />
-              </svg>
-            )}
-            {l.label}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-const FUNNEL_Y_TICKS = [0, 150, 300, 450];
-const FUNNEL_Y_MAX = 450;
-
-function FunnelBarLabel({ x, y, width, value }) {
-  if (value == null) return null;
-  return (
-    <text x={x + width / 2} y={y - 8} textAnchor="middle" fontSize={11} fontWeight={700} fill="#374151">
-      {value}
-    </text>
-  );
-}
-
-function FunnelXAxisTick({ x, y, payload }) {
-  const row = WEEKLY_FUNNEL_DATA.find((d) => d.week === payload.value);
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <text textAnchor="middle">
-        <tspan x={0} dy={16} fontSize={12} fontWeight={600} fill="#374151">
-          {payload.value}
-        </tspan>
-        <tspan x={0} dy={15} fontSize={10} fill="#9CA3AF">
-          {row?.range}
-        </tspan>
-      </text>
-    </g>
-  );
-}
-
-function FunnelTooltip({ active, payload, label }) {
-  const row = payload?.[0]?.payload;
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white border border-black/10 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] px-3.5 py-3 min-w-[140px]">
-      <p className="text-[11px] font-bold text-[#111] mb-1.5">{label}</p>
-      <div className="flex flex-col gap-1">
-        {FUNNEL_LEGEND.map((f) => (
-          <p key={f.key} className="flex items-center justify-between gap-4 text-[11px] text-[#6B7280]">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="size-2 rounded-full" style={{ backgroundColor: f.color }} />
-              {f.label}
-            </span>
-            <span className="font-semibold text-[#111]">{row[f.key]}</span>
-          </p>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function LeadsConversionCard() {
-  const [period, setPeriod] = useState("this_month");
-
-  return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
-      <div className="flex items-center justify-between gap-3 mb-4 px-1 flex-wrap">
-        <div className="flex items-center gap-2.5">
-          <span className="size-9 rounded-xl bg-[#EEF0FE] grid place-items-center shrink-0">
-            <Users size={17} className="text-[#6366F1]" strokeWidth={1.8} />
-          </span>
-          <div>
-            <h2 className="text-[17px] font-bold text-[#111] leading-tight">Leads to Conversion Overview</h2>
-            <p className="text-[11px] text-[#9CA3AF]">Total Leads</p>
-          </div>
-        </div>
-        <PeriodSelect value={period} onChange={setPeriod} compact />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-        {CONVERSION_STATS.map((s) => (
-          <div key={s.label} className="border border-black/8 rounded-xl px-3.5 py-3">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="size-7 rounded-lg bg-[#EEF0FE] grid place-items-center shrink-0">
-                <Users size={13} className="text-[#6366F1]" strokeWidth={1.8} />
-              </span>
-              <p className="text-[11px] text-[#9CA3AF] leading-snug">{s.label}</p>
-            </div>
-            <p className="text-[18px] font-bold text-[#111] leading-tight">{s.value}</p>
-            <p className="text-[10px] font-semibold text-[#16A34A] mt-1">{s.note}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between gap-3 mb-1 px-1 flex-wrap">
-        <p className="text-[12px] font-semibold text-[#4B5563]">Weekly Lead Funnel Progress</p>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-          {FUNNEL_LEGEND.map((f) => (
-            <span key={f.key} className="inline-flex items-center gap-1.5 text-[11px] text-[#4B5563]">
-              <span className="size-2.5 rounded-[3px]" style={{ backgroundColor: f.color }} />
-              {f.label}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="w-full overflow-x-auto">
-      <div className="min-w-[720px]">
-        <div className="h-[420px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart
-            data={WEEKLY_FUNNEL_DATA}
-            margin={{ top: 36, right: 12, left: 4, bottom: 8 }}
-            barCategoryGap="36%"
-            barGap={6}
-          >
-            <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" />
-            <XAxis
-              dataKey="week"
-              axisLine={{ stroke: "rgba(0,0,0,0.12)" }}
-              tickLine={false}
-              tick={<FunnelXAxisTick />}
-              interval={0}
-              height={52}
-              tickMargin={6}
-              padding={{ left: 18, right: 18 }}
-            />
-            <YAxis
-              domain={[0, FUNNEL_Y_MAX]}
-              ticks={FUNNEL_Y_TICKS}
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 11, fill: "#9CA3AF" }}
-              width={44}
-              label={{ value: "Count", position: "top", offset: 18, fontSize: 11, fill: "#9CA3AF" }}
-            />
-            <Tooltip content={<FunnelTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
-
-            {FUNNEL_LEGEND.map((f) => (
-              <Bar
-                key={f.key}
-                dataKey={f.key}
-                fill={f.color}
-                barSize={22}
-                radius={[4, 4, 0, 0]}
-              >
-                <LabelList dataKey={f.key} content={FunnelBarLabel} />
-              </Bar>
-            ))}
-          </ComposedChart>
-        </ResponsiveContainer>
-        </div>
-      </div>
-      </div>
-
-      <div className="mt-5 border border-black/8 rounded-xl p-4">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <h3 className="text-[15px] font-bold text-[#111]">Lead Type Breakdown</h3>
-          <span className="text-[11px] text-[#9CA3AF]">(This Month)</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {LEAD_TYPE_BREAKDOWN.map((t) => (
-            <div key={t.label} className="border border-black/8 rounded-xl px-3.5 py-3">
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-[#6B7280]">
-                <span className="size-2 rounded-full" style={{ backgroundColor: t.color }} />
-                {t.label}
-              </span>
-              <p className="text-[18px] font-bold text-[#111] mt-1.5">
-                {t.value} <span className="text-[12px] font-semibold text-[#9CA3AF]">({t.pct})</span>
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* Small brand-style glyphs for source identity (lucide has no brand marks). */
-function FacebookGlyph({ size = 13 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="12" fill="#1877F2" />
-      <path d="M15.5 8.5h-1.4c-.5 0-.6.2-.6.7v1.3h2l-.3 2.3h-1.7V19h-2.4v-6.2H9.5v-2.3h1.6V8.9c0-1.9 1-2.9 2.9-2.9h1.5v2.5Z" fill="#fff" />
-    </svg>
-  );
-}
-
-function InstagramGlyph({ size = 13 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <defs>
-        <linearGradient id="igGrad" x1="0" y1="24" x2="24" y2="0">
-          <stop offset="0" stopColor="#FEDA75" />
-          <stop offset="0.35" stopColor="#D62976" />
-          <stop offset="0.7" stopColor="#962FBF" />
-          <stop offset="1" stopColor="#4F5BD5" />
-        </linearGradient>
-      </defs>
-      <rect x="0" y="0" width="24" height="24" rx="7" fill="url(#igGrad)" />
-      <rect x="6.5" y="6.5" width="11" height="11" rx="3.5" stroke="#fff" strokeWidth="1.6" fill="none" />
-      <circle cx="12" cy="12" r="3.1" stroke="#fff" strokeWidth="1.6" fill="none" />
-      <circle cx="17" cy="7" r="1" fill="#fff" />
-    </svg>
-  );
-}
-
-function GoogleGlyph({ size = 13 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24">
-      <path fill="#4285F4" d="M22.6 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.9a5.04 5.04 0 0 1-2.19 3.31v2.75h3.54c2.07-1.9 3.35-4.71 3.35-8.07Z" />
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.54-2.75c-.98.66-2.24 1.05-3.74 1.05-2.87 0-5.3-1.94-6.17-4.54H2.18v2.84A11 11 0 0 0 12 23Z" />
-      <path fill="#FBBC05" d="M5.83 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.65-2.84Z" />
-      <path fill="#EA4335" d="M12 5.36c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.96 1 12 1a11 11 0 0 0-9.82 6.06l3.65 2.84C6.7 7.3 9.13 5.36 12 5.36Z" />
-    </svg>
-  );
-}
-
-const ACQUISITION_ICONS = {
-  website: (props) => <Globe {...props} />,
-  referral: (props) => <Share2 {...props} />,
-  mobile: (props) => <Smartphone {...props} />,
-  facebook: ({ size }) => <FacebookGlyph size={size} />,
-  instagram: ({ size }) => <InstagramGlyph size={size} />,
-  google: ({ size }) => <GoogleGlyph size={size} />,
-  walkin: (props) => <Store {...props} />,
-};
-
-function AcquisitionDonutLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
-  const RAD = Math.PI / 180;
-  const r = innerRadius + (outerRadius - innerRadius) * 0.55;
-  const px = cx + r * Math.cos(-midAngle * RAD);
-  const py = cy + r * Math.sin(-midAngle * RAD);
-  if (percent < 0.04) return null;
-  return (
-    <text x={px} y={py} textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={700} fill="#fff">
-      {Math.round(percent * 100)}%
-    </text>
-  );
-}
-
-function ClientAcquisitionCard() {
-  const [period, setPeriod] = useState("this_month");
-  const { sorted, sort, toggle } = useTableSort(ACQUISITION_SOURCES, { defaultKey: "source" });
-
-  return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
-      <div className="flex items-center justify-between gap-3 mb-4 px-1 flex-wrap">
-        <div className="flex items-center gap-2.5">
-          <span className="size-9 rounded-xl bg-[#EEF0FE] grid place-items-center shrink-0">
-            <PieChartIcon size={16} className="text-[#6366F1]" strokeWidth={1.8} />
-          </span>
-          <div>
-            <h2 className="text-[17px] font-bold text-[#111] leading-tight">Client Acquisition</h2>
-            <p className="text-[11px] text-[#9CA3AF]">Leads by Source</p>
-          </div>
-        </div>
-        <PeriodSelect value={period} onChange={setPeriod} compact />
-      </div>
-
-      <div className="flex flex-col md:flex-row items-center gap-4">
-        <div className="relative w-full max-w-[180px] h-[180px] shrink-0">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={ACQUISITION_SOURCES}
-                dataKey="pct"
-                nameKey="source"
-                cx="50%"
-                cy="50%"
-                innerRadius="52%"
-                outerRadius="100%"
-                paddingAngle={1.5}
-                stroke="#fff"
-                strokeWidth={2}
-                isAnimationActive={false}
-                label={AcquisitionDonutLabel}
-                labelLine={false}
-              >
-                {ACQUISITION_SOURCES.map((s) => (
-                  <Cell key={s.source} fill={s.color} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="absolute inset-0 grid place-items-center pointer-events-none">
-            <div className="text-center">
-              <p className="text-[17px] font-bold text-[#111] leading-tight">{ACQUISITION_TOTAL_LEADS}</p>
-              <p className="text-[9px] text-[#9CA3AF]">Total Leads</p>
-              <p className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-[#16A34A] mt-1 whitespace-nowrap">
-                <ArrowUpRight size={10} /> 18.4%
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="w-full min-w-0 overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-black/8">
-                {[
-                  { label: "Source", key: "source" },
-                  { label: "Leads", key: "totalLeads" },
-                  { label: "Conv.", key: "conversion" },
-                ].map((h) => (
-                  <SortableTh
-                    key={h.key}
-                    label={h.label}
-                    sortKey={h.key}
-                    sort={sort}
-                    onSort={toggle}
-                    className="text-[10px] font-semibold text-[#9CA3AF] uppercase px-2 py-2 whitespace-nowrap"
-                  />
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((s) => {
-                const Icon = ACQUISITION_ICONS[s.icon];
-                return (
-                  <tr key={s.source} className="border-b border-black/6 last:border-0">
-                    <td className="px-2 py-2">
-                      <span className="inline-flex items-center gap-2 text-[11.5px] font-medium text-[#374151] whitespace-nowrap">
-                        <span
-                          className="size-5 rounded-md grid place-items-center shrink-0 overflow-hidden"
-                          style={{ backgroundColor: `${s.color}1A` }}
-                        >
-                          <Icon size={12} style={{ color: s.color }} strokeWidth={1.8} />
-                        </span>
-                        {s.source}
-                      </span>
-                    </td>
-                    <td className="px-2 py-2 text-[11.5px] text-[#374151] whitespace-nowrap">{s.totalLeads.toLocaleString("en-IN")}</td>
-                    <td className="px-2 py-2 text-[11.5px] text-[#374151] whitespace-nowrap">{s.conversion}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="mt-4 bg-[#F6F5FF] border border-[#E5E2FB] rounded-xl px-3.5 py-2.5 flex items-center gap-2.5">
-        <Info size={14} className="text-[#6366F1] shrink-0" strokeWidth={1.8} />
-        <p className="text-[11px] text-[#4B5563]">Showing total leads &amp; lead conversion percentage by source.</p>
-      </div>
-    </div>
-  );
-}
-
-function RecentAnnouncementsCard() {
-  const [messageOpen, setMessageOpen] = useState(false);
-
-  return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4">
-      <div className="flex items-center justify-between gap-3 mb-3 px-1">
-        <div className="flex items-center gap-2.5">
-          <CalendarClock size={19} className="text-[#374151]" strokeWidth={1.6} />
-          <h2 className="text-[17px] font-bold text-[#111]">Recent Announcements</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-medium text-[#6B7280] bg-[#F1F2F4] rounded-lg px-2.5 py-1">148</span>
-          <Link to="/announcements" className="text-[11px] font-semibold text-[#3B82F6] bg-[#E8F2FE] rounded-lg px-3 py-1 hover:bg-[#DBE9FD] transition-colors">
-            View All
-          </Link>
-        </div>
-      </div>
-
-      <div className="border border-black/8 rounded-xl overflow-hidden">
-        <div className="divide-y divide-black/8 max-h-[294px] overflow-y-auto overscroll-contain">
-          {RECENT_ANNOUNCEMENTS.map((a) => (
-            <div key={a.id} className="flex items-start gap-3 px-4 py-3.5 hover:bg-[#FAFAFB] transition-colors">
-              <span className="size-7 rounded-lg bg-[#E8F2FE] grid place-items-center shrink-0">
-                <Megaphone size={14} className="text-[#3B82F6]" strokeWidth={1.8} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-bold text-[#111]">{a.title}</p>
-                <p className="text-[11px] text-[#9CA3AF] mt-0.5">{a.desc}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="inline-block text-[10px] font-semibold text-[#3B82F6] bg-[#E8F2FE] rounded-md px-2 py-1">{a.type}</span>
-                  <span className="inline-block text-[10px] font-semibold text-[#E8395B] bg-[#FDECEE] rounded-md px-2 py-1">{a.priority}</span>
+                  {row.dropPct && (
+                    <div className="flex items-start ml-2 pl-2.5 border-l border-[#D1D5DB]">
+                      <div>
+                        <p className="text-[11.5px] font-medium text-[#6B7280] leading-[1.25] whitespace-nowrap">
+                          Drop off
+                        </p>
+                        <p className="leading-[1.25] mt-px whitespace-nowrap tabular-nums">
+                          <span className="text-[13px] font-bold text-[#E11D48]">{row.dropPct}</span>
+                          {" "}
+                          <span className="text-[12px] font-medium text-[#9CA3AF]">({row.dropCount})</span>
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setMessageOpen(true)}
-                className="text-[#F59E0B] hover:text-[#D97706] p-1 rounded transition-colors shrink-0"
-                aria-label="Send message"
-              >
-                <MessageSquare size={16} />
-              </button>
             </div>
           ))}
         </div>
-      </div>
-
-      <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
-    </div>
-  );
-}
-
-function ActiveContestCard() {
-  const { sorted, sort, toggle } = useTableSort(ACTIVE_CONTESTS, { defaultKey: "title" });
-
-  return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
-      <div className="flex items-center justify-between gap-3 mb-3 px-1">
-        <div className="flex items-center gap-2.5">
-          <img src={contestIcon} alt="" className="size-7 object-contain" />
-          <h2 className="text-[17px] font-bold text-[#111]">Active Contest</h2>
-        </div>
-        <span className="text-[11px] font-medium text-[#6B7280] bg-[#F1F2F4] rounded-lg px-2.5 py-1">32</span>
-      </div>
-
-      <div className="border border-black/8 rounded-xl overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-black/8">
-              {[
-                { label: "Title", key: "title" },
-                { label: "Time Left", key: "timeLeft" },
-                { label: "Prize", key: "prize" },
-                { label: "Action", key: "action", unsortable: true },
-              ].map((h) => (
-                <SortableTh
-                  key={h.key}
-                  label={h.label}
-                  sortKey={h.key}
-                  sort={sort}
-                  onSort={toggle}
-                  unsortable={h.unsortable}
-                  className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap"
-                />
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((c) => (
-              <tr key={c.id} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
-                <td className="px-4 py-4">
-                  <div className="flex items-start gap-2.5">
-                    <span className="size-7 rounded-lg bg-[#E8F2FE] grid place-items-center shrink-0 mt-0.5">
-                      <Target size={14} className="text-[#3B82F6]" strokeWidth={1.8} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[13px] font-bold text-[#111] whitespace-nowrap">{c.title}</p>
-                      <p className="text-[11px] text-[#9CA3AF] leading-snug max-w-[220px]">{c.desc}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className={`px-4 py-4 text-[12px] font-semibold whitespace-nowrap ${c.timeTone}`}>{c.timeLeft}</td>
-                <td className="px-4 py-4 text-[13px] font-bold text-[#111] whitespace-nowrap">{c.prize}</td>
-                <td className="px-4 py-4">
-                  <button
-                    type="button"
-                    className="text-[12px] font-semibold text-[#7A0A17] border border-[#7A0A17]/30 rounded-lg px-4 py-1.5 hover:bg-[#FCF5F6] transition-colors"
-                  >
-                    Join
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function LeaderboardCard() {
-  const { sorted, sort, toggle } = useTableSort(LEADERBOARD, { defaultKey: "rank" });
-
-  return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col">
-      <div className="flex items-center justify-between gap-3 mb-3 px-1">
-        <div className="flex items-center gap-2.5">
-          <img src={leaderboardIcon} alt="" className="size-7 object-contain" />
-          <h2 className="text-[17px] font-bold text-[#111]">Leaderboard</h2>
-        </div>
-        <span className="text-[11px] font-medium text-[#6B7280] bg-[#F1F2F4] rounded-lg px-2.5 py-1">148</span>
-      </div>
-
-      <div className="border border-black/8 rounded-xl overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-black/8">
-              {[
-                { label: "#", key: "rank" },
-                { label: "Name", key: "name" },
-                { label: "Branch", key: "branch" },
-                { label: "Total XP", key: "xp" },
-              ].map((h) => (
-                <SortableTh
-                  key={h.key}
-                  label={h.label}
-                  sortKey={h.key}
-                  sort={sort}
-                  onSort={toggle}
-                  className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3 whitespace-nowrap"
-                />
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((p) => (
-              <tr
-                key={p.rank}
-                className={`border-b border-black/8 last:border-0 transition-colors ${p.self ? "bg-[#F6F9FF]" : "hover:bg-[#FAFAFB]"}`}
-              >
-                <td className="px-4 py-4">
-                  {RANK_MEDAL_COLORS[p.rank] ? (
-                    <span
-                      className="size-6 rounded-full grid place-items-center text-[11px] font-bold text-white"
-                      style={{ backgroundColor: RANK_MEDAL_COLORS[p.rank] }}
-                    >
-                      {p.rank}
-                    </span>
-                  ) : (
-                    <span className="text-[13px] font-semibold text-[#6B7280] pl-1.5">{p.rank}.</span>
-                  )}
-                </td>
-                <td className="px-4 py-4">
-                  <p className="text-[13px] font-bold text-[#111] whitespace-nowrap">{p.name}</p>
-                  <p className="text-[11px] text-[#9CA3AF]">{p.role}</p>
-                </td>
-                <td className="px-4 py-4 text-[12px] text-[#6B7280] whitespace-nowrap">{p.branch}</td>
-                <td className="px-4 py-4 text-[13px] font-bold text-[#111] whitespace-nowrap">{p.xp} XP</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
     </div>
   );
@@ -1768,8 +836,7 @@ const NEXT_STAGE_DASH = {
   P5: "P6",
 };
 
-function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
-  const navigate = useNavigate();
+function MyLeadsCard({ leads, onOpenDeal, onMoveStage }) {
   const [period, setPeriod] = useState("today");
   const [leadsView, setLeadsView] = useState("team");
   const [leadsViewOpen, setLeadsViewOpen] = useState(false);
@@ -1791,7 +858,6 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
       <LeadScoreModal lead={scoreLead} onClose={() => setScoreLead(null)} />
       <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
 
-      {/* Lead Health */}
       <div className="flex items-center justify-between gap-3 mb-4 px-1 flex-wrap">
         <h2 className="text-[17px] font-bold text-[#111] flex items-center gap-2">
           <Heart size={16} className="text-[#E8395B]" fill="#E8395B" strokeWidth={0} />
@@ -1851,9 +917,9 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-3.5">
             {[
-              { label: "Low Probability",    color: "#E8395B" },
-              { label: "Medium",              color: "#F59E0B" },
-              { label: "High",                color: "#16A34A" },
+              { label: "Low Probability", color: "#E8395B" },
+              { label: "Medium",           color: "#F59E0B" },
+              { label: "High",             color: "#16A34A" },
             ].map((f) => (
               <span key={f.label} className="inline-flex items-center gap-1.5 text-[11px] text-[#6B7280]">
                 <Flag size={12} style={{ color: f.color }} fill={f.color} strokeWidth={0} />
@@ -1861,38 +927,26 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
               </span>
             ))}
           </div>
-
           <PeriodSelect value={period} onChange={setPeriod} compact />
-
-          <button
-            type="button"
-            onClick={() => onAddProspect?.()}
-            className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-          >
-            <Plus size={15} />
-            Add Prospect / Lead
-          </button>
         </div>
       </div>
 
       <div className="border border-black/8 rounded-xl overflow-hidden">
         <table className="w-full text-left border-collapse table-fixed">
           <colgroup>
-            <col style={{ width: "14%" }} />
-            <col style={{ width: "13%" }} />
-            <col style={{ width: "13%" }} />
-            <col style={{ width: "8%" }} />
-            <col style={{ width: "8%" }} />
+            <col style={{ width: "18%" }} />
+            <col style={{ width: "16%" }} />
+            <col style={{ width: "10%" }} />
             <col style={{ width: "9%" }} />
             <col style={{ width: "12%" }} />
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "11%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "9%" }} />
           </colgroup>
           <thead>
             <tr className="border-b border-black/8">
               {[
                 { label: "Client Name", key: "name" },
-                { label: "Owner", key: "owner" },
                 { label: "Stage", key: "stage" },
                 { label: "Priority", key: "priority" },
                 { label: "Lead\nScore", key: "leadScore" },
@@ -1909,13 +963,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
                   onSort={toggle}
                   unsortable={h.unsortable}
                   className={`text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide py-2 align-bottom ${
-                    h.key === "name"
-                      ? "pl-2.5 pr-5"
-                      : h.key === "owner"
-                        ? "pl-4 pr-2.5"
-                        : h.key === "leadScore" || h.key === "profileCompletion" || h.key === "source"
-                          ? "px-2"
-                          : "px-2.5"
+                    h.key === "name" ? "pl-2.5 pr-3" : "px-2"
                   }`}
                 />
               ))}
@@ -1924,13 +972,25 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
           <tbody>
             {sorted.map((lead, i) => {
               const priority = PRIORITY_STYLES[lead.priority];
+              const stageKey = stageKeyFromLead(lead);
+              const canMove = stageKey === "P0" || stageKey === "P1";
+              const stageBody = (
+                <>
+                  {lead.stage}
+                  {lead.stageTone && (
+                    <span className={`ml-1 text-[11px] font-semibold ${lead.stageTone === "Won" ? "text-[#16A34A]" : lead.stageTone === "Lost" ? "text-[#E8395B]" : "text-[#3B82F6]"}`}>
+                      ({lead.stageTone})
+                    </span>
+                  )}
+                </>
+              );
               return (
                 <tr
-                  key={i}
+                  key={`${lead.id}-${lead.name}-${i}`}
                   onClick={() => onOpenDeal?.(lead)}
                   className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
                 >
-                  <td className="pl-2.5 pr-5 py-3">
+                  <td className="pl-2.5 pr-3 py-3">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: LEAD_DOT_COLORS[i % LEAD_DOT_COLORS.length] }} />
                       <div className="min-w-0">
@@ -1942,48 +1002,25 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
                       </div>
                     </div>
                   </td>
-                  <td className="pl-4 pr-2.5 py-3">
-                    <p className="text-[12px] font-medium text-[#374151] leading-tight">{lead.owner}</p>
-                    <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.ownerRole}</p>
+                  <td className="px-2 py-3">
+                    {canMove ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMoveStage?.(lead, stageKey);
+                        }}
+                        className="text-left text-[12px] text-[#374151] leading-tight hover:text-[#7A0A17] hover:underline decoration-[#7A0A17]/40 underline-offset-2 transition-colors"
+                        title={stageKey === "P0" ? "Move to P1" : "Move to P2"}
+                      >
+                        {stageBody}
+                      </button>
+                    ) : (
+                      <p className="text-[12px] text-[#374151] leading-tight">{stageBody}</p>
+                    )}
                   </td>
-                  <td className="px-2.5 py-3">
-                    {(() => {
-                      const stageKey = stageKeyFromLead(lead);
-                      const canMove = stageKey === "P0" || stageKey === "P1";
-                      const body = (
-                        <>
-                          {lead.stage}
-                          {lead.stageTone && (
-                            <span className={`ml-1 text-[11px] font-semibold ${lead.stageTone === "Won" ? "text-[#16A34A]" : lead.stageTone === "Lost" ? "text-[#E8395B]" : "text-[#3B82F6]"}`}>
-                              ({lead.stageTone})
-                            </span>
-                          )}
-                        </>
-                      );
-                      return canMove ? (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onMoveStage?.(lead, stageKey);
-                          }}
-                          className="text-left text-[12px] text-[#374151] leading-tight hover:text-[#7A0A17] hover:underline decoration-[#7A0A17]/40 underline-offset-2 transition-colors"
-                          title={stageKey === "P0" ? "Move to P1" : "Move to P2"}
-                        >
-                          <span className="block">{body}</span>
-                          <span className="block text-[10px] text-[#9CA3AF] leading-tight no-underline">{lead.timeAtStage}</span>
-                        </button>
-                      ) : (
-                        <>
-                          <p className="text-[12px] text-[#374151] leading-tight">{body}</p>
-                          <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.timeAtStage}</p>
-                        </>
-                      );
-                    })()}
-                  </td>
-                  <td className="px-2.5 py-3">
+                  <td className="px-2 py-3">
                     <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md ${priority.bg}`} style={{ color: priority.color }}>
-                      <Flag size={11} fill={priority.color} strokeWidth={0} />
                       {lead.priority}
                     </span>
                   </td>
@@ -2017,17 +1054,8 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
                       <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.followUpNote}</p>
                     </FollowUpHoverCard>
                   </td>
-                  <td className="px-2.5 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-2 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-0 flex-nowrap">
-                      {lead.lost ? (
-                        <button type="button" className="p-1.5 text-[#E8395B] hover:bg-black/4 rounded-lg transition-colors" title="Dropped Call" aria-label="Dropped Call">
-                          <PhoneOff size={14} />
-                        </button>
-                      ) : (
-                        <button type="button" className="p-1.5 text-[#16A34A] hover:bg-black/4 rounded-lg transition-colors" title="Call" aria-label="Call">
-                          <Phone size={14} />
-                        </button>
-                      )}
                       <button
                         type="button"
                         onClick={() => setMessageOpen(true)}
@@ -2042,20 +1070,6 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
                         hasUnread={i % 2 === 0}
                         recipientName={lead.name}
                       />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const params = new URLSearchParams();
-                          if (lead.name) params.set("client", lead.name);
-                          const qs = params.toString();
-                          navigate(qs ? `/calendar?${qs}` : "/calendar");
-                        }}
-                        className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors"
-                        title="Schedule"
-                        aria-label="Schedule"
-                      >
-                        <Calendar size={14} />
-                      </button>
                       <button type="button" className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors" title="More Options" aria-label="More Options">
                         <MoreVertical size={14} />
                       </button>
@@ -2075,6 +1089,7 @@ function MyLeadsCard({ leads, onOpenDeal, onMoveStage, onAddProspect }) {
 
 export default function Dashboard() {
   const [period, setPeriod] = useState("this_month");
+  const [search, setSearch] = useState("");
   const [dealLead, setDealLead] = useState(null);
   const [dealStage, setDealStage] = useState(null);
   const [showAddProspect, setShowAddProspect] = useState(false);
@@ -2086,6 +1101,12 @@ export default function Dashboard() {
     if (h < 17) return "Good Afternoon";
     return "Good Evening";
   }, []);
+
+  const visibleLeads = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return myLeads;
+    return myLeads.filter((l) => `${l.name} ${l.id} ${l.stage} ${l.source}`.toLowerCase().includes(q));
+  }, [myLeads, search]);
 
   const openDeal = (lead, stageKey) => {
     setDealLead(lead);
@@ -2149,40 +1170,32 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-
-      {/* Greeting row */}
       <div className="flex items-center justify-between gap-4 px-5 pt-5 pb-4 flex-wrap">
         <h1 className="text-[22px] font-bold text-[#111] tracking-tight">
           {greeting}, {USER.name}
         </h1>
 
         <div className="flex items-center gap-2.5 shrink-0">
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search here..."
+            className="w-[240px] sm:w-[280px]"
+          />
           <PeriodSelect value={period} onChange={setPeriod} />
-
-          <button
-            type="button"
-            onClick={() => setShowAddProspect(true)}
-            className="inline-flex items-center gap-2 h-[38px] px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors"
-          >
-            <Plus size={15} />
-            Add Prospect / Lead
-          </button>
         </div>
       </div>
 
-      {/* Body */}
       <div className="px-5 pb-8 flex flex-col gap-4">
-        {/* Stats + Quick Actions */}
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)] gap-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {STATS.map((stat) => (
               <StatCard key={stat.label} stat={stat} />
             ))}
           </div>
-          <QuickActionsCard />
+          <QuickActionsCard onCreateLead={() => setShowAddProspect(true)} />
         </div>
 
-        {/* Performance score / personal assistant / up next + updates */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch">
           <PerformanceScoreCard />
           <AIAssistant />
@@ -2195,36 +1208,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Lead health + my leads / sales funnel */}
         <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-4 items-start">
           <MyLeadsCard
-            leads={myLeads}
+            leads={visibleLeads}
             onOpenDeal={(lead) => openDeal(lead)}
             onMoveStage={(lead, stageKey) => openDeal(lead, stageKey)}
-            onAddProspect={() => setShowAddProspect(true)}
           />
           <SalesFunnelCard />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-          <PendingTasksCard />
-          <RecentAnnouncementsCard />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-          <ActiveContestCard />
-          <LeaderboardCard />
-        </div>
-
-        <GoalsPerformanceCard />
-
-        <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-4 items-start">
-          <div className="flex flex-col gap-4 min-w-0">
-            <LeadsConversionCard />
-          </div>
-          <div className="flex flex-col gap-4 min-w-0">
-            <ClientAcquisitionCard />
-          </div>
         </div>
       </div>
     </div>
