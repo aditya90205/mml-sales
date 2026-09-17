@@ -9,7 +9,8 @@ export function atLeast(stage, minStage) {
 }
 
 export const FULL_STAGE_HISTORY = [
-  { stage: "P0 Prospect",        entered: "24 Jun", exited: "25 Jun", duration: "1d",  sla: "3d",  status: "Within SLA" },
+  { stage: "P0 New",             entered: "24 Jun", exited: "25 Jun", duration: "1d",  sla: "3d",  status: "Within SLA" },
+  { stage: "P0 Contacted",       entered: "25 Jun", exited: "25 Jun", duration: "0d",  sla: "3d",  status: "Within SLA" },
   { stage: "P1 Qualified",       entered: "25 Jun", exited: "27 Jun", duration: "2d",  sla: "5d",  status: "Within SLA" },
   { stage: "P2 Data Collection", entered: "27 Jun", exited: "1 Jul",  duration: "4d",  sla: "7d",  status: "Within SLA" },
   { stage: "P3 Visit / Video",   entered: "1 Jul",  exited: "19 Jul", duration: "18d", sla: "10d", status: "Breached" },
@@ -43,8 +44,9 @@ export function dashRows(rows, empty, keep = []) {
   return rows.map((row) => dashRow(row, keep));
 }
 
-export function historyUntil(stage) {
-  const current = stageRank(stage);
+export function historyUntil(stage, { p0Contacted } = {}) {
+  // History has an extra P0 Contacted row before P1.
+  const current = stage === "P0" ? (p0Contacted ? 1 : 0) : stageRank(stage) + 1;
   return FULL_STAGE_HISTORY.map((row, i) => {
     if (i < current) return row;
     if (i === current) return { ...row, exited: EMPTY };

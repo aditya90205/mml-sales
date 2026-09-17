@@ -299,7 +299,7 @@ const LEAD_HEALTH = [
 const FUNNEL_STAGE_IDS = ["P0", "P1", "P2", "P3", "P4", "P5", "P6"];
 
 const FUNNEL_ROW_META = [
-  { key: "new",         stageId: "P0", label: "New",                to: "to P1", top: "7.8%",  height: "13.2%", width: "92%", color: "#84A8DE" },
+  { key: "new",         stageId: "P0", label: "New",                to: "to Contacted", top: "7.8%",  height: "13.2%", width: "92%", color: "#84A8DE" },
   { key: "contacted",   stageId: "P0", label: "Contacted",          to: "to P1", top: "21.2%", height: "12.2%", width: "86%", color: "#6394D7" },
   { key: "qualified",   stageId: "P1", label: "Qualified",          to: "to P2", top: "33.4%", height: "11.4%", width: "80%", color: "#386FB8" },
   { key: "profile",     stageId: "P2", label: "Profile Creation",   to: "to P3", top: "44.8%", height: "11.0%", width: "72%", color: "#D7AB77" },
@@ -325,7 +325,7 @@ function buildPipelineFunnel(leadsByStage) {
   const current = FUNNEL_STAGE_IDS.map((id) => (leadsByStage[id] || []).length);
   const reached = FUNNEL_STAGE_IDS.map((_, i) => current.slice(i).reduce((sum, n) => sum + n, 0));
   const laterThanP0 = current.slice(1).reduce((sum, n) => sum + n, 0);
-  const p0Contacted = (leadsByStage.P0 || []).filter((lead) => lead.lastDiscussion || lead.nextAction).length;
+  const p0Contacted = (leadsByStage.P0 || []).filter((lead) => lead.p0Status === "contacted" || lead.overviewDetails).length;
   const contacted = p0Contacted + laterThanP0;
 
   const counts = FUNNEL_ROW_META.map((row) => (
@@ -1645,6 +1645,7 @@ export default function Dashboard() {
               nextAction,
               mobile: lead.mobile,
               email: lead.email,
+              p0Status: "new",
             });
             setMyLeads((prev) => [
               {
@@ -1749,6 +1750,7 @@ export default function Dashboard() {
                 mobile: f.mobile || match?.mobile,
                 email: f.email || match?.email,
                 owner: match?.owner || "Rohit Kumar",
+                p0Status: "new",
               });
               leadRef = { lead: created, stageId: "P0" };
             }

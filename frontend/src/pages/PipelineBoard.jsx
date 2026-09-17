@@ -36,6 +36,7 @@ import SearchField from "../components/common/SearchField.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import {
   findLeadById as findStoredLeadById,
+  p0StatusOf,
   readLeads,
   subscribePipeline,
   writeLeads,
@@ -52,6 +53,37 @@ const PIPELINE_STAGES = [
   { id: "P5", label: "Closed",                  color: "#16A34A" },
   { id: "P6", label: "Handover to services", color: "#EAB308" },
 ];
+
+/** Kanban splits P0 into New + Contacted; both stay on the same Overview page. */
+const BOARD_COLUMNS = [
+  { key: "P0-new",       id: "P0", label: "New",                    color: "#E8395B", p0Status: "new" },
+  { key: "P0-contacted", id: "P0", label: "Contacted",              color: "#6394D7", p0Status: "contacted" },
+  { key: "P1",           id: "P1", label: "Qualified",               color: "#F59E0B" },
+  { key: "P2",           id: "P2", label: "Profile Creation",        color: "#8B5CF6" },
+  { key: "P3",           id: "P3", label: "Video Call/Visit",        color: "#7C3AED" },
+  { key: "P4",           id: "P4", label: "Negotiation",             color: "#6366F1" },
+  { key: "P5",           id: "P5", label: "Closed",                  color: "#16A34A" },
+  { key: "P6",           id: "P6", label: "Handover to services", color: "#EAB308" },
+];
+
+function p0BoardLabel(lead) {
+  return p0StatusOf(lead) === "contacted" ? "Contacted" : "New";
+}
+
+function leadPatchFromDetails(details = {}) {
+  const patch = {
+    profession: details.profession,
+    familyIncomeBand: details.familyIncomeBand,
+    areaOfHouse: details.areaOfHouse,
+    starred: details.premium === "Yes",
+  };
+  if (details.lastDiscussionAt) patch.lastDiscussion = details.lastDiscussionAt;
+  if (details.nextActionAt || details.nextAction) {
+    patch.nextAction = details.nextActionAt || details.nextAction;
+  }
+  if (details.leadSource) patch.source = details.leadSource;
+  return patch;
+}
 
 const TEMPERATURE_STYLES = {
   Hot:  { color: "#E8395B", bg: "#FDECEE" },
@@ -72,6 +104,8 @@ const PIPELINE_STAGE_IDS = new Set(PIPELINE_STAGES.map((s) => s.id));
 
 function stageFromSearch(searchParams) {
   const raw = String(searchParams.get("stage") || "").toUpperCase();
+  if (raw === "P0-NEW" || raw === "P0NEW") return "P0-new";
+  if (raw === "P0-CONTACTED" || raw === "P0CONTACTED") return "P0-contacted";
   return PIPELINE_STAGE_IDS.has(raw) ? raw : null;
 }
 
@@ -178,28 +212,38 @@ function StageCardHeader({ stage, count, as: Comp = "div", className = "", style
   );
 }
 
+function columnLeadCount(leadsData, col) {
+  const all = leadsData[col.id] || [];
+  if (col.p0Status === "new") return all.filter((l) => p0StatusOf(l) !== "contacted").length;
+  if (col.p0Status === "contacted") return all.filter((l) => p0StatusOf(l) === "contacted").length;
+  return all.length;
+}
+
 function PipelineStageStrip({ leadsData, activeStageId, onToggleStage }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-      {PIPELINE_STAGES.map((stage) => {
-        const count = leadsData[stage.id]?.length ?? 0;
-        const active = stage.id === activeStageId;
+    <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3">
+      {BOARD_COLUMNS.map((col) => {
+        const count = columnLeadCount(leadsData, col);
+        const active =
+          activeStageId === col.key ||
+          (activeStageId === "P0" && col.id === "P0") ||
+          (activeStageId === col.id && !col.p0Status);
         return (
           <StageCardHeader
-            key={stage.id}
+            key={col.key}
             as="button"
             type="button"
-            stage={stage}
+            stage={col}
             count={count}
-            onClick={() => onToggleStage(stage.id)}
+            onClick={() => onToggleStage(col.key)}
             className="transition-shadow"
             style={
               active
                 ? {
-                    borderTopColor: stage.color,
-                    borderRightColor: stage.color,
-                    borderBottomColor: stage.color,
-                    boxShadow: `0 0 0 1px ${stage.color}`,
+                    borderTopColor: col.color,
+                    borderRightColor: col.color,
+                    borderBottomColor: col.color,
+                    boxShadow: `0 0 0 1px ${col.color}`,
                   }
                 : undefined
             }
@@ -420,7 +464,7 @@ function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal
           className="w-full inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-[#F8E8EA] border border-[#7A0A17]/20 text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#F0D4D8] transition-colors"
         >
           {stageKey === "P0" ? (
-            "Edit / Move to P1"
+            p0StatusOf(lead) === "contacted" ? "Edit / Move to P1" : "Edit / Move to Contacted"
           ) : (
             <>
               Move to {nextStageLabel} <ArrowRight size={13} />
@@ -574,9 +618,15 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                             onMoveStage?.(lead, stage.id);
                           }}
                           className="text-left text-[12px] text-[#374151] hover:text-[#7A0A17] hover:underline decoration-[#7A0A17]/40 underline-offset-2 transition-colors"
-                          title={stage.id === "P0" ? "Move to P1" : "Move to P2"}
+                          title={
+                            stage.id === "P0"
+                              ? p0StatusOf(lead) === "contacted"
+                                ? "Move to P1"
+                                : "Move to Contacted"
+                              : "Move to P2"
+                          }
                         >
-                          {stage.id} - {stage.label}{" "}
+                          {stage.id} - {stage.id === "P0" ? p0BoardLabel(lead) : stage.label}{" "}
                           <span style={{ color: temp.color }} className="font-semibold no-underline">({lead.temperature})</span>
                         </button>
                       ) : (
@@ -773,12 +823,43 @@ export default function PipelineBoard() {
   }, [location.state?.resetPipeline]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddProspect = (newLead) => {
-    const leadWithId = { id: `p0-${Date.now()}`, ...newLead };
+    const leadWithId = { id: `p0-${Date.now()}`, p0Status: "new", ...newLead };
     setLeadsData((prev) => ({
       ...prev,
       P0: [leadWithId, ...(prev.P0 || [])],
     }));
-    toast.success(`Prospect "${newLead.name}" created successfully in P0 Prospect!`);
+    toast.success(`Prospect "${newLead.name}" created successfully in P0 New!`);
+  };
+
+  const handleMoveToP0Contacted = (lead, details = {}) => {
+    const alreadyContacted = p0StatusOf(lead) === "contacted";
+    const hasDetails = details && Object.keys(details).length > 0;
+    const overviewDetails = hasDetails
+      ? {
+          ...(lead.overviewDetails || {}),
+          ...details,
+          stageLabel: "P0 Contacted",
+        }
+      : lead.overviewDetails;
+    const patch = {
+      ...leadPatchFromDetails(details),
+      p0Status: "contacted",
+      overviewDetails,
+      completion: Math.max(lead.completion || 0, 40),
+    };
+    const updatedLead = { ...lead, ...patch };
+    setLeadsData((prev) => ({
+      ...prev,
+      P0: (prev.P0 || []).map((l) => (l.id === lead.id ? { ...l, ...patch } : l)),
+    }));
+    setActiveLead(updatedLead);
+    setDealTargetStage("P0");
+    if (alreadyContacted) {
+      toast.success(`Deal details updated for "${lead.name}".`);
+    } else {
+      toast.success(`Lead "${lead.name}" moved to P0 Contacted.`);
+    }
+    return updatedLead;
   };
 
   const handleMoveToP1 = (lead, updatedData = {}) => {
@@ -923,8 +1004,16 @@ export default function PipelineBoard() {
   /** Advance from deal detail without the old Move to P1 / P2 form pages. */
   const handleAdvanceFromDetail = (lead, stageKey) => {
     if (stageKey === "P0") {
-      handleMoveToP1(lead);
-      setSubView("deal-detail");
+      if (p0StatusOf(lead) !== "contacted") {
+        handleMoveToP0Contacted(lead, lead.overviewDetails || {});
+        setSubView("deal-detail");
+      } else {
+        handleMoveToP1(lead, {
+          overviewDetails: lead.overviewDetails,
+          p0Status: "contacted",
+        });
+        setSubView("deal-detail");
+      }
     } else if (stageKey === "P1") {
       handleMoveToP2(lead);
       setSubView("deal-detail");
@@ -948,24 +1037,25 @@ export default function PipelineBoard() {
   };
 
   const handleP0DetailsSaved = (lead, details = {}) => {
-    handleMoveToP1(lead, {
-      profession: details.profession,
-      familyIncomeBand: details.familyIncomeBand,
-      areaOfHouse: details.areaOfHouse,
-      starred: details.premium === "Yes",
-    });
+    handleMoveToP0Contacted(lead, details);
     setSubView("deal-detail");
   };
 
   const columns = useMemo(
     () =>
-      PIPELINE_STAGES.map((stage, i) => {
-        const allLeads = leadsData[stage.id] || [];
+      BOARD_COLUMNS.map((col, i) => {
+        const allLeads = leadsData[col.id] || [];
+        const bySub =
+          col.p0Status === "new"
+            ? allLeads.filter((l) => p0StatusOf(l) !== "contacted")
+            : col.p0Status === "contacted"
+              ? allLeads.filter((l) => p0StatusOf(l) === "contacted")
+              : allLeads;
         const filtered = search
-          ? allLeads.filter((l) => l.name.toLowerCase().includes(search.toLowerCase()))
-          : allLeads;
-        const next = PIPELINE_STAGES[i + 1];
-        return { stage, leads: filtered.slice(0, perPage), nextStageId: next?.id };
+          ? bySub.filter((l) => l.name.toLowerCase().includes(search.toLowerCase()))
+          : bySub;
+        const next = BOARD_COLUMNS[i + 1];
+        return { columnKey: col.key, stage: col, leads: filtered.slice(0, perPage), nextStageId: next?.id };
       }),
     [search, perPage, leadsData]
   );
@@ -973,12 +1063,25 @@ export default function PipelineBoard() {
   // Flat list for table view
   const flatLeads = useMemo(
     () =>
-      PIPELINE_STAGES.filter((stage) => !stageFilter || stage.id === stageFilter).flatMap((stage) => {
-        const all = leadsData[stage.id] || [];
+      BOARD_COLUMNS.filter((col) => {
+        if (!stageFilter) return true;
+        if (stageFilter === "P0") return col.id === "P0";
+        return col.key === stageFilter || col.id === stageFilter;
+      }).flatMap((col) => {
+        const all = leadsData[col.id] || [];
+        const bySub =
+          col.p0Status === "new"
+            ? all.filter((l) => p0StatusOf(l) !== "contacted")
+            : col.p0Status === "contacted"
+              ? all.filter((l) => p0StatusOf(l) === "contacted")
+              : all;
         const filtered = search
-          ? all.filter((l) => l.name.toLowerCase().includes(search.toLowerCase()))
-          : all;
-        return filtered.slice(0, perPage).map((lead) => ({ lead, stage }));
+          ? bySub.filter((l) => l.name.toLowerCase().includes(search.toLowerCase()))
+          : bySub;
+        return filtered.slice(0, perPage).map((lead) => ({
+          lead,
+          stage: { id: col.id, label: col.label, color: col.color },
+        }));
       }),
     [search, perPage, leadsData, stageFilter]
   );
@@ -1071,9 +1174,9 @@ export default function PipelineBoard() {
         {view === "board" ? (
           /* Board – break out of px-5 so scroll area is edge-to-edge */
           <div className="-mx-5 flex items-start gap-4 overflow-x-auto pb-2 scrollbar-thin px-5">
-            {columns.map(({ stage, leads, nextStageId }) => (
+            {columns.map(({ columnKey, stage, leads, nextStageId }) => (
               <PipelineColumn
-                key={stage.id}
+                key={columnKey}
                 stage={stage}
                 leads={leads}
                 nextStageId={nextStageId}

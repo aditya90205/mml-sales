@@ -243,9 +243,11 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved }
 
   const handleSave = (e) => {
     e.preventDefault();
-    setDetails(draft);
-    onPremiumChange?.(draft.premium === "Yes");
-    onDetailsSaved?.(draft);
+    const next =
+      currentStage === "P0" ? { ...draft, stageLabel: "P0 Contacted" } : draft;
+    setDetails(next);
+    onPremiumChange?.(next.premium === "Yes");
+    onDetailsSaved?.(next);
     if (currentStage !== "P0") {
       toast.success("Deal details updated.");
     }
@@ -259,7 +261,7 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved }
           <h3 className="text-[14px] font-bold text-[#111] shrink-0">Deal details</h3>
           <p className="text-[11.5px] text-[#9CA3AF] bg-[#FAFAFB] border border-black/6 rounded-xl px-3 py-1.5 leading-snug max-w-full">
             {deal.fieldsFilledNote ||
-              "0 of 14 mandatory fields filled. please fill/edit all the details to move to P1"}
+              "0 of 14 mandatory fields filled. please fill/edit all the details to move to Contacted"}
           </p>
         </div>
         <TabHeaderButton onClick={openModal}>Edit details</TabHeaderButton>

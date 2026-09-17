@@ -41,6 +41,7 @@ import PaymentsTab from "./deal-tabs/PaymentsTab";
 import P6ChecklistTab from "./deal-tabs/P6ChecklistTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
 import { EMPTY, atLeast, historyUntil, maybeDash, stageGateFor } from "./deal-tabs/stageContent.jsx";
+import { p0StatusOf } from "../../utils/pipelineStore.js";
 import eyeIcon from "../../assets/eye.png";
 
 const BASE_TABS = [
@@ -84,11 +85,12 @@ const DEAL_DEFAULTS = {
     { label: "Parent is decision maker", tone: "blue" },
     { label: "Cross-branch price enquiry", tone: "amber" },
   ],
-  fieldsFilledNote: "0 of 14 mandatory fields filled. please fill/edit all the details to move to P1",
+  fieldsFilledNote: "0 of 14 mandatory fields filled. please fill/edit all the details to move to Contacted",
 };
 
 const STAGE_LABELS = {
-  P0: "P0 Prospect",
+  P0: "P0 New",
+  "P0-contacted": "P0 Contacted",
   P1: "P1 Qualified",
   P2: "P2 Data Collection",
   P3: "P3 Visit / Video",
@@ -118,7 +120,8 @@ const STAGE_TO_TAB = {
 };
 
 const LOCK_NOTES = {
-  P0: "Qualify the lead and capture intent before this deal can move to P1.",
+  P0: "Fill the P0 details to mark this lead as Contacted. New and Contacted share this Overview page.",
+  Contacted: "Qualify the lead and capture intent before this deal can move to P1.",
   P1: "Complete data collection requirements before this deal can move to P2.",
   P2: "Log a visit or video call before this deal can move to P3.",
   P3: "Finish negotiation checks before this deal can move to P4.",
@@ -195,11 +198,15 @@ export default function DealDetailPage({
   const [messageOpen, setMessageOpen] = useState(false);
   const [serviceAssignOpen, setServiceAssignOpen] = useState(false);
   const [serviceAssigned, setServiceAssigned] = useState(null);
-  const [savedDetails, setSavedDetails] = useState(null);
+  const [savedDetails, setSavedDetails] = useState(() => lead?.overviewDetails || null);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [followUpOpen, setFollowUpOpen] = useState(false);
   const lateTabsUnlocked = atLeast(currentStage, "P5");
-  const nextStage = NEXT_STAGE[currentStage];
+  const isContactedP0 =
+    currentStage === "P0" && (p0StatusOf(lead) === "contacted" || Boolean(savedDetails));
+  const p0StageLabel = isContactedP0 || atLeast(currentStage, "P1") ? "P0 Contacted" : "P0 New";
+  const nextStage = currentStage === "P0" && !isContactedP0 ? "Contacted" : NEXT_STAGE[currentStage];
+  const lockNoteKey = currentStage === "P0" && isContactedP0 ? "Contacted" : currentStage;
   const tabs = BASE_TABS.map((tab) =>
     tab.key === "payments" || tab.key === "p6" ? { ...tab, locked: !lateTabsUnlocked } : tab
   );
@@ -212,6 +219,12 @@ export default function DealDetailPage({
   useEffect(() => {
     setSelectedPackage(null);
   }, [lead?.id]);
+
+  useEffect(() => {
+    if (lead?.overviewDetails) {
+      setSavedDetails((prev) => prev || lead.overviewDetails);
+    }
+  }, [lead]);
 
   // Keep the open tab aligned with the current pipeline stage (Move to P2 → Profile Create, etc.).
   useEffect(() => {
@@ -233,7 +246,7 @@ export default function DealDetailPage({
     const base = {
       ...DEAL_DEFAULTS,
       dealCode,
-      stageLabel: STAGE_LABELS[currentStage] || STAGE_LABELS.P4,
+      stageLabel: currentStage === "P0" ? p0StageLabel : STAGE_LABELS[currentStage] || STAGE_LABELS.P4,
       name,
       email: contact.email,
       phone: contact.phone,
@@ -260,11 +273,13 @@ export default function DealDetailPage({
         flagsFilled ? flag : { ...flag, label: EMPTY }
       ),
       stageGate: stageGateFor(currentStage),
-      stageHistory: historyUntil(currentStage),
+      stageHistory: historyUntil(currentStage, { p0Contacted: isContactedP0 }),
       fieldsFilledNote:
         currentStage === "P0" && !savedDetails
-          ? "0 of 14 mandatory fields filled. please fill/edit all the details to move to P1"
-          : "14 of 14 mandatory fields filled.",
+          ? "0 of 14 mandatory fields filled. please fill/edit all the details to move to Contacted"
+          : currentStage === "P0"
+            ? "14 of 14 mandatory fields filled. Move to P1 when ready."
+            : "14 of 14 mandatory fields filled.",
       weightedValue: maybeDash(detailsFilled, DEAL_DEFAULTS.weightedValue),
       weightedValueNote: maybeDash(detailsFilled, DEAL_DEFAULTS.weightedValueNote),
     };
@@ -274,7 +289,10 @@ export default function DealDetailPage({
     return {
       ...base,
       dealCode: savedDetails.dealCode || base.dealCode,
-      stageLabel: STAGE_LABELS[currentStage] || savedDetails.stageLabel || base.stageLabel,
+      stageLabel:
+        currentStage === "P0"
+          ? p0StageLabel
+          : STAGE_LABELS[currentStage] || savedDetails.stageLabel || base.stageLabel,
       packageInterest: savedDetails.packageInterest || base.packageInterest,
       premium: savedDetails.premium === "Yes",
       dealValue: savedDetails.dealValue || base.dealValue,
@@ -332,14 +350,21 @@ export default function DealDetailPage({
     }
     const tabForNext = STAGE_TO_TAB[nextStage];
     if (tabForNext) setActiveTab(tabForNext);
-    onAdvance?.(lead, currentStage);
+    onAdvance?.(
+      {
+        ...lead,
+        p0Status: isContactedP0 ? "contacted" : lead?.p0Status,
+        overviewDetails: savedDetails || lead?.overviewDetails,
+      },
+      currentStage
+    );
   };
 
   const handleDetailsSaved = (draft) => {
     setSavedDetails(draft);
     handlePremiumChange(draft.premium === "Yes");
     if (currentStage === "P0") {
-      onP0DetailsSaved?.(lead, draft);
+      onP0DetailsSaved?.({ ...lead, p0Status: "contacted", overviewDetails: draft }, draft);
     }
   };
 
@@ -408,7 +433,7 @@ export default function DealDetailPage({
                 <>
                   <span className="font-bold">{nextStage} is locked.</span>{" "}
                   <span className="text-[#6B7280]">
-                    {LOCK_NOTES[currentStage] || "Complete the required steps for this stage before advancing."}
+                    {LOCK_NOTES[lockNoteKey] || "Complete the required steps for this stage before advancing."}
                   </span>
                 </>
               ) : serviceAssigned ? (
@@ -516,7 +541,15 @@ export default function DealDetailPage({
         </div>
 
         {/* Stage progress */}
-        <StageStepper activeStageId={currentStage} />
+        <StageStepper
+          activeStageId={
+            currentStage !== "P0"
+              ? currentStage
+              : isContactedP0
+                ? "P0-contacted"
+                : "P0-new"
+          }
+        />
 
         {/* Deal header + tabs */}
         <div className="bg-white border border-black/8 rounded-2xl overflow-hidden">

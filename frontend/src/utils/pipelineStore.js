@@ -1,10 +1,36 @@
 const EVENT = "mml-sales-pipeline";
 
+/** Sample Overview fields carried from P0 New → P0 Contacted. */
+const SAMPLE_P0_CONTACTED_DETAILS = {
+  dealCode: "MML-D-10429",
+  stageLabel: "P0 Contacted",
+  packageInterest: "Premium",
+  premium: "Yes",
+  dealValue: "₹51,000",
+  leadSource: "Outbound Calls",
+  leadScore: "Warm",
+  enquiryBy: "Parent (father)",
+  lookingFor: "Girl · 26–30 · NCR",
+  areaOfHouse: "Greater Kailash II",
+  profession: "Chartered Accountant",
+  familyIncomeBand: "₹60L–₹1Cr p.a.",
+  nextMeeting: "04/09/26",
+  winLossReasons: "No decision / Think about it, Competitor / Existing solution",
+  winLossTone: "Hot",
+  lastDiscussionAt: "20/08/25, 11:30 AM",
+  lastDiscussionNote: "Meeting Notes/Discussions",
+  nextActionAt: "29/08/25, 11:30 AM",
+  nextAction: "Call Client for pricing confirmation at 8 PM",
+  nextActionUrgency: "6 Hrs Left",
+  assignedTo: "Rohit K.",
+  assignedBy: "Aditya Sharma",
+};
+
 /** Two sample cards per stage, mirroring the pipeline board roster. */
 export const LEADS_BY_STAGE = {
   P0: [
-    { id: "p0-1", name: "Kuhu Sharma",    starred: true,  mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
-    { id: "p0-2", name: "Ankit Sharma",   starred: true,  mmlId: "MML - D - 10429", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
+    { id: "p0-1", name: "Kuhu Sharma",  starred: true,  mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", p0Status: "new" },
+    { id: "p0-2", name: "Ankit Sharma", starred: true,  mmlId: "MML - D - 10429", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", p0Status: "contacted", profession: SAMPLE_P0_CONTACTED_DETAILS.profession, familyIncomeBand: SAMPLE_P0_CONTACTED_DETAILS.familyIncomeBand, areaOfHouse: SAMPLE_P0_CONTACTED_DETAILS.areaOfHouse, overviewDetails: SAMPLE_P0_CONTACTED_DETAILS },
   ],
   P1: [
     { id: "p1-1", name: "Harshit Sharma", starred: false, mmlId: "MML - D - 10430", temperature: "Hot",  score: 8.5, priority: "High",   completion: 40,  days: 4,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
@@ -37,9 +63,21 @@ const STAGE_IDS = Object.keys(LEADS_BY_STAGE);
 function cloneLeads(data = LEADS_BY_STAGE) {
   const next = {};
   for (const id of STAGE_IDS) {
-    next[id] = Array.isArray(data?.[id]) ? data[id].map((lead) => ({ ...lead })) : [];
+    next[id] = Array.isArray(data?.[id])
+      ? data[id].map((lead) => ({
+          ...lead,
+          overviewDetails: lead.overviewDetails ? { ...lead.overviewDetails } : lead.overviewDetails,
+        }))
+      : [];
   }
   return next;
+}
+
+/** P0 sub-status: New until details are saved / the lead is marked Contacted. */
+export function p0StatusOf(lead) {
+  if (!lead) return "new";
+  if (lead.p0Status === "contacted" || lead.overviewDetails) return "contacted";
+  return "new";
 }
 
 let leads = cloneLeads(LEADS_BY_STAGE);
@@ -73,7 +111,7 @@ export function countStageLeads(stageId = "P0") {
 export function addP0Lead(lead) {
   const id = lead?.id || `p0-${Date.now()}`;
   leads = cloneLeads(leads);
-  leads.P0 = [{ ...lead, id }, ...(leads.P0 || [])];
+  leads.P0 = [{ ...lead, id, p0Status: lead?.p0Status || "new" }, ...(leads.P0 || [])];
   emit();
   return leads.P0[0];
 }

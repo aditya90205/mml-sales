@@ -49,6 +49,7 @@ export default function AddP0ProspectPage({ onBack, onAddProspect }) {
       nextAction: "Initial Contact",
       mobile: formData.mobile,
       email: formData.email,
+      p0Status: "new",
     };
 
     onAddProspect(newLead);
