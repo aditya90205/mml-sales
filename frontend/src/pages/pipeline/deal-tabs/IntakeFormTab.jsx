@@ -14,6 +14,7 @@ import ClientRecordView from "./intake/ClientRecordView";
 import PersonalChangeOtpModal from "./intake/PersonalChangeOtpModal";
 import SectionEditModal from "./intake/SectionEditModal";
 import { consumeBiodataDraft, mapBiodataToIntake } from "../../../utils/biodataDraftStore.js";
+import { recordLeadActivity } from "../../../utils/leadActivityStore.js";
 
 function IntakeViewToggle({ view, onChange }) {
   const options = [
@@ -235,6 +236,16 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
         ? "Change saved after OTP. Client data updated."
         : `${logEntries.length} changes saved after OTP. Client data updated.`
     );
+    if (logEntries.length) {
+      recordLeadActivity(lead, "P2", {
+        type: "details",
+        title:
+          logEntries.length === 1
+            ? `Intake updated: ${logEntries[0].label}`
+            : `Intake updated (${logEntries.length} fields)`,
+        stage: "P2",
+      });
+    }
     otpState.onSuccess?.();
   };
 

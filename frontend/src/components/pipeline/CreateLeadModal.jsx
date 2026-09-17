@@ -19,6 +19,21 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import {
+  digitsOnly,
+  findDuplicatesByMobileOrEmail,
+  formatDisplayMobile,
+} from "../../utils/contactSearch.js";
+import {
+  CREATE_LEAD_COMPARE_FIELDS,
+  EMAIL_RE,
+  FIELD_DUMMY_HINTS,
+  FIELD_STATUS_META,
+  contactToLeadFields,
+  displayFieldValue,
+  firstValidationMessage,
+  validateCreateLeadFields,
+} from "../../utils/leadFields.js";
 
 const RELATIONS = ["Self / Prospect", "Parent", "Sibling", "Relative", "Friend", "Other"];
 const CONTACT_WITH = ["First Contact", "Follow-up", "Existing Client", "Referred Contact"];
@@ -31,6 +46,7 @@ const SOURCES = [
   "Google Ads",
   "Newspaper",
   "Cold Call",
+  "Biodata Upload",
 ];
 const INCOME = [
   "Under ₹15 Lakh",
@@ -132,7 +148,57 @@ function YesNoToggle({ value, onChange }) {
   );
 }
 
-function Field({ label, required, extra, children }) {
+function FieldHint({ status }) {
+  const meta = FIELD_STATUS_META[status];
+  if (!meta) return null;
+  return (
+    <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md border ${meta.className}`}>
+      {meta.label}
+    </span>
+  );
+}
+
+function FieldNote({ status, fieldKey, existingValue }) {
+  if (status === "missing") {
+    return <p className="text-[11.5px] font-medium text-[#B91C1C]">Blank — not in biodata. Fill this.</p>;
+  }
+  if (status === "mismatch") {
+    return (
+      <p className="text-[11.5px] font-medium text-[#92400E]">
+        Different — on file: {displayFieldValue(fieldKey, existingValue)}
+      </p>
+    );
+  }
+  return null;
+}
+
+function StatusExtra({ status, fieldKey, existingValue, onUseExisting }) {
+  if (!status) return null;
+  return (
+    <div className="flex items-center gap-1.5 shrink-0">
+      <FieldHint status={status} />
+      {status === "mismatch" && existingValue ? (
+        <button
+          type="button"
+          onClick={() => onUseExisting?.(fieldKey)}
+          className="text-[10px] font-semibold text-[#92400E] hover:underline"
+        >
+          Use existing
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function toneClass(status) {
+  if (status === "mismatch") return "ring-2 ring-[#F59E0B]/55 bg-[#FFFBEB]";
+  if (status === "new") return "ring-2 ring-[#2563EB]/40 bg-[#EFF6FF]";
+  if (status === "missing") return "ring-2 ring-[#E8395B]/40 bg-[#FEF2F2]";
+  if (status === "match") return "ring-2 ring-[#16A34A]/35 bg-[#F0FDF4]";
+  return "";
+}
+
+function Field({ label, required, extra, note, children }) {
   return (
     <div className="flex flex-col gap-1.5 min-w-0">
       <div className="flex items-center justify-between gap-2">
@@ -143,6 +209,7 @@ function Field({ label, required, extra, children }) {
         {extra}
       </div>
       {children}
+      {note}
     </div>
   );
 }
@@ -164,13 +231,13 @@ function Chip({ active, onClick, children }) {
   );
 }
 
-function NativeSelect({ value, onChange, options }) {
+function NativeSelect({ value, onChange, options, className = "" }) {
   return (
     <div className="relative">
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`${INPUT} appearance-none pr-9 cursor-pointer`}
+        className={`${INPUT} appearance-none pr-9 cursor-pointer ${className}`}
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
@@ -341,11 +408,21 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
   const [dropOpen, setDropOpen] = useState(false);
   const [dropReason, setDropReason] = useState("");
   const [dropError, setDropError] = useState("");
-  const isUpdate = Boolean(initial?.existingLeadId || initial?.mode === "update");
+  const [linkedLead, setLinkedLead] = useState(null);
+  const [fieldMeta, setFieldMeta] = useState(() => initial?.fieldMeta || {});
+  const alsoRead = Array.isArray(initial?.alsoRead) ? initial.alsoRead : [];
+  const existingValues = initial?.existingValues || {};
+  const fromBiodata = Boolean(initial?.fileName || Object.keys(fieldMeta).length);
+  const isUpdate = Boolean(initial?.existingLeadId || initial?.mode === "update" || linkedLead);
 
   const set = (key) => (value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setError("");
+    setFieldMeta((prev) => {
+      if (!prev[key] || prev[key] !== "missing") return prev;
+      if (!String(value ?? "").trim()) return prev;
+      return { ...prev, [key]: "new" };
+    });
   };
 
   useEffect(() => {
@@ -353,6 +430,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
       setDropOpen(false);
       setDropReason("");
       setDropError("");
+      setLinkedLead(null);
       return;
     }
     const prev = document.body.style.overflow;
@@ -401,15 +479,81 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
     fileRef.current?.click();
   };
 
-  const validate = () => {
-    if (!form.firstName.trim()) return "Prospect's first name is required.";
-    if (!form.lastName.trim()) return "Prospect's last name is required.";
-    const digits = form.mobile.replace(/\D/g, "");
-    if (digits.length < 8) return "Enter a valid mobile number.";
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "Enter a valid email address.";
-    if (!form.city.trim()) return "City is required.";
-    return "";
+  const duplicateHits = useMemo(() => {
+    const digits = digitsOnly(form.mobile);
+    const email = form.email.trim();
+    const hits = findDuplicatesByMobileOrEmail({
+      mobile: digits.length >= 8 ? form.mobile : "",
+      email: EMAIL_RE.test(email) ? email : "",
+    });
+    const skip = new Set(
+      [initial?.existingLeadId, linkedLead?.recordId, linkedLead?.id]
+        .filter(Boolean)
+        .flatMap((id) => [id, `lead:${id}`, `client:${id}`])
+    );
+    return hits.filter((row) => !skip.has(row.recordId) && !skip.has(row.id));
+  }, [form.mobile, form.email, initial?.existingLeadId, linkedLead]);
+
+  const missingFields = useMemo(
+    () => CREATE_LEAD_COMPARE_FIELDS.filter((f) => fieldMeta[f.key] === "missing"),
+    [fieldMeta]
+  );
+  const statusCounts = useMemo(() => {
+    const counts = { match: 0, mismatch: 0, new: 0, missing: 0 };
+    for (const status of Object.values(fieldMeta)) {
+      if (status in counts) counts[status] += 1;
+    }
+    return counts;
+  }, [fieldMeta]);
+
+  const statusUi = (key) =>
+    fromBiodata
+      ? {
+          extra: (
+            <StatusExtra
+              status={fieldMeta[key]}
+              fieldKey={key}
+              existingValue={existingValues[key]}
+              onUseExisting={useExistingValue}
+            />
+          ),
+          note: <FieldNote status={fieldMeta[key]} fieldKey={key} existingValue={existingValues[key]} />,
+        }
+      : {};
+
+  const useExistingValue = (key) => {
+    const raw = existingValues[key];
+    if (raw == null || String(raw).trim() === "") return;
+    const mapped = applyInitial({ [key]: raw });
+    const value =
+      key === "mobile"
+        ? String(raw).replace(/\D/g, "").replace(/^91/, "").slice(-10)
+        : mapped[key] || raw;
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setFieldMeta((prev) => ({ ...prev, [key]: "match" }));
+    setError("");
   };
+
+  const applyExistingLead = (row) => {
+    const fields = contactToLeadFields(row);
+    setLinkedLead(row);
+    setForm((prev) => ({
+      ...prev,
+      firstName: prev.firstName || fields.firstName,
+      lastName: prev.lastName || fields.lastName,
+      mobile: digitsOnly(prev.mobile || fields.mobile).replace(/^91/, "").slice(-10),
+      email: prev.email || fields.email,
+      city: prev.city || fields.city,
+      area: prev.area || fields.area,
+      dob: prev.dob || fields.dob,
+      lookingFor: fields.lookingFor || prev.lookingFor,
+      relation: fields.relation || prev.relation,
+      contactWith: "Existing Client",
+    }));
+    setError("");
+  };
+
+  const validate = () => firstValidationMessage(validateCreateLeadFields(form));
 
   const submit = (e) => {
     e?.preventDefault?.();
@@ -424,8 +568,14 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
       name: `${form.firstName.trim()} ${form.lastName.trim()}`.replace(/\s+/g, " "),
       mobile: `${dialCode} ${digits}`,
       fileName: file?.name || initial?.fileName || "",
-      existingLeadId: initial?.existingLeadId || undefined,
-      clientId: initial?.clientId || undefined,
+      existingLeadId:
+        (linkedLead?.type === "lead" ? linkedLead.recordId : null) ||
+        initial?.existingLeadId ||
+        undefined,
+      clientId:
+        (linkedLead?.type === "client" ? linkedLead.recordId : null) ||
+        initial?.clientId ||
+        undefined,
       mode: isUpdate ? "update" : "create",
     });
     onClose?.();
@@ -477,8 +627,10 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
                 </h2>
                 <p className="text-[12px] text-[#9CA3AF] mt-0.5">
                   {isUpdate
-                    ? "Existing lead found — review biodata fields and save updates"
-                    : "Capture the inquiry while you are on the call"}
+                    ? "Existing lead found — review Existing / New / Blank fields and save"
+                    : fromBiodata
+                      ? "Biodata filled this form — green Existing, blue New, red Blank"
+                      : "Capture the inquiry while you are on the call"}
                 </p>
               </div>
             </div>
@@ -493,64 +645,151 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
           </div>
 
           <div className="px-6 pb-5 overflow-y-auto scrollbar-thin flex flex-col gap-5">
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragging(false);
-                if (onUploadBiodata) {
-                  onUploadBiodata(form);
-                  return;
-                }
-                takeFile(e.dataTransfer.files?.[0]);
-              }}
-              className={`flex items-center justify-between gap-4 rounded-2xl px-4 py-3.5 transition-colors ${
-                dragging ? "bg-[#EDE7F6]" : "bg-[#F5F2FB]"
-              }`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="size-10 rounded-xl bg-white text-[#7A0A17] grid place-items-center shrink-0 shadow-sm">
-                  <FileSpreadsheet size={18} />
-                </span>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-[13.5px] font-bold text-[#111]">Upload Biodata / Bulk Import</p>
-                    <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bg-white text-[#E8395B] text-[10px] font-semibold">
-                      <Sparkles size={10} />
-                      AI Parsing
-                    </span>
+            {!fromBiodata ? (
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragging(true);
+                }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragging(false);
+                  if (onUploadBiodata) {
+                    onUploadBiodata(form);
+                    return;
+                  }
+                  takeFile(e.dataTransfer.files?.[0]);
+                }}
+                className={`flex items-center justify-between gap-4 rounded-2xl px-4 py-3.5 transition-colors ${
+                  dragging ? "bg-[#EDE7F6]" : "bg-[#F5F2FB]"
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="size-10 rounded-xl bg-white text-[#7A0A17] grid place-items-center shrink-0 shadow-sm">
+                    <FileSpreadsheet size={18} />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-[13.5px] font-bold text-[#111]">Upload Biodata / Bulk Import</p>
+                      <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bg-white text-[#E8395B] text-[10px] font-semibold">
+                        <Sparkles size={10} />
+                        AI Parsing
+                      </span>
+                    </div>
+                    <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 truncate">
+                      {file
+                        ? file.name
+                        : "PDF, Word, or scanned image (JPG / PNG) · match by mobile & email"}
+                    </p>
                   </div>
-                  <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 truncate">
-                    {file
-                      ? file.name
-                      : "Autofills and name checks • Browse files or drag & drop here (PDF, DOCX, XLSX)"}
-                  </p>
+                </div>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.xls,.xlsx"
+                  className="hidden"
+                  onChange={(e) => takeFile(e.target.files?.[0])}
+                />
+                <button
+                  type="button"
+                  onClick={openBiodataUpload}
+                  className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-white border border-black/10 text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] shrink-0"
+                >
+                  <CloudUpload size={15} />
+                  Select File
+                </button>
+              </div>
+            ) : null}
+
+            {fromBiodata ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-[12px] text-[#6B7280]">
+                  After upload: <span className="font-semibold text-[#166534]">Existing</span> already in
+                  system, <span className="font-semibold text-[#1D4ED8]">New</span> from biodata,{" "}
+                  <span className="font-semibold text-[#B91C1C]">Blank</span> not captured.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {["match", "new", "missing", "mismatch"].map((key) =>
+                    statusCounts[key] ? (
+                      <span
+                        key={key}
+                        className={`inline-flex items-center h-6 px-2 rounded-full border text-[11px] font-semibold ${FIELD_STATUS_META[key].className}`}
+                      >
+                        {FIELD_STATUS_META[key].label}
+                        {` · ${statusCounts[key]}`}
+                      </span>
+                    ) : null
+                  )}
                 </div>
               </div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".pdf,.doc,.docx,.xls,.xlsx"
-                className="hidden"
-                onChange={(e) => takeFile(e.target.files?.[0])}
-              />
-              <button
-                type="button"
-                onClick={openBiodataUpload}
-                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-white border border-black/10 text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] shrink-0"
-              >
-                <CloudUpload size={15} />
-                Select File
-              </button>
-            </div>
+            ) : null}
+
+            {missingFields.length > 0 ? (
+              <div className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-3.5 py-3 -mt-1">
+                <p className="text-[13px] font-bold text-[#B91C1C]">Blank fields — fill these</p>
+                <ul className="mt-2 flex flex-col gap-1.5">
+                  {missingFields.map((field) => (
+                    <li key={field.key} className="text-[12.5px] text-[#7F1D1D]">
+                      <span className="font-semibold">{field.label}</span>
+                      {field.required ? " *" : ""}
+                      <span className="text-[#9B1C1C]/80">
+                        {" "}
+                        — not captured. {FIELD_DUMMY_HINTS[field.key] || "Fill manually"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {alsoRead.length > 0 ? (
+              <div className="-mt-1">
+                <p className="text-[12px] font-semibold text-[#6B7280] mb-2">
+                  Also read{" "}
+                  <span className="font-normal text-[#9CA3AF]">(kept on the profile, not form fields)</span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {alsoRead.map((chip) => (
+                    <span
+                      key={chip.label}
+                      className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[#F3F4F6] text-[11.5px] text-[#374151]"
+                    >
+                      <span className="font-semibold text-[#6B7280]">{chip.label}</span>
+                      <span className="font-medium">{chip.value}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {duplicateHits[0] ? (
+              <div className="rounded-xl border border-[#F5D78E] bg-[#FFF8E8] px-3.5 py-3 flex flex-col sm:flex-row sm:items-center gap-2.5">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-bold text-[#92400E]">Already in system</p>
+                  <p className="text-[12.5px] text-[#78350F] mt-0.5">
+                    {duplicateHits[0].mobileOk ? "Mobile" : "Email"} matches{" "}
+                    <span className="font-semibold">{duplicateHits[0].name}</span>
+                    {duplicateHits[0].email ? ` · ${duplicateHits[0].email}` : ""}
+                    {duplicateHits[0].mobile ? ` · ${formatDisplayMobile(duplicateHits[0].mobile)}` : ""}
+                    {duplicateHits.length > 1 ? ` · +${duplicateHits.length - 1} more` : ""}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => applyExistingLead(duplicateHits[0])}
+                  className="h-9 px-3.5 rounded-xl bg-white border border-[#D97706]/40 text-[12.5px] font-semibold text-[#92400E] hover:bg-[#FFFBEB] shrink-0"
+                >
+                  Update this lead
+                </button>
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-              <Field label="Looking for a bride or groom" required>
-                <YesNoToggle value={form.lookingFor} onChange={set("lookingFor")} />
+              <Field label="Looking for a bride or groom" required {...statusUi("lookingFor")}>
+                <div className={`rounded-xl ${toneClass(fieldMeta.lookingFor)}`}>
+                  <YesNoToggle value={form.lookingFor} onChange={set("lookingFor")} />
+                </div>
               </Field>
               <Field label="NRI" required>
                 <YesNoToggle
@@ -567,37 +806,42 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
               </Field>
             </div>
 
-            <Field label="Relation to Prospect" required>
-              <NativeSelect value={form.relation} onChange={set("relation")} options={RELATIONS} />
+            <Field label="Relation to Prospect" required {...statusUi("relation")}>
+              <NativeSelect
+                value={form.relation}
+                onChange={set("relation")}
+                options={RELATIONS}
+                className={toneClass(fieldMeta.relation)}
+              />
             </Field>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-              <Field label="Prospect's First Name" required>
+              <Field label="Prospect's First Name" required {...statusUi("firstName")}>
                 <input
                   value={form.firstName}
                   onChange={(e) => set("firstName")(e.target.value)}
                   placeholder="Kabir"
-                  className={INPUT}
+                  className={`${INPUT} ${toneClass(fieldMeta.firstName)}`}
                 />
               </Field>
-              <Field label="Prospect's Last Name" required>
+              <Field label="Prospect's Last Name" required {...statusUi("lastName")}>
                 <input
                   value={form.lastName}
                   onChange={(e) => set("lastName")(e.target.value)}
                   placeholder="Vaidya"
-                  className={INPUT}
+                  className={`${INPUT} ${toneClass(fieldMeta.lastName)}`}
                 />
               </Field>
               <Field label="Already in Contact With" required>
                 <NativeSelect value={form.contactWith} onChange={set("contactWith")} options={CONTACT_WITH} />
               </Field>
-              <Field label="Date of Birth">
+              <Field label="Date of Birth" {...statusUi("dob")}>
                 <div className="relative">
                   <input
                     type="date"
                     value={form.dob}
                     onChange={(e) => set("dob")(e.target.value)}
-                    className={`${INPUT} pr-10 relative [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                    className={`${INPUT} ${toneClass(fieldMeta.dob)} pr-10 relative [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
                   />
                   <Calendar size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
                 </div>
@@ -612,8 +856,8 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
                   options={form.nri === "yes" ? COUNTRIES : ["India"]}
                 />
               </Field>
-              <Field label="Mobile Number" required>
-                <div className="flex h-10 rounded-xl border border-black/12 overflow-hidden focus-within:border-[#7A0A17]/45">
+              <Field label="Mobile Number" required {...statusUi("mobile")}>
+                <div className={`flex h-10 rounded-xl border overflow-hidden focus-within:border-[#7A0A17]/45 ${toneClass(fieldMeta.mobile) || "border-black/12"}`}>
                   <span className="min-w-[3.25rem] px-2.5 grid place-items-center text-[13px] font-medium text-[#6B7280] bg-[#F7F7F8] border-r border-black/10 shrink-0">
                     {dialCode}
                   </span>
@@ -629,7 +873,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-              <Field label="City" required>
+              <Field label="City" required {...statusUi("city")}>
                 <div className="relative" ref={cityRef}>
                   <Building2 size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
                   <input
@@ -640,7 +884,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
                     }}
                     onFocus={() => setCityOpen(true)}
                     placeholder="Mumbai, Maharashtra"
-                    className={`${INPUT} pl-10 pr-10`}
+                    className={`${INPUT} ${toneClass(fieldMeta.city)} pl-10 pr-10`}
                     autoComplete="off"
                   />
                   <Search size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
@@ -663,20 +907,20 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
                   )}
                 </div>
               </Field>
-              <Field label="Area / Locality">
+              <Field label="Area / Locality" {...statusUi("area")}>
                 <div className="relative">
                   <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
                   <input
                     value={form.area}
                     onChange={(e) => set("area")(e.target.value)}
                     placeholder="Bandra West"
-                    className={`${INPUT} pl-10`}
+                    className={`${INPUT} ${toneClass(fieldMeta.area)} pl-10`}
                   />
                 </div>
               </Field>
             </div>
 
-            <Field label="Email">
+            <Field label="Email" {...statusUi("email")}>
               <div className="relative">
                 <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
                 <input
@@ -684,7 +928,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
                   value={form.email}
                   onChange={(e) => set("email")(e.target.value)}
                   placeholder="kabir.vaidya@enterprise-group.in"
-                  className={`${INPUT} pl-10`}
+                  className={`${INPUT} ${toneClass(fieldMeta.email)} pl-10`}
                 />
               </div>
             </Field>

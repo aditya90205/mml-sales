@@ -5,6 +5,7 @@ import StatusPill from "../../../components/common/StatusPill";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
 import { dashRows, EMPTY } from "./stageContent.jsx";
+import { recordLeadActivity } from "../../../utils/leadActivityStore.js";
 
 const INITIAL_NOTES = [
   {
@@ -38,7 +39,7 @@ const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
 /** Notes & RM Flags tab — qualitative context that carries into service handover. */
-export default function NotesRmFlagsTab({ empty = false }) {
+export default function NotesRmFlagsTab({ empty = false, lead, currentStage = "P2" }) {
   const [notes, setNotes] = useState(INITIAL_NOTES);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -69,6 +70,11 @@ export default function NotesRmFlagsTab({ empty = false }) {
       ...prev,
     ]);
     toast.success("Note added.");
+    recordLeadActivity(lead, currentStage, {
+      type: isFlag ? "flag" : "note",
+      title: isFlag ? `RM flag added: ${title.trim()}` : `Note added: ${title.trim()}`,
+      detail: body.trim(),
+    });
     reset();
     setOpen(false);
   };

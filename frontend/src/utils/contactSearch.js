@@ -1,5 +1,6 @@
 import { readClients } from "./clientsData.js";
 import { readLeads } from "./pipelineStore.js";
+import { splitName } from "./leadFields.js";
 
 /** Digits only — used for mobile compare. */
 export function digitsOnly(value = "") {
@@ -23,6 +24,16 @@ function nameToEmail(name = "") {
 const LEAD_CONTACT_EXTRA = {
   "p0-1": { mobile: "9812345678", email: "kuhu.sharma@email.com", owner: "Rohit Kumar" },
   "p0-2": { mobile: "9823456789", email: "ankit.sharma@email.com", owner: "Rohit Kumar" },
+  "p0-ritika": {
+    mobile: "9876543210",
+    email: "ritika.sharma@email.com",
+    owner: "Rohit Kumar",
+    city: "",
+    area: "",
+    dob: "",
+    lookingFor: "yes",
+    relation: "Parent",
+  },
   "p1-1": { mobile: "9876544598", email: "harshit.sharma@email.com", owner: "Rohit Kumar" },
   "p1-2": { mobile: "9811122233", email: "arjun.rampal@email.com", owner: "Pooja Sharma" },
   "p2-1": { mobile: "9898989898", email: "ankur.sharma@email.com", owner: "Rohit Kumar" },
@@ -43,23 +54,16 @@ const EXTRA_CONTACTS = [
     id: "crm-aman",
     type: "lead",
     name: "Aman Gupta",
+    firstName: "Aman",
+    lastName: "Gupta",
     mobile: "9811004521",
     email: "aman.gupta@email.com",
+    city: "Noida, Uttar Pradesh",
+    area: "Sector 62",
     owner: "Neha Bhatia",
     stageId: "P1",
     mmlId: "MML - D - 10501",
     recordId: "crm-aman",
-  },
-  {
-    id: "crm-ritika",
-    type: "lead",
-    name: "Ritika Sharma",
-    mobile: "9876543210",
-    email: "ritika@example.com",
-    owner: "Rohit Kumar",
-    stageId: "P0",
-    mmlId: "MML - D - 10502",
-    recordId: "crm-ritika",
   },
 ];
 
@@ -69,13 +73,21 @@ function flattenLeads() {
   for (const [stageId, list] of Object.entries(byStage || {})) {
     for (const lead of list || []) {
       const extra = LEAD_CONTACT_EXTRA[lead.id] || {};
+      const names = splitName(lead.name);
       rows.push({
         id: `lead:${lead.id}`,
         type: "lead",
         recordId: lead.id,
         name: lead.name || "",
+        firstName: lead.firstName || names.firstName,
+        lastName: lead.lastName || names.lastName,
         mobile: lead.mobile || extra.mobile || "",
         email: lead.email || extra.email || nameToEmail(lead.name),
+        city: lead.city || extra.city || "",
+        area: lead.area || extra.area || "",
+        dob: lead.dob || extra.dob || "",
+        lookingFor: lead.lookingFor || extra.lookingFor || "",
+        relation: lead.relation || extra.relation || "",
         owner: lead.owner || extra.owner || "Unassigned",
         stageId,
         mmlId: lead.mmlId || "",
@@ -94,9 +106,12 @@ function flattenClients() {
       type: "client",
       recordId: String(c.id),
       name: c.name || "",
+      ...splitName(c.name),
       mobile: c.mobile || mobile,
       phoneMask: c.phone || "",
       email: c.email || nameToEmail(c.name),
+      city: c.city || "",
+      area: c.area || "",
       owner: c.owner || "Unassigned",
       stageId: null,
       mmlId: c.clientId || "",
@@ -170,30 +185,76 @@ export function searchContacts({ name = "", mobile = "", email = "" } = {}) {
   return { hasQuery: true, results };
 }
 
+/**
+ * Duplicate check used by Create Lead + biodata: exact mobile (last 10)
+ * and/or exact email. Name is not used.
+ */
+export function findDuplicatesByMobileOrEmail({ mobile = "", email = "" } = {}) {
+  const qMobile = digitsOnly(mobile).slice(-10);
+  const qEmail = normalizeEmail(email);
+  const hasMobile = qMobile.length >= 8;
+  const hasEmail = Boolean(qEmail);
+  if (!hasMobile && !hasEmail) return [];
+
+  const results = [];
+  for (const row of listAllContacts()) {
+    const rowMobile = digitsOnly(row.mobile).slice(-10);
+    const rowEmail = normalizeEmail(row.email);
+    const mobileOk = hasMobile && rowMobile.length >= 8 && rowMobile === qMobile;
+    const emailOk = hasEmail && Boolean(rowEmail) && rowEmail === qEmail;
+    if (!mobileOk && !emailOk) continue;
+    results.push({
+      ...row,
+      mobileOk,
+      emailOk,
+      nameOk: null,
+      matched: true,
+      score: (mobileOk ? 5 : 0) + (emailOk ? 4 : 0),
+    });
+  }
+  results.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+  return results;
+}
+
 /** Mock AI extraction from an uploaded biodata file (frontend demo). */
 export function mockExtractBiodata(file) {
   const fileName = file?.name || "biodata.pdf";
   const sizeMb = file?.size ? (file.size / (1024 * 1024)).toFixed(1) : "1.4";
+  // PDF dummy matches Ritika (already in CRM). JPG / "new" filenames are a fresh prospect.
+  const asNew = /new|unknown|sender|\.jpe?g$/i.test(fileName);
 
-  const fields = [
-    { key: "firstName", label: "First name", value: "Ritika", confidence: 99 },
-    { key: "lastName", label: "Last name", value: "Sharma", confidence: 98 },
-    { key: "dob", label: "Date of birth", value: "1996-04-12", confidence: 95 },
-    { key: "mobile", label: "Mobile number", value: "9876543210", confidence: 99 },
-    { key: "email", label: "Email", value: "ritika@example.com", confidence: 92 },
-    { key: "city", label: "City", value: "Gurugram", confidence: 94 },
-    { key: "area", label: "Area / locality", value: "Sector 54", confidence: 78 },
-    { key: "lookingFor", label: "Looking for", value: "Groom", confidence: 88 },
-    { key: "relation", label: "Relation to prospect", value: "Self", confidence: 71 },
-  ];
+  const fields = asNew
+    ? [
+        { key: "firstName", label: "First name", value: "Kavya", confidence: 96 },
+        { key: "lastName", label: "Last name", value: "Kapoor", confidence: 94 },
+        { key: "dob", label: "Date of birth", value: "", confidence: 40 },
+        { key: "mobile", label: "Mobile number", value: "9000011122", confidence: 91 },
+        { key: "email", label: "Email", value: "kavya.kapoor@example.com", confidence: 88 },
+        { key: "city", label: "City", value: "", confidence: 35 },
+        { key: "area", label: "Area / locality", value: "", confidence: 30 },
+        { key: "lookingFor", label: "Looking for", value: "Groom", confidence: 82 },
+        { key: "relation", label: "Relation to prospect", value: "Self", confidence: 70 },
+      ]
+    : [
+        { key: "firstName", label: "First name", value: "Ritika", confidence: 99 },
+        { key: "lastName", label: "Last name", value: "Sharma", confidence: 98 },
+        { key: "dob", label: "Date of birth", value: "", confidence: 20 },
+        { key: "mobile", label: "Mobile number", value: "9876543210", confidence: 99 },
+        { key: "email", label: "Email", value: "ritika@example.com", confidence: 92 },
+        { key: "city", label: "City", value: "", confidence: 18 },
+        { key: "area", label: "Area / locality", value: "Sector 54", confidence: 78 },
+        { key: "lookingFor", label: "Looking for", value: "Groom", confidence: 88 },
+        { key: "relation", label: "Relation to prospect", value: "Self", confidence: 71 },
+      ];
 
   return {
     fileName,
     sizeLabel: `${sizeMb} MB`,
     pages: 2,
-    hasTextLayer: true,
+    hasTextLayer: !/\.(jpe?g|png|webp|tiff?)$/i.test(fileName),
     senderMobile: "9811004521",
-    biodataName: "Ritika Sharma",
+    senderEmail: "aman.gupta@email.com",
+    biodataName: asNew ? "Kavya Kapoor" : "Ritika Sharma",
     fields,
     alsoRead: [
       { label: "Height", value: "5' 4\"" },

@@ -1710,6 +1710,7 @@ export default function Dashboard() {
       {showCreateLead ? (
         <CreateLeadModal
           key={
+            leadInitial?.prefillAt ||
             leadInitial?.existingLeadId ||
             leadInitial?.fileName ||
             leadInitial?.mobile ||
@@ -1851,6 +1852,7 @@ export default function Dashboard() {
             const fullName =
               [f.firstName, f.lastName].filter(Boolean).join(" ").trim() || match?.name || "";
             const isNew = Boolean(payload?.createNew);
+            const prior = biodataCompareWith || {};
 
             setShowBiodataUpload(false);
             setBiodataCompareWith(null);
@@ -1905,21 +1907,30 @@ export default function Dashboard() {
 
             // Always open Create Lead with biodata fields (update vs create decided by existingLeadId)
             setLeadInitial({
-              firstName: f.firstName || "",
-              lastName: f.lastName || "",
-              dob: f.dob || "",
-              mobile: f.mobile || payload?.senderMobile || match?.mobile || "",
-              email: f.email || match?.email || "",
-              city: f.city || "",
-              area: f.area || "",
-              lookingFor: f.lookingFor || "yes",
-              relation: f.relation || "Self / Prospect",
-              contactWith: match && !isNew ? "Existing Client" : "First Contact",
-              source: "Biodata Upload",
-              fileName: payload?.fileName || "",
+              ...prior,
+              firstName: f.firstName || prior.firstName || "",
+              lastName: f.lastName || prior.lastName || "",
+              dob: f.dob || prior.dob || "",
+              mobile: f.mobile || payload?.senderMobile || match?.mobile || prior.mobile || "",
+              email: f.email || match?.email || prior.email || "",
+              city: f.city || prior.city || "",
+              area: f.area || prior.area || "",
+              lookingFor: f.lookingFor || prior.lookingFor || "yes",
+              relation: f.relation || prior.relation || "Self / Prospect",
+              contactWith: match && !isNew ? "Existing Client" : prior.contactWith || "First Contact",
+              source:
+                prior.source && prior.source !== "Website Inquiry"
+                  ? prior.source
+                  : "Biodata Upload",
+              fileName: payload?.fileName || prior.fileName || "",
               existingLeadId: existingLeadId || undefined,
               clientId: clientId || undefined,
               mode: existingLeadId ? "update" : "create",
+              fieldMeta: payload?.fieldMeta || {},
+              alsoRead: payload?.alsoRead || [],
+              existingValues: payload?.existingValues || {},
+              biodataName: payload?.biodataName || "",
+              prefillAt: Date.now(),
             });
             setShowCreateLead(true);
 
@@ -1929,10 +1940,14 @@ export default function Dashboard() {
                   ? `Updated existing lead — flagged for review. Finish details in the form.`
                   : `Updated existing lead in DB. Review / save details in Create Lead.`
               );
+            } else if (payload?.matchKind === "sender" && payload?.senderMatch) {
+              toast.info(
+                `Sender "${payload.senderMatch.name}" is registered — finish as a new lead.`
+              );
             } else if (payload?.resolution === "relative" && match) {
               toast.info(`Linked to "${match.name}" — finish as a new lead in the form.`);
             } else {
-              toast.info("Fill Create Lead and save.");
+              toast.info("Fill missing Create Lead fields and save.");
             }
           }}
         />

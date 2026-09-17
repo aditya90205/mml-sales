@@ -15,6 +15,7 @@ export default function Modal({
   hideHeader = false,
   hideClose = false,
   headerActions,
+  zClass = "z-50",
 }) {
   useEffect(() => {
     if (!open) return;
@@ -27,7 +28,7 @@ export default function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className={`fixed inset-0 ${zClass} flex items-center justify-center p-4`}
       aria-modal="true"
       role="dialog"
     >

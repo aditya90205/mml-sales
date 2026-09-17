@@ -42,6 +42,7 @@ import P6ChecklistTab from "./deal-tabs/P6ChecklistTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
 import { EMPTY, atLeast, historyUntil, maybeDash, stageGateFor } from "./deal-tabs/stageContent.jsx";
 import { p0StatusOf } from "../../utils/pipelineStore.js";
+import { recordLeadActivity } from "../../utils/leadActivityStore.js";
 import eyeIcon from "../../assets/eye.png";
 
 const BASE_TABS = [
@@ -245,6 +246,10 @@ export default function DealDetailPage({
     const contact = getDealContact(lead, name);
     const base = {
       ...DEAL_DEFAULTS,
+      id: lead?.id,
+      source: lead?.source || DEAL_DEFAULTS.leadSource,
+      p0Status: p0StatusOf(lead),
+      owner: lead?.owner,
       dealCode,
       stageLabel: currentStage === "P0" ? p0StageLabel : STAGE_LABELS[currentStage] || STAGE_LABELS.P4,
       name,
@@ -322,6 +327,12 @@ export default function DealDetailPage({
       branch: DUMMY_MANAGER.branch,
     });
     setServiceAssignOpen(true);
+    recordLeadActivity(lead, currentStage, {
+      type: "handover",
+      title: `Handover assigned to ${DUMMY_MANAGER.name}`,
+      detail: DUMMY_MANAGER.branch,
+      stage: "P6",
+    });
   };
 
   const openWinLossModal = (mode) => setWinLossModal({ open: true, mode });
@@ -334,6 +345,14 @@ export default function DealDetailPage({
     });
     setWinLossModal({ open: false, mode });
     setActiveTab("overview");
+    recordLeadActivity(lead, currentStage, {
+      type: mode === "cold" ? "flag" : "stage",
+      title:
+        mode === "cold"
+          ? `${deal.name} moved to Cold & Hold`
+          : `${deal.name} marked as lost`,
+      detail: reasons,
+    });
     toast.success(
       mode === "cold"
         ? `${deal.name} moved to Cold & Hold. Win / loss reasons updated.`
@@ -365,6 +384,21 @@ export default function DealDetailPage({
     handlePremiumChange(draft.premium === "Yes");
     if (currentStage === "P0") {
       onP0DetailsSaved?.({ ...lead, p0Status: "contacted", overviewDetails: draft }, draft);
+    } else {
+      recordLeadActivity(lead, currentStage, {
+        type: "details",
+        title: "Deal details updated",
+      });
+    }
+  };
+
+  const handlePackageSelect = (pkg) => {
+    setSelectedPackage(pkg);
+    if (pkg?.name) {
+      recordLeadActivity(lead, currentStage, {
+        type: "quote",
+        title: `${pkg.name} package selected`,
+      });
     }
   };
 
@@ -382,13 +416,13 @@ export default function DealDetailPage({
       case "intake":
         return <IntakeFormTab empty={currentStage === "P0"} lead={lead} />;
       case "visits":
-        return <VisitsMeetingsTab empty={!atLeast(currentStage, "P3")} />;
+        return <VisitsMeetingsTab empty={!atLeast(currentStage, "P3")} lead={lead} currentStage={currentStage} />;
       case "package":
         return (
           <PackageQuoteTab
             empty={!atLeast(currentStage, "P4")}
             selectedKey={selectedPackage?.key ?? null}
-            onPackageSelect={setSelectedPackage}
+            onPackageSelect={handlePackageSelect}
           />
         );
       case "discounts":
@@ -396,7 +430,7 @@ export default function DealDetailPage({
       case "documents":
         return <DocumentsKycTab empty={!atLeast(currentStage, "P5")} />;
       case "notes":
-        return <NotesRmFlagsTab empty={!atLeast(currentStage, "P2")} />;
+        return <NotesRmFlagsTab empty={!atLeast(currentStage, "P2")} lead={lead} currentStage={currentStage} />;
       case "audit":
         return <AuditTab currentStage={currentStage} />;
       case "payments":

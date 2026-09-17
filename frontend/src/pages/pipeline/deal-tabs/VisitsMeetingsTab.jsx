@@ -18,6 +18,7 @@ import {
   Td,
 } from "../../../components/pipeline/deskUi";
 import { dashRow, dashRows } from "./stageContent.jsx";
+import { recordLeadActivity } from "../../../utils/leadActivityStore.js";
 
 const CAPTURE_ITEMS = [
   { title: "House / GPS photo", note: "Taken at the door with location accuracy under 15m.", status: "Captured", tone: "green", done: true },
@@ -187,7 +188,7 @@ function LastActionIcons({ values = {}, empty = false }) {
 }
 
 /** Same design and data as the standalone "Smart Home & Office Visits" page. */
-export default function VisitsMeetingsTab({ empty = false }) {
+export default function VisitsMeetingsTab({ empty = false, lead, currentStage = "P3" }) {
   const [visitType, setVisitType] = useState("Home visit");
   const [date, setDate] = useState("2026-07-02");
   const [slot, setSlot] = useState("11:00 AM – 1:00 PM");
@@ -225,7 +226,18 @@ export default function VisitsMeetingsTab({ empty = false }) {
         <h2 className="text-[16px] font-bold text-[#111]">Visits & Meetings</h2>
         <div className="flex items-center gap-2">
           <OutlineButton onClick={() => toast.info("Reschedule slot opened.")}>Reschedule</OutlineButton>
-          <PrimaryButton onClick={() => toast.success("Visit started. Capture checklist is live.")}>Start Visit</PrimaryButton>
+          <PrimaryButton
+            onClick={() => {
+              toast.success("Visit started. Capture checklist is live.");
+              recordLeadActivity(lead, currentStage, {
+                type: "meeting",
+                title: `Visit started for ${lead?.name || "client"}`,
+                stage: "P3",
+              });
+            }}
+          >
+            Start Visit
+          </PrimaryButton>
         </div>
       </div>
 

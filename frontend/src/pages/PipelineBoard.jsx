@@ -35,12 +35,14 @@ import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import SearchField from "../components/common/SearchField.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import {
+  addP0Lead,
   findLeadById as findStoredLeadById,
   p0StatusOf,
   readLeads,
   subscribePipeline,
   writeLeads,
 } from "../utils/pipelineStore.js";
+import { recordLeadActivity } from "../utils/leadActivityStore.js";
 
 /* ───────────────────────── Data ───────────────────────── */
 
@@ -769,6 +771,14 @@ function findLeadById(leadId) {
   return findStoredLeadById(leadId);
 }
 
+function logLeadMove(lead, fromStage, title, extra = {}) {
+  recordLeadActivity(lead, fromStage, {
+    type: extra.type || "stage",
+    title,
+    ...extra,
+  });
+}
+
 export default function PipelineBoard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
@@ -829,11 +839,7 @@ export default function PipelineBoard() {
   }, [location.state?.resetPipeline]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddProspect = (newLead) => {
-    const leadWithId = { id: `p0-${Date.now()}`, p0Status: "new", ...newLead };
-    setLeadsData((prev) => ({
-      ...prev,
-      P0: [leadWithId, ...(prev.P0 || [])],
-    }));
+    addP0Lead({ p0Status: "new", ...newLead });
     toast.success(`Prospect "${newLead.name}" created successfully in P0 New!`);
   };
 
@@ -861,8 +867,13 @@ export default function PipelineBoard() {
     setActiveLead(updatedLead);
     setDealTargetStage("P0");
     if (alreadyContacted) {
+      logLeadMove(updatedLead, "P0", "Deal details updated", { type: "details", stage: "P0" });
       toast.success(`Deal details updated for "${lead.name}".`);
     } else {
+      logLeadMove(updatedLead, "P0", "Deal details saved — moved to P0 Contacted", {
+        type: "details",
+        stage: "P0",
+      });
       toast.success(`Lead "${lead.name}" moved to P0 Contacted.`);
     }
     return updatedLead;
@@ -881,6 +892,7 @@ export default function PipelineBoard() {
     const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 8.5, completion: 45 };
     setActiveLead(updatedLead);
     setDealTargetStage("P1");
+    logLeadMove(updatedLead, "P0", "Stage advanced P0 Contacted → P1 Qualified", { stage: "P1" });
     toast.success(`Lead "${lead.name}" successfully moved to P1 Qualified!`);
     return updatedLead;
   };
@@ -900,6 +912,7 @@ export default function PipelineBoard() {
     const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 9.0, completion: 70 };
     setActiveLead(updatedLead);
     setDealTargetStage("P2");
+    logLeadMove(updatedLead, "P1", "Stage advanced P1 Qualified → P2 Data Collection", { stage: "P2" });
     toast.success(`Lead "${lead.name}" successfully moved to P2 Data Collection!`);
     return updatedLead;
   };
@@ -911,6 +924,7 @@ export default function PipelineBoard() {
       return { ...prev, P2: from, P3: [updatedLead, ...(prev.P3 || [])] };
     });
     setActiveLead(updatedLead);
+    logLeadMove(updatedLead, "P2", "Stage advanced P2 Data Collection → P3 Visit / Video", { stage: "P3" });
     toast.success(`Lead "${lead.name}" moved to P3 Visit / Video!`);
   };
 
@@ -921,6 +935,7 @@ export default function PipelineBoard() {
       return { ...prev, P3: from, P4: [updatedLead, ...(prev.P4 || [])] };
     });
     setActiveLead(updatedLead);
+    logLeadMove(updatedLead, "P3", "Stage advanced P3 Visit / Video → P4 Negotiation", { stage: "P4" });
     toast.success(`Lead "${lead.name}" moved to P4 Negotiation!`);
   };
 
@@ -935,6 +950,7 @@ export default function PipelineBoard() {
       };
     });
     setActiveLead(updatedLead);
+    logLeadMove(updatedLead, "P4", "Stage advanced P4 Negotiation → P5 Payment", { stage: "P5" });
     toast.success(`Lead "${lead.name}" moved to P5 Payment!`);
   };
 
@@ -949,6 +965,7 @@ export default function PipelineBoard() {
       };
     });
     setActiveLead(updatedLead);
+    logLeadMove(updatedLead, "P5", "Stage advanced P5 Payment → P6 Handover", { stage: "P6" });
     toast.success(`Lead "${lead.name}" moved to P6 Handover!`);
   };
 

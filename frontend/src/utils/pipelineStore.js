@@ -1,3 +1,5 @@
+import { addLeadActivity } from "./leadActivityStore.js";
+
 const EVENT = "mml-sales-pipeline";
 
 /** Sample Overview fields carried from P0 New → P0 Contacted. */
@@ -31,6 +33,31 @@ export const LEADS_BY_STAGE = {
   P0: [
     { id: "p0-1", name: "Kuhu Sharma",  starred: true,  mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", p0Status: "new" },
     { id: "p0-2", name: "Ankit Sharma", starred: true,  mmlId: "MML - D - 10429", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", p0Status: "contacted", profession: SAMPLE_P0_CONTACTED_DETAILS.profession, familyIncomeBand: SAMPLE_P0_CONTACTED_DETAILS.familyIncomeBand, areaOfHouse: SAMPLE_P0_CONTACTED_DETAILS.areaOfHouse, overviewDetails: SAMPLE_P0_CONTACTED_DETAILS },
+    {
+      id: "p0-ritika",
+      name: "Ritika Sharma",
+      firstName: "Ritika",
+      lastName: "Sharma",
+      starred: false,
+      mmlId: "MML - D - 10502",
+      temperature: "Warm",
+      score: 7.8,
+      priority: "Medium",
+      completion: 35,
+      days: 1,
+      hrs: 18,
+      source: "Biodata Upload",
+      lastDiscussion: "16/09/26, 4:10 PM",
+      nextAction: "Review biodata",
+      p0Status: "new",
+      mobile: "9876543210",
+      email: "ritika.sharma@email.com",
+      city: "",
+      area: "",
+      dob: "",
+      lookingFor: "yes",
+      relation: "Parent",
+    },
   ],
   P1: [
     { id: "p1-1", name: "Harshit Sharma", starred: false, mmlId: "MML - D - 10430", temperature: "Hot",  score: 8.5, priority: "High",   completion: 40,  days: 4,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" },
@@ -112,8 +139,15 @@ export function addP0Lead(lead) {
   const id = lead?.id || `p0-${Date.now()}`;
   leads = cloneLeads(leads);
   leads.P0 = [{ ...lead, id, p0Status: lead?.p0Status || "new" }, ...(leads.P0 || [])];
+  const created = leads.P0[0];
   emit();
-  return leads.P0[0];
+  addLeadActivity(created.id, {
+    type: "created",
+    title: `Lead ${created.name} created`,
+    detail: created.source ? `Source: ${created.source}` : "Added to P0 New",
+    stage: "P0",
+  });
+  return created;
 }
 
 export function findLeadById(leadId) {
