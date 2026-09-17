@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CheckCheck, ChevronDown, Filter, Search } from "lucide-react";
 import SearchField from "../components/common/SearchField.jsx";
+import NotificationTypeIcon from "../components/common/NotificationTypeIcon.jsx";
 import {
   NOTIFICATION_TYPES,
   markAllNotificationsRead,
@@ -203,17 +204,19 @@ export default function NotificationsPage() {
                     n.unread ? "bg-[#FDF6F7] hover:bg-[#F9ECEE]" : "bg-white hover:bg-[#FAFAFB]"
                   }`}
                 >
-                  <img src={n.avatar} alt="" className="size-10 rounded-full object-cover shrink-0" />
+                  <NotificationTypeIcon type={n.type} title={n.title} size="lg" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13.5px] text-[#111] leading-snug">
-                      <span className="font-semibold">{n.actor}</span>
-                      <span className="text-[#6B7280]"> · {n.title}</span>
+                    <p className="text-[13.5px] text-[#111] leading-snug font-semibold">
+                      {n.title}
                     </p>
                     <p className="text-[13px] text-[#6B7280] mt-0.5 leading-relaxed">{n.message}</p>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <span className="inline-flex items-center h-[20px] px-2 rounded-md bg-[#EEF2FF] text-[11px] font-medium text-[#4B5563]">
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <span className="inline-flex items-center h-[20px] px-2 rounded-md bg-[#EEF2FF] text-[11px] font-semibold text-[#4F46E5]">
                         {n.type}
                       </span>
+                      {n.actor && (
+                        <span className="text-[11px] text-[#9CA3AF]">by {n.actor}</span>
+                      )}
                       <span className="text-[11px] text-[#9CA3AF]">{n.time}</span>
                     </div>
                   </div>

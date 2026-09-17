@@ -330,7 +330,7 @@ function applyInitial(initial) {
   return next;
 }
 
-export default function CreateLeadModal({ open, onClose, onCreate, initial = null }) {
+export default function CreateLeadModal({ open, onClose, onCreate, onUploadBiodata, initial = null }) {
   const fileRef = useRef(null);
   const cityRef = useRef(null);
   const [form, setForm] = useState(() => applyInitial(initial));
@@ -341,6 +341,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
   const [dropOpen, setDropOpen] = useState(false);
   const [dropReason, setDropReason] = useState("");
   const [dropError, setDropError] = useState("");
+  const isUpdate = Boolean(initial?.existingLeadId || initial?.mode === "update");
 
   const set = (key) => (value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -392,6 +393,14 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
     setFile(next);
   };
 
+  const openBiodataUpload = () => {
+    if (onUploadBiodata) {
+      onUploadBiodata(form);
+      return;
+    }
+    fileRef.current?.click();
+  };
+
   const validate = () => {
     if (!form.firstName.trim()) return "Prospect's first name is required.";
     if (!form.lastName.trim()) return "Prospect's last name is required.";
@@ -414,7 +423,10 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
       ...form,
       name: `${form.firstName.trim()} ${form.lastName.trim()}`.replace(/\s+/g, " "),
       mobile: `${dialCode} ${digits}`,
-      fileName: file?.name || "",
+      fileName: file?.name || initial?.fileName || "",
+      existingLeadId: initial?.existingLeadId || undefined,
+      clientId: initial?.clientId || undefined,
+      mode: isUpdate ? "update" : "create",
     });
     onClose?.();
   };
@@ -461,10 +473,12 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
               <UserPlus size={18} strokeWidth={2.2} className="text-[#7A0A17] shrink-0 mt-0.5" />
               <div className="min-w-0">
                 <h2 id="create-lead-title" className="text-[18px] font-bold text-[#111] leading-tight">
-                  Create Lead
+                  {isUpdate ? "Update Lead" : "Create Lead"}
                 </h2>
                 <p className="text-[12px] text-[#9CA3AF] mt-0.5">
-                  Capture the inquiry while you are on the call
+                  {isUpdate
+                    ? "Existing lead found — review biodata fields and save updates"
+                    : "Capture the inquiry while you are on the call"}
                 </p>
               </div>
             </div>
@@ -488,6 +502,10 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
               onDrop={(e) => {
                 e.preventDefault();
                 setDragging(false);
+                if (onUploadBiodata) {
+                  onUploadBiodata(form);
+                  return;
+                }
                 takeFile(e.dataTransfer.files?.[0]);
               }}
               className={`flex items-center justify-between gap-4 rounded-2xl px-4 py-3.5 transition-colors ${
@@ -522,7 +540,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
               />
               <button
                 type="button"
-                onClick={() => fileRef.current?.click()}
+                onClick={openBiodataUpload}
                 className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-white border border-black/10 text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] shrink-0"
               >
                 <CloudUpload size={15} />
@@ -748,7 +766,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
                 className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
               >
                 <UserPlus size={14} />
-                Create Lead
+                {isUpdate ? "Save Lead" : "Create Lead"}
               </button>
             </div>
           </div>

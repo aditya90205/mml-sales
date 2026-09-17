@@ -139,7 +139,9 @@ export function calendarEventToMeetingView(ev) {
     people,
     modes: modeLabels,
     meetingTypes: modeLabels.length ? modeLabels : ["Virtual / Online"],
-    meetingWith: MEETING_WITH_LABELS[m.meetingWith] || m.meetingWith || "",
+    meetingWith: Array.isArray(m.meetingWithTypes) && m.meetingWithTypes.length
+      ? m.meetingWithTypes.map((k) => MEETING_WITH_LABELS[k] || k).join(", ")
+      : MEETING_WITH_LABELS[m.meetingWith] || m.meetingWith || "",
     priority: m.priority || "—",
     reminderChannels: (m.reminderChannels || []).map((k) => REMINDER_CHANNEL_LABELS[k] || k),
     reminderFrequency: [

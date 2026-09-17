@@ -199,7 +199,13 @@ function StageCardHeader({ stage, count, as: Comp = "div", className = "", style
       {...props}
     >
       <div className="min-w-0">
-        <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#9CA3AF]">{stage.id}</p>
+        <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#9CA3AF]">
+          {stage.p0Status === "new"
+            ? "P0 New"
+            : stage.p0Status === "contacted"
+              ? "P0 Contacted"
+              : stage.id}
+        </p>
         <p className="text-[13px] font-bold text-[#111] leading-tight truncate">{stage.label}</p>
       </div>
       <span
@@ -626,7 +632,7 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                               : "Move to P2"
                           }
                         >
-                          {stage.id} - {stage.id === "P0" ? p0BoardLabel(lead) : stage.label}{" "}
+                          {stage.id === "P0" ? `P0 ${p0BoardLabel(lead)}` : `${stage.id} - ${stage.label}`}{" "}
                           <span style={{ color: temp.color }} className="font-semibold no-underline">({lead.temperature})</span>
                         </button>
                       ) : (

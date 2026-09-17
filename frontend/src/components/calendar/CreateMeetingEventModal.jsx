@@ -162,6 +162,7 @@ const PILL_IDLE = "border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]";
 const emptyForm = {
   title: "",
   meetingWith: "client",
+  meetingWithTypes: ["client"],
   inviteGroups: [],
   people: [],
   emails: [],
@@ -169,10 +170,12 @@ const emptyForm = {
   specialInstructions: "",
   notes: "",
   description: "",
+  customDescription: "",
   meetingType: "video",
   meetingTypes: [],
   meetingLink: "",
   venue: "",
+  logisticsRequired: false,
   startDate: "",
   endDate: "",
   startTime: "",
@@ -200,6 +203,11 @@ function parseEmails(value) {
 }
 
 function durationToMinutes(duration) {
+  const raw = String(duration || "").trim();
+  if (/^\d{1,2}:\d{2}$/.test(raw)) {
+    const mins = timeToMinutes(raw);
+    return mins > 0 ? mins : 60;
+  }
   const map = {
     "15 minutes": 15,
     "30 minutes": 30,
@@ -211,9 +219,21 @@ function durationToMinutes(duration) {
     "3 hours": 180,
   };
   if (map[duration]) return map[duration];
-  const n = parseInt(String(duration), 10);
-  if (String(duration).includes("hour")) return Number.isFinite(n) ? n * 60 : 60;
+  const n = parseInt(raw, 10);
+  if (raw.includes("hour")) return Number.isFinite(n) ? n * 60 : 60;
+  if (raw.includes("minute")) return Number.isFinite(n) ? n : 60;
   return Number.isFinite(n) ? n : 60;
+}
+
+function minutesToTimeInput(mins) {
+  const safe = Number.isFinite(mins) && mins > 0 ? Math.min(mins, 23 * 60 + 59) : 60;
+  const h = Math.floor(safe / 60);
+  const m = safe % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function durationToTimeInput(duration) {
+  return minutesToTimeInput(durationToMinutes(duration || "1 hour"));
 }
 
 function normalizeDuration(duration) {
@@ -221,7 +241,7 @@ function normalizeDuration(duration) {
   if (DURATION_OPTIONS.includes(duration)) return duration;
   const mins = durationToMinutes(duration);
   const match = DURATION_OPTIONS.find((opt) => durationToMinutes(opt) === mins);
-  return match || "1 hour";
+  return match || minutesToDurationLabel(mins) || "1 hour";
 }
 
 function addMinutesToTime(time, minutes) {
@@ -278,23 +298,50 @@ function formatDateLabel(iso) {
   return `${d}-${m}-${y}`;
 }
 
-function deriveMeetingWith(inviteGroups = []) {
-  if (inviteGroups.includes("client")) return "client";
-  if (inviteGroups.includes("employees")) return "employee";
-  if (inviteGroups.includes("others")) return "others";
+function normalizeMeetingWithTypes(value, inviteGroups = []) {
+  if (Array.isArray(value) && value.length) {
+    return [...new Set(value.filter((k) => MEETING_WITH_OPTIONS.some((o) => o.key === k)))];
+  }
+  if (typeof value === "string" && value.trim()) {
+    const parts = value.includes(",")
+      ? value.split(",").map((s) => s.trim())
+      : [value.trim()];
+    const cleaned = parts.filter((k) => MEETING_WITH_OPTIONS.some((o) => o.key === k));
+    if (cleaned.length) return [...new Set(cleaned)];
+  }
+  const fromGroups = [];
+  if (inviteGroups.includes("client")) fromGroups.push("client");
+  if (inviteGroups.includes("employees")) fromGroups.push("employee");
+  if (inviteGroups.includes("others")) fromGroups.push("others");
+  return fromGroups.length ? fromGroups : ["client"];
+}
+
+function primaryMeetingWith(types = []) {
+  if (types.includes("client")) return "client";
+  if (types.includes("employee")) return "employee";
+  if (types.includes("others")) return "others";
   return "client";
 }
 
-function inviteGroupsFromPeople(people, meetingWith) {
+function inviteGroupsFromPeople(people, meetingWithTypes) {
   const groups = new Set();
-  if (meetingWith === "employee") groups.add("employees");
-  else if (meetingWith) groups.add(meetingWith);
+  (meetingWithTypes || []).forEach((mw) => {
+    if (mw === "employee") groups.add("employees");
+    else if (mw) groups.add(mw);
+  });
   (people || []).forEach((p) => {
     if (belongsToList(p, LEADS)) groups.add("client");
     if (belongsToList(p, EMPLOYEES)) groups.add("employees");
     if (belongsToList(p, OTHERS)) groups.add("others");
   });
   return [...groups];
+}
+
+function peopleForMeetingWithType(people, type) {
+  if (type === "employee") return (people || []).filter((p) => belongsToList(p, EMPLOYEES));
+  if (type === "client") return (people || []).filter((p) => belongsToList(p, LEADS));
+  if (type === "others") return (people || []).filter((p) => belongsToList(p, OTHERS));
+  return [];
 }
 
 function Field({ label, required, children, danger, hint }) {
@@ -339,26 +386,54 @@ function Chip({ label, onRemove }) {
   );
 }
 
-function AttendeePicker({ group, people, onAdd, onRemove }) {
+function AttendeePicker({ groups, people, onAdd, onRemove }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
+  const groupList = Array.isArray(groups) ? groups.filter(Boolean) : groups ? [groups] : [];
 
-  const config = {
+  const groupConfig = {
     employee: {
       heading: "Employees — search by ID or name",
       placeholder: "Type an employee ID or name...",
       options: EMPLOYEES,
+      hint: "Pick employees by name or employee ID.",
     },
     client: {
       heading: "Leads — search or pick",
       placeholder: "Type a lead name or ID...",
       options: LEADS,
+      hint: "Pick from current pipeline leads.",
     },
-    others: { heading: "Others — search or pick", placeholder: "Type a name...", options: OTHERS },
-  }[group] || { heading: "Search or pick", placeholder: "Type a name...", options: [] };
+    others: {
+      heading: "Others — search or pick",
+      placeholder: "Type a name...",
+      options: OTHERS,
+      hint: "Add as many attendees as you need.",
+    },
+  };
 
-  const matches = config.options.filter((person) => {
+  const options = groupList.flatMap((g) => groupConfig[g]?.options || []);
+  const uniqueOptions = options.filter(
+    (person, idx, arr) => arr.findIndex((p) => formatPerson(p) === formatPerson(person)) === idx
+  );
+
+  const heading =
+    groupList.length === 0
+      ? "Select Employee, Client or Others above"
+      : groupList.length > 1
+        ? "Employees, leads & others — search or pick"
+        : groupConfig[groupList[0]]?.heading || "Search or pick";
+  const placeholder =
+    groupList.length > 1
+      ? "Type a name or ID..."
+      : groupConfig[groupList[0]]?.placeholder || "Type a name...";
+  const hint =
+    groupList.length > 1
+      ? "Pick employees and clients together — emails fill in automatically."
+      : groupConfig[groupList[0]]?.hint || "Add as many attendees as you need.";
+
+  const matches = uniqueOptions.filter((person) => {
     const label = formatPerson(person);
     const q = query.trim().toLowerCase();
     const haystack = `${person.id || ""} ${person.name} ${label}`.toLowerCase();
@@ -368,7 +443,7 @@ function AttendeePicker({ group, people, onAdd, onRemove }) {
   useEffect(() => {
     setQuery("");
     setOpen(false);
-  }, [group]);
+  }, [groupList.join("|")]);
 
   useEffect(() => {
     const onDoc = (e) => {
@@ -387,7 +462,7 @@ function AttendeePicker({ group, people, onAdd, onRemove }) {
   return (
     <div className="flex flex-col gap-1.5">
       <p className="text-[12.5px] font-semibold text-[#374151]">Who is attending</p>
-      <p className="text-[12px] text-[#9CA3AF]">{config.heading}</p>
+      <p className="text-[12px] text-[#9CA3AF]">{heading}</p>
       <div ref={rootRef} className="relative">
         <div className={`${INPUT} flex items-center gap-2 pr-3`}>
           <Search size={14} className="text-[#9CA3AF] shrink-0" />
@@ -404,12 +479,13 @@ function AttendeePicker({ group, people, onAdd, onRemove }) {
                 if (matches[0]) pick(matches[0]);
               }
             }}
-            placeholder={config.placeholder}
-            className="flex-1 min-w-0 bg-transparent outline-none placeholder:text-[#9CA3AF]"
+            placeholder={placeholder}
+            disabled={groupList.length === 0}
+            className="flex-1 min-w-0 bg-transparent outline-none placeholder:text-[#9CA3AF] disabled:cursor-not-allowed"
           />
           <ChevronDown size={15} className="text-[#9CA3AF] shrink-0" />
         </div>
-        {open && (
+        {open && groupList.length > 0 && (
           <div className="absolute z-20 mt-1 w-full max-h-48 overflow-auto rounded-xl border border-black/10 bg-white shadow-lg">
             {matches.length === 0 ? (
               <p className="px-3.5 py-2.5 text-[13px] text-[#9CA3AF]">No matches</p>
@@ -445,13 +521,7 @@ function AttendeePicker({ group, people, onAdd, onRemove }) {
           ))}
         </div>
       )}
-      <p className="text-[11.5px] text-[#9CA3AF]">
-        {group === "client"
-          ? "Pick from current pipeline leads."
-          : group === "employee"
-            ? "Pick employees by name or employee ID."
-            : "Add as many attendees as you need."}
-      </p>
+      <p className="text-[11.5px] text-[#9CA3AF]">{hint}</p>
     </div>
   );
 }
@@ -484,27 +554,43 @@ export default function CreateMeetingEventModal({
     if (initial) {
       const emails = parseEmails(initial.emails || initial.emailIds);
       const meetingType = initial.meetingType || initial.meetingTypes?.[0] || "video";
+      const meetingWithTypes = normalizeMeetingWithTypes(
+        initial.meetingWithTypes || initial.meetingWith,
+        initial.inviteGroups
+      );
+      const startTime = initial.startTime || "10:00";
+      const duration = isEvent
+        ? initial.duration || "60 min"
+        : normalizeDuration(initial.duration || "1 hour");
+      const endTime =
+        initial.endTime ||
+        addMinutesToTime(startTime, durationToMinutes(duration || (isEvent ? "60 min" : "1 hour")));
+      const people = Array.isArray(initial.people) ? initial.people : [];
+      const peopleEmails = people.map((p) => emailForPerson(p)).filter(Boolean);
+      const mergedEmails = [...new Set([...peopleEmails, ...emails])];
+      const presets = MEETING_DESCRIPTIONS.filter((d) => d !== "Other");
+      let description = initial.description || "";
+      let customDescription = initial.customDescription || "";
+      if (description && !MEETING_DESCRIPTIONS.includes(description) && description !== "Other") {
+        customDescription = customDescription || description;
+        description = "Other";
+      }
       setForm({
         ...emptyForm,
         ...initial,
-        emails,
-        emailIds: emails.join("; "),
+        emails: mergedEmails,
+        emailIds: mergedEmails.join("; "),
         meetingType,
         meetingTypes: initial.meetingTypes?.length ? initial.meetingTypes : meetingType ? [meetingType] : [],
-        meetingWith: initial.meetingWith || deriveMeetingWith(initial.inviteGroups),
-        startTime: initial.startTime || "10:00",
-        endTime:
-          initial.endTime ||
-          addMinutesToTime(initial.startTime || "10:00", durationToMinutes(initial.duration || (isEvent ? "60 min" : "1 hour"))),
-        duration: isEvent
-          ? initial.duration || "60 min"
-          : computeDurationFromRange(
-              initial.startTime || "10:00",
-              initial.endTime ||
-                addMinutesToTime(initial.startTime || "10:00", durationToMinutes(initial.duration || "1 hour")),
-              initial.startDate,
-              initial.endDate
-            ) || normalizeDuration(initial.duration),
+        meetingWithTypes,
+        meetingWith: primaryMeetingWith(meetingWithTypes),
+        logisticsRequired: Boolean(initial.logisticsRequired),
+        people,
+        description: presets.includes(description) || description === "Other" ? description : description || "",
+        customDescription,
+        startTime,
+        endTime,
+        duration,
         reminderChannels: initial.reminderChannels?.length ? initial.reminderChannels : ["email"],
         reminderFrequency: initial.reminderFrequency?.length ? initial.reminderFrequency : ["on_day"],
         customReminders: initial.customReminders || [],
@@ -540,6 +626,7 @@ export default function CreateMeetingEventModal({
         endTime: "11:00",
         duration: "1 hour",
         meetingWith: "client",
+        meetingWithTypes: ["client"],
         description: "General / internal discussions",
         meetingType: "video",
         reminderChannels: ["email"],
@@ -576,10 +663,12 @@ export default function CreateMeetingEventModal({
       ? [form.description, ...baseDescriptionOptions]
       : baseDescriptionOptions;
 
-  const meetingDescriptionOptions =
-    form.description && !MEETING_DESCRIPTIONS.includes(form.description)
-      ? [form.description, ...MEETING_DESCRIPTIONS]
-      : MEETING_DESCRIPTIONS;
+  const meetingDescriptionOptions = MEETING_DESCRIPTIONS;
+
+  const resolvedMeetingDescription = () => {
+    if (form.description === "Other") return (form.customDescription || "").trim();
+    return form.description || "";
+  };
 
   const set = (field) => (val) => setForm((f) => ({ ...f, [field]: val }));
 
@@ -613,13 +702,86 @@ export default function CreateMeetingEventModal({
 
   const addPerson = (name) => {
     if (name === "__all__") {
-      set("people")([...new Set([...form.people, ...peopleOptions])]);
+      const nextPeople = [...new Set([...form.people, ...peopleOptions])];
+      const nextEmails = [
+        ...new Set([...(form.emails || []), ...nextPeople.map((p) => emailForPerson(p)).filter(Boolean)]),
+      ];
+      setForm((f) => ({ ...f, people: nextPeople, emails: nextEmails, emailIds: nextEmails.join("; ") }));
       return;
     }
-    if (name && !form.people.includes(name)) set("people")([...form.people, name]);
+    if (!name || form.people.includes(name)) return;
+    const email = emailForPerson(name);
+    setForm((f) => {
+      const people = [...f.people, name];
+      const emails = email && !f.emails.includes(email) ? [...f.emails, email] : f.emails;
+      return { ...f, people, emails, emailIds: emails.join("; ") };
+    });
   };
 
-  const removePerson = (name) => set("people")(form.people.filter((p) => p !== name));
+  const removePerson = (name) => {
+    const email = emailForPerson(name);
+    setForm((f) => {
+      const people = f.people.filter((p) => p !== name);
+      const stillUsed = people.some((p) => emailForPerson(p) === email);
+      const emails = email && !stillUsed ? f.emails.filter((x) => x !== email) : f.emails;
+      return { ...f, people, emails, emailIds: emails.join("; ") };
+    });
+  };
+
+  const toggleMeetingWithType = (key) => {
+    setForm((f) => {
+      const current = normalizeMeetingWithTypes(f.meetingWithTypes || f.meetingWith);
+      const isOn = current.includes(key);
+      if (isOn && current.length === 1) return f;
+      const nextTypes = isOn ? current.filter((k) => k !== key) : [...current, key];
+      const removedPeople = isOn ? peopleForMeetingWithType(f.people, key) : [];
+      const people = isOn ? f.people.filter((p) => !removedPeople.includes(p)) : f.people;
+      const removedEmails = new Set(removedPeople.map((p) => emailForPerson(p)).filter(Boolean));
+      const emails = f.emails.filter((email) => {
+        if (!removedEmails.has(email)) return true;
+        return people.some((p) => emailForPerson(p) === email);
+      });
+      return {
+        ...f,
+        meetingWithTypes: nextTypes,
+        meetingWith: primaryMeetingWith(nextTypes),
+        people,
+        emails,
+        emailIds: emails.join("; "),
+      };
+    });
+  };
+
+  const setDurationType = (durationTime) => {
+    const mins = timeToMinutes(durationTime) || 60;
+    const label = minutesToDurationLabel(mins) || "1 hour";
+    setForm((f) => ({
+      ...f,
+      duration: label,
+      endTime: addMinutesToTime(f.startTime || "10:00", mins),
+    }));
+  };
+
+  const setStartTimeAndSync = (startTime) => {
+    setForm((f) => ({
+      ...f,
+      startTime,
+      endTime: addMinutesToTime(startTime || "10:00", durationToMinutes(f.duration || "1 hour")),
+    }));
+  };
+
+  const setEndTimeAndSync = (endTime) => {
+    setForm((f) => {
+      const mins =
+        isoDateDiffDays(f.startDate, f.endDate) * 24 * 60 +
+        (timeToMinutes(endTime) - timeToMinutes(f.startTime));
+      return {
+        ...f,
+        endTime,
+        duration: minutesToDurationLabel(mins) || f.duration,
+      };
+    });
+  };
 
   const emailInputId = `calendar-${label.toLowerCase()}-email-${isEdit ? "edit" : "create"}`;
   const formId = `create-${label.toLowerCase()}-form`;
@@ -729,12 +891,13 @@ export default function CreateMeetingEventModal({
       return;
     }
 
-    if (!form.meetingWith) {
+    if (!form.meetingWithTypes?.length && !form.meetingWith) {
       toast.error("Please select who the meeting is with.");
       return;
     }
-    if (!form.description) {
-      toast.error("Meeting description is required.");
+    const resolvedDescription = resolvedMeetingDescription();
+    if (!form.description || (form.description === "Other" && !resolvedDescription)) {
+      toast.error(form.description === "Other" ? "Please type a meeting description." : "Meeting description is required.");
       return;
     }
     if (!form.meetingType) {
@@ -766,14 +929,20 @@ export default function CreateMeetingEventModal({
       return;
     }
 
-    const inviteGroups = inviteGroupsFromPeople(form.people, form.meetingWith);
+    const meetingWithTypes = normalizeMeetingWithTypes(form.meetingWithTypes || form.meetingWith);
+    const inviteGroups = inviteGroupsFromPeople(form.people, meetingWithTypes);
     onSave?.({
       ...form,
+      description: resolvedDescription,
+      customDescription: form.description === "Other" ? form.customDescription : "",
+      meetingWithTypes,
+      meetingWith: primaryMeetingWith(meetingWithTypes),
       inviteGroups,
       meetingTypes: [form.meetingType],
       emailIds: form.emails.join("; "),
       endTime: form.endTime,
-      duration: computedDuration,
+      duration: form.duration || computedDuration,
+      logisticsRequired: form.meetingType === "face" ? Boolean(form.logisticsRequired) : false,
     });
     toast.success(isEdit ? "Meeting updated successfully." : "Meeting created successfully.");
     setForm(emptyForm);
@@ -1100,26 +1269,20 @@ export default function CreateMeetingEventModal({
 
             <Field label="Meeting With" required>
               <div className="grid grid-cols-3 gap-2.5">
-                {MEETING_WITH_OPTIONS.map((opt) => (
-                  <PillButton
-                    key={opt.key}
-                    active={form.meetingWith === opt.key}
-                    onClick={() =>
-                      setForm((s) => ({
-                        ...s,
-                        meetingWith: opt.key,
-                        people: s.meetingWith === opt.key ? s.people : [],
-                      }))
-                    }
-                  >
-                    {opt.label}
-                  </PillButton>
-                ))}
+                {MEETING_WITH_OPTIONS.map((opt) => {
+                  const active = (form.meetingWithTypes || []).includes(opt.key);
+                  return (
+                    <PillButton key={opt.key} active={active} onClick={() => toggleMeetingWithType(opt.key)}>
+                      {opt.label}
+                    </PillButton>
+                  );
+                })}
               </div>
+              <p className="text-[11.5px] text-[#9CA3AF]">You can select Client and Employee together.</p>
             </Field>
 
             <AttendeePicker
-              group={form.meetingWith}
+              groups={form.meetingWithTypes}
               people={form.people}
               onAdd={(name) => addPerson(name)}
               onRemove={removePerson}
@@ -1132,7 +1295,13 @@ export default function CreateMeetingEventModal({
             >
               <select
                 value={form.description}
-                onChange={(e) => set("description")(e.target.value)}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    description: e.target.value,
+                    customDescription: e.target.value === "Other" ? f.customDescription : "",
+                  }))
+                }
                 className={INPUT}
                 style={{ color: form.description ? "#111" : "#9CA3AF" }}
               >
@@ -1145,6 +1314,15 @@ export default function CreateMeetingEventModal({
                   </option>
                 ))}
               </select>
+              {form.description === "Other" && (
+                <input
+                  type="text"
+                  value={form.customDescription}
+                  onChange={(e) => set("customDescription")(e.target.value)}
+                  placeholder="Type your meeting description..."
+                  className={`${INPUT} mt-2`}
+                />
+              )}
             </Field>
 
             <Field label="Meeting Type" required>
@@ -1156,7 +1334,13 @@ export default function CreateMeetingEventModal({
                         type="radio"
                         name="meeting-type"
                         checked={form.meetingType === m.key}
-                        onChange={() => set("meetingType")(m.key)}
+                        onChange={() =>
+                          setForm((f) => ({
+                            ...f,
+                            meetingType: m.key,
+                            logisticsRequired: m.key === "face" ? f.logisticsRequired : false,
+                          }))
+                        }
                         className="size-3.5 accent-[#7A0A17]"
                       />
                       <span className="text-[13px] text-[#374151]">{m.label}</span>
@@ -1191,9 +1375,18 @@ export default function CreateMeetingEventModal({
                       type="text"
                       value={form.venue}
                       onChange={(e) => set("venue")(e.target.value)}
-                      placeholder="Paste a Google Maps link"
+                      placeholder="Google maps link or address"
                       className="w-full h-9 px-3 rounded-lg bg-white border border-black/10 text-[13px] outline-none focus:border-[#7A0A17]/40"
                     />
+                    <label className="flex items-center gap-2 cursor-pointer mt-3">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(form.logisticsRequired)}
+                        onChange={(e) => set("logisticsRequired")(e.target.checked)}
+                        className="size-3.5 accent-[#7A0A17]"
+                      />
+                      <span className="text-[13px] text-[#374151]">Company vehicle booking required</span>
+                    </label>
                   </div>
                 )}
               </div>
@@ -1249,30 +1442,26 @@ export default function CreateMeetingEventModal({
                 <input
                   type="time"
                   value={form.startTime}
-                  onChange={(e) => {
-                    const startTime = e.target.value;
-                    setForm((f) => {
-                      const days = isoDateDiffDays(f.startDate, f.endDate);
-                      const next = { ...f, startTime };
-                      if (days <= 0 && timeToMinutes(f.endTime) <= timeToMinutes(startTime)) {
-                        next.endTime = addMinutesToTime(startTime, 60);
-                      }
-                      return next;
-                    });
-                  }}
+                  onChange={(e) => setStartTimeAndSync(e.target.value)}
                   className={INPUT}
                 />
               </Field>
-              <Field label="End Time">
-                <input type="time" value={form.endTime} onChange={(e) => set("endTime")(e.target.value)} className={INPUT} />
+              <Field label="Duration" required>
+                <input
+                  type="time"
+                  value={durationToTimeInput(form.duration || "1 hour")}
+                  onChange={(e) => setDurationType(e.target.value)}
+                  className={INPUT}
+                />
               </Field>
             </div>
 
-            <Field label="Duration — set automatically from start time + end time">
+            <Field label="End Time" hint="Filled automatically from start time + duration — you can still edit it.">
               <input
-                readOnly
-                value={computedDuration || "—"}
-                className={`${INPUT} bg-[#FDECEE]/40 text-[#6B7280]`}
+                type="time"
+                value={form.endTime}
+                onChange={(e) => setEndTimeAndSync(e.target.value)}
+                className={INPUT}
               />
             </Field>
 

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Check,
   CheckCircle2,
   CloudUpload,
   FileText,
   Loader2,
+  Pencil,
   Search,
   UserPlus,
   XCircle,
@@ -35,8 +35,6 @@ const RESOLUTIONS = [
 const INPUT =
   "w-full h-10 px-3.5 rounded-xl bg-white border border-black/12 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/45 transition-colors";
 
-const LOW_CONFIDENCE = 80;
-
 function MatchIcon({ ok, size = 16 }) {
   if (ok === true) {
     return <CheckCircle2 size={size} className="text-[#16A34A] shrink-0" strokeWidth={2.2} />;
@@ -47,24 +45,55 @@ function MatchIcon({ ok, size = 16 }) {
   return <span className="inline-block size-4 rounded-full bg-black/10 shrink-0" style={{ width: size, height: size }} />;
 }
 
-function ConfidenceBadge({ value }) {
-  const low = value < LOW_CONFIDENCE;
-  return (
-    <span
-      className={`text-[12px] font-semibold tabular-nums shrink-0 ${
-        low ? "text-[#D97706]" : "text-[#16A34A]"
-      }`}
-    >
-      {value}%
-    </span>
-  );
-}
-
 function emptySearch() {
   return { name: "", mobile: "", email: "" };
 }
 
-export default function BiodataUploadModal({ open, onClose, onFillForm }) {
+/** Normalize Create Lead + biodata values for equality checks. */
+function normalizeField(key, value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+
+  if (key === "mobile") return digitsOnly(raw).slice(-10);
+
+  if (key === "email") return raw.toLowerCase();
+
+  if (key === "lookingFor") {
+    const v = raw.toLowerCase();
+    if (v === "yes" || v.includes("groom")) return "yes";
+    if (v === "no" || v.includes("bride")) return "no";
+    return v;
+  }
+
+  if (key === "relation") {
+    const v = raw.toLowerCase();
+    if (v.includes("self")) return "self";
+    if (v.includes("parent")) return "parent";
+    if (v.includes("sibling")) return "sibling";
+    if (v.includes("relative")) return "relative";
+    if (v.includes("friend")) return "friend";
+    return v;
+  }
+
+  if (key === "city") {
+    return raw.toLowerCase().split(",")[0].trim();
+  }
+
+  return raw.toLowerCase();
+}
+
+function leadCompareValue(compareWith, key) {
+  if (!compareWith || typeof compareWith !== "object") return "";
+  return compareWith[key] ?? "";
+}
+
+function fieldsMatch(key, biodataValue, leadValue) {
+  const leadNorm = normalizeField(key, leadValue);
+  if (!leadNorm) return true; // nothing on Create Lead to conflict with
+  return normalizeField(key, biodataValue) === leadNorm;
+}
+
+export default function BiodataUploadModal({ open, onClose, onFillForm, compareWith = null }) {
   const fileRef = useRef(null);
   const [step, setStep] = useState("search"); // search | review
   const [dragging, setDragging] = useState(false);
@@ -78,8 +107,9 @@ export default function BiodataUploadModal({ open, onClose, onFillForm }) {
   const [manualMode, setManualMode] = useState(false);
   const [recheckMobile, setRecheckMobile] = useState("");
   const [resolution, setResolution] = useState("relative");
-  const [selectedKeys, setSelectedKeys] = useState([]);
   const [fieldValues, setFieldValues] = useState({});
+  const [mismatchedKeys, setMismatchedKeys] = useState([]);
+  const [editingKeys, setEditingKeys] = useState([]);
 
   const reset = () => {
     setStep("search");
@@ -94,8 +124,9 @@ export default function BiodataUploadModal({ open, onClose, onFillForm }) {
     setManualMode(false);
     setRecheckMobile("");
     setResolution("relative");
-    setSelectedKeys([]);
     setFieldValues({});
+    setMismatchedKeys([]);
+    setEditingKeys([]);
   };
 
   useEffect(() => {
@@ -129,19 +160,27 @@ export default function BiodataUploadModal({ open, onClose, onFillForm }) {
     const data = mockExtractBiodata(nextFile);
     setExtracted(data);
     setRecheckMobile(data.senderMobile || "");
+
     const values = {};
-    const keys = [];
+    const mismatches = [];
     for (const f of data.fields) {
-      values[f.key] = f.value;
-      keys.push(f.key);
+      const leadVal = leadCompareValue(compareWith, f.key);
+      const ok = fieldsMatch(f.key, f.value, leadVal);
+      if (ok) {
+        values[f.key] = f.value;
+      } else {
+        values[f.key] = "";
+        mismatches.push(f.key);
+      }
     }
     setFieldValues(values);
-    setSelectedKeys(keys);
+    setMismatchedKeys(mismatches);
+    setEditingKeys([]);
 
     const autoQuery = {
       name: data.biodataName || "",
-      mobile: data.senderMobile || digitsOnly(values.mobile) || "",
-      email: values.email || "",
+      mobile: data.senderMobile || digitsOnly(values.mobile || data.fields.find((x) => x.key === "mobile")?.value) || "",
+      email: values.email || data.fields.find((x) => x.key === "email")?.value || "",
     };
     setSearch((prev) => ({
       name: prev.name || autoQuery.name,
@@ -195,25 +234,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm }) {
     return Boolean(inside && sender && inside !== sender);
   }, [extracted, fieldValues.mobile, recheckMobile]);
 
-  const selectedCount = selectedKeys.length;
-
-  const toggleKey = (key) => {
-    setSelectedKeys((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
-  };
-
-  const selectAll = () => {
-    if (!extracted) return;
-    setSelectedKeys(extracted.fields.map((f) => f.key));
-  };
-
-  const dropLow = () => {
-    if (!extracted) return;
-    setSelectedKeys(
-      extracted.fields.filter((f) => f.confidence >= LOW_CONFIDENCE).map((f) => f.key)
-    );
-  };
+  const fieldCount = extracted?.fields?.length || 0;
 
   const handleRecheck = () => {
     const mobile = recheckMobile.trim();
@@ -230,22 +251,23 @@ export default function BiodataUploadModal({ open, onClose, onFillForm }) {
 
   const primaryActionLabel = useMemo(() => {
     if (manualMode || !selectedMatch) {
-      return `Create new lead · ${selectedCount} field${selectedCount === 1 ? "" : "s"}`;
+      return `Save · ${fieldCount} field${fieldCount === 1 ? "" : "s"}`;
     }
     if (nameMismatch && resolution === "relative") {
-      return `Create linked lead · ${selectedCount} field${selectedCount === 1 ? "" : "s"}`;
+      return `Save linked lead · ${fieldCount} field${fieldCount === 1 ? "" : "s"}`;
     }
     if (nameMismatch && resolution === "wrong") {
-      return "Open existing · flag for review";
+      return "Save · flag for review";
     }
-    return `Save & open client detail · ${selectedCount} field${selectedCount === 1 ? "" : "s"}`;
-  }, [manualMode, selectedMatch, nameMismatch, resolution, selectedCount]);
+    return `Save · ${fieldCount} field${fieldCount === 1 ? "" : "s"}`;
+  }, [manualMode, selectedMatch, nameMismatch, resolution, fieldCount]);
 
   const handleFill = () => {
     if (!extracted) return;
+    // Always save every extracted field the same way (no select / unselect gate)
     const picked = {};
-    for (const key of selectedKeys) {
-      picked[key] = fieldValues[key] ?? "";
+    for (const f of extracted.fields) {
+      picked[f.key] = fieldValues[f.key] ?? "";
     }
     const isNew =
       manualMode ||
@@ -277,7 +299,9 @@ export default function BiodataUploadModal({ open, onClose, onFillForm }) {
       subtitle={
         step === "search"
           ? "Search leads / clients, then upload — match or enter manually"
-          : "Match existing → Pipeline client detail + Client Database save"
+          : compareWith
+            ? "Compared with Create Lead — mismatch fields are blank; edit & fill manually"
+            : "Review extracted fields, edit if needed, then save"
       }
       icon={<FileText size={18} />}
       iconBg="#E7F8EF"
@@ -296,8 +320,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm }) {
             <button
               type="button"
               onClick={handleFill}
-              disabled={selectedCount === 0 && !(nameMismatch && resolution === "wrong" && selectedMatch)}
-              className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] disabled:opacity-45 disabled:pointer-events-none transition-colors"
+              className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
             >
               {primaryActionLabel}
             </button>
@@ -665,47 +688,31 @@ export default function BiodataUploadModal({ open, onClose, onFillForm }) {
                 <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 truncate">
                   from {extracted.fileName} · {extracted.sizeLabel} · {extracted.pages} pages
                   {extracted.hasTextLayer ? " · text layer found" : ""}
+                  {mismatchedKeys.length > 0
+                    ? ` · ${mismatchedKeys.length} mismatch — fill manually`
+                    : ""}
                 </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={selectAll}
-                  className="h-8 px-2.5 rounded-lg border border-black/10 text-[12px] font-semibold text-[#374151] hover:bg-[#FAFAFB]"
-                >
-                  Select all
-                </button>
-                <button
-                  type="button"
-                  onClick={dropLow}
-                  className="h-8 px-2.5 rounded-lg border border-black/10 text-[12px] font-semibold text-[#374151] hover:bg-[#FAFAFB]"
-                >
-                  Drop low confidence
-                </button>
               </div>
             </div>
 
             <ul className="rounded-xl border border-black/10 divide-y divide-black/6 overflow-hidden">
               {extracted.fields.map((field) => {
-                const checked = selectedKeys.includes(field.key);
+                const isMismatch = mismatchedKeys.includes(field.key);
+                const isEditing = editingKeys.includes(field.key);
+                const canEdit = !isMismatch || isEditing;
                 return (
                   <li
                     key={field.key}
-                    className="flex items-center gap-3 px-3.5 py-2.5 bg-white hover:bg-[#FAFAFB]"
+                    className={`flex items-center gap-3 px-3.5 py-2.5 ${
+                      isMismatch && !isEditing ? "bg-[#FEF2F2]" : "bg-white hover:bg-[#FAFAFB]"
+                    }`}
                   >
-                    <button
-                      type="button"
-                      onClick={() => toggleKey(field.key)}
-                      className={`size-5 rounded-md border grid place-items-center shrink-0 transition-colors ${
-                        checked
-                          ? "bg-[#16A34A] border-[#16A34A] text-white"
-                          : "bg-white border-black/20 text-transparent"
-                      }`}
-                      aria-label={`Toggle ${field.label}`}
-                    >
-                      <Check size={12} strokeWidth={3} />
-                    </button>
-                    <span className="w-[38%] sm:w-[34%] text-[12.5px] text-[#6B7280] shrink-0">
+                    {isMismatch ? (
+                      <XCircle size={18} className="text-[#E8395B] shrink-0" strokeWidth={2.2} />
+                    ) : (
+                      <CheckCircle2 size={18} className="text-[#16A34A] shrink-0" strokeWidth={2.2} />
+                    )}
+                    <span className="w-[34%] sm:w-[30%] text-[12.5px] text-[#6B7280] shrink-0">
                       {field.label}
                     </span>
                     <input
@@ -713,9 +720,41 @@ export default function BiodataUploadModal({ open, onClose, onFillForm }) {
                       onChange={(e) =>
                         setFieldValues((prev) => ({ ...prev, [field.key]: e.target.value }))
                       }
-                      className="flex-1 min-w-0 h-8 px-2 rounded-lg border border-transparent hover:border-black/10 focus:border-[#7A0A17]/40 outline-none text-[13px] font-medium text-[#111] bg-transparent"
+                      readOnly={!canEdit}
+                      placeholder={isMismatch ? "Fill manually" : ""}
+                      className={`flex-1 min-w-0 h-8 px-2 rounded-lg outline-none text-[13px] font-medium ${
+                        canEdit
+                          ? "border border-black/10 focus:border-[#7A0A17]/40 text-[#111] bg-white"
+                          : "border border-transparent text-[#111] bg-transparent"
+                      } ${isMismatch && !fieldValues[field.key] ? "placeholder:text-[#E8395B]/70" : ""}`}
                     />
-                    <ConfidenceBadge value={field.confidence} />
+                    {isMismatch ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditingKeys((prev) =>
+                            prev.includes(field.key) ? prev : [...prev, field.key]
+                          )
+                        }
+                        className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg border border-black/10 text-[12px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] shrink-0"
+                      >
+                        <Pencil size={12} />
+                        Edit
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditingKeys((prev) =>
+                            prev.includes(field.key) ? prev : [...prev, field.key]
+                          )
+                        }
+                        className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg border border-transparent text-[12px] font-semibold text-[#6B7280] hover:border-black/10 hover:bg-[#FAFAFB] shrink-0"
+                      >
+                        <Pencil size={12} />
+                        Edit
+                      </button>
+                    )}
                   </li>
                 );
               })}

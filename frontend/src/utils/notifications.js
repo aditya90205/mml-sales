@@ -23,7 +23,6 @@ export const DEFAULT_NOTIFICATIONS = [
     period: "today",
     unread: true,
     to: "/pipeline",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face",
   },
   {
     id: "n2",
@@ -35,7 +34,6 @@ export const DEFAULT_NOTIFICATIONS = [
     period: "today",
     unread: true,
     to: "/calendar",
-    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=80&h=80&fit=crop&crop=face",
   },
   {
     id: "n3",
@@ -47,7 +45,6 @@ export const DEFAULT_NOTIFICATIONS = [
     period: "today",
     unread: true,
     to: "/clients",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face",
   },
   {
     id: "n4",
@@ -59,7 +56,6 @@ export const DEFAULT_NOTIFICATIONS = [
     period: "today",
     unread: true,
     to: "/pipeline/contract-payment",
-    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=80&h=80&fit=crop&crop=face",
   },
   {
     id: "n5",
@@ -71,7 +67,6 @@ export const DEFAULT_NOTIFICATIONS = [
     period: "today",
     unread: true,
     to: "/pipeline/discount-requests",
-    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&crop=face",
   },
   {
     id: "n6",
@@ -83,7 +78,6 @@ export const DEFAULT_NOTIFICATIONS = [
     period: "today",
     unread: true,
     to: "/calendar",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face",
   },
   {
     id: "n7",
@@ -95,7 +89,6 @@ export const DEFAULT_NOTIFICATIONS = [
     period: "today",
     unread: false,
     to: "/tasks",
-    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&h=80&fit=crop&crop=face",
   },
   {
     id: "n8",
@@ -107,7 +100,6 @@ export const DEFAULT_NOTIFICATIONS = [
     period: "today",
     unread: false,
     to: "/campaign/management",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face",
   },
   {
     id: "n9",
@@ -119,7 +111,6 @@ export const DEFAULT_NOTIFICATIONS = [
     period: "today",
     unread: false,
     to: "/cold-pool",
-    avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=80&h=80&fit=crop&crop=face",
   },
   {
     id: "n10",
@@ -131,7 +122,6 @@ export const DEFAULT_NOTIFICATIONS = [
     period: "week",
     unread: false,
     to: "/pipeline?openLead=p4-1",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
   },
   {
     id: "n11",
@@ -143,7 +133,6 @@ export const DEFAULT_NOTIFICATIONS = [
     period: "week",
     unread: false,
     to: "/pipeline/discount-requests",
-    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face",
   },
   {
     id: "n12",
@@ -155,7 +144,6 @@ export const DEFAULT_NOTIFICATIONS = [
     period: "week",
     unread: false,
     to: "/clients",
-    avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=80&h=80&fit=crop&crop=face",
   },
   {
     id: "n13",
@@ -167,7 +155,6 @@ export const DEFAULT_NOTIFICATIONS = [
     period: "week",
     unread: false,
     to: "/documents",
-    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&h=80&fit=crop&crop=face",
   },
   {
     id: "n14",
@@ -179,7 +166,6 @@ export const DEFAULT_NOTIFICATIONS = [
     period: "older",
     unread: false,
     to: "/pipeline/contract-payment",
-    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=80&h=80&fit=crop&crop=face",
   },
 ];
 

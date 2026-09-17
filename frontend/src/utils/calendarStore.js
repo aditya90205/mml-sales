@@ -83,6 +83,7 @@ export function unscheduledToMeetingForm(item, date = new Date()) {
   return {
     title: item?.title || "",
     meetingWith: "client",
+    meetingWithTypes: ["client"],
     people: peopleFromTitle(item?.title),
     description: "Follow-up",
     meetingType: /call/i.test(item?.title || "") ? "telephonic" : "video",
@@ -108,9 +109,20 @@ export function meetingFormToCalendarItem(form, category = "meeting", existingId
   const startH = parseTimeHour(form.startTime, 10);
   let endH = parseTimeHour(form.endTime, startH + 1);
   if (endH <= startH) endH = Math.min(startH + 1, 18);
+  const meetingWithTypes = Array.isArray(form.meetingWithTypes)
+    ? form.meetingWithTypes
+    : form.meetingWith
+      ? String(form.meetingWith)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+  const meetingWith = meetingWithTypes.includes("client")
+    ? "client"
+    : meetingWithTypes[0] || form.meetingWith || "";
   const client =
-    form.meetingWith === "client"
-      ? displayName(form.people?.[0] || "")
+    meetingWithTypes.includes("client") || meetingWith === "client"
+      ? displayName(form.people?.find((p) => String(p).includes("MML-D-")) || form.people?.[0] || "")
       : displayName(form.people?.find((p) => String(p).includes("MML-D-")) || "");
   return {
     id: existingId || `${category}-${Date.now()}`,
@@ -121,9 +133,14 @@ export function meetingFormToCalendarItem(form, category = "meeting", existingId
     category,
     meta: {
       priority: form.priority || "Medium",
-      clientRelated: Boolean(client) || form.meetingWith === "client" || form.inviteGroups?.includes("client"),
+      clientRelated:
+        Boolean(client) ||
+        meetingWith === "client" ||
+        meetingWithTypes.includes("client") ||
+        form.inviteGroups?.includes("client"),
       client,
-      meetingWith: form.meetingWith || "",
+      meetingWith,
+      meetingWithTypes,
       assignees: form.people?.length ? form.people : ["Priya Sharma"],
       people: form.people || [],
       inviteGroups: form.inviteGroups || [],
@@ -137,6 +154,7 @@ export function meetingFormToCalendarItem(form, category = "meeting", existingId
       specialInstructions: form.specialInstructions || "",
       location: form.venue || "",
       venue: form.venue || "",
+      logisticsRequired: Boolean(form.logisticsRequired),
       link: form.meetingLink || "",
       meetingLink: form.meetingLink || "",
       meetingType: form.meetingType || form.meetingTypes?.[0] || "",
@@ -260,4 +278,40 @@ export function subscribeCalendar(onChange) {
   const handler = () => onChange();
   window.addEventListener(EVENT, handler);
   return () => window.removeEventListener(EVENT, handler);
+}
+
+export function sameCalendarDay(a, b) {
+  if (!a || !b) return false;
+  const da = a instanceof Date ? a : new Date(a);
+  const db = b instanceof Date ? b : new Date(b);
+  if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return false;
+  return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
+}
+
+export function formatHourTime(h, m = 0) {
+  const hour = Number(h);
+  if (!Number.isFinite(hour)) return "";
+  const period = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
+}
+
+export function findUpNextEvent(events, now = new Date()) {
+  return (
+    [...(events || [])]
+      .filter((ev) => {
+        if (ev?.startH == null || !ev.date) return false;
+        const start = new Date(ev.date);
+        if (Number.isNaN(start.getTime())) return false;
+        start.setHours(ev.startH, 0, 0, 0);
+        return start >= now;
+      })
+      .sort((a, b) => {
+        const as = new Date(a.date);
+        as.setHours(a.startH, 0, 0, 0);
+        const bs = new Date(b.date);
+        bs.setHours(b.startH, 0, 0, 0);
+        return as - bs;
+      })[0] || null
+  );
 }

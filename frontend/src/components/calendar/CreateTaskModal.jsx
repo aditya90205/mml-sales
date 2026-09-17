@@ -59,6 +59,7 @@ const REPEAT_OPTIONS = ["Does not repeat", "Daily", "Every weekday", "Weekly", "
 const EFFORT_OPTIONS = ["15 mins", "30 mins", "45 mins", "1 hour", "2 hours"];
 const REMINDER_CHANNELS = ["Email", "WhatsApp", "SMS", "In-app"];
 const REMINDER_FREQUENCIES = ["Every day till due", "On day of task", "1 hour before", "On overdue"];
+const REMINDER_UNITS = ["minutes before", "hours before", "days before"];
 const MESSAGE_TEMPLATES = [
   "No template — plain text",
   "Standard reminder",
@@ -130,6 +131,19 @@ function PillButton({ active, onClick, children, className = "" }) {
   );
 }
 
+function Chip({ label, onRemove }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 bg-[#F1F2F4] text-[#111] text-[12.5px] font-medium rounded-lg px-2.5 py-1">
+      {label}
+      {onRemove ? (
+        <button type="button" onClick={onRemove} className="text-[#9CA3AF] hover:text-[#E8395B]">
+          ×
+        </button>
+      ) : null}
+    </span>
+  );
+}
+
 function emptyTaskForm(defaultDate) {
   const startDate = toIsoDate(defaultDate || new Date());
   return {
@@ -151,7 +165,8 @@ function emptyTaskForm(defaultDate) {
     reminderChannels: ["Email", "WhatsApp"],
     messageTemplate: "No template — plain text",
     messageBody: "",
-    reminderFrequency: "On day of task",
+    reminderFrequency: ["On day of task"],
+    customReminders: [],
     checklist: [],
     attachment: "",
     referenceLink: "",
@@ -174,11 +189,13 @@ function normalizeInitial(defaultDate, initial) {
     merged.reminderChannels = ["Email", "WhatsApp"];
   }
   if (Array.isArray(merged.reminderFrequency)) {
-    merged.reminderFrequency = merged.reminderFrequency[0] || "On day of task";
+    merged.reminderFrequency = merged.reminderFrequency.filter(Boolean);
+  } else if (merged.reminderFrequency) {
+    merged.reminderFrequency = [merged.reminderFrequency];
+  } else {
+    merged.reminderFrequency = ["On day of task"];
   }
-  if (!REMINDER_FREQUENCIES.includes(merged.reminderFrequency)) {
-    merged.reminderFrequency = "On day of task";
-  }
+  if (!Array.isArray(merged.customReminders)) merged.customReminders = [];
   const presets = TASK_DESCRIPTIONS.filter((d) => d !== "Others...");
   if (merged.description && !presets.includes(merged.description) && merged.description !== "Others...") {
     merged.customDescription = merged.customDescription || merged.description;
@@ -204,6 +221,8 @@ export default function CreateTaskModal({ open, onClose, onSave, defaultDate, in
   const [clientQuery, setClientQuery] = useState("");
   const [clientOpen, setClientOpen] = useState(false);
   const [checklistDraft, setChecklistDraft] = useState("");
+  const [reminderAmount, setReminderAmount] = useState("30");
+  const [reminderUnit, setReminderUnit] = useState("minutes before");
   const clientRef = useRef(null);
 
   useEffect(() => {
@@ -212,6 +231,8 @@ export default function CreateTaskModal({ open, onClose, onSave, defaultDate, in
     setClientQuery(initial?.client || "");
     setClientOpen(false);
     setChecklistDraft("");
+    setReminderAmount("30");
+    setReminderUnit("minutes before");
     // Seed once per open so parent re-renders don't reset in-progress edits.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -284,6 +305,17 @@ export default function CreateTaskModal({ open, onClose, onSave, defaultDate, in
     if (!text) return;
     setForm((s) => ({ ...s, checklist: [...s.checklist, { text, done: false }] }));
     setChecklistDraft("");
+  };
+
+  const addCustomReminder = () => {
+    const amount = String(reminderAmount).trim();
+    if (!amount || Number(amount) <= 0) {
+      toast.error("Enter a reminder amount.");
+      return;
+    }
+    const labelText = `${amount} ${reminderUnit}`;
+    if ((form.customReminders || []).includes(labelText)) return;
+    set("customReminders")([...(form.customReminders || []), labelText]);
   };
 
   const handleSubmit = (e) => {
@@ -665,20 +697,60 @@ export default function CreateTaskModal({ open, onClose, onSave, defaultDate, in
         </Field>
 
         <Field label="Reminder Frequency">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap gap-2">
             {REMINDER_FREQUENCIES.map((freq) => (
               <button
                 key={freq}
                 type="button"
-                onClick={() => set("reminderFrequency")(freq)}
+                onClick={() => toggleInArray("reminderFrequency")(freq)}
                 className={`h-9 px-3.5 rounded-full border text-[12.5px] font-semibold whitespace-nowrap transition-colors ${
-                  form.reminderFrequency === freq ? PILL_ACTIVE : PILL_IDLE
+                  (form.reminderFrequency || []).includes(freq) ? PILL_ACTIVE : PILL_IDLE
                 }`}
               >
                 {freq}
               </button>
             ))}
           </div>
+          <div className="flex items-center gap-2 flex-wrap mt-2">
+            <input
+              type="number"
+              min="1"
+              value={reminderAmount}
+              onChange={(e) => setReminderAmount(e.target.value)}
+              className="w-[72px] h-10 px-3 rounded-xl bg-white border border-black/10 text-[13px] outline-none focus:border-[#7A0A17]/40"
+            />
+            <select
+              value={reminderUnit}
+              onChange={(e) => setReminderUnit(e.target.value)}
+              className="h-10 px-3 rounded-xl bg-white border border-black/10 text-[13px] outline-none focus:border-[#7A0A17]/40"
+            >
+              {REMINDER_UNITS.map((unit) => (
+                <option key={unit} value={unit}>
+                  {unit}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={addCustomReminder}
+              className="h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712]"
+            >
+              Add reminder
+            </button>
+          </div>
+          {(form.customReminders || []).length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {form.customReminders.map((item) => (
+                <Chip
+                  key={item}
+                  label={item}
+                  onRemove={() =>
+                    set("customReminders")(form.customReminders.filter((x) => x !== item))
+                  }
+                />
+              ))}
+            </div>
+          )}
         </Field>
 
         <Field label="Checklist">

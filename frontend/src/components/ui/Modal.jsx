@@ -13,6 +13,7 @@ export default function Modal({
   footer,
   width = "max-w-lg",
   hideHeader = false,
+  hideClose = false,
   headerActions,
 }) {
   useEffect(() => {
@@ -59,14 +60,16 @@ export default function Modal({
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {headerActions}
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-1 rounded-lg text-[#6f7886] hover:bg-black/5 transition-colors shrink-0"
-                aria-label="Close modal"
-              >
-                <X size={18} />
-              </button>
+              {!hideClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-1 rounded-lg text-[#6f7886] hover:bg-black/5 transition-colors shrink-0"
+                  aria-label="Close modal"
+                >
+                  <X size={18} />
+                </button>
+              )}
             </div>
           </div>
         )}

@@ -4,6 +4,7 @@ import { Clock, Bell, ArrowUpRight, CheckCheck, User, LogOut, CircleDot, Chevron
 import SearchField from "../common/SearchField.jsx";
 import Avatar from "../ui/Avatar";
 import TimesheetDetailsModal from "../hrms/TimesheetDetailsModal";
+import NotificationTypeIcon from "../common/NotificationTypeIcon.jsx";
 import { logout } from "../../utils/auth";
 import {
   markAllNotificationsRead,
@@ -135,14 +136,18 @@ function NotificationBell() {
                   n.unread ? "bg-[#FCF5F6] hover:bg-[#F9ECEE]" : "hover:bg-[#FAFAFB]"
                 }`}
               >
-                <img src={n.avatar} alt="" className="size-9 rounded-full object-cover shrink-0" />
+                <NotificationTypeIcon type={n.type} title={n.title} size="sm" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-[#111] leading-snug">
-                    <span className="font-semibold">{n.actor}</span>
-                    <span className="text-[#555]"> · {n.title}</span>
+                    <span className="font-semibold">{n.title}</span>
                   </p>
-                  <p className="text-xs text-[#6B7280] mt-0.5 leading-relaxed">{n.message}</p>
-                  <p className="text-[11px] text-[#9CA3AF] mt-1">{n.time}</p>
+                  <p className="text-xs text-[#6B7280] mt-0.5 leading-relaxed line-clamp-2">{n.message}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] font-semibold text-[#6B7280] bg-black/[0.04] px-1.5 py-0.5 rounded-md">
+                      {n.type}
+                    </span>
+                    <span className="text-[11px] text-[#9CA3AF]">{n.time}</span>
+                  </div>
                 </div>
                 {n.unread && <span className="size-1.5 rounded-full bg-[#E8395B] shrink-0 mt-2" />}
               </button>

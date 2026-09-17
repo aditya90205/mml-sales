@@ -101,8 +101,11 @@ function taskToForm(task) {
     messageTemplate: task.messageTemplate || "No template — plain text",
     messageBody: task.messageBody || "",
     reminderFrequency: Array.isArray(task.reminderFrequency)
-      ? task.reminderFrequency[0] || "On day of task"
-      : task.reminderFrequency || "On day of task",
+      ? task.reminderFrequency
+      : task.reminderFrequency
+        ? [task.reminderFrequency]
+        : ["On day of task"],
+    customReminders: Array.isArray(task.customReminders) ? task.customReminders : [],
     checklist: Array.isArray(task.checklist) ? task.checklist : [],
     attachment: task.attachment || task.attachments?.[0]?.name || "",
     referenceLink: task.referenceLink || "",

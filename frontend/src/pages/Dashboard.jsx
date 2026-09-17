@@ -29,7 +29,6 @@ import {
   SquareCheck,
   FileText,
   Heart,
-  Bell,
   Crown,
   Sparkles,
   Filter,
@@ -47,20 +46,31 @@ import CreateLeadModal from "../components/pipeline/CreateLeadModal";
 import BiodataUploadModal from "../components/pipeline/BiodataUploadModal";
 import CreateMeetingEventModal from "../components/calendar/CreateMeetingEventModal";
 import CreateTaskModal from "../components/calendar/CreateTaskModal";
+import TaskDetailsModal, { calendarEventToTaskView } from "../components/calendar/TaskDetailsModal";
+import EventDetailsModal, { calendarEventToEventView } from "../components/calendar/EventDetailsModal";
+import MeetingDetailsModal, { calendarEventToMeetingView } from "../components/calendar/MeetingDetailsModal";
+import OthersDetailsModal, { calendarEventToOtherView } from "../components/calendar/OthersDetailsModal";
+import { INITIAL_EVENTS } from "./CalendarPage";
 import SearchField from "../components/common/SearchField.jsx";
 import { toast } from "react-toastify";
 import { USER } from "../components/layout/TopBar";
 import {
-  markAllNotificationsRead,
+  markNotificationRead,
   readNotifications,
   subscribeNotifications,
 } from "../utils/notifications.js";
+import NotificationTypeIcon from "../components/common/NotificationTypeIcon.jsx";
+import Modal from "../components/ui/Modal.jsx";
 import {
   addExtraEvent,
+  findUpNextEvent,
+  formatHourTime,
   meetingFormToCalendarItem,
+  mergeCalendarEvents,
   readExtraEvents,
   readUnscheduled,
   removeUnscheduled,
+  sameCalendarDay,
   subscribeCalendar,
   unscheduledToMeetingForm,
 } from "../utils/calendarStore.js";
@@ -282,14 +292,6 @@ const PERFORMANCE_DETAIL_META = {
   },
 };
 
-const UP_NEXT = {
-  dateLabel: "UP NEXT - NOV 10:35 AM",
-  badge: "Today",
-  title: "Follow up on Payment",
-  time: "11:00 AM – 12:00 PM",
-};
-
-
 const LEAD_HEALTH = [
   { key: "hot",  label: "Hot Leads",  count: 18, icon: Flame,     bg: "#FDECEE", fg: "#E8395B" },
   { key: "warm", label: "Warm Leads", count: 18, icon: Flame,     bg: "#FFF3E4", fg: "#F59E0B" },
@@ -299,14 +301,14 @@ const LEAD_HEALTH = [
 const FUNNEL_STAGE_IDS = ["P0", "P1", "P2", "P3", "P4", "P5", "P6"];
 
 const FUNNEL_ROW_META = [
-  { key: "new",         stageId: "P0", label: "New",                to: "to Contacted", top: "7.8%",  height: "13.2%", width: "92%", color: "#84A8DE" },
-  { key: "contacted",   stageId: "P0", label: "Contacted",          to: "to P1", top: "21.2%", height: "12.2%", width: "86%", color: "#6394D7" },
-  { key: "qualified",   stageId: "P1", label: "Qualified",          to: "to P2", top: "33.4%", height: "11.4%", width: "80%", color: "#386FB8" },
-  { key: "profile",     stageId: "P2", label: "Profile Creation",   to: "to P3", top: "44.8%", height: "11.0%", width: "72%", color: "#D7AB77" },
-  { key: "video",       stageId: "P3", label: "Video call / Visit", to: "to P4", top: "55.6%", height: "10.6%", width: "64%", color: "#BB8D58" },
-  { key: "negotiation", stageId: "P4", label: "Negotiation",        to: "to P5", top: "65.8%", height: "10.4%", width: "56%", color: "#8A909C" },
-  { key: "payment",     stageId: "P5", label: "Payment",            to: "to P6", top: "76.0%", height: "10.6%", width: "48%", color: "#A11620" },
-  { key: "handover",    stageId: "P6", label: "Handover",           to: "Final Conversion", isFinal: true, top: "86.2%", height: "11.2%", width: "42%", color: "#6E0F16" },
+  { key: "new",         stageId: "P0", filterKey: "P0-new",       statLabel: "P0 New",       label: "New",                to: "to Contacted", top: "7.8%",  height: "13.2%", width: "92%", color: "#84A8DE" },
+  { key: "contacted",   stageId: "P0", filterKey: "P0-contacted", statLabel: "P0 Contacted", label: "Contacted",          to: "to P1", top: "21.2%", height: "12.2%", width: "86%", color: "#6394D7" },
+  { key: "qualified",   stageId: "P1", filterKey: "P1",           statLabel: "P1",           label: "Qualified",          to: "to P2", top: "33.4%", height: "11.4%", width: "80%", color: "#386FB8" },
+  { key: "profile",     stageId: "P2", filterKey: "P2",           statLabel: "P2",           label: "Profile Creation",   to: "to P3", top: "44.8%", height: "11.0%", width: "72%", color: "#D7AB77" },
+  { key: "video",       stageId: "P3", filterKey: "P3",           statLabel: "P3",           label: "Video call / Visit", to: "to P4", top: "55.6%", height: "10.6%", width: "64%", color: "#BB8D58" },
+  { key: "negotiation", stageId: "P4", filterKey: "P4",           statLabel: "P4",           label: "Negotiation",        to: "to P5", top: "65.8%", height: "10.4%", width: "56%", color: "#8A909C" },
+  { key: "payment",     stageId: "P5", filterKey: "P5",           statLabel: "P5",           label: "Payment",            to: "to P6", top: "76.0%", height: "10.6%", width: "48%", color: "#A11620" },
+  { key: "handover",    stageId: "P6", filterKey: "P6",           statLabel: "P6",           label: "Handover",           to: "Final Conversion", isFinal: true, top: "86.2%", height: "11.2%", width: "42%", color: "#6E0F16" },
 ];
 
 function meanDays(leads) {
@@ -341,7 +343,7 @@ function buildPipelineFunnel(leadsByStage) {
     const dropPct = prev ? `${Math.round((dropped / prev) * 100)}%` : "0%";
     return {
       ...row,
-      stat: `${row.stageId} - ${count}`,
+      stat: `${row.statLabel} - ${count}`,
       pct,
       dropPct: i >= 2 && dropped > 0 ? dropPct : undefined,
       dropCount: String(row.isFinal ? count : dropped),
@@ -797,23 +799,41 @@ function PerformanceScoreCard({ period, myLeads }) {
   );
 }
 
-function UpNextCard() {
+function UpNextCard({ item, onDetails }) {
+  const isToday = item ? sameCalendarDay(item.date, new Date()) : false;
   return (
     <div className="relative overflow-hidden flex-1 min-w-0 rounded-2xl border border-[#7A0A17]/15 bg-gradient-to-br from-[#FFF5F6] to-[#FDECEE] p-3.5 shadow-[0_1px_2px_rgba(122,10,23,0.06)]">
       <div className="absolute inset-y-0 left-0 w-1 bg-[#7A0A17]" />
-      <div className="flex items-center justify-between gap-2 pl-1.5">
-        <p className="text-[10.5px] font-bold text-[#7A0A17] tracking-wide whitespace-nowrap">{UP_NEXT.dateLabel}</p>
-        <span className="text-[10px] font-bold text-white bg-[#7A0A17] rounded-md px-1.5 py-0.5">{UP_NEXT.badge}</span>
-      </div>
-      <div className="flex items-center justify-between gap-2 mt-2 pl-1.5">
-        <p className="text-[13.5px] font-bold text-[#111] leading-snug">{UP_NEXT.title}</p>
-        <Link to="/calendar" className="text-[11.5px] font-semibold text-[#3B82F6] hover:underline shrink-0">
-          Details
-        </Link>
-      </div>
-      <p className="inline-flex items-center mt-2.5 ml-1.5 text-[11.5px] font-semibold text-[#374151] bg-white px-2.5 py-[3px] rounded-lg">
-        {UP_NEXT.time}
-      </p>
+      {!item ? (
+        <>
+          <p className="text-[10.5px] font-bold text-[#7A0A17] tracking-wide pl-1.5">UP NEXT</p>
+          <p className="text-[12px] text-[#9CA3AF] mt-3 pl-1.5">Nothing scheduled.</p>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-2 pl-1.5">
+            <p className="text-[10.5px] font-bold text-[#7A0A17] tracking-wide whitespace-nowrap">
+              UP NEXT · {formatHourTime(item.startH).toUpperCase()}
+            </p>
+            <span className="text-[10px] font-bold text-white bg-[#7A0A17] rounded-md px-1.5 py-0.5">
+              {isToday ? "Today" : item.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-2 mt-2 pl-1.5">
+            <p className="text-[13.5px] font-bold text-[#111] leading-snug">{item.title}</p>
+            <button
+              type="button"
+              onClick={() => onDetails?.(item)}
+              className="text-[11.5px] font-semibold text-[#3B82F6] hover:underline shrink-0"
+            >
+              Details
+            </button>
+          </div>
+          <p className="inline-flex items-center mt-2.5 ml-1.5 text-[11.5px] font-semibold text-[#7A0A17] bg-white/70 border border-[#7A0A17]/12 px-2 py-0.5 rounded-md">
+            {formatHourTime(item.startH)} – {formatHourTime(item.endH)}
+          </p>
+        </>
+      )}
     </div>
   );
 }
@@ -845,51 +865,77 @@ function UnscheduledCard({ item, onSchedule }) {
 
 function RecentUpdatesCard() {
   const [items, setItems] = useState(readNotifications);
+  const [selected, setSelected] = useState(null);
   useEffect(() => subscribeNotifications(setItems), []);
   const preview = items.slice(0, 5);
-  const unreadCount = items.filter((n) => n.unread).length;
+
+  const openUpdate = (u) => {
+    markNotificationRead(u.id);
+    setSelected(u);
+  };
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col flex-1 min-h-0">
-      <div className="flex items-center justify-between gap-3 mb-1 px-0.5">
-        <div className="flex items-center gap-2.5">
-          <span className="size-8 rounded-full bg-[#FFF3E4] grid place-items-center">
-            <Bell size={15} className="text-[#F59E0B]" strokeWidth={2} />
-          </span>
+    <>
+      <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col flex-1 min-h-[420px]">
+        <div className="mb-1 px-0.5">
           <h2 className="text-[15px] font-bold text-[#111]">Recent Updates</h2>
         </div>
-        <button
-          type="button"
-          onClick={() => markAllNotificationsRead()}
-          disabled={unreadCount === 0}
-          className="text-[11.5px] font-semibold text-[#7A0A17] hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Mark all read
-        </button>
+
+        <div className="flex flex-col divide-y divide-black/6 flex-1">
+          {preview.map((u) => (
+            <button
+              key={u.id}
+              type="button"
+              onClick={() => openUpdate(u)}
+              className={`w-full flex items-start gap-3 py-3.5 text-left rounded-xl transition-colors hover:bg-[#FAFAFB] -mx-1 px-1 ${
+                u.unread ? "" : "opacity-90"
+              }`}
+            >
+              <NotificationTypeIcon type={u.type} title={u.title} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <p
+                    className={`text-[13px] leading-tight ${
+                      u.unread ? "font-bold text-[#111]" : "font-semibold text-[#111]"
+                    }`}
+                  >
+                    {u.title}
+                  </p>
+                  {u.unread && <span className="size-1.5 rounded-full bg-[#E8395B] shrink-0" />}
+                </div>
+                <p className="text-[12px] text-[#9CA3AF] leading-snug mt-0.5 line-clamp-2">{u.message}</p>
+              </div>
+              <span className="text-[11px] text-[#9CA3AF] whitespace-nowrap shrink-0 pt-0.5">{u.time}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex flex-col divide-y divide-black/6">
-        {preview.map((u) => (
-          <div key={u.id} className="flex items-start gap-3 py-3">
-            <img src={u.avatar} alt="" className="size-9 rounded-full object-cover shrink-0" />
-            <div className="min-w-0 flex-1">
-              <p className={`text-[13px] leading-tight ${u.unread ? "font-bold text-[#111]" : "font-semibold text-[#111]"}`}>
-                {u.title}
-              </p>
-              <p className="text-[12px] text-[#9CA3AF] leading-snug mt-0.5">{u.message}</p>
-            </div>
-            <span className="text-[11px] text-[#9CA3AF] whitespace-nowrap shrink-0 pt-0.5">{u.time}</span>
-          </div>
-        ))}
-      </div>
-
-      <Link
-        to="/notifications"
-        className="text-center text-[13px] font-semibold text-[#7A0A17] hover:underline mt-auto pt-3 border-t border-black/6"
+      <Modal
+        open={Boolean(selected)}
+        onClose={() => setSelected(null)}
+        title={selected?.title || "Update"}
+        subtitle={selected ? selected.time : undefined}
+        icon={
+          selected ? (
+            <NotificationTypeIcon type={selected.type} title={selected.title} size="sm" className="!ring-0" />
+          ) : null
+        }
+        iconBg="transparent"
+        width="max-w-md"
       >
-        See all notifications
-      </Link>
-    </div>
+        {selected && (
+          <div className="flex flex-col gap-2">
+            <p className="text-[14px] text-[#374151] leading-relaxed">{selected.message}</p>
+            {selected.actor && (
+              <p className="text-[12px] text-[#9CA3AF]">
+                From <span className="font-semibold text-[#6B7280]">{selected.actor}</span>
+              </p>
+            )}
+          </div>
+        )}
+      </Modal>
+    </>
   );
 }
 
@@ -1064,8 +1110,8 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  const selectStage = (stageId) => {
-    onSelectStage?.(activeStage === stageId ? null : stageId);
+  const selectStage = (filterKey) => {
+    onSelectStage?.(activeStage === filterKey ? null : filterKey);
   };
 
   return (
@@ -1116,14 +1162,14 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
               className="absolute inset-0 w-full h-full object-contain object-center select-none pointer-events-none"
             />
             {FUNNEL_ROWS.map((row) => {
-              const isActive = activeStage === row.stageId;
+              const isActive = activeStage === row.filterKey;
               const dimOthers = Boolean(activeStage) && !isActive;
               return (
                 <button
                   key={row.key}
                   type="button"
-                  onClick={() => selectStage(row.stageId)}
-                  title={`Filter My Leads by ${row.label}`}
+                  onClick={() => selectStage(row.filterKey)}
+                  title={`Filter My Leads by ${row.statLabel}`}
                   aria-pressed={isActive}
                   className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center rounded-sm transition-opacity duration-150"
                   style={{
@@ -1153,13 +1199,13 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
 
           <div className="relative flex-1 min-w-0 max-w-[52%] [@container(min-width:420px)]:min-w-[148px] [@container(min-width:520px)]:min-w-[168px]">
             {FUNNEL_ROWS.map((row) => {
-              const isActive = activeStage === row.stageId;
+              const isActive = activeStage === row.filterKey;
               const dimOthers = Boolean(activeStage) && !isActive;
               return (
                 <button
                   key={row.key}
                   type="button"
-                  onClick={() => selectStage(row.stageId)}
+                  onClick={() => selectStage(row.filterKey)}
                   aria-pressed={isActive}
                   className="absolute inset-x-0 flex items-center gap-2 text-left transition-opacity duration-150"
                   style={{
@@ -1217,8 +1263,12 @@ const MY_LEADS_VIEWS = [
 ];
 
 function stageKeyFromLead(lead) {
-  const match = String(lead.stage || "").match(/P[0-6]/);
-  return match ? match[0] : "P0";
+  const stageText = String(lead.stage || "");
+  const match = stageText.match(/P[0-6]/);
+  const stage = match ? match[0] : "P0";
+  if (stage !== "P0") return stage;
+  if (/contacted/i.test(stageText) || lead.p0Status === "contacted") return "P0-contacted";
+  return "P0-new";
 }
 
 function MyLeadsCard({
@@ -1396,7 +1446,11 @@ function MyLeadsCard({
               className="inline-flex items-center gap-1 h-7 pl-2.5 pr-1.5 rounded-lg bg-[#FCF5F6] text-[11px] font-semibold text-[#7A0A17] border border-[#7A0A17]/15 hover:bg-[#F9EDEF] transition-colors"
               title="Clear stage filter"
             >
-              {stageFilter}
+              {stageFilter === "P0-new"
+                ? "P0 New"
+                : stageFilter === "P0-contacted"
+                  ? "P0 Contacted"
+                  : stageFilter}
               <X size={12} className="opacity-70" />
             </button>
           )}
@@ -1562,15 +1616,30 @@ export default function Dashboard() {
   const [showCreateMeeting, setShowCreateMeeting] = useState(false);
   const [showBiodataUpload, setShowBiodataUpload] = useState(false);
   const [leadInitial, setLeadInitial] = useState(null);
+  const [biodataCompareWith, setBiodataCompareWith] = useState(null);
   const [meetingPrefill, setMeetingPrefill] = useState(null);
   const [schedulingUnscheduledId, setSchedulingUnscheduledId] = useState(null);
   const [unscheduledItems, setUnscheduledItems] = useState(readUnscheduled);
+  const [calendarEvents, setCalendarEvents] = useState(() =>
+    mergeCalendarEvents(INITIAL_EVENTS, readExtraEvents())
+  );
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedMeetingEvent, setSelectedMeetingEvent] = useState(null);
+  const [selectedTaskEvent, setSelectedTaskEvent] = useState(null);
+  const [selectedOtherEvent, setSelectedOtherEvent] = useState(null);
   const [stats, setStats] = useState(buildDashboardStats);
   const [myLeads, setMyLeads] = useState(MY_LEADS);
   const [stageFilter, setStageFilter] = useState(null);
   const [healthFilter, setHealthFilter] = useState(null);
 
-  useEffect(() => subscribeCalendar(() => setUnscheduledItems(readUnscheduled())), []);
+  useEffect(
+    () =>
+      subscribeCalendar(() => {
+        setUnscheduledItems(readUnscheduled());
+        setCalendarEvents(mergeCalendarEvents(INITIAL_EVENTS, readExtraEvents()));
+      }),
+    []
+  );
   useEffect(() => {
     const refresh = () => setStats(buildDashboardStats());
     const unsubPipeline = subscribePipeline(refresh);
@@ -1597,6 +1666,32 @@ export default function Dashboard() {
     return counts;
   }, [myLeads]);
 
+  const upNext = useMemo(() => findUpNextEvent(calendarEvents), [calendarEvents]);
+
+  const closeCalendarDetails = () => {
+    setSelectedEvent(null);
+    setSelectedMeetingEvent(null);
+    setSelectedTaskEvent(null);
+    setSelectedOtherEvent(null);
+  };
+
+  const openCalendarItem = (ev) => {
+    setSelectedEvent(null);
+    setSelectedMeetingEvent(null);
+    setSelectedTaskEvent(null);
+    setSelectedOtherEvent(null);
+    if (ev?.category === "task") setSelectedTaskEvent(ev);
+    else if (ev?.category === "event") setSelectedEvent(ev);
+    else if (ev?.category === "meeting") setSelectedMeetingEvent(ev);
+    else if (ev) setSelectedOtherEvent(ev);
+  };
+
+  const editCalendarItem = (ev) => {
+    const id = ev?.id;
+    closeCalendarDetails();
+    if (id) navigate(`/calendar?focus=${encodeURIComponent(id)}`);
+  };
+
   const visibleLeads = useMemo(() => {
     let list = myLeads;
     if (stageFilter) {
@@ -1614,12 +1709,21 @@ export default function Dashboard() {
     <div className="flex flex-col flex-1 min-h-0">
       {showCreateLead ? (
         <CreateLeadModal
-          key={leadInitial?.fileName || leadInitial?.mobile || "create-lead"}
+          key={
+            leadInitial?.existingLeadId ||
+            leadInitial?.fileName ||
+            leadInitial?.mobile ||
+            "create-lead"
+          }
           open
           initial={leadInitial}
           onClose={() => {
             setShowCreateLead(false);
             setLeadInitial(null);
+          }}
+          onUploadBiodata={(formSnapshot) => {
+            setBiodataCompareWith(formSnapshot || null);
+            setShowBiodataUpload(true);
           }}
           onCreate={(lead) => {
             const nextAction =
@@ -1630,7 +1734,62 @@ export default function Dashboard() {
                   : lead.meeting === "Callback Later"
                     ? "Callback"
                     : "Initial Contact";
-            addP0Lead({
+
+            const existingId = lead.existingLeadId || leadInitial?.existingLeadId;
+
+            if (existingId) {
+              updateLead(existingId, {
+                name: lead.name,
+                mobile: lead.mobile,
+                email: lead.email,
+                source: lead.source,
+                lastDiscussion: "Just now",
+                nextAction,
+                temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
+              });
+              upsertClientFromBiodata({
+                clientId: lead.clientId || leadInitial?.clientId,
+                name: lead.name,
+                mobile: lead.mobile,
+                email: lead.email,
+                fields: {
+                  firstName: lead.firstName,
+                  lastName: lead.lastName,
+                  city: lead.city,
+                  area: lead.area,
+                  dob: lead.dob,
+                  lookingFor: lead.lookingFor,
+                  relation: lead.relation,
+                  fileName: lead.fileName,
+                },
+                owner: "Rohit Kumar",
+                linkedLeadId: existingId,
+              });
+              setMyLeads((prev) =>
+                prev.map((row) =>
+                  row.pipelineLeadId === existingId || row.id === existingId
+                    ? {
+                        ...row,
+                        name: lead.name,
+                        mobile: lead.mobile,
+                        email: lead.email,
+                        source: lead.source,
+                        lastDiscussion: "Just now",
+                        nextAction,
+                        temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
+                        nextActionNote:
+                          [lead.city, lead.area].filter(Boolean).join(" · ") || row.nextActionNote,
+                      }
+                    : row
+                )
+              );
+              setLeadInitial(null);
+              setShowCreateLead(false);
+              toast.success(`Lead "${lead.name}" updated.`);
+              return;
+            }
+
+            const created = addP0Lead({
               name: lead.name,
               starred: false,
               mmlId: `MML - D - ${Math.floor(10000 + Math.random() * 90000)}`,
@@ -1649,7 +1808,8 @@ export default function Dashboard() {
             });
             setMyLeads((prev) => [
               {
-                id: `MML-ID-D-${Math.floor(10000 + Math.random() * 90000)}`,
+                id: created?.id || `MML-ID-D-${Math.floor(10000 + Math.random() * 90000)}`,
+                pipelineLeadId: created?.id,
                 name: lead.name,
                 starred: false,
                 stage: "P0 - New",
@@ -1680,112 +1840,100 @@ export default function Dashboard() {
       {showBiodataUpload ? (
         <BiodataUploadModal
           open
-          onClose={() => setShowBiodataUpload(false)}
+          compareWith={biodataCompareWith}
+          onClose={() => {
+            setShowBiodataUpload(false);
+            setBiodataCompareWith(null);
+          }}
           onFillForm={(payload) => {
             const f = payload?.fields || {};
             const match = payload?.match;
             const fullName =
               [f.firstName, f.lastName].filter(Boolean).join(" ").trim() || match?.name || "";
-            const createNew = Boolean(payload?.createNew);
+            const isNew = Boolean(payload?.createNew);
 
             setShowBiodataUpload(false);
+            setBiodataCompareWith(null);
 
-            // No match / relative → Create Lead form only
-            if (createNew) {
-              setLeadInitial({
-                firstName: f.firstName || "",
-                lastName: f.lastName || "",
-                dob: f.dob || "",
-                mobile: f.mobile || payload?.senderMobile || "",
-                email: f.email || "",
-                city: f.city || "",
-                area: f.area || "",
-                lookingFor: f.lookingFor || "yes",
-                relation: f.relation || "Self / Prospect",
-                contactWith: match ? "Existing Client" : "First Contact",
-                source: "Biodata Upload",
-                fileName: payload?.fileName || "",
-              });
-              setShowCreateLead(true);
-              if (payload?.resolution === "relative" && match) {
-                toast.info(`New lead linked to existing contact "${match.name}".`);
-              } else {
-                toast.info("No existing match — create a new lead.");
-              }
-              return;
+            // Prefer existing DB lead when matched (update, don't create)
+            let leadRef = null;
+            if (!isNew && match) {
+              leadRef =
+                (match?.type === "lead" && match.recordId && findLeadById(match.recordId)) ||
+                (match?.linkedLeadId && findLeadById(match.linkedLeadId)) ||
+                findLeadByName(match?.name) ||
+                findLeadByName(fullName);
             }
 
-            // Existing match → save Client Database + open Pipeline client detail (intake)
-            let leadRef =
-              (match?.type === "lead" && match.recordId && findLeadById(match.recordId)) ||
-              (match?.linkedLeadId && findLeadById(match.linkedLeadId)) ||
-              findLeadByName(match?.name) ||
-              findLeadByName(fullName);
-
-            const leadPatch = {
-              ...(payload?.resolution === "same" && fullName ? { name: fullName } : {}),
-              mobile: f.mobile || match?.mobile,
-              email: f.email || match?.email,
-              lastDiscussion: "Just now",
-              nextAction: "Review biodata",
-            };
+            let existingLeadId = leadRef?.lead?.id || null;
+            let clientId = match?.type === "client" ? match.recordId : undefined;
 
             if (leadRef) {
-              updateLead(leadRef.lead.id, leadPatch);
-              leadRef = findLeadById(leadRef.lead.id);
-            } else {
-              const created = addP0Lead({
-                name: fullName || match?.name || "Biodata lead",
-                starred: false,
-                mmlId: match?.mmlId || `MML - D - ${Math.floor(10000 + Math.random() * 90000)}`,
-                temperature: "Warm",
-                score: 8.0,
-                priority: "High",
-                completion: 55,
-                days: 0,
-                hrs: 24,
-                source: "Biodata Upload",
-                lastDiscussion: "Just now",
-                nextAction: "Review biodata",
+              const leadPatch = {
+                ...(payload?.resolution === "same" && fullName ? { name: fullName } : {}),
                 mobile: f.mobile || match?.mobile,
                 email: f.email || match?.email,
+                lastDiscussion: "Just now",
+                nextAction: "Review biodata",
+              };
+              updateLead(leadRef.lead.id, leadPatch);
+              leadRef = findLeadById(leadRef.lead.id);
+              existingLeadId = leadRef?.lead?.id || existingLeadId;
+
+              const savedClient = upsertClientFromBiodata({
+                clientId,
+                name: leadPatch.name || leadRef?.lead?.name || fullName,
+                mobile: f.mobile || match?.mobile,
+                email: f.email || match?.email,
+                fields: { ...f, fileName: payload?.fileName },
+                alsoRead: payload?.alsoRead || [],
                 owner: match?.owner || "Rohit Kumar",
-                p0Status: "new",
+                linkedLeadId: existingLeadId,
               });
-              leadRef = { lead: created, stageId: "P0" };
+              clientId = savedClient?.id || clientId;
+
+              if (existingLeadId) {
+                setBiodataDraft(existingLeadId, {
+                  fields: f,
+                  alsoRead: payload?.alsoRead || [],
+                  fileName: payload?.fileName,
+                  clientId: savedClient?.id,
+                  resolution: payload?.resolution,
+                });
+              }
             }
 
-            const leadId = leadRef.lead.id;
-            const savedClient = upsertClientFromBiodata({
-              clientId: match?.type === "client" ? match.recordId : undefined,
-              name: leadPatch.name || leadRef.lead.name || fullName,
-              mobile: f.mobile || match?.mobile,
-              email: f.email || match?.email,
-              fields: { ...f, fileName: payload?.fileName },
-              alsoRead: payload?.alsoRead || [],
-              owner: match?.owner || "Rohit Kumar",
-              linkedLeadId: leadId,
+            // Always open Create Lead with biodata fields (update vs create decided by existingLeadId)
+            setLeadInitial({
+              firstName: f.firstName || "",
+              lastName: f.lastName || "",
+              dob: f.dob || "",
+              mobile: f.mobile || payload?.senderMobile || match?.mobile || "",
+              email: f.email || match?.email || "",
+              city: f.city || "",
+              area: f.area || "",
+              lookingFor: f.lookingFor || "yes",
+              relation: f.relation || "Self / Prospect",
+              contactWith: match && !isNew ? "Existing Client" : "First Contact",
+              source: "Biodata Upload",
+              fileName: payload?.fileName || "",
+              existingLeadId: existingLeadId || undefined,
+              clientId: clientId || undefined,
+              mode: existingLeadId ? "update" : "create",
             });
+            setShowCreateLead(true);
 
-            setBiodataDraft(leadId, {
-              fields: f,
-              alsoRead: payload?.alsoRead || [],
-              fileName: payload?.fileName,
-              clientId: savedClient?.id,
-              resolution: payload?.resolution,
-            });
-
-            if (payload?.resolution === "wrong") {
-              toast.warning(
-                `Opened Pipeline client detail for "${leadRef.lead.name}" — flagged for review. Saved in Client Database.`
-              );
-            } else {
+            if (existingLeadId) {
               toast.success(
-                `Saved to Client Database (${savedClient?.clientId || savedClient?.name}) and opened Pipeline client detail.`
+                payload?.resolution === "wrong"
+                  ? `Updated existing lead — flagged for review. Finish details in the form.`
+                  : `Updated existing lead in DB. Review / save details in Create Lead.`
               );
+            } else if (payload?.resolution === "relative" && match) {
+              toast.info(`Linked to "${match.name}" — finish as a new lead in the form.`);
+            } else {
+              toast.info("Fill Create Lead and save.");
             }
-
-            navigate(`/pipeline?openLead=${encodeURIComponent(leadId)}&tab=intake`);
           }}
         />
       ) : null}
@@ -1814,6 +1962,31 @@ export default function Dashboard() {
         onClose={() => setShowCreateTask(false)}
         defaultDate={new Date()}
         onSave={(form) => addTaskFromForm(form)}
+      />
+      <EventDetailsModal
+        open={!!selectedEvent}
+        event={calendarEventToEventView(selectedEvent)}
+        onClose={() => setSelectedEvent(null)}
+        onEdit={() => selectedEvent && editCalendarItem(selectedEvent)}
+      />
+      <OthersDetailsModal
+        open={!!selectedOtherEvent}
+        item={calendarEventToOtherView(selectedOtherEvent)}
+        onClose={() => setSelectedOtherEvent(null)}
+        onEdit={() => selectedOtherEvent && editCalendarItem(selectedOtherEvent)}
+      />
+      <MeetingDetailsModal
+        open={!!selectedMeetingEvent}
+        meeting={calendarEventToMeetingView(selectedMeetingEvent)}
+        entityLabel="Meeting"
+        onClose={() => setSelectedMeetingEvent(null)}
+        onEdit={() => selectedMeetingEvent && editCalendarItem(selectedMeetingEvent)}
+      />
+      <TaskDetailsModal
+        open={!!selectedTaskEvent}
+        task={calendarEventToTaskView(selectedTaskEvent)}
+        onClose={() => setSelectedTaskEvent(null)}
+        onEdit={() => selectedTaskEvent && editCalendarItem(selectedTaskEvent)}
       />
       <div className="flex items-center justify-between gap-4 px-5 pt-5 pb-4 flex-wrap">
         <h1 className="text-[22px] font-bold text-[#111] tracking-tight">
@@ -1850,7 +2023,10 @@ export default function Dashboard() {
                 setSchedulingUnscheduledId(null);
                 setShowCreateMeeting(true);
               }}
-              onUploadBiodata={() => setShowBiodataUpload(true)}
+              onUploadBiodata={() => {
+                setBiodataCompareWith(null);
+                setShowBiodataUpload(true);
+              }}
             />
           </div>
         </div>
@@ -1860,7 +2036,7 @@ export default function Dashboard() {
           <AIAssistant />
           <div className="flex flex-col gap-4 min-h-0">
             <div className="flex items-stretch gap-3">
-              <UpNextCard />
+              <UpNextCard item={upNext} onDetails={openCalendarItem} />
               <UnscheduledCard
                 item={unscheduledItems[0] || null}
                 onSchedule={(item) => {

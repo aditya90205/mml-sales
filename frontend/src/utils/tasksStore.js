@@ -273,7 +273,12 @@ export function applyFormToTask(existing, form) {
     reminderChannels: form.reminderChannels || [],
     messageTemplate: form.messageTemplate || "",
     messageBody: form.messageBody || "",
-    reminderFrequency: form.reminderFrequency || "On day of task",
+    reminderFrequency: Array.isArray(form.reminderFrequency)
+      ? form.reminderFrequency
+      : form.reminderFrequency
+        ? [form.reminderFrequency]
+        : ["On day of task"],
+    customReminders: Array.isArray(form.customReminders) ? form.customReminders : [],
     specialInstructions: form.specialInstructions || "",
     referenceLink: form.referenceLink || "",
     attachment: form.attachment || "",

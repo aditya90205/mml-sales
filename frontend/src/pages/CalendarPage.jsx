@@ -32,6 +32,7 @@ import MeetingDetailsModal, { calendarEventToMeetingView } from "../components/c
 import OthersDetailsModal, { calendarEventToOtherView } from "../components/calendar/OthersDetailsModal";
 import {
   addExtraEvent,
+  findUpNextEvent,
   hydrateCalendarItem,
   mergeCalendarEvents,
   readExtraEvents,
@@ -41,7 +42,7 @@ import {
   unscheduledToMeetingForm,
 } from "../utils/calendarStore.js";
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────── Categories ───────────────────────── */
 
 const CATEGORIES = {
   event: { label: "Event", dot: "#A02868", bg: "#FDECF3", text: "#A02868", border: "#BB8D5833" },
@@ -50,14 +51,14 @@ const CATEGORIES = {
   other: { label: "Others", dot: "#6F7886", bg: "#F3F4F6", text: "#6F7886", border: "#6F788633" },
 };
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Date helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────── Date helpers ───────────────────────── */
 
 const DAY_LABELS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MONTH_LABELS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
-const HOURS = Array.from({ length: 10 }, (_, i) => 9 + i); // 9 AM â€“ 6 PM
+const HOURS = Array.from({ length: 10 }, (_, i) => 9 + i); // 9 AM – 6 PM
 
 function sameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -90,9 +91,9 @@ function hourToTimeStr(h) {
   return `${String(h).padStart(2, "0")}:00`;
 }
 function fmtDate(d) {
-  if (!d) return "â€”";
+  if (!d) return "—";
   const date = d instanceof Date ? d : new Date(d);
-  if (Number.isNaN(date.getTime())) return "â€”";
+  if (Number.isNaN(date.getTime())) return "—";
   return `${String(date.getDate()).padStart(2, "0")}-${String(date.getMonth() + 1).padStart(2, "0")}-${date.getFullYear()}`;
 }
 function toDateInput(d) {
@@ -111,9 +112,22 @@ function getMeetingJoinUrl(meta = {}) {
 
 function eventToMeetingForm(ev) {
   const m = ev.meta || {};
+  const meetingWithTypes = Array.isArray(m.meetingWithTypes)
+    ? m.meetingWithTypes
+    : m.meetingWith
+      ? String(m.meetingWith)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : m.clientRelated
+        ? ["client"]
+        : ["employee"];
   return {
     title: ev.title || "",
-    meetingWith: m.meetingWith || (m.clientRelated ? "client" : "employee"),
+    meetingWith: meetingWithTypes.includes("client")
+      ? "client"
+      : meetingWithTypes[0] || (m.clientRelated ? "client" : "employee"),
+    meetingWithTypes,
     inviteGroups: m.inviteGroups || (m.clientRelated ? ["client", "employees"] : ["employees"]),
     people: Array.isArray(m.people) ? m.people : Array.isArray(m.assignees) ? m.assignees : [],
     emails: Array.isArray(m.emails)
@@ -130,6 +144,7 @@ function eventToMeetingForm(ev) {
     meetingTypes: m.meetingTypes?.length ? m.meetingTypes : ["video"],
     meetingLink: m.meetingLink || m.link || "",
     venue: m.venue || m.location || "",
+    logisticsRequired: Boolean(m.logisticsRequired),
     startDate: toDateInput(ev.date),
     endDate: toDateInput(m.dueDate || ev.date),
     startTime: m.startTime || hourToTimeStr(ev.startH),
@@ -205,8 +220,11 @@ function eventToTaskForm(ev) {
     messageTemplate: m.messageTemplate || "No template — plain text",
     messageBody: m.messageBody || "",
     reminderFrequency: Array.isArray(m.reminderFrequency)
-      ? m.reminderFrequency[0] || "On day of task"
-      : m.reminderFrequency || "On day of task",
+      ? m.reminderFrequency
+      : m.reminderFrequency
+        ? [m.reminderFrequency]
+        : ["On day of task"],
+    customReminders: Array.isArray(m.customReminders) ? m.customReminders : [],
     checklist: Array.isArray(m.checklist) ? m.checklist : [],
     attachment: m.attachment || m.attachments?.[0]?.name || "",
     referenceLink: m.referenceLink || "",
@@ -238,7 +256,7 @@ const PRIORITY_STYLES = {
   Low: { color: "#16A34A", bg: "#E7F8EF" },
 };
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Mock data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────── Mock data ───────────────────────── */
 
 const TODAY = new Date();
 const ANCHOR = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
@@ -266,8 +284,8 @@ function mk(dayOffset, startH, endH, title, category, meta = {}) {
   };
 }
 
-const INITIAL_EVENTS = [
-  mk(0, 13, 15, "Video Call â€” Kapoor Family", "meeting", {
+export const INITIAL_EVENTS = [
+  mk(0, 13, 15, "Video Call — Kapoor Family", "meeting", {
     link: "https://meet.google.com/mml-kapoor",
     meetingLink: "https://meet.google.com/mml-kapoor",
     clientRelated: true,
@@ -299,7 +317,7 @@ const INITIAL_EVENTS = [
     project: "Sales Pipeline",
     milestone: "Weekly Sync",
     progress: 55,
-    description: "Align on open follow-ups from yesterdayâ€™s home visits and video calls.",
+    description: "Align on open follow-ups from yesterday’s home visits and video calls.",
     comments: [
       { author: "Priya Sharma", text: "Please cover Sethi Family follow-up first.", date: new Date().toISOString() },
     ],
@@ -325,7 +343,7 @@ const INITIAL_EVENTS = [
     project: "Matchmaking",
     milestone: "Planning",
     progress: 20,
-    description: "Review yesterdayâ€™s P0â€“P3 movement and flag stuck prospects.",
+    description: "Review yesterday’s P0–P3 movement and flag stuck prospects.",
     comments: [],
     checklist: [
       { text: "Check P0/P1 stuck prospects", done: false, assignee: "Priya Sharma", dueDate: addDays(ANCHOR, 2) },
@@ -360,7 +378,7 @@ const INITIAL_EVENTS = [
     checklist: [],
     attachments: [],
   }),
-  mk(1, 14, 16, "Branch All-Hands â€” Ankur Mishra", "event", {
+  mk(1, 14, 16, "Branch All-Hands — Ankur Mishra", "event", {
     location: "Rajouri Garden Branch",
     venue: "Rajouri Garden Branch",
     assignees: ["Anjali Gupta", "Abhinav Pandey"],
@@ -475,7 +493,7 @@ const INITIAL_EVENTS = [
     stars: 25,
     description: "Host the Meet the Parents evening for shortlisted families in the main hall.",
   }),
-  mk(4, 13, 15, "Office Visit â€” Malhotra Family", "meeting", {
+  mk(4, 13, 15, "Office Visit — Malhotra Family", "meeting", {
     link: "https://meet.google.com/mml-malhotra",
     meetingLink: "https://meet.google.com/mml-malhotra",
     clientRelated: true,
@@ -485,14 +503,14 @@ const INITIAL_EVENTS = [
   }),
   mk(4, 17, 18, "Update Visit Notes", "other", {
     assignees: ["Priya Sharma"],
-    description: "Capture and share notes from todayâ€™s home and office visits.",
+    description: "Capture and share notes from today’s home and office visits.",
   }),
   mk(5, 9, 10, "Check Family Feedback", "task", {
     clientRelated: true,
     client: "Sethi Family",
     assignees: ["Rahul Verma"],
     stage: "In Progress",
-    description: "Review feedback forms submitted after last weekâ€™s profile shares.",
+    description: "Review feedback forms submitted after last week’s profile shares.",
   }),
   mk(5, 11, 13, "Community Campaign Sync", "meeting", {
     link: "https://meet.google.com/mml-campaign-fri",
@@ -505,7 +523,7 @@ const INITIAL_EVENTS = [
     client: "Multiple",
     assignees: ["Neha Kapoor"],
     stars: 14,
-    description: "Send invites for next weekâ€™s Meet the Parents evening.",
+    description: "Send invites for next week’s Meet the Parents evening.",
   }),
   mk(6, 9, 10, "Prepare Package Proposal", "task", {
     clientRelated: true,
@@ -531,7 +549,7 @@ const INITIAL_EVENTS = [
 
 const DAY_STATUS = { 3: "free", 9: "free", 11: "filling", 17: "busy", 26: "busy" };
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Small pieces â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────── Small pieces ───────────────────────── */
 
 function CategoryChip({ id, checked, onToggle, count }) {
   const cat = CATEGORIES[id];
@@ -655,7 +673,7 @@ function EventBlock({ ev, onClick, dense, draggable: canDrag = false, onDragStar
 }
 
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Mini calendar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────── Mini calendar ───────────────────────── */
 
 function MiniCalendar({ cursor, onCursorChange, selected, onSelect }) {
   const monthStart = startOfMonth(cursor);
@@ -734,7 +752,7 @@ function MiniCalendar({ cursor, onCursorChange, selected, onSelect }) {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────── Page ───────────────────────── */
 
 export default function CalendarPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -793,7 +811,7 @@ export default function CalendarPage() {
         ? {
             isClientRelated: true,
             client,
-            title: `Follow up â€” ${client}`,
+            title: `Follow up — ${client}`,
             description: `Follow-up task from pipeline for ${client}.`,
           }
         : { isClientRelated: true }
@@ -867,20 +885,7 @@ export default function CalendarPage() {
     setMiniCursor(date);
   };
 
-  const upNext = useMemo(() => {
-    const now = new Date();
-    return [...events]
-      .filter((ev) => {
-        const start = new Date(ev.date);
-        start.setHours(ev.startH, 0, 0, 0);
-        return start >= now;
-      })
-      .sort((a, b) => {
-        const as = new Date(a.date); as.setHours(a.startH);
-        const bs = new Date(b.date); bs.setHours(b.startH);
-        return as - bs;
-      })[0];
-  }, [events]);
+  const upNext = useMemo(() => findUpNextEvent(events), [events]);
 
   const handleDrop = (day, hour) => {
     const payload = dragPayloadRef.current || dragOverCell;
@@ -944,6 +949,7 @@ export default function CalendarPage() {
         clientRelated: true,
         client: String(item.title || "").replace(/^(?:call back|follow up with)\s+/i, ""),
         meetingWith: "client",
+        meetingWithTypes: ["client"],
         meetingType: /call/i.test(item.title) ? "telephonic" : "video",
         assignees: ["Priya Sharma"],
         people: [String(item.title || "").replace(/^(?:call back|follow up with)\s+/i, "")].filter(Boolean),
@@ -1001,9 +1007,20 @@ export default function CalendarPage() {
       const parts = String(label).split(" · ");
       return parts.length > 1 ? parts.slice(1).join(" · ").trim() : String(label);
     };
+    const meetingWithTypes = Array.isArray(form.meetingWithTypes)
+      ? form.meetingWithTypes
+      : form.meetingWith
+        ? String(form.meetingWith)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
+    const meetingWith = meetingWithTypes.includes("client")
+      ? "client"
+      : meetingWithTypes[0] || form.meetingWith || "";
     const client =
-      form.meetingWith === "client"
-        ? displayName(form.people?.[0] || "")
+      meetingWithTypes.includes("client") || meetingWith === "client"
+        ? displayName(form.people?.find((p) => String(p).includes("MML-D-")) || form.people?.[0] || "")
         : displayName(form.people?.find((p) => String(p).includes("MML-D-")) || "");
     return {
       id: existingId || `${category}-${Date.now()}`,
@@ -1014,9 +1031,14 @@ export default function CalendarPage() {
       category,
       meta: {
         priority: form.priority || "Medium",
-        clientRelated: Boolean(client) || form.meetingWith === "client" || form.inviteGroups?.includes("client"),
+        clientRelated:
+          Boolean(client) ||
+          meetingWith === "client" ||
+          meetingWithTypes.includes("client") ||
+          form.inviteGroups?.includes("client"),
         client,
-        meetingWith: form.meetingWith || "",
+        meetingWith,
+        meetingWithTypes,
         assignees: form.people?.length ? form.people : ["Priya Sharma"],
         people: form.people || [],
         inviteGroups: form.inviteGroups || [],
@@ -1032,6 +1054,7 @@ export default function CalendarPage() {
         specialInstructions: form.specialInstructions || "",
         location: form.venue || "",
         venue: form.venue || "",
+        logisticsRequired: Boolean(form.logisticsRequired),
         link: form.meetingLink || "",
         meetingLink: form.meetingLink || "",
         meetingType: form.meetingType || form.meetingTypes?.[0] || "",
@@ -1120,7 +1143,7 @@ export default function CalendarPage() {
         reminderFrequency: form.reminderFrequency || "",
         vendors: form.vendors || [],
         attachment: form.attachment || "",
-        attachments: form.attachment ? [{ name: form.attachment, size: "â€”" }] : [],
+        attachments: form.attachment ? [{ name: form.attachment, size: "—" }] : [],
         referenceLink: form.referenceLink || "",
         specialInstructions: form.specialInstructions || "",
         comments: existingId ? events.find((e) => e.id === existingId)?.meta?.comments || [] : [],
@@ -1176,7 +1199,12 @@ export default function CalendarPage() {
         reminderChannels: form.reminderChannels || [],
         messageTemplate: form.messageTemplate || "",
         messageBody: form.messageBody || "",
-        reminderFrequency: form.reminderFrequency || "On day of task",
+        reminderFrequency: Array.isArray(form.reminderFrequency)
+          ? form.reminderFrequency
+          : form.reminderFrequency
+            ? [form.reminderFrequency]
+            : ["On day of task"],
+        customReminders: Array.isArray(form.customReminders) ? form.customReminders : [],
         referenceLink: form.referenceLink || "",
         attachment: form.attachment || "",
         project: prevMeta.project || "Sales Pipeline",
@@ -1430,7 +1458,7 @@ export default function CalendarPage() {
 
   return (
     <div className="flex flex-1 min-h-0" style={{ height: "calc(var(--app-vh, 100vh) - 56px)" }}>
-      {/* â”€â”€ Left utility rail (page-local, sits beside the app sidebar) â”€â”€ */}
+      {/* ── Left utility rail (page-local, sits beside the app sidebar) ── */}
       <aside className="w-[236px] shrink-0 border-r border-black/8 bg-white flex flex-col gap-4 p-4 overflow-y-auto scrollbar-thin">
         <div className="relative">
           <button
@@ -1467,7 +1495,7 @@ export default function CalendarPage() {
 
         <button
           type="button"
-          onClick={() => toast.info("Ask AI: try â€œfind me a free slot tomorrowâ€.")}
+          onClick={() => toast.info("Ask AI: try “find me a free slot tomorrow”.")}
           className="text-left bg-[#FCF5F6] border border-[#7A0A17]/12 rounded-2xl p-3.5 hover:bg-[#F9ECEE] transition-colors"
         >
           <div className="flex items-center justify-between">
@@ -1486,7 +1514,7 @@ export default function CalendarPage() {
             <div className="absolute inset-y-0 left-0 w-1 bg-[#7A0A17]" />
             <div className="flex items-center justify-between pl-1.5">
               <p className="text-[10.5px] font-bold text-[#7A0A17] tracking-wide">
-                UP NEXT Â· {fmtTime(upNext.startH).toUpperCase()}
+                UP NEXT · {fmtTime(upNext.startH).toUpperCase()}
               </p>
               <span className="text-[10px] font-bold text-white bg-[#7A0A17] px-1.5 py-0.5 rounded-md">
                 {sameDay(upNext.date, TODAY) ? "Today" : upNext.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
@@ -1503,7 +1531,7 @@ export default function CalendarPage() {
               </button>
             </div>
             <p className="inline-flex items-center mt-2 ml-1.5 text-[11.5px] font-semibold text-[#7A0A17] bg-white/70 border border-[#7A0A17]/12 px-2 py-0.5 rounded-md">
-              {fmtTime(upNext.startH)} â€“ {fmtTime(upNext.endH)}
+              {fmtTime(upNext.startH)} – {fmtTime(upNext.endH)}
             </p>
           </div>
         )}
@@ -1531,7 +1559,7 @@ export default function CalendarPage() {
         </div>
       </aside>
 
-      {/* â”€â”€ Main calendar â”€â”€ */}
+      {/* ── Main calendar ── */}
       <div className="flex flex-col flex-1 min-w-0 min-h-0">
         {/* Toolbar */}
         <div className="flex items-center gap-4 px-5 py-3.5 border-b border-black/8 bg-white flex-wrap">
@@ -1611,7 +1639,7 @@ export default function CalendarPage() {
               )}
             </div>
 
-            {/* View toggle â€” same control as Pipeline */}
+            {/* View toggle — same control as Pipeline */}
             <div className="flex items-center h-10 rounded-xl border border-black/10 bg-white overflow-hidden shrink-0">
               <button
                 type="button"
@@ -1754,7 +1782,7 @@ export default function CalendarPage() {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ List view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────── List view ───────────────────────── */
 
 function InitialsAvatar({ name, size = 26 }) {
   const initials = String(name || "?")
@@ -1838,13 +1866,13 @@ function EventListView({ events, onEventClick, onEdit, onDelete }) {
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`text-[12px] ${isToday ? "text-[#7A0A17] font-semibold" : "text-[#374151]"}`}>
                         {fmtDate(ev.date)}
-                        {isToday ? " Â· Today" : ""}
+                        {isToday ? " · Today" : ""}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-[12px] text-[#6B7280]">
-                          {fmtTime(ev.startH)} â€“ {fmtTime(ev.endH)}
+                          {fmtTime(ev.startH)} – {fmtTime(ev.endH)}
                         </span>
                         {meetingUrl ? (
                           <a
@@ -1867,7 +1895,7 @@ function EventListView({ events, onEventClick, onEdit, onDelete }) {
                         {priority}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-[12px] text-[#374151] whitespace-nowrap">{ev.meta?.stage || "â€”"}</td>
+                    <td className="px-4 py-3 text-[12px] text-[#374151] whitespace-nowrap">{ev.meta?.stage || "—"}</td>
                     <td className="px-4 py-3 text-[12px] text-[#6B7280] whitespace-nowrap">{fmtDate(ev.meta?.dueDate)}</td>
                     <td className="px-4 py-3">
                       {assignees.length ? (
@@ -1879,7 +1907,7 @@ function EventListView({ events, onEventClick, onEdit, onDelete }) {
                           </span>
                         </span>
                       ) : (
-                        <span className="text-[12px] text-[#9CA3AF]">â€”</span>
+                        <span className="text-[12px] text-[#9CA3AF]">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -1929,7 +1957,7 @@ function EventListView({ events, onEventClick, onEdit, onDelete }) {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Slot overflow modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────── Slot overflow modal ───────────────────────── */
 
 function SlotEventsModal({ slot, onClose, onEventClick }) {
   if (!slot) return null;
@@ -1944,7 +1972,7 @@ function SlotEventsModal({ slot, onClose, onEventClick }) {
     <Modal
       open={!!slot}
       onClose={onClose}
-      title={`${fmtTime(hour)} Â· ${dateLabel}`}
+      title={`${fmtTime(hour)} · ${dateLabel}`}
       subtitle={`${events.length} item${events.length === 1 ? "" : "s"} in this slot`}
       icon={<CalendarDays size={18} />}
       iconBg="#FCF5F6"
@@ -1967,7 +1995,7 @@ function SlotEventsModal({ slot, onClose, onEventClick }) {
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[11px] font-semibold" style={{ color: cat.text }}>
-                  {fmtTime(ev.startH)} â€“ {fmtTime(ev.endH)}
+                  {fmtTime(ev.startH)} – {fmtTime(ev.endH)}
                 </p>
                 <span
                   className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md"
@@ -1990,7 +2018,7 @@ function SlotEventsModal({ slot, onClose, onEventClick }) {
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Week / Day grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────── Week / Day grid ───────────────────────── */
 
 function WeekDayGrid({ days, eventsFor, onEventClick, dragOverCell, updateDragCell, beginDrag, clearDrag, onDrop }) {
   const [slotModal, setSlotModal] = useState(null);
@@ -2117,7 +2145,7 @@ function WeekDayGrid({ days, eventsFor, onEventClick, dragOverCell, updateDragCe
   );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Month grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ───────────────────────── Month grid ───────────────────────── */
 
 function MonthGrid({ days, anchorDate, eventsFor, onEventClick, onDayClick }) {
   return (
