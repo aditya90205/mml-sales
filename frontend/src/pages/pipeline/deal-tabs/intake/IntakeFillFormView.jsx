@@ -5,10 +5,9 @@ import {
   SECTIONS_META,
   SECTION_BLOCKS,
   SECTION_TIPS,
-  OVERALL_TOTAL_FIELDS,
-  OVERALL_FILLED_FIELDS,
   computeSectionPercent,
   countSectionFields,
+  countOverallFields,
 } from "./intakeFormData";
 import { FormBlock } from "./IntakeSectionFields";
 import Modal from "../../../../components/ui/Modal";
@@ -200,7 +199,8 @@ export default function IntakeFillFormView({
     percent: empty ? 0 : computeSectionPercent(SECTION_BLOCKS[s.key], values, chips),
   }));
 
-  const overallPercent = empty ? 0 : Math.round((OVERALL_FILLED_FIELDS / OVERALL_TOTAL_FIELDS) * 100);
+  const overall = countOverallFields(values, chips, { empty });
+  const overallPercent = overall.total ? Math.round((overall.filled / overall.total) * 100) : 0;
   const isPersonal = activeKey === "personal";
   // Fill-the-form fields stay editable at P2; OTP is only required when committing to the client record.
   const personalLocked = false;
@@ -311,7 +311,7 @@ export default function IntakeFillFormView({
       </div>
 
       <div className="flex flex-col gap-5">
-        <FormFilledCard percent={overallPercent} filled={empty ? 0 : OVERALL_FILLED_FIELDS} total={OVERALL_TOTAL_FIELDS} />
+        <FormFilledCard percent={overallPercent} filled={overall.filled} total={overall.total} />
         <SectionsSidebar sections={sections} activeKey={activeKey} onSelect={setActiveKey} />
         <SelectedDocumentsCard documents={selectedDocuments} />
       </div>

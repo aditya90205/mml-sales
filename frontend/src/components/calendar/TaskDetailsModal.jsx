@@ -25,7 +25,7 @@ const PRIORITY_FILL = {
   Low: "bg-[#E7F8EF] text-[#16A34A]",
   Medium: "bg-[#FFF3E4] text-[#D97706]",
   High: "bg-[#FDECEE] text-[#E8395B]",
-  Critical: "bg-[#F3E8FF] text-[#7C3AED]",
+  Critical: "bg-[#FDECEE] text-[#E8395B]",
 };
 
 const STAGE_DOT = {
@@ -217,10 +217,10 @@ export default function TaskDetailsModal({
             <DetailItem label="Priority" icon={Flag}>
               <span
                 className={`inline-flex text-[11px] font-semibold px-2.5 py-1 rounded-md ${
-                  PRIORITY_FILL[task.priority] || PRIORITY_FILL.Medium
+                  PRIORITY_FILL[task.priority === "Critical" ? "High" : task.priority] || PRIORITY_FILL.Medium
                 }`}
               >
-                {task.priority}
+                {task.priority === "Critical" ? "High" : task.priority}
               </span>
             </DetailItem>
             <DetailItem label="Assignee" icon={UserCheck}>{assigneeLabel}</DetailItem>

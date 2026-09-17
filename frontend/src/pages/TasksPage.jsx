@@ -65,13 +65,16 @@ function sortTasksByPriority(list) {
 }
 
 const PRIORITY_STYLES = {
-  Critical: { color: "#E8395B", bg: "#FDECEE" },
   High: { color: "#E8395B", bg: "#FDECEE" },
   Medium: { color: "#F59E0B", bg: "#FFF3E4" },
   Low: { color: "#16A34A", bg: "#E7F8EF" },
 };
 
-const PRIORITY_RANK = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+const PRIORITY_RANK = { High: 0, Critical: 0, Medium: 1, Low: 2 };
+
+function displayPriority(priority) {
+  return priority === "Critical" ? "High" : priority || "Medium";
+}
 
 const PER_PAGE_OPTIONS = [10, 25, 50];
 
@@ -81,7 +84,7 @@ function taskToForm(task) {
     title: task.title || "",
     description: task.description || "Follow up on pending response",
     customDescription: task.customDescription || "",
-    priority: task.priority === "Critical" ? "High" : task.priority || "Low",
+    priority: task.priority ? displayPriority(task.priority) : "Low",
     taskType: task.taskType || "Client visit",
     branch: task.branch || "Rajouri Garden",
     assignees: task.assignees?.length
@@ -268,7 +271,8 @@ function TasksToolbar({ search, onSearchChange, perPage, onPerPageChange, view, 
 /* ───────────────────────── Task card ───────────────────────── */
 
 function TaskCard({ task, columnColor, onView, onEdit, onDelete }) {
-  const priority = PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.Medium;
+  const priorityLabel = displayPriority(task.priority);
+  const priority = PRIORITY_STYLES[priorityLabel] || PRIORITY_STYLES.Medium;
 
   return (
     <div
@@ -309,7 +313,7 @@ function TaskCard({ task, columnColor, onView, onEdit, onDelete }) {
         className="self-start inline-block text-[10px] font-semibold px-2 py-1 rounded-md"
         style={{ color: priority.color, backgroundColor: priority.bg }}
       >
-        {task.priority}
+        {priorityLabel}
       </span>
 
       <div>
@@ -453,7 +457,8 @@ function TaskListView({ rows, onView, onEdit, onDelete, defaultSortKey = "title"
           </thead>
           <tbody className="divide-y divide-black/6">
             {sorted.map(({ task, column }) => {
-              const priority = PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.Medium;
+              const priorityLabel = displayPriority(task.priority);
+              const priority = PRIORITY_STYLES[priorityLabel] || PRIORITY_STYLES.Medium;
               return (
                 <tr key={task.id} className="hover:bg-[#FAFAFB] transition-colors">
                   <td className="px-4 py-3 text-[13px] font-semibold text-[#111] max-w-[260px]">
@@ -473,7 +478,7 @@ function TaskListView({ rows, onView, onEdit, onDelete, defaultSortKey = "title"
                       className="inline-block text-[10px] font-semibold px-2 py-1 rounded-md whitespace-nowrap"
                       style={{ color: priority.color, backgroundColor: priority.bg }}
                     >
-                      {task.priority}
+                      {priorityLabel}
                     </span>
                   </td>
                   <td className="px-4 py-3 min-w-[120px]">
@@ -579,7 +584,7 @@ export default function TasksPage() {
   const kpiStats = useMemo(() => {
     const unassigned = tasks.filter(isTaskUnassigned).length;
     const assigned = tasks.length - unassigned;
-    const high = tasks.filter((t) => t.priority === "High" || t.priority === "Critical").length;
+    const high = tasks.filter(isHighPriority).length;
     const counts = { total: tasks.length, unassigned, assigned, high };
     return STAT_DEFS.map((def) => ({ ...def, value: counts[def.id] }));
   }, [tasks]);
@@ -684,7 +689,7 @@ export default function TasksPage() {
               className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-[#FFF3E4] text-[#F59E0B] text-[12px] font-semibold hover:brightness-[0.97] transition-[filter]"
             >
               Due today
-              {sortByPriority && <span className="text-[#9CA3AF] font-medium">· Critical → Low</span>}
+              {sortByPriority && <span className="text-[#9CA3AF] font-medium">· High → Low</span>}
               <X size={13} strokeWidth={2.2} />
             </button>
           )}

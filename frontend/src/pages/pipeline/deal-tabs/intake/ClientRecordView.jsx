@@ -3,10 +3,9 @@ import { Check, Eye, EyeOff, Pencil, ShieldCheck } from "lucide-react";
 import {
   SECTIONS_META,
   SECTION_BLOCKS,
-  OVERALL_TOTAL_FIELDS,
-  OVERALL_FILLED_FIELDS,
   RECORD_DETAIL_TABLES,
   countSectionFields,
+  countOverallFields,
   getFilledRows,
 } from "./intakeFormData";
 
@@ -514,15 +513,16 @@ export default function ClientRecordView({ values, chips, empty, changeLog = [],
     };
   }).filter(Boolean);
 
-  const formFilled = empty ? 0 : OVERALL_FILLED_FIELDS;
-  const formPercent = empty ? 0 : Math.round((OVERALL_FILLED_FIELDS / OVERALL_TOTAL_FIELDS) * 100);
+  const overall = countOverallFields(values, chips, { empty });
+  const formFilled = overall.filled;
+  const formPercent = overall.total ? Math.round((overall.filled / overall.total) * 100) : 0;
 
   return (
     <div className="flex flex-col gap-5">
       <ClientRecordSummaryBar
         formPercent={formPercent}
         formFilled={formFilled}
-        formTotal={OVERALL_TOTAL_FIELDS}
+        formTotal={overall.total}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,80fr)_minmax(0,20fr)] gap-5 items-start">

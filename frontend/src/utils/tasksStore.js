@@ -32,6 +32,12 @@ const COLUMN_BY_STAGE = {
   Done: "done",
 };
 
+function normalizePriority(priority) {
+  if (priority === "Critical" || priority === "High") return "High";
+  if (priority === "Medium" || priority === "Low") return priority;
+  return "Medium";
+}
+
 function makeTask(partial, columnId) {
   const stage = STAGE_BY_COLUMN[columnId] || "New";
   const rawAssignee = partial.assignee;
@@ -40,7 +46,7 @@ function makeTask(partial, columnId) {
   return {
     id: partial.id || `task-${columnId}-${Math.random().toString(36).slice(2, 9)}`,
     title: partial.title,
-    priority: partial.priority || "Medium",
+    priority: normalizePriority(partial.priority),
     progress: partial.progress ?? 0,
     project: partial.project || "Sales Pipeline",
     date: partial.date || toDisplayDate(dueDate),
@@ -86,7 +92,7 @@ const INITIAL_TASKS = [
     {
       id: "t1",
       title: "Visit client — initial consultation",
-      priority: "Critical",
+      priority: "High",
       progress: 20,
       project: "South Delhi leads",
       assignee: "Rahul Verma",
@@ -110,7 +116,7 @@ const INITIAL_TASKS = [
     {
       id: "t3",
       title: "Matchmaking shortlist for Ananya",
-      priority: "Critical",
+      priority: "High",
       progress: 60,
       project: "Premium package",
       assignee: "Sana Iqbal",
@@ -134,7 +140,7 @@ const INITIAL_TASKS = [
     {
       id: "t5",
       title: "Verify KYC & family documents",
-      priority: "Critical",
+      priority: "High",
       progress: 75,
       project: "P5 Payment deals",
       assignee: "Dev Malhotra",
@@ -206,7 +212,7 @@ const INITIAL_TASKS = [
   ),
 ];
 
-let tasks = INITIAL_TASKS.map((t) => ({ ...t }));
+let tasks = INITIAL_TASKS.map((t) => ({ ...t, priority: normalizePriority(t.priority) }));
 
 function emit() {
   if (typeof window === "undefined") return;
@@ -214,11 +220,13 @@ function emit() {
 }
 
 export function readTasks() {
-  return tasks.map((t) => ({ ...t }));
+  return tasks.map((t) => ({ ...t, priority: normalizePriority(t.priority) }));
 }
 
 export function writeTasks(next) {
-  tasks = Array.isArray(next) ? next.map((t) => ({ ...t })) : [];
+  tasks = Array.isArray(next)
+    ? next.map((t) => ({ ...t, priority: normalizePriority(t.priority) }))
+    : [];
   emit();
   return readTasks();
 }
@@ -238,7 +246,7 @@ export function isDueToday(task) {
 }
 
 export function isHighPriority(task) {
-  return task?.priority === "High" || task?.priority === "Critical";
+  return normalizePriority(task?.priority) === "High";
 }
 
 export function applyFormToTask(existing, form) {
@@ -254,7 +262,7 @@ export function applyFormToTask(existing, form) {
     id: existing?.id || `task-${Date.now()}`,
     title: form.title.trim(),
     description: form.description || "",
-    priority: form.priority || "Low",
+    priority: normalizePriority(form.priority || "Low"),
     taskType: form.taskType || "Client visit",
     branch: form.branch || "Rajouri Garden",
     assignees,

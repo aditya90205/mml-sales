@@ -698,19 +698,20 @@ function PerformanceScoreCard({ period, myLeads }) {
             src={salesPersonProfile}
             alt="Sales person"
             className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: "center 8%" }}
+            style={{ objectPosition: "center 22%" }}
           />
           <div
-            className="absolute inset-x-0 bottom-0 h-[46%] flex flex-col items-center justify-center"
-            style={{ backgroundColor: "#7A0A17" }}
+            className="absolute inset-x-0 bottom-0 h-[32%] flex flex-col items-center justify-center gap-0.5 px-2 pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.78) 22%, rgba(0,0,0,0.9) 100%)",
+            }}
           >
-            <p className="text-[11px] font-semibold text-white leading-tight">Overall Score</p>
-            <p className="text-[20px] font-extrabold text-white leading-none mt-0.5">
-              {report.overall}
-              <span className="text-[13px] font-semibold text-white/85"> / 100</span>
+            <p className="text-[11px] font-medium text-white leading-tight">Overall Score</p>
+            <p className="text-[15px] font-bold text-white leading-none">
+              {report.overall} / 100
             </p>
           </div>
-          <div className="absolute inset-x-0 top-[54%] h-[2px] bg-white" />
         </div>
 
         {segments.map((s) => {

@@ -8,14 +8,8 @@ export const SECTIONS_META = [
   { key: "siblings", label: "Siblings & family standing" },
   { key: "match", label: "Match desired" },
   { key: "essential", label: "Essential questions for relationship success" },
-  { key: "medical", label: "Medical history disclosure" },
-  { key: "declaration", label: "Declaration & check list" },
   { key: "communication", label: "Communication, consent & privacy" },
-  { key: "casesheet", label: "Case sheet — for official use" },
 ];
-
-export const OVERALL_TOTAL_FIELDS = 270;
-export const OVERALL_FILLED_FIELDS = 145;
 
 const PERSONAL_DETAILS_BLOCKS = [
   {
@@ -81,10 +75,8 @@ const PERSONAL_DETAILS_BLOCKS = [
     ],
   },
   {
-    title: "Identity & contact",
+    title: "Contact",
     fields: [
-      { key: "panNo", label: "PAN No", type: "upload", note: "Card image optional — front and back" },
-      { key: "aadhaarNo", label: "Aadhaar No", type: "upload", chipsKey: "aadhaarFiles" },
       { key: "mobile", label: "Mobile", required: true, type: "text" },
       { key: "alternateContact", label: "Alternate contact", type: "text" },
       { key: "email", label: "E-mail", required: true, type: "text" },
@@ -601,8 +593,6 @@ const DECLARATION_BLOCKS = [
   },
 ];
 
-const VISIBILITY_OPTIONS = ["Hidden", "RM only", "Shortlisted only", "All viewers"];
-
 const COMMUNICATION_BLOCKS = [
   {
     title: "How to reach the client",
@@ -614,25 +604,6 @@ const COMMUNICATION_BLOCKS = [
       { key: "doNotDisturb", label: "Do not disturb", type: "pill", options: ["On", "Off"] },
       { key: "smsOptIn", label: "SMS opt-in", type: "pill", options: ["Yes", "No"] },
       { key: "emailOptIn", label: "E-mail opt-in", type: "pill", options: ["Yes", "No"] },
-    ],
-  },
-  {
-    title: "Consent & sign-off",
-    fields: [
-      { key: "dataPrivacyConsent", label: "Data privacy consent", required: true, type: "pill", options: ["Taken", "Pending"] },
-      { key: "consentTakenOn", label: "Consent taken on", type: "text" },
-      { key: "otpSignOff", label: "OTP sign-off", type: "pill", options: ["Done", "Pending"] },
-    ],
-  },
-  {
-    title: "What the client allows us to show",
-    fields: [
-      { key: "showPhoneNumber", label: "Phone number", type: "pill", options: VISIBILITY_OPTIONS },
-      { key: "showAddress", label: "Address", type: "pill", options: VISIBILITY_OPTIONS },
-      { key: "showPhotographs", label: "Photographs", type: "pill", options: VISIBILITY_OPTIONS },
-      { key: "showIncome", label: "Income", type: "pill", options: VISIBILITY_OPTIONS },
-      { key: "showKundli", label: "Kundli", type: "pill", options: VISIBILITY_OPTIONS },
-      { key: "contactChangeNeedsApproval", label: "Contact or address change needs RM approval", type: "pill", options: ["Yes", "No"] },
     ],
   },
   {
@@ -728,10 +699,7 @@ export const SECTION_BLOCKS = {
   siblings: SIBLINGS_BLOCKS,
   match: MATCH_BLOCKS,
   essential: ESSENTIAL_BLOCKS,
-  medical: MEDICAL_BLOCKS,
-  declaration: DECLARATION_BLOCKS,
   communication: COMMUNICATION_BLOCKS,
-  casesheet: CASESHEET_BLOCKS,
 };
 
 /** Flat map of personal-detail field key → label (for change summary / OTP diffs). */
@@ -785,8 +753,6 @@ export const DEMO_PERSONAL_VALUES = {
   maritalStatus: "Never married",
   lookingFor: "Groom",
   enquiryBy: "Parent",
-  panNo: "AHXPR••••K",
-  aadhaarNo: "•••• •••• 4417",
   aadhaarFiles: ["aadhaar-front.jpg", "aadhaar-back.jpg"],
   mobile: "98••• ••164",
   email: "priya.raheja@gmail.com",
@@ -1036,8 +1002,6 @@ export function getFilledRows(rows) {
 
 /** Detail tables shown below section summary cards on Client record. */
 export const RECORD_DETAIL_TABLES = [
-  { key: "paymentDetails", title: "Payment details", columns: PAYMENT_ROW_FIELDS },
-  { key: "caseMaturityCharges", title: "Case maturity charges", columns: CASE_MATURITY_ROW_FIELDS },
   { key: "courses", title: "Educational qualifications", columns: QUALIFICATION_ROW_FIELDS, asTable: true },
   { key: "siblingDetails", title: "Sibling detail", columns: SIBLING_ROW_FIELDS },
 ];
@@ -1055,6 +1019,19 @@ export function countSectionFields(blocks, values, chipValues) {
   const total = visible.length;
   const filled = visible.filter((f) => isFieldFilled(f, values, chipValues)).length;
   return { filled, total };
+}
+
+export function countOverallFields(values = {}, chipValues = {}, { empty = false } = {}) {
+  return SECTIONS_META.reduce(
+    (acc, section) => {
+      const blocks = SECTION_BLOCKS[section.key] || [];
+      const counts = empty
+        ? { filled: 0, total: blocks.reduce((sum, b) => sum + b.fields.length, 0) }
+        : countSectionFields(blocks, values, chipValues);
+      return { filled: acc.filled + counts.filled, total: acc.total + counts.total };
+    },
+    { filled: 0, total: 0 }
+  );
 }
 
 /** Clone only the values/chips that belong to a section's blocks. */
@@ -1129,13 +1106,7 @@ export const SECTION_TIPS = {
     "Ask like this: Start with must-haves, then nice-to-haves. Confirm flexibility on caste, city and age.",
   essential:
     "Ask like this: These answers affect match quality — pause and confirm each one with the client.",
-  medical:
-    "Ask like this: Be sensitive. Record what the client discloses; do not probe beyond what they share.",
-  declaration:
-    "Ask like this: Read each checklist item aloud and tick only after the client confirms.",
   communication:
     "Ask like this: Confirm preferred contact channel and who can receive updates about this profile.",
-  casesheet:
-    "Ask like this: Official-use notes only. Keep them factual and dated.",
 };
 
