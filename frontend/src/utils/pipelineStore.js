@@ -86,3 +86,31 @@ export function findLeadById(leadId) {
   }
   return null;
 }
+
+export function updateLead(leadId, patch = {}) {
+  if (!leadId) return null;
+  let updated = null;
+  let foundStage = null;
+  leads = cloneLeads(leads);
+  for (const stageId of STAGE_IDS) {
+    leads[stageId] = (leads[stageId] || []).map((l) => {
+      if (l.id !== leadId) return l;
+      updated = { ...l, ...patch, id: l.id };
+      foundStage = stageId;
+      return updated;
+    });
+  }
+  if (!updated) return null;
+  emit();
+  return { lead: { ...updated }, stageId: foundStage };
+}
+
+export function findLeadByName(name) {
+  const q = String(name || "").trim().toLowerCase();
+  if (!q) return null;
+  for (const stageId of STAGE_IDS) {
+    const lead = (leads[stageId] || []).find((l) => String(l.name || "").toLowerCase() === q);
+    if (lead) return { lead: { ...lead }, stageId };
+  }
+  return null;
+}

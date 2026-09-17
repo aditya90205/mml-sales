@@ -13,6 +13,7 @@ import IntakeFillFormView from "./intake/IntakeFillFormView";
 import ClientRecordView from "./intake/ClientRecordView";
 import PersonalChangeOtpModal from "./intake/PersonalChangeOtpModal";
 import SectionEditModal from "./intake/SectionEditModal";
+import { consumeBiodataDraft, mapBiodataToIntake } from "../../../utils/biodataDraftStore.js";
 
 function IntakeViewToggle({ view, onChange }) {
   const options = [
@@ -101,16 +102,25 @@ const DEMO_CHANGE_LOG = [
  * Intake Form tab — toggles between Fill the form and Client record views.
  * Client-record section edits require Send OTP → verify before data updates.
  */
-export default function IntakeFormTab({ empty = false }) {
-  const [view, setView] = useState("fill");
+export default function IntakeFormTab({ empty = false, lead = null }) {
+  const draft = lead?.id ? consumeBiodataDraft(lead.id) : null;
+  const intakeFromBiodata = draft ? mapBiodataToIntake(draft) : {};
+  const seedValues = {
+    ...(empty ? {} : SECTION_DEMO_VALUES),
+    ...intakeFromBiodata,
+  };
+
+  const [view, setView] = useState(draft ? "record" : "fill");
   const [activeKey, setActiveKey] = useState("personal");
-  const [values, setValues] = useState(empty ? {} : SECTION_DEMO_VALUES);
-  const [chips, setChips] = useState({ aadhaarFiles: empty ? [] : DEMO_PERSONAL_VALUES.aadhaarFiles });
+  const [values, setValues] = useState(seedValues);
+  const [chips, setChips] = useState({
+    aadhaarFiles: empty && !draft ? [] : DEMO_PERSONAL_VALUES.aadhaarFiles,
+  });
   const [personalBaseline, setPersonalBaseline] = useState(() =>
-    snapshotPersonalValues(empty ? {} : SECTION_DEMO_VALUES)
+    snapshotPersonalValues(seedValues)
   );
   const [personalUnlocked, setPersonalUnlocked] = useState(true);
-  const [changeLog, setChangeLog] = useState(() => (empty ? [] : DEMO_CHANGE_LOG));
+  const [changeLog, setChangeLog] = useState(() => (empty && !draft ? [] : DEMO_CHANGE_LOG));
   const [otpState, setOtpState] = useState({
     open: false,
     mode: "unlock",

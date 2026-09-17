@@ -355,7 +355,7 @@ export default function DealDetailPage({
           />
         );
       case "intake":
-        return <IntakeFormTab empty={currentStage === "P0"} />;
+        return <IntakeFormTab empty={currentStage === "P0"} lead={lead} />;
       case "visits":
         return <VisitsMeetingsTab empty={!atLeast(currentStage, "P3")} />;
       case "package":

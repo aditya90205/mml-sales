@@ -14,9 +14,11 @@ import {
   Phone,
   Search,
   Sparkles,
+  Trash2,
   UserPlus,
   X,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 const RELATIONS = ["Self / Prospect", "Parent", "Sibling", "Relative", "Friend", "Other"];
 const CONTACT_WITH = ["First Contact", "Follow-up", "Existing Client", "Referred Contact"];
@@ -56,6 +58,16 @@ const MEETINGS = [
   { id: "Call Agreed", label: "Call Agreed", icon: Phone },
   { id: "Callback Later", label: "Callback Later", icon: Clock },
   { id: "Not Yet", label: "Not Yet", icon: Ban },
+];
+const DROP_REASONS = [
+  "Not interested",
+  "Wrong enquiry / Never enquired",
+  "Duplicate lead",
+  "Invalid contact details",
+  "Already registered",
+  "Timing / not looking now",
+  "Budget / Price",
+  "Other",
 ];
 const COUNTRIES = ["India", "USA", "UK", "Canada", "UAE", "Australia", "Singapore", "Other"];
 const COUNTRY_DIAL = {
@@ -171,14 +183,164 @@ function NativeSelect({ value, onChange, options }) {
   );
 }
 
-export default function CreateLeadModal({ open, onClose, onCreate }) {
+function ReasonSelect({ value, onChange, options, placeholder = "Select reason" }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const close = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`${INPUT} flex items-center text-left pr-9 ${value ? "text-[#111]" : "text-[#9CA3AF]"}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="truncate">{value || placeholder}</span>
+      </button>
+      <ChevronDown
+        size={15}
+        className={`absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none transition-transform ${open ? "rotate-180" : ""}`}
+      />
+      {open ? (
+        <div
+          className="absolute left-0 right-0 top-[calc(100%+6px)] bg-white border border-black/8 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-30 py-1 max-h-44 overflow-y-auto"
+          role="listbox"
+        >
+          {options.map((opt) => {
+            const active = opt === value;
+            return (
+              <button
+                key={opt}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
+                className={`w-full text-left px-3.5 py-2 text-[13px] ${
+                  active ? "bg-[#FCF5F6] text-[#7A0A17] font-semibold" : "text-[#374151] hover:bg-[#FCF5F6] hover:text-[#7A0A17]"
+                }`}
+              >
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function DropLeadConfirm({ reason, onReasonChange, error, onCancel, onConfirm }) {
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="drop-lead-title"
+    >
+      <div className="absolute inset-0 bg-black/55 backdrop-blur-md" onClick={onCancel} aria-hidden />
+      <div className="relative z-10 w-full max-w-[400px] bg-white rounded-2xl shadow-xl p-5 overflow-visible">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="size-9 rounded-full bg-[#FCE8EC] text-[#7A0A17] grid place-items-center shrink-0">
+              <Trash2 size={16} />
+            </span>
+            <h3 id="drop-lead-title" className="text-[16px] font-bold text-[#111]">
+              Drop Lead
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="size-8 grid place-items-center rounded-lg text-[#6B7280] hover:bg-black/5 transition-colors shrink-0 -mt-1 -mr-1"
+            aria-label="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <p className="text-[13.5px] font-semibold text-[#111]">Are you sure you want to drop this lead?</p>
+        <p className="text-[12.5px] text-[#9CA3AF] mt-1 leading-relaxed">
+          This lead will be removed from your pipeline and won&apos;t be available in your active leads list.
+        </p>
+
+        <div className="mt-4">
+          <label className="block text-[13px] font-semibold text-[#111] mb-1.5">Reason for dropping</label>
+          <ReasonSelect value={reason} onChange={onReasonChange} options={DROP_REASONS} />
+          {error ? <p className="text-[12px] font-semibold text-[#E8395B] mt-1.5">{error}</p> : null}
+        </div>
+
+        <div className="flex items-center justify-end gap-2.5 mt-5">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-9 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            <Trash2 size={14} />
+            Drop Lead
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function applyInitial(initial) {
+  const base = emptyForm();
+  if (!initial || typeof initial !== "object") return base;
+  const next = { ...base, ...initial };
+  if (initial.mobile) {
+    next.mobile = String(initial.mobile).replace(/\D/g, "").replace(/^91/, "").slice(-10);
+  }
+  if (initial.lookingFor) {
+    const lf = String(initial.lookingFor).toLowerCase();
+    next.lookingFor = lf.includes("no") || lf === "bride" ? "no" : "yes";
+  }
+  if (initial.relation) {
+    const r = String(initial.relation).toLowerCase();
+    if (r.includes("self")) next.relation = "Self / Prospect";
+    else if (r.includes("parent")) next.relation = "Parent";
+    else if (r.includes("sibling")) next.relation = "Sibling";
+    else if (r.includes("relative")) next.relation = "Relative";
+    else if (r.includes("friend")) next.relation = "Friend";
+    else next.relation = "Other";
+  }
+  if (initial.city && !String(initial.city).includes(",")) {
+    const hit = CITIES.find((c) => c.toLowerCase().startsWith(String(initial.city).toLowerCase()));
+    if (hit) next.city = hit;
+  }
+  return next;
+}
+
+export default function CreateLeadModal({ open, onClose, onCreate, initial = null }) {
   const fileRef = useRef(null);
   const cityRef = useRef(null);
-  const [form, setForm] = useState(emptyForm);
-  const [file, setFile] = useState(null);
+  const [form, setForm] = useState(() => applyInitial(initial));
+  const [file, setFile] = useState(() => (initial?.fileName ? { name: initial.fileName } : null));
   const [dragging, setDragging] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
   const [error, setError] = useState("");
+  const [dropOpen, setDropOpen] = useState(false);
+  const [dropReason, setDropReason] = useState("");
+  const [dropError, setDropError] = useState("");
 
   const set = (key) => (value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -186,21 +348,28 @@ export default function CreateLeadModal({ open, onClose, onCreate }) {
   };
 
   useEffect(() => {
-    if (!open) return;
-    setForm(emptyForm());
-    setFile(null);
-    setDragging(false);
-    setCityOpen(false);
-    setError("");
+    if (!open) {
+      setDropOpen(false);
+      setDropReason("");
+      setDropError("");
+      return;
+    }
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const onKey = (e) => e.key === "Escape" && onClose?.();
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      if (dropOpen) {
+        setDropOpen(false);
+        return;
+      }
+      onClose?.();
+    };
     document.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
       document.removeEventListener("keydown", onKey);
     };
-  }, [open, onClose]);
+  }, [open, onClose, dropOpen]);
 
   useEffect(() => {
     const close = (e) => {
@@ -250,17 +419,38 @@ export default function CreateLeadModal({ open, onClose, onCreate }) {
     onClose?.();
   };
 
+  const openDropModal = () => {
+    setDropReason("");
+    setDropError("");
+    setDropOpen(true);
+  };
+
+  const confirmDrop = () => {
+    if (!dropReason) {
+      setDropError("Select a reason for dropping.");
+      return;
+    }
+    const name = `${form.firstName.trim()} ${form.lastName.trim()}`.replace(/\s+/g, " ").trim();
+    toast.info(name ? `Lead "${name}" dropped.` : "Lead dropped.");
+    setDropOpen(false);
+    onClose?.();
+  };
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
       <div
         className="absolute inset-0"
-        onClick={onClose}
+        onClick={() => {
+          if (!dropOpen) onClose?.();
+        }}
         aria-hidden
       />
       <div
-        className="relative z-10 w-full max-w-[640px] bg-white rounded-2xl shadow-xl border border-black/8 max-h-[90vh] flex flex-col overflow-hidden"
+        className={`relative z-10 w-full max-w-[640px] bg-white rounded-2xl shadow-xl border border-black/8 max-h-[90vh] flex flex-col overflow-hidden ${
+          dropOpen ? "opacity-0 pointer-events-none" : ""
+        }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-lead-title"
@@ -531,11 +721,21 @@ export default function CreateLeadModal({ open, onClose, onCreate }) {
           </div>
 
           <div className="flex items-center justify-between gap-3 px-6 py-3.5 bg-[#F5F2FB] shrink-0">
-            <p className="inline-flex items-center gap-1.5 text-[12px] text-[#9CA3AF]">
-              <Lock size={13} />
-              Enterprise encrypted pipeline
-            </p>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3 min-w-0">
+              <button
+                type="button"
+                onClick={openDropModal}
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-[#7A0A17]/35 text-[13px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors shrink-0"
+              >
+                <Trash2 size={14} />
+                Drop Lead
+              </button>
+              <p className="hidden sm:inline-flex items-center gap-1.5 text-[12px] text-[#9CA3AF] truncate">
+                <Lock size={13} className="shrink-0" />
+                Enterprise encrypted pipeline
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 shrink-0">
               <button
                 type="button"
                 onClick={onClose}
@@ -554,6 +754,18 @@ export default function CreateLeadModal({ open, onClose, onCreate }) {
           </div>
         </form>
       </div>
+      {dropOpen ? (
+        <DropLeadConfirm
+          reason={dropReason}
+          onReasonChange={(value) => {
+            setDropReason(value);
+            setDropError("");
+          }}
+          error={dropError}
+          onCancel={() => setDropOpen(false)}
+          onConfirm={confirmDrop}
+        />
+      ) : null}
     </div>
   );
 }

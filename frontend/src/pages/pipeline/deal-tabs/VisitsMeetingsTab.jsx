@@ -33,7 +33,7 @@ const LAST_ACTION_ICONS = [
   { key: "transcript", label: "Transcript", Icon: FileText, color: "#7C3AED", hoverBg: "hover:bg-[#F3E8FF]" },
 ];
 
-const VISITS = [
+export const VISITS = [
   {
     date: "02 Jul",
     client: "Aditya Verma",

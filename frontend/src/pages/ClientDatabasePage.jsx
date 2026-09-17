@@ -17,7 +17,7 @@ import SendEmailModal from "../components/common/SendEmailModal.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import ClientGroupsChart, { statsFromClients } from "../components/clients/ClientGroupsChart.jsx";
-import { BRANCHES, CLIENTS, PROBABILITY_META } from "../utils/clientsData.js";
+import { BRANCHES, PROBABILITY_META, readClients, subscribeClients } from "../utils/clientsData.js";
 import { groupQuery, readSavedGroups, removeSavedGroup } from "../utils/clientGroups.js";
 import { matchesAll } from "../utils/clientQuery.js";
 
@@ -120,7 +120,11 @@ export default function ClientDatabasePage() {
   const location = useLocation();
   const filterRef = useRef(null);
   const perPageRef = useRef(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => {
+    const params = new URLSearchParams(location.search || "");
+    return params.get("q") || params.get("focus") || "";
+  });
+  const [clients, setClients] = useState(() => readClients());
   const [savedGroups, setSavedGroups] = useState([]);
   const [activeGroupIds, setActiveGroupIds] = useState([]);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -154,10 +158,21 @@ export default function ClientDatabasePage() {
       setScrollToChart(true);
       cleared = true;
     }
+
     if (cleared) {
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state, location.pathname, navigate]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate from navigation state / saved groups
+  }, [location, navigate]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || "");
+    const q = params.get("q") || params.get("focus");
+    if (q) setSearch(q);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync search box from ?q=
+  }, [location.search]);
+
+  useEffect(() => subscribeClients(() => setClients(readClients())), []);
 
   useEffect(() => {
     if (!scrollToChart || savedGroups.length === 0) return;
@@ -180,7 +195,7 @@ export default function ClientDatabasePage() {
   const extraFilterCount = [genderFilter, probFilter, marriedFilter].filter((v) => v !== "all").length;
 
   const filtered = useMemo(() => {
-    let rows = CLIENTS;
+    let rows = clients;
     const q = search.trim().toLowerCase();
     if (q) {
       rows = rows.filter((c) =>
@@ -211,7 +226,7 @@ export default function ClientDatabasePage() {
       }
     }
     return rows;
-  }, [search, statusFilter, branchFilter, genderFilter, probFilter, marriedFilter, activeGroupIds, savedGroups]);
+  }, [clients, search, statusFilter, branchFilter, genderFilter, probFilter, marriedFilter, activeGroupIds, savedGroups]);
 
   const { sorted, sort, toggle } = useTableSort(filtered, { defaultKey: null, defaultDir: "asc" });
 

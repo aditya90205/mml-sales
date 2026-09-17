@@ -649,6 +649,147 @@ export const CLIENTS = [
   },
 ];
 
+const EVENT = "mml-sales-clients";
+
+function emit() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(EVENT));
+}
+
+function digitsOnly(value = "") {
+  return String(value).replace(/\D/g, "");
+}
+
+function todayLabel() {
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${dd}/${mm}/${yy}`;
+}
+
+export function readClients() {
+  return CLIENTS.map((c) => ({ ...c }));
+}
+
+export function subscribeClients(onChange) {
+  if (typeof window === "undefined") return () => {};
+  const handler = () => onChange();
+  window.addEventListener(EVENT, handler);
+  return () => window.removeEventListener(EVENT, handler);
+}
+
+export function findClientById(id) {
+  if (id == null || id === "") return null;
+  const hit = CLIENTS.find((c) => String(c.id) === String(id));
+  return hit ? { ...hit } : null;
+}
+
+export function findClientByName(name) {
+  const q = String(name || "").trim().toLowerCase();
+  if (!q) return null;
+  const hit = CLIENTS.find((c) => String(c.name || "").toLowerCase() === q);
+  return hit ? { ...hit } : null;
+}
+
+export function updateClient(id, patch = {}) {
+  const idx = CLIENTS.findIndex((c) => String(c.id) === String(id));
+  if (idx < 0) return null;
+  CLIENTS[idx] = { ...CLIENTS[idx], ...patch, id: CLIENTS[idx].id };
+  emit();
+  return { ...CLIENTS[idx] };
+}
+
+/**
+ * Save biodata onto the same client row used by Client Database
+ * (create if missing). Returns the saved client.
+ */
+export function upsertClientFromBiodata({
+  clientId,
+  name,
+  mobile,
+  email,
+  fields = {},
+  alsoRead = [],
+  owner = "Rohit Kumar",
+  linkedLeadId = null,
+} = {}) {
+  const fullName =
+    name ||
+    [fields.firstName, fields.lastName].filter(Boolean).join(" ").trim() ||
+    "Unknown";
+  const alsoMap = Object.fromEntries(
+    (alsoRead || []).map((c) => [String(c.label || "").toLowerCase(), c.value])
+  );
+  const mobileDigits = digitsOnly(mobile || fields.mobile || "");
+  const phoneMask = mobileDigits
+    ? `******${mobileDigits.slice(-4)}`
+    : undefined;
+
+  const patch = {
+    name: fullName,
+    ...(phoneMask ? { phone: phoneMask } : {}),
+    ...(email || fields.email ? { email: email || fields.email } : {}),
+    ...(fields.city || fields.area
+      ? {
+          address: `*********** ${[fields.area, fields.city].filter(Boolean).join(", ")}`,
+          area: fields.area || fields.city,
+        }
+      : {}),
+    ...(alsoMap.education ? { education: alsoMap.education } : {}),
+    ...(alsoMap.income
+      ? {
+          incomeLpa: Number(String(alsoMap.income).replace(/[^\d.]/g, "")) || undefined,
+        }
+      : {}),
+    lastContact: todayLabel(),
+    reason: "Biodata uploaded — profile updated",
+    status: "Active",
+    ...(linkedLeadId ? { linkedLeadId } : {}),
+    biodataFile: fields.fileName || undefined,
+  };
+
+  // Drop undefined keys
+  Object.keys(patch).forEach((k) => patch[k] === undefined && delete patch[k]);
+
+  let existing =
+    (clientId != null && findClientById(clientId)) || findClientByName(fullName);
+
+  if (existing) {
+    return updateClient(existing.id, {
+      ...patch,
+      owner: existing.owner || owner,
+      branch: existing.branch || "South Extension",
+    });
+  }
+
+  const nextId = CLIENTS.reduce((max, c) => Math.max(max, Number(c.id) || 0), 0) + 1;
+  const row = {
+    id: nextId,
+    name: fullName,
+    clientId: `MML-D-${10240 + nextId}`,
+    phone: phoneMask || "******0000",
+    status: "Active",
+    married: false,
+    address: patch.address || "*********** New Delhi",
+    owner,
+    branch: "South Extension",
+    lastContact: todayLabel(),
+    reason: patch.reason,
+    gender: /groom/i.test(String(fields.lookingFor || "")) ? "Female" : "Male",
+    area: patch.area || "South Extension",
+    education: patch.education || "—",
+    incomeLpa: patch.incomeLpa || 0,
+    probability: "medium",
+    email: patch.email,
+    linkedLeadId,
+    biodataFile: patch.biodataFile,
+  };
+  CLIENTS.push(row);
+  emit();
+  return { ...row };
+}
+
 export const PROBABILITY_META = {
   low: { label: "Low Probability", color: "#DC2626" },
   medium: { label: "Medium", color: "#D97706" },
@@ -656,3 +797,7 @@ export const PROBABILITY_META = {
 };
 
 export const BRANCHES = [...new Set(CLIENTS.map((c) => c.branch))];
+
+export function readBranches() {
+  return [...new Set(CLIENTS.map((c) => c.branch))];
+}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
@@ -32,14 +33,18 @@ import {
   Crown,
   Sparkles,
   Filter,
+  Phone,
+  TrendingUp,
+  IndianRupee,
+  User,
 } from "lucide-react";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
-import DealDetailPage from "./pipeline/DealDetailPage";
 import CreateLeadModal from "../components/pipeline/CreateLeadModal";
+import BiodataUploadModal from "../components/pipeline/BiodataUploadModal";
 import CreateMeetingEventModal from "../components/calendar/CreateMeetingEventModal";
 import CreateTaskModal from "../components/calendar/CreateTaskModal";
 import SearchField from "../components/common/SearchField.jsx";
@@ -53,14 +58,18 @@ import {
 import {
   addExtraEvent,
   meetingFormToCalendarItem,
+  readExtraEvents,
   readUnscheduled,
   removeUnscheduled,
   subscribeCalendar,
   unscheduledToMeetingForm,
 } from "../utils/calendarStore.js";
-import { CLIENTS } from "../utils/clientsData.js";
-import { addP0Lead, countStageLeads, readLeads, subscribePipeline } from "../utils/pipelineStore.js";
-import { addTaskFromForm, getTodayTaskStats, subscribeTasks } from "../utils/tasksStore.js";
+import { CLIENTS, upsertClientFromBiodata } from "../utils/clientsData.js";
+import { addP0Lead, countStageLeads, findLeadById, findLeadByName, readLeads, subscribePipeline, updateLead } from "../utils/pipelineStore.js";
+import { setBiodataDraft } from "../utils/biodataDraftStore.js";
+import { addTaskFromForm, getTodayTaskStats, readTasks, subscribeTasks } from "../utils/tasksStore.js";
+import { buildPerformanceReport } from "../utils/performanceStats.js";
+import { VISITS } from "./pipeline/deal-tabs/VisitsMeetingsTab.jsx";
 import salesFunnelSvg from "../assets/sales-funnel.svg";
 import salesPersonProfile from "../assets/sale-person-profile.jpg";
 import visitsArrow from "../assets/Monthly-visits-  Meetings-arrow.png";
@@ -123,7 +132,7 @@ const QUICK_ACTIONS = [
   { label: "Create Lead",     icon: UserPlus,   bg: "#FDECEE", fg: "#E8395B", action: "lead" },
   { label: "Create Task",     icon: SquareCheck, bg: "#E8F2FE", fg: "#3B82F6", action: "task" },
   { label: "Create Meeting",  icon: Calendar,   bg: "#F0EBFE", fg: "#8B5CF6", action: "meeting" },
-  { label: "Upload Biodata",  icon: FileText,   bg: "#E7F8EF", fg: "#16A34A", to: "#" },
+  { label: "Upload Biodata",  icon: FileText,   bg: "#E7F8EF", fg: "#16A34A", action: "biodata" },
 ];
 
 const PERFORMANCE_SEGMENTS = [
@@ -228,7 +237,50 @@ const PERFORMANCE_SEGMENTS = [
   },
 ];
 
-const PERFORMANCE_OVERALL_SCORE = 87;
+const PERFORMANCE_DETAIL_META = {
+  followup: {
+    icon: User,
+    iconBg: "#FEF2DD",
+    iconColor: "#C27C27",
+    scoreColor: "#C27C27",
+    metric: "Follow-up Discipline",
+  },
+  visits: {
+    icon: Calendar,
+    iconBg: "#E9F6EC",
+    iconColor: "#288270",
+    scoreColor: "#288270",
+    metric: "Monthly visits / Meetings",
+  },
+  calls: {
+    icon: Phone,
+    iconBg: "#FEEBEC",
+    iconColor: "#811A3A",
+    scoreColor: "#BF4C70",
+    metric: "Calls per Day",
+  },
+  conversion: {
+    icon: FileText,
+    iconBg: "#E7EEF8",
+    iconColor: "#2C76B5",
+    scoreColor: "#2C76B5",
+    metric: "Conversion Rate",
+  },
+  registrations: {
+    icon: TrendingUp,
+    iconBg: "#FEE9D8",
+    iconColor: "#C94818",
+    scoreColor: "#C94818",
+    metric: "No. of registrations",
+  },
+  revenue: {
+    icon: IndianRupee,
+    iconBg: "#F6E6F8",
+    iconColor: "#89518E",
+    scoreColor: "#89518E",
+    metric: "Revenue",
+  },
+};
 
 const UP_NEXT = {
   dateLabel: "UP NEXT - NOV 10:35 AM",
@@ -475,9 +527,7 @@ function StatCard({ stat }) {
   );
 }
 
-function QuickActionsCard({ onCreateLead, onCreateTask, onCreateMeeting }) {
-  const navigate = useNavigate();
-
+function QuickActionsCard({ onCreateLead, onCreateTask, onCreateMeeting, onUploadBiodata }) {
   return (
     <div className="bg-white border border-black/8 rounded-2xl px-4 py-3 h-full flex flex-col justify-center gap-2 min-w-0">
       <div className="flex items-center gap-1.5 shrink-0">
@@ -485,7 +535,7 @@ function QuickActionsCard({ onCreateLead, onCreateTask, onCreateMeeting }) {
         <p className="text-[13.5px] font-bold text-[#111] whitespace-nowrap">Quick Actions</p>
       </div>
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        {QUICK_ACTIONS.map(({ label, icon: Icon, bg, fg, to, action }) => (
+        {QUICK_ACTIONS.map(({ label, icon: Icon, bg, fg, action }) => (
           <button
             key={label}
             type="button"
@@ -493,7 +543,7 @@ function QuickActionsCard({ onCreateLead, onCreateTask, onCreateMeeting }) {
               if (action === "lead") onCreateLead?.();
               else if (action === "task") onCreateTask?.();
               else if (action === "meeting") onCreateMeeting?.();
-              else if (to) navigate(to);
+              else if (action === "biodata") onUploadBiodata?.();
             }}
             className="inline-flex items-center justify-center gap-1.5 h-9 px-2.5 rounded-xl flex-1 min-w-0 transition-opacity hover:opacity-85"
             style={{ backgroundColor: bg }}
@@ -507,9 +557,125 @@ function QuickActionsCard({ onCreateLead, onCreateTask, onCreateMeeting }) {
   );
 }
 
-function PerformanceScoreCard() {
+function performancePopoverPos(rect, width = 340, estimatedHeight = 430) {
+  const gap = 12;
+  const pad = 12;
+  let left = rect.right + gap;
+  if (left + width > window.innerWidth - pad) left = rect.left - width - gap;
+  left = Math.max(pad, Math.min(left, window.innerWidth - width - pad));
+
+  let top = rect.top;
+  if (top + estimatedHeight > window.innerHeight - pad) {
+    top = Math.max(pad, window.innerHeight - estimatedHeight - pad);
+  }
+  return { top, left };
+}
+
+function PerformanceDetailPopover({ detail, pos, onMouseEnter, onMouseLeave }) {
+  if (!detail || !pos) return null;
+
+  const Icon = detail.icon;
+
+  return createPortal(
+    <div
+      className="fixed z-[80] w-[340px] max-h-[min(90vh,480px)] overflow-y-auto bg-white rounded-[24px] border border-black/8 shadow-[0_18px_50px_rgba(0,0,0,0.16)] p-5"
+      style={{ top: pos.top, left: pos.left }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      <div className="flex items-start gap-2.5">
+        <span
+          className="size-9 rounded-full grid place-items-center shrink-0"
+          style={{ backgroundColor: detail.iconBg, color: detail.iconColor }}
+        >
+          <Icon size={16} strokeWidth={1.9} />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-[15px] font-bold text-[#111] leading-tight">{detail.title}</h2>
+          <p className="text-[12px] text-[#9CA3AF] mt-0.5 leading-snug">{detail.subtitle}</p>
+        </div>
+      </div>
+
+      <div className="flex items-end justify-between gap-3 mt-4">
+        <p className="text-[28px] font-extrabold leading-none" style={{ color: detail.scoreColor }}>
+          {detail.score}
+          {detail.target && (
+            <span className="text-[14px] font-semibold text-[#9CA3AF]"> / {detail.target}</span>
+          )}
+        </p>
+        <p className="text-[12px] text-[#9CA3AF] text-right leading-tight pb-1">{detail.metric}</p>
+      </div>
+
+      <div className="flex flex-col gap-2 mt-3.5">
+        {detail.rows.map((row) => (
+          <div
+            key={row.label}
+            className="flex items-center justify-between gap-3 rounded-xl border border-black/8 bg-[#FAFAFB] px-3.5 py-2.5"
+          >
+            <span className="text-[13px] text-[#6B7280]">{row.label}</span>
+            <span className="text-[13px] font-bold text-[#111]">{row.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {detail.items?.length > 0 && (
+        <ul className="mt-3.5 space-y-1.5">
+          {detail.items.map((item) => (
+            <li key={item} className="flex items-start gap-2 text-[12.5px] text-[#6B7280] leading-snug">
+              <span className="size-1.5 rounded-full bg-[#D1D5DB] shrink-0 mt-1.5" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>,
+    document.body
+  );
+}
+
+function PerformanceScoreCard({ period, myLeads }) {
+  const [activeKey, setActiveKey] = useState(null);
+  const [popoverPos, setPopoverPos] = useState(null);
+  const hideTimer = useRef(null);
+  const [leadsByStage, setLeadsByStage] = useState(readLeads);
+  const [events, setEvents] = useState(readExtraEvents);
+  const [tasks, setTasks] = useState(readTasks);
   const n = PERFORMANCE_SEGMENTS.length;
   const gradient = PERFORMANCE_SEGMENTS.map((s, i) => `${s.color} ${(i * 360) / n}deg ${((i + 1) * 360) / n}deg`).join(", ");
+
+  const showDetail = (key, el) => {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    const rect = el?.getBoundingClientRect();
+    if (!rect) return;
+    setActiveKey(key);
+    setPopoverPos(performancePopoverPos(rect));
+  };
+
+  const hideDetail = () => {
+    hideTimer.current = setTimeout(() => {
+      setActiveKey(null);
+      setPopoverPos(null);
+    }, 180);
+  };
+
+  useEffect(() => subscribePipeline(() => setLeadsByStage(readLeads())), []);
+  useEffect(() => subscribeCalendar(() => setEvents(readExtraEvents())), []);
+  useEffect(() => subscribeTasks(() => setTasks(readTasks())), []);
+  useEffect(() => () => {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+  }, []);
+
+  const report = useMemo(
+    () => buildPerformanceReport({ leadsByStage, myLeads, events, tasks, visits: VISITS, period }),
+    [leadsByStage, myLeads, events, tasks, period]
+  );
+  const segments = useMemo(
+    () => PERFORMANCE_SEGMENTS.map((s) => ({ ...s, ...(report.segments[s.key] || {}) })),
+    [report]
+  );
+  const activeDetail = activeKey
+    ? { ...PERFORMANCE_DETAIL_META[activeKey], ...(report.details[activeKey] || {}) }
+    : null;
 
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col h-full overflow-visible">
@@ -538,14 +704,14 @@ function PerformanceScoreCard() {
           >
             <p className="text-[11px] font-semibold text-white leading-tight">Overall Score</p>
             <p className="text-[20px] font-extrabold text-white leading-none mt-0.5">
-              {PERFORMANCE_OVERALL_SCORE}
+              {report.overall}
               <span className="text-[13px] font-semibold text-white/85"> / 100</span>
             </p>
           </div>
           <div className="absolute inset-x-0 top-[54%] h-[2px] bg-white" />
         </div>
 
-        {PERFORMANCE_SEGMENTS.map((s) => {
+        {segments.map((s) => {
           const stacked = s.layout === "stack";
           return (
             <div
@@ -556,6 +722,8 @@ function PerformanceScoreCard() {
                 left: s.pos.left,
                 right: s.pos.right,
               }}
+              onMouseEnter={(e) => showDetail(s.key, e.currentTarget)}
+              onMouseLeave={hideDetail}
             >
               <div className="relative w-max">
                 <img
@@ -565,7 +733,7 @@ function PerformanceScoreCard() {
                   style={s.arrowStyle}
                 />
                 <div
-                  className="relative z-[2] rounded-[22px]"
+                  className="relative z-[2] rounded-[22px] cursor-default text-left hover:brightness-[0.97] hover:shadow-[0_2px_10px_rgba(0,0,0,0.08)] transition-[filter,box-shadow]"
                   style={{
                     backgroundColor: s.capsuleBg,
                     display: "flex",
@@ -617,6 +785,14 @@ function PerformanceScoreCard() {
         })}
         </div>
       </div>
+      <PerformanceDetailPopover
+        detail={activeDetail}
+        pos={popoverPos}
+        onMouseEnter={() => {
+          if (hideTimer.current) clearTimeout(hideTimer.current);
+        }}
+        onMouseLeave={hideDetail}
+      />
     </div>
   );
 }
@@ -1045,25 +1221,6 @@ function stageKeyFromLead(lead) {
   return match ? match[0] : "P0";
 }
 
-const STAGE_LABELS_DASH = {
-  P0: "P0 - New",
-  P1: "P1 - Qualified",
-  P2: "P2 - Profile Creation",
-  P3: "P3 - Video Call/Visit",
-  P4: "P4 - Negotiation",
-  P5: "P5 - Profile Creation",
-  P6: "P6 - Service Handover",
-};
-
-const NEXT_STAGE_DASH = {
-  P0: "P1",
-  P1: "P2",
-  P2: "P3",
-  P3: "P4",
-  P4: "P5",
-  P5: "P6",
-};
-
 function MyLeadsCard({
   leads,
   healthFilter,
@@ -1071,8 +1228,6 @@ function MyLeadsCard({
   healthCounts,
   stageFilter,
   onClearStageFilter,
-  onOpenDeal,
-  onMoveStage,
 }) {
   const [period, setPeriod] = useState("today");
   const [leadsView, setLeadsView] = useState("team");
@@ -1299,23 +1454,10 @@ function MyLeadsCard({
               </tr>
             ) : sorted.map((lead, i) => {
               const priority = PRIORITY_STYLES[lead.priority];
-              const stageKey = stageKeyFromLead(lead);
-              const canMove = stageKey === "P0" || stageKey === "P1";
-              const stageBody = (
-                <>
-                  {lead.stage}
-                  {lead.stageTone && (
-                    <span className={`ml-1 text-[11px] font-semibold ${lead.stageTone === "Won" ? "text-[#16A34A]" : lead.stageTone === "Lost" ? "text-[#E8395B]" : "text-[#3B82F6]"}`}>
-                      ({lead.stageTone})
-                    </span>
-                  )}
-                </>
-              );
               return (
                 <tr
                   key={`${lead.id}-${lead.name}-${i}`}
-                  onClick={() => onOpenDeal?.(lead)}
-                  className="border-b border-black/6 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
+                  className="border-b border-black/6 last:border-0 hover:bg-[#FAFAFB] transition-colors"
                 >
                   <td className="pl-3 pr-2 py-2.5">
                     <div className="flex items-center gap-2 min-w-0">
@@ -1334,21 +1476,14 @@ function MyLeadsCard({
                     </div>
                   </td>
                   <td className="px-2 py-2.5">
-                    {canMove ? (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onMoveStage?.(lead, stageKey);
-                        }}
-                        className="text-left text-[12px] text-[#374151] leading-tight hover:text-[#7A0A17] hover:underline decoration-[#7A0A17]/40 underline-offset-2 transition-colors"
-                        title={stageKey === "P0" ? "Move to P1" : "Move to P2"}
-                      >
-                        {stageBody}
-                      </button>
-                    ) : (
-                      <p className="text-[12px] text-[#374151] leading-tight">{stageBody}</p>
-                    )}
+                    <p className="text-[12px] text-[#374151] leading-tight">
+                      {lead.stage}
+                      {lead.stageTone && (
+                        <span className={`ml-1 text-[11px] font-semibold ${lead.stageTone === "Won" ? "text-[#16A34A]" : lead.stageTone === "Lost" ? "text-[#E8395B]" : "text-[#3B82F6]"}`}>
+                          ({lead.stageTone})
+                        </span>
+                      )}
+                    </p>
                   </td>
                   <td className="px-2 py-2.5">
                     <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md whitespace-nowrap ${priority.bg}`} style={{ color: priority.color }}>
@@ -1422,11 +1557,11 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [period, setPeriod] = useState("this_month");
   const [search, setSearch] = useState("");
-  const [dealLead, setDealLead] = useState(null);
-  const [dealStage, setDealStage] = useState(null);
   const [showCreateLead, setShowCreateLead] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showCreateMeeting, setShowCreateMeeting] = useState(false);
+  const [showBiodataUpload, setShowBiodataUpload] = useState(false);
+  const [leadInitial, setLeadInitial] = useState(null);
   const [meetingPrefill, setMeetingPrefill] = useState(null);
   const [schedulingUnscheduledId, setSchedulingUnscheduledId] = useState(null);
   const [unscheduledItems, setUnscheduledItems] = useState(readUnscheduled);
@@ -1475,110 +1610,183 @@ export default function Dashboard() {
     return list.filter((l) => `${l.name} ${l.id} ${l.stage} ${l.source}`.toLowerCase().includes(q));
   }, [myLeads, search, stageFilter, healthFilter]);
 
-  const openDeal = (lead, stageKey) => {
-    setDealLead(lead);
-    setDealStage(stageKey || stageKeyFromLead(lead));
-  };
-
-  const updateLeadStage = (lead, nextStage, patch = {}) => {
-    const stageLabel = STAGE_LABELS_DASH[nextStage] || nextStage;
-    setMyLeads((prev) =>
-      prev.map((l) =>
-        l.name === lead.name && l.id === lead.id
-          ? { ...l, ...patch, stage: stageLabel, starred: patch.starred ?? l.starred }
-          : l
-      )
-    );
-    setDealLead((prev) => (prev ? { ...prev, ...patch, stage: stageLabel } : prev));
-    setDealStage(nextStage);
-  };
-
-  if (dealLead) {
-    return (
-      <DealDetailPage
-        lead={{ name: dealLead.name, mmlId: dealLead.id, starred: dealLead.starred }}
-        currentStage={dealStage || stageKeyFromLead(dealLead)}
-        onBack={() => {
-          setDealLead(null);
-          setDealStage(null);
-        }}
-        onAdvance={(lead, stageKey) => {
-          const next = NEXT_STAGE_DASH[stageKey];
-          if (!next) return;
-          updateLeadStage(lead, next);
-          toast.success(`Lead "${lead.name || dealLead.name}" moved to ${STAGE_LABELS_DASH[next]}!`);
-        }}
-        onP0DetailsSaved={(lead, details) => {
-          updateLeadStage(lead, "P1", {
-            starred: details?.premium === "Yes",
-          });
-          toast.success(`Details saved. Lead "${lead.name || dealLead.name}" moved to P1 Qualified!`);
-        }}
-        onPremiumChange={(premium) => {
-          setDealLead((prev) => (prev ? { ...prev, starred: premium } : prev));
-          setMyLeads((prev) =>
-            prev.map((l) => (l.name === dealLead.name && l.id === dealLead.id ? { ...l, starred: premium } : l))
-          );
-        }}
-      />
-    );
-  }
-
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <CreateLeadModal
-        open={showCreateLead}
-        onClose={() => setShowCreateLead(false)}
-        onCreate={(lead) => {
-          const nextAction =
-            lead.meeting === "Meeting Agreed"
-              ? "Schedule meeting"
-              : lead.meeting === "Call Agreed"
-                ? "Follow-up call"
-                : lead.meeting === "Callback Later"
-                  ? "Callback"
-                  : "Initial Contact";
-          addP0Lead({
-            name: lead.name,
-            starred: false,
-            mmlId: `MML - D - ${Math.floor(10000 + Math.random() * 90000)}`,
-            temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
-            score: 8.0,
-            priority: "High",
-            completion: 25,
-            days: 0,
-            hrs: 24,
-            source: lead.source,
-            lastDiscussion: "Just now",
-            nextAction,
-          });
-          setMyLeads((prev) => [
-            {
-              id: `MML-ID-D-${Math.floor(10000 + Math.random() * 90000)}`,
+      {showCreateLead ? (
+        <CreateLeadModal
+          key={leadInitial?.fileName || leadInitial?.mobile || "create-lead"}
+          open
+          initial={leadInitial}
+          onClose={() => {
+            setShowCreateLead(false);
+            setLeadInitial(null);
+          }}
+          onCreate={(lead) => {
+            const nextAction =
+              lead.meeting === "Meeting Agreed"
+                ? "Schedule meeting"
+                : lead.meeting === "Call Agreed"
+                  ? "Follow-up call"
+                  : lead.meeting === "Callback Later"
+                    ? "Callback"
+                    : "Initial Contact";
+            addP0Lead({
               name: lead.name,
               starred: false,
-              stage: "P0 - New",
+              mmlId: `MML - D - ${Math.floor(10000 + Math.random() * 90000)}`,
               temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
-              stageTone: null,
+              score: 8.0,
               priority: "High",
-              leadScore: 8.0,
-              profileCompletion: 25,
+              completion: 25,
+              days: 0,
+              hrs: 24,
               source: lead.source,
-              followUp: "24 HRS Left",
-              followUpTone: "text-[#6B7280]",
-              followUpNote: "Start Time: —",
-              lost: false,
               lastDiscussion: "Just now",
               nextAction,
-              nextActionNote: [lead.city, lead.area].filter(Boolean).join(" · ") || "Initial contact",
               mobile: lead.mobile,
               email: lead.email,
-            },
-            ...prev,
-          ]);
-          toast.success(`Lead "${lead.name}" created.`);
-        }}
-      />
+            });
+            setMyLeads((prev) => [
+              {
+                id: `MML-ID-D-${Math.floor(10000 + Math.random() * 90000)}`,
+                name: lead.name,
+                starred: false,
+                stage: "P0 - New",
+                temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
+                stageTone: null,
+                priority: "High",
+                leadScore: 8.0,
+                profileCompletion: 25,
+                source: lead.source,
+                followUp: "24 HRS Left",
+                followUpTone: "text-[#6B7280]",
+                followUpNote: "Start Time: —",
+                lost: false,
+                lastDiscussion: "Just now",
+                nextAction,
+                nextActionNote: [lead.city, lead.area].filter(Boolean).join(" · ") || "Initial contact",
+                mobile: lead.mobile,
+                email: lead.email,
+              },
+              ...prev,
+            ]);
+            setLeadInitial(null);
+            setShowCreateLead(false);
+            toast.success(`Lead "${lead.name}" created.`);
+          }}
+        />
+      ) : null}
+      {showBiodataUpload ? (
+        <BiodataUploadModal
+          open
+          onClose={() => setShowBiodataUpload(false)}
+          onFillForm={(payload) => {
+            const f = payload?.fields || {};
+            const match = payload?.match;
+            const fullName =
+              [f.firstName, f.lastName].filter(Boolean).join(" ").trim() || match?.name || "";
+            const createNew = Boolean(payload?.createNew);
+
+            setShowBiodataUpload(false);
+
+            // No match / relative → Create Lead form only
+            if (createNew) {
+              setLeadInitial({
+                firstName: f.firstName || "",
+                lastName: f.lastName || "",
+                dob: f.dob || "",
+                mobile: f.mobile || payload?.senderMobile || "",
+                email: f.email || "",
+                city: f.city || "",
+                area: f.area || "",
+                lookingFor: f.lookingFor || "yes",
+                relation: f.relation || "Self / Prospect",
+                contactWith: match ? "Existing Client" : "First Contact",
+                source: "Biodata Upload",
+                fileName: payload?.fileName || "",
+              });
+              setShowCreateLead(true);
+              if (payload?.resolution === "relative" && match) {
+                toast.info(`New lead linked to existing contact "${match.name}".`);
+              } else {
+                toast.info("No existing match — create a new lead.");
+              }
+              return;
+            }
+
+            // Existing match → save Client Database + open Pipeline client detail (intake)
+            let leadRef =
+              (match?.type === "lead" && match.recordId && findLeadById(match.recordId)) ||
+              (match?.linkedLeadId && findLeadById(match.linkedLeadId)) ||
+              findLeadByName(match?.name) ||
+              findLeadByName(fullName);
+
+            const leadPatch = {
+              ...(payload?.resolution === "same" && fullName ? { name: fullName } : {}),
+              mobile: f.mobile || match?.mobile,
+              email: f.email || match?.email,
+              lastDiscussion: "Just now",
+              nextAction: "Review biodata",
+            };
+
+            if (leadRef) {
+              updateLead(leadRef.lead.id, leadPatch);
+              leadRef = findLeadById(leadRef.lead.id);
+            } else {
+              const created = addP0Lead({
+                name: fullName || match?.name || "Biodata lead",
+                starred: false,
+                mmlId: match?.mmlId || `MML - D - ${Math.floor(10000 + Math.random() * 90000)}`,
+                temperature: "Warm",
+                score: 8.0,
+                priority: "High",
+                completion: 55,
+                days: 0,
+                hrs: 24,
+                source: "Biodata Upload",
+                lastDiscussion: "Just now",
+                nextAction: "Review biodata",
+                mobile: f.mobile || match?.mobile,
+                email: f.email || match?.email,
+                owner: match?.owner || "Rohit Kumar",
+              });
+              leadRef = { lead: created, stageId: "P0" };
+            }
+
+            const leadId = leadRef.lead.id;
+            const savedClient = upsertClientFromBiodata({
+              clientId: match?.type === "client" ? match.recordId : undefined,
+              name: leadPatch.name || leadRef.lead.name || fullName,
+              mobile: f.mobile || match?.mobile,
+              email: f.email || match?.email,
+              fields: { ...f, fileName: payload?.fileName },
+              alsoRead: payload?.alsoRead || [],
+              owner: match?.owner || "Rohit Kumar",
+              linkedLeadId: leadId,
+            });
+
+            setBiodataDraft(leadId, {
+              fields: f,
+              alsoRead: payload?.alsoRead || [],
+              fileName: payload?.fileName,
+              clientId: savedClient?.id,
+              resolution: payload?.resolution,
+            });
+
+            if (payload?.resolution === "wrong") {
+              toast.warning(
+                `Opened Pipeline client detail for "${leadRef.lead.name}" — flagged for review. Saved in Client Database.`
+              );
+            } else {
+              toast.success(
+                `Saved to Client Database (${savedClient?.clientId || savedClient?.name}) and opened Pipeline client detail.`
+              );
+            }
+
+            navigate(`/pipeline?openLead=${encodeURIComponent(leadId)}&tab=intake`);
+          }}
+        />
+      ) : null}
       <CreateMeetingEventModal
         open={showCreateMeeting}
         onClose={() => {
@@ -1630,19 +1838,23 @@ export default function Dashboard() {
           </div>
           <div className="lg:flex-1 min-w-0">
             <QuickActionsCard
-              onCreateLead={() => setShowCreateLead(true)}
+              onCreateLead={() => {
+                setLeadInitial(null);
+                setShowCreateLead(true);
+              }}
               onCreateTask={() => setShowCreateTask(true)}
               onCreateMeeting={() => {
                 setMeetingPrefill(null);
                 setSchedulingUnscheduledId(null);
                 setShowCreateMeeting(true);
               }}
+              onUploadBiodata={() => setShowBiodataUpload(true)}
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch">
-          <PerformanceScoreCard />
+          <PerformanceScoreCard period={period} myLeads={myLeads} />
           <AIAssistant />
           <div className="flex flex-col gap-4 min-h-0">
             <div className="flex items-stretch gap-3">
@@ -1669,8 +1881,6 @@ export default function Dashboard() {
               healthCounts={healthCounts}
               stageFilter={stageFilter}
               onClearStageFilter={() => setStageFilter(null)}
-              onOpenDeal={(lead) => openDeal(lead)}
-              onMoveStage={(lead, stageKey) => openDeal(lead, stageKey)}
             />
           </div>
           <SalesFunnelCard
