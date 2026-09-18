@@ -42,7 +42,7 @@ import P6ChecklistTab from "./deal-tabs/P6ChecklistTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
 import { EMPTY, atLeast, historyUntil, maybeDash, stageGateFor } from "./deal-tabs/stageContent.jsx";
 import { p0StatusOf } from "../../utils/pipelineStore.js";
-import { recordLeadActivity } from "../../utils/leadActivityStore.js";
+import { ensureLeadHistory, recordLeadActivity } from "../../utils/leadActivityStore.js";
 import eyeIcon from "../../assets/eye.png";
 
 const BASE_TABS = [
@@ -227,6 +227,10 @@ export default function DealDetailPage({
     }
   }, [lead]);
 
+  useEffect(() => {
+    ensureLeadHistory(lead, currentStage);
+  }, [lead, currentStage]);
+
   const skipStageTabSync = useRef(Boolean(initialTab && initialTab !== STAGE_TO_TAB[currentStage]));
 
   // Keep the open tab aligned with the current pipeline stage (Move to P2 → Profile Create, etc.).
@@ -253,6 +257,7 @@ export default function DealDetailPage({
     const base = {
       ...DEAL_DEFAULTS,
       id: lead?.id,
+      mmlId: lead?.mmlId,
       source: lead?.source || DEAL_DEFAULTS.leadSource,
       p0Status: p0StatusOf(lead),
       owner: lead?.owner,

@@ -1953,7 +1953,7 @@ export default function Dashboard() {
               fileName: payload?.fileName || prior.fileName || "",
               existingLeadId: existingLeadId || undefined,
               clientId: clientId || undefined,
-              mode: existingLeadId ? "update" : "create",
+              mode: existingLeadId || (match && !isNew) ? "update" : "create",
               alsoRead: payload?.alsoRead || [],
               intake: payload?.intake || {},
               biodataName: payload?.biodataName || "",

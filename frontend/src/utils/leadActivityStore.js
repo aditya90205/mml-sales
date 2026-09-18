@@ -1,24 +1,6 @@
 const EVENT = "mml-sales-lead-activity";
 const CURRENT_USER = "Neha Sharma";
 
-const DEMO_LEAD_IDS = new Set([
-  "p0-1",
-  "p0-2",
-  "p0-ritika",
-  "p1-1",
-  "p1-2",
-  "p2-1",
-  "p2-2",
-  "p3-1",
-  "p3-2",
-  "p4-1",
-  "p4-2",
-  "p5-1",
-  "p5-2",
-  "p6-1",
-  "p6-2",
-]);
-
 const STAGE_RANK = {
   P0: 0,
   P1: 2,
@@ -228,6 +210,10 @@ export function hasLeadHistory(leadId) {
   return Boolean(leadId && byLead[leadId]);
 }
 
+export function leadActivityId(lead) {
+  return lead?.id || lead?.mmlId || lead?.dealCode || "";
+}
+
 export function seedLeadActivity(leadId, events = []) {
   if (!leadId || byLead[leadId]) return getLeadActivities(leadId);
   byLead[leadId] = { events: events.map(normalizeActivity) };
@@ -236,11 +222,11 @@ export function seedLeadActivity(leadId, events = []) {
 }
 
 export function ensureLeadHistory(lead, stageId = "P0") {
-  const leadId = lead?.id;
+  const leadId = leadActivityId(lead);
   if (!leadId) return [];
-  if (!byLead[leadId]) {
-    const events = DEMO_LEAD_IDS.has(leadId) ? buildDemoHistory(lead, stageId) : [];
-    byLead[leadId] = { events };
+  const existing = byLead[leadId]?.events;
+  if (!existing?.length) {
+    byLead[leadId] = { events: buildDemoHistory(lead, stageId) };
   }
   return getLeadActivities(leadId);
 }
@@ -256,9 +242,10 @@ export function addLeadActivity(leadId, event = {}) {
 
 /** Seed demo history when needed, then append a live event. */
 export function recordLeadActivity(lead, stageId, event = {}) {
-  if (!lead?.id) return null;
+  const leadId = leadActivityId(lead);
+  if (!leadId) return null;
   ensureLeadHistory(lead, stageId);
-  return addLeadActivity(lead.id, {
+  return addLeadActivity(leadId, {
     actor: event.actor || CURRENT_USER,
     stage: event.stage || stageId,
     ...event,

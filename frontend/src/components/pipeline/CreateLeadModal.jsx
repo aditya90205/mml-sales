@@ -463,7 +463,13 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
   );
   const [importedSnap, setImportedSnap] = useState(() => initial?.importedFields || {});
   const fromBiodata = Boolean(initial?.fileName || initial?.intake);
-  const isUpdate = Boolean(initial?.existingLeadId || initial?.mode === "update" || linkedLead);
+  const isUpdate = Boolean(
+    initial?.existingLeadId ||
+      initial?.clientId ||
+      initial?.mode === "update" ||
+      initial?.matchName ||
+      linkedLead
+  );
 
   const set = (key) => (value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -596,8 +602,6 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
     return out;
   }, [form, existingSnap, importedSnap, hasExistingRecord]);
 
-  const extraP2 = Array.isArray(initial?.alsoRead) ? initial.alsoRead.filter((row) => row?.label && row?.value) : [];
-
   const applyFieldSource = (key, source) => {
     const raw = source === "existing" ? existingSnap?.[key] : importedSnap?.[key];
     set(key)(coerceCreateLeadValue(key, raw));
@@ -684,14 +688,12 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
               <UserPlus size={18} strokeWidth={2.2} className="text-[#7A0A17] shrink-0 mt-0.5" />
               <div className="min-w-0">
                 <h2 id="create-lead-title" className="text-[18px] font-bold text-[#111] leading-tight">
-                  {isUpdate ? "Update Lead" : "Create Lead"}
+                  Create Lead
                 </h2>
                 <p className="text-[12px] text-[#9CA3AF] mt-0.5">
                   {fromBiodata
-                    ? "Filled from biodata. Extra details go to Profile Create (P2)."
-                    : isUpdate
-                      ? "This person is already in the system — check the fields and save"
-                      : "Capture the inquiry while you are on the call"}
+                    ? "Filled from biodata. Check the fields, then save."
+                    : "Capture the inquiry while you are on the call"}
                 </p>
               </div>
             </div>
@@ -1042,23 +1044,11 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
               </div>
             </Field>
 
-            {fromBiodata && extraP2.length ? (
+            {fromBiodata ? (
               <div className="rounded-xl bg-[#F5F2FB] border border-black/8 px-3.5 py-3">
-                <p className="text-[13px] font-semibold text-[#111]">Extra biodata → Profile Create (P2)</p>
-                <p className="text-[12px] text-[#6B7280] mt-0.5">
-                  These save on the pipeline profile after you save this lead.
+                <p className="text-[13px] font-medium text-[#374151]">
+                  Remaining details updated in P2 profile.
                 </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {extraP2.map((chip) => (
-                    <span
-                      key={chip.label}
-                      className="inline-flex max-w-full items-center gap-1 h-7 px-2.5 rounded-lg bg-white border border-black/10 text-[11.5px] text-[#374151]"
-                    >
-                      <span className="font-semibold text-[#7A0A17] shrink-0">{chip.label}</span>
-                      <span className="truncate">{chip.value}</span>
-                    </span>
-                  ))}
-                </div>
               </div>
             ) : null}
 
@@ -1093,7 +1083,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
                 className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
               >
                 <UserPlus size={14} />
-                {isUpdate ? "Save Lead" : "Create Lead"}
+                Create Lead
               </button>
             </div>
           </div>

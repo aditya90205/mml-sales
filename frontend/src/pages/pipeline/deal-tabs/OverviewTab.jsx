@@ -479,7 +479,7 @@ function RmFlagsCard({ flags }) {
 }
 
 /**
- * Overview: deal details + lead activity history on the left;
+ * Overview: deal details first, then lead activity history on the left;
  * stage gate, weighted value, RM flags, and Stage History & SLA on the right.
  */
 export default function OverviewTab({ deal, currentStage, onPremiumChange, onDetailsSaved }) {

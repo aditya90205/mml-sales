@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import {
   ensureLeadHistory,
-  getLeadActivities,
   subscribeLeadActivity,
 } from "../../../utils/leadActivityStore.js";
 
@@ -105,11 +104,6 @@ export default function LeadActivityHistory({ lead, currentStage = "P0" }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef(null);
 
-  useEffect(() => {
-    ensureLeadHistory(lead, currentStage);
-    setTick((n) => n + 1);
-  }, [lead?.id, currentStage, lead?.p0Status]);
-
   useEffect(() => subscribeLeadActivity(() => setTick((n) => n + 1)), []);
 
   useEffect(() => {
@@ -122,11 +116,11 @@ export default function LeadActivityHistory({ lead, currentStage = "P0" }) {
   }, [filterOpen]);
 
   const events = useMemo(() => {
-    const all = getLeadActivities(lead?.id);
+    const all = ensureLeadHistory(lead, currentStage);
     if (filter === "all") return all;
     const types = FILTER_TYPES[filter] || [];
     return all.filter((event) => types.includes(event.type));
-  }, [lead?.id, filter, tick]);
+  }, [lead, currentStage, filter, tick]);
 
   const groups = groupByDate(events);
   const name = lead?.name || "this lead";
