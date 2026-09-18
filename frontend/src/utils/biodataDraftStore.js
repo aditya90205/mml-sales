@@ -65,21 +65,34 @@ export function mapBiodataToIntake(payload = {}) {
   if (f.email) out.email = f.email;
   if (f.city) {
     const city = String(f.city).split(",")[0].trim();
+    out.city = out.city || f.city;
     out.placeOfBirth = out.placeOfBirth || city;
     out.addrCity = out.addrCity || city;
     out.currentCity = city;
   }
   if (f.area) {
+    out.area = out.area || f.area;
     out.addrAreaLocality = out.addrAreaLocality || f.area;
     out.currentLocality = f.area;
   }
   if (f.lookingFor) out.lookingFor = mapLookingFor(f.lookingFor);
   if (f.relation) out.enquiryBy = out.enquiryBy || mapEnquiryBy(f.relation);
   if (f.occupation) out.occupation = out.occupation || f.occupation;
-  if (f.profession) out.occupation = out.occupation || f.profession;
+  if (f.profession) {
+    out.profession = out.profession || f.profession;
+    out.occupation = out.occupation || f.profession;
+  }
+  if (f.nri) out.nri = out.nri || mapNriYesNo(f.nri) || f.nri;
+  if (f.country) out.country = out.country || f.country;
+  if (f.familyIncomeBand || f.income) {
+    out.familyIncomeBand = out.familyIncomeBand || f.familyIncomeBand || f.income;
+  }
+  if (f.source || f.leadSource) out.leadSource = out.leadSource || f.source || f.leadSource;
+  if (f.meeting) out.meeting = out.meeting || f.meeting;
+  if (f.community) out.community = out.community || f.community;
 
   if (alsoMap.height) out.height = out.height || alsoMap.height;
-  if (alsoMap.community) out.sectCaste = out.sectCaste || alsoMap.community;
+  if (alsoMap.community) out.community = out.community || alsoMap.community;
   if (alsoMap.caste) out.sectCaste = out.sectCaste || alsoMap.caste;
   if (alsoMap.education && !out.courses?.some((row) => row?.course)) {
     out.courses = [
@@ -358,7 +371,153 @@ export function buildLeadIntakePayload(leadForm = {}, payload = {}) {
     alsoRead,
     intake,
     fileName,
-    intakeValues: mergeFilledValues(fromBiodata, fromLead),
+    intakeValues: mergeFilledValues(
+      mergeFilledValues(fromBiodata, fromLead),
+      leadForm.intakeValues || {}
+    ),
+  };
+}
+
+/** Create Lead / CRM compare fields → P2 intake keys. */
+export function leadFieldsToIntake(fields = {}) {
+  const looking = mapLookingFor(fields.lookingFor);
+  const enquiry = mapEnquiryBy(fields.relation || fields.enquiryBy);
+  const nri = mapNriYesNo(fields.nri) || String(fields.nri || "").trim();
+  const out = {};
+  if (fields.firstName) out.firstName = fields.firstName;
+  if (fields.lastName) out.lastName = fields.lastName;
+  if (fields.dob) out.dob = fields.dob;
+  if (fields.mobile) out.mobile = digitsMobile(fields.mobile);
+  if (fields.email) out.email = fields.email;
+  if (fields.city) out.city = fields.city;
+  if (fields.area) out.area = fields.area;
+  if (looking) out.lookingFor = looking;
+  if (enquiry) out.enquiryBy = enquiry;
+  if (fields.profession) out.profession = fields.profession;
+  if (fields.occupation) out.occupation = out.occupation || fields.occupation;
+  if (nri) out.nri = nri === "yes" ? "Yes" : nri === "no" ? "No" : nri;
+  if (fields.country) out.country = fields.country;
+  if (fields.source || fields.leadSource) out.leadSource = fields.source || fields.leadSource;
+  if (fields.meeting) out.meeting = fields.meeting;
+  if (fields.income || fields.familyIncomeBand) {
+    out.familyIncomeBand = fields.income || fields.familyIncomeBand;
+  }
+  if (fields.community) out.community = fields.community;
+  return out;
+}
+
+function normalizeReviewValues(values = {}) {
+  const next = { ...values };
+  if (next.kundliShown === "Shared") next.kundliShown = "Yes";
+  if (next.kundliShown === "On request only") next.kundliShown = "No";
+  return next;
+}
+
+/**
+ * Imported biodata vs existing CRM/P2 values, plus the seeded review form.
+ * Imported filled keys win; empty biodata never wipes existing.
+ */
+export function buildBiodataIntakeSnapshots(initial = {}, existingLead = null) {
+  const imported = normalizeReviewValues(
+    mergeFilledValues(
+      mapBiodataToIntake({
+        fields: initial.importedFields || initial.fields || initial,
+        alsoRead: initial.alsoRead,
+        intake: initial.intake,
+      }),
+      leadFieldsToIntake(initial.importedFields || initial)
+    )
+  );
+  const existing = normalizeReviewValues(
+    mergeFilledValues(
+      mergeFilledValues(mapLeadToIntake(existingLead || {}), existingLead?.intakeValues || {}),
+      leadFieldsToIntake(initial.existingValues || {})
+    )
+  );
+  const values = mergeFilledValues(
+    mergeFilledValues(
+      {
+        nri: "No",
+        country: "India",
+        enquiryBy: "Self",
+        leadSource: "Biodata Upload",
+        meeting: "Meeting Agreed",
+      },
+      existing
+    ),
+    imported
+  );
+  if (String(values.nri).toLowerCase() === "no") values.country = values.country || "India";
+  return { imported, existing, values: normalizeReviewValues(values) };
+}
+
+const COUNTRY_DIAL = {
+  India: "+91",
+  USA: "+1",
+  UK: "+44",
+  Canada: "+1",
+  UAE: "+971",
+  Australia: "+61",
+  Singapore: "+65",
+  Other: "+",
+};
+
+function habitForP2(key, value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (key === "drinking" && /^no$/i.test(raw)) return "Teetotaller";
+  if (key === "smoking" && /^no$/i.test(raw)) return "Non smoker";
+  return raw;
+}
+
+/** Review-modal P2 values → Create Lead submit shape (extra keys stay on intakeValues). */
+export function intakeToLeadForm(values = {}, extra = {}) {
+  const looking = mapLookingFor(values.lookingFor);
+  const nriYes = String(values.nri || "").toLowerCase() === "yes";
+  const digits = digitsMobile(values.mobile);
+  const country = nriYes ? values.country || "India" : "India";
+  const dial = COUNTRY_DIAL[country] || "+91";
+  const kundliShown =
+    String(values.kundliShown || "").toLowerCase() === "yes"
+      ? "Shared"
+      : String(values.kundliShown || "").toLowerCase() === "no"
+        ? "On request only"
+        : values.kundliShown || "";
+  const intakeValues = {
+    ...values,
+    lookingFor: looking || values.lookingFor,
+    nri: nriYes ? "Yes" : "No",
+    country,
+    mobile: digits,
+    kundliShown,
+    drinking: habitForP2("drinking", values.drinking) || values.drinking,
+    smoking: habitForP2("smoking", values.smoking) || values.smoking,
+  };
+  return {
+    lookingFor: looking === "Groom" ? "yes" : looking === "Bride" ? "no" : "yes",
+    nri: nriYes ? "yes" : "no",
+    relation: values.enquiryBy || "Self",
+    firstName: values.firstName || "",
+    lastName: values.lastName || "",
+    dob: values.dob || "",
+    mobile: digits ? `${dial} ${digits}` : "",
+    email: values.email || "",
+    city: values.city || values.addrCity || "",
+    area: values.area || values.addrAreaLocality || "",
+    source: values.leadSource || "Biodata Upload",
+    country,
+    profession: values.profession || values.occupation || "",
+    meeting: values.meeting || "Meeting Agreed",
+    income: values.familyIncomeBand || "",
+    notes: values.extraInfo || "",
+    name: [values.firstName, values.lastName].filter(Boolean).join(" ").trim(),
+    intakeValues,
+    fileName: extra.fileName || "",
+    alsoRead: extra.alsoRead,
+    intake: extra.intake || intakeValues,
+    existingLeadId: extra.existingLeadId,
+    clientId: extra.clientId,
+    mode: extra.mode,
   };
 }
 

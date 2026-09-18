@@ -44,6 +44,7 @@ import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import CreateLeadModal from "../components/pipeline/CreateLeadModal";
 import BiodataUploadModal from "../components/pipeline/BiodataUploadModal";
+import BiodataProfileModal from "../components/pipeline/BiodataProfileModal";
 import CreateMeetingEventModal from "../components/calendar/CreateMeetingEventModal";
 import CreateTaskModal from "../components/calendar/CreateTaskModal";
 import TaskDetailsModal, { calendarEventToTaskView } from "../components/calendar/TaskDetailsModal";
@@ -1615,6 +1616,7 @@ export default function Dashboard() {
   const [period, setPeriod] = useState("this_month");
   const [search, setSearch] = useState("");
   const [showCreateLead, setShowCreateLead] = useState(false);
+  const [showBiodataProfile, setShowBiodataProfile] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showCreateMeeting, setShowCreateMeeting] = useState(false);
   const [showBiodataUpload, setShowBiodataUpload] = useState(false);
@@ -1695,37 +1697,13 @@ export default function Dashboard() {
     if (id) navigate(`/calendar?focus=${encodeURIComponent(id)}`);
   };
 
-  const visibleLeads = useMemo(() => {
-    let list = myLeads;
-    if (stageFilter) {
-      list = list.filter((l) => stageKeyFromLead(l) === stageFilter);
-    }
-    if (healthFilter) {
-      list = list.filter((l) => String(l.temperature || "").toLowerCase() === healthFilter);
-    }
-    const q = search.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter((l) => `${l.name} ${l.id} ${l.stage} ${l.source}`.toLowerCase().includes(q));
-  }, [myLeads, search, stageFilter, healthFilter]);
+  const closeLeadModals = () => {
+    setShowCreateLead(false);
+    setShowBiodataProfile(false);
+    setLeadInitial(null);
+  };
 
-  return (
-    <div className="flex flex-col flex-1 min-h-0">
-      {showCreateLead ? (
-        <CreateLeadModal
-          key={
-            leadInitial?.prefillAt ||
-            leadInitial?.existingLeadId ||
-            leadInitial?.fileName ||
-            leadInitial?.mobile ||
-            "create-lead"
-          }
-          open
-          initial={leadInitial}
-          onClose={() => {
-            setShowCreateLead(false);
-            setLeadInitial(null);
-          }}
-          onCreate={(lead) => {
+  const commitLeadForm = (lead) => {
             const nextAction =
               lead.meeting === "Meeting Agreed"
                 ? "Schedule meeting"
@@ -1746,6 +1724,7 @@ export default function Dashboard() {
               lead.fileName ||
                 pendingBiodata?.fileName ||
                 pendingBiodata?.alsoRead?.length ||
+                lead.intakeValues ||
                 (pendingBiodata?.intake && Object.keys(pendingBiodata.intake).length)
             );
             const bio = buildLeadIntakePayload(lead, pendingBiodata);
@@ -1829,8 +1808,7 @@ export default function Dashboard() {
                     : row
                 )
               );
-              setLeadInitial(null);
-              setShowCreateLead(false);
+              closeLeadModals();
               toast.success(
                 fromBiodata
                   ? `Lead "${lead.name}" updated. Extra biodata fields filled in Profile Create (P2).`
@@ -1904,14 +1882,57 @@ export default function Dashboard() {
               },
               ...prev,
             ]);
-            setLeadInitial(null);
-            setShowCreateLead(false);
+            closeLeadModals();
             toast.success(
               fromBiodata
                 ? `Lead "${lead.name}" created. Extra biodata fields filled in Profile Create (P2).`
                 : `Lead "${lead.name}" created.`
             );
+  };
+
+  const visibleLeads = useMemo(() => {
+    let list = myLeads;
+    if (stageFilter) {
+      list = list.filter((l) => stageKeyFromLead(l) === stageFilter);
+    }
+    if (healthFilter) {
+      list = list.filter((l) => String(l.temperature || "").toLowerCase() === healthFilter);
+    }
+    const q = search.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((l) => `${l.name} ${l.id} ${l.stage} ${l.source}`.toLowerCase().includes(q));
+  }, [myLeads, search, stageFilter, healthFilter]);
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0">
+      {showCreateLead ? (
+        <CreateLeadModal
+          key={
+            leadInitial?.prefillAt ||
+            leadInitial?.existingLeadId ||
+            leadInitial?.fileName ||
+            leadInitial?.mobile ||
+            "create-lead"
+          }
+          open
+          initial={leadInitial}
+          onClose={() => {
+            setShowCreateLead(false);
+            setLeadInitial(null);
           }}
+          onCreate={commitLeadForm}
+        />
+      ) : null}
+      {showBiodataProfile ? (
+        <BiodataProfileModal
+          key={leadInitial?.prefillAt || leadInitial?.fileName || "biodata-profile"}
+          open
+          initial={leadInitial}
+          onClose={() => {
+            setShowBiodataProfile(false);
+            setLeadInitial(null);
+          }}
+          onSave={commitLeadForm}
         />
       ) : null}
       {showBiodataUpload ? (
@@ -1980,14 +2001,14 @@ export default function Dashboard() {
               fieldMeta: payload?.fieldMeta || {},
               prefillAt: Date.now(),
             });
-            setShowCreateLead(true);
+            setShowBiodataProfile(true);
 
             if (existingLeadId) {
               toast.info(
-                `This number is already ${match?.name || "in the system"}. Matched vs new fields are on the form. Extra biodata saves in Profile Create (P2).`
+                `This number is already ${match?.name || "in the system"}. Check New / Same / Existing, then save to Profile Create (P2).`
               );
             } else {
-              toast.info("Check the filled fields, then create the lead. Extra details go to P2.");
+              toast.info("Check the biodata fields, then save. Extra details go to Profile Create (P2).");
             }
           }}
         />
