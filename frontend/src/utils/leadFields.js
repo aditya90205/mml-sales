@@ -8,7 +8,7 @@ export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const CREATE_LEAD_COMPARE_FIELDS = [
   { key: "firstName", label: "First name", required: true },
   { key: "lastName", label: "Last name", required: true },
-  { key: "mobile", label: "Mobile number", required: true },
+  { key: "mobile", label: "Mobile number", required: false },
   { key: "email", label: "Email", required: false },
   { key: "city", label: "City", required: true },
   { key: "area", label: "Area / locality", required: false },
@@ -16,6 +16,8 @@ export const CREATE_LEAD_COMPARE_FIELDS = [
   { key: "lookingFor", label: "Looking for", required: false },
   { key: "relation", label: "Relation to prospect", required: false },
 ];
+
+export const CONTACT_REQUIRED_MESSAGE = "Enter at least one valid mobile number or email.";
 
 export const FIELD_DUMMY_HINTS = {
   firstName: "e.g. Ritika",
@@ -54,6 +56,11 @@ export function isValidEmail(value) {
 
 export function isValidMobile(value) {
   return digitsOnly(value).length >= 8;
+}
+
+/** Profile / lead contact rule: at least one of mobile or email. */
+export function hasValidMobileOrEmail(form = {}) {
+  return isValidMobile(form.mobile) || isValidEmail(form.email);
 }
 
 export function splitName(name = "") {
@@ -148,9 +155,9 @@ export function formToLeadFields(form) {
 export function classifyField(key, importedValue, existingValue) {
   const imported = normalizeField(key, importedValue);
   const existing = normalizeField(key, existingValue);
-  if (!imported && !existing) return FIELD_STATUS.missing;
+  if (!imported && !existing) return FIELD_STATUS.empty;
   if (imported && !existing) return FIELD_STATUS.neu;
-  if (!imported && existing) return FIELD_STATUS.missing;
+  if (!imported && existing) return FIELD_STATUS.keep;
   if (imported === existing) return FIELD_STATUS.match;
   return FIELD_STATUS.mismatch;
 }
@@ -163,6 +170,45 @@ export function classifyLeadFields(imported = {}, existing = {}) {
   return out;
 }
 
+/** Coerce a CRM / biodata value into Create Lead form shape. */
+export function coerceCreateLeadValue(key, value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  if (key === "mobile") return digitsOnly(raw).replace(/^91/, "").slice(-10);
+  if (key === "lookingFor") {
+    const v = raw.toLowerCase();
+    if (v.includes("no") || v.includes("bride")) return "no";
+    return "yes";
+  }
+  if (key === "relation") {
+    const v = raw.toLowerCase();
+    if (v.includes("self")) return "Self / Prospect";
+    if (v.includes("parent")) return "Parent";
+    if (v.includes("sibling")) return "Sibling";
+    if (v.includes("relative")) return "Relative";
+    if (v.includes("friend")) return "Friend";
+    return raw;
+  }
+  return raw;
+}
+
+/** Pending Create Lead diffs: existing record vs current / biodata values. */
+export function listLeadFieldChanges(nextValues = {}, existingValues = {}) {
+  const changes = [];
+  for (const field of CREATE_LEAD_COMPARE_FIELDS) {
+    const status = classifyField(field.key, nextValues[field.key], existingValues[field.key]);
+    if (status !== FIELD_STATUS.mismatch && status !== FIELD_STATUS.neu) continue;
+    changes.push({
+      key: field.key,
+      label: field.label,
+      status,
+      from: displayFieldValue(field.key, existingValues[field.key]),
+      to: displayFieldValue(field.key, nextValues[field.key]),
+    });
+  }
+  return changes;
+}
+
 /** Same rules as Create Lead submit. Returns { fieldKey: message }. */
 export function validateCreateLeadFields(form = {}) {
   const errors = {};
@@ -172,12 +218,17 @@ export function validateCreateLeadFields(form = {}) {
   if (!String(form.lastName || "").trim()) {
     errors.lastName = "Prospect's last name is required.";
   }
-  if (!isValidMobile(form.mobile)) {
+  const mobile = String(form.mobile || "").trim();
+  const email = String(form.email || "").trim();
+  if (mobile && !isValidMobile(mobile)) {
     errors.mobile = "Enter a valid mobile number.";
   }
-  const email = String(form.email || "").trim();
   if (email && !isValidEmail(email)) {
     errors.email = "Enter a valid email address.";
+  }
+  if (!hasValidMobileOrEmail(form)) {
+    errors.mobile = CONTACT_REQUIRED_MESSAGE;
+    errors.email = CONTACT_REQUIRED_MESSAGE;
   }
   if (!String(form.city || "").trim()) {
     errors.city = "City is required.";

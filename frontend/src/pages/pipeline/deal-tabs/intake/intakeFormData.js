@@ -76,10 +76,11 @@ const PERSONAL_DETAILS_BLOCKS = [
   },
   {
     title: "Contact",
+    note: "At least one of mobile or email is required",
     fields: [
-      { key: "mobile", label: "Mobile", required: true, type: "text" },
+      { key: "mobile", label: "Mobile", required: true, requiredGroup: "contact", type: "text" },
       { key: "alternateContact", label: "Alternate contact", type: "text" },
-      { key: "email", label: "E-mail", required: true, type: "text" },
+      { key: "email", label: "E-mail", required: true, requiredGroup: "contact", type: "text" },
     ],
   },
   {
@@ -754,8 +755,8 @@ export const DEMO_PERSONAL_VALUES = {
   lookingFor: "Groom",
   enquiryBy: "Parent",
   aadhaarFiles: ["aadhaar-front.jpg", "aadhaar-back.jpg"],
-  mobile: "98••• ••164",
-  email: "priya.raheja@gmail.com",
+  mobile: "9876501234",
+  email: "priya.raheja@email.com",
   dob: "14 Jul 1995",
   timeOfBirth: "04:20",
   placeOfBirth: "Delhi",

@@ -805,7 +805,13 @@ export default function PipelineBoard() {
     setLeadsDataState(next);
   };
 
-  useEffect(() => subscribePipeline(() => setLeadsDataState(readLeads())), []);
+  useEffect(() => subscribePipeline(() => {
+    setLeadsDataState(readLeads());
+    setActiveLead((prev) => {
+      if (!prev?.id) return prev;
+      return findStoredLeadById(prev.id)?.lead || prev;
+    });
+  }), []);
 
   const stageParam = searchParams.get("stage");
   useEffect(() => {

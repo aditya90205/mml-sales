@@ -1,20 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import {
-  SECTION_DEMO_VALUES,
-  DEMO_PERSONAL_VALUES,
   snapshotPersonalValues,
   diffPersonalValues,
   SECTION_BLOCKS,
   SECTIONS_META,
+  SECTION_DEMO_VALUES,
   diffSectionValues,
+  isFilled,
 } from "./intake/intakeFormData";
 import IntakeFillFormView from "./intake/IntakeFillFormView";
 import ClientRecordView from "./intake/ClientRecordView";
 import PersonalChangeOtpModal from "./intake/PersonalChangeOtpModal";
 import SectionEditModal from "./intake/SectionEditModal";
-import { consumeBiodataDraft, mapBiodataToIntake } from "../../../utils/biodataDraftStore.js";
+import { mapBiodataToIntake, mapLeadToIntake } from "../../../utils/biodataDraftStore.js";
+import { extractBiodata } from "../../../utils/biodataExtract.js";
 import { recordLeadActivity } from "../../../utils/leadActivityStore.js";
+import { updateLead } from "../../../utils/pipelineStore.js";
+import { CONTACT_REQUIRED_MESSAGE, hasValidMobileOrEmail } from "../../../utils/leadFields.js";
+
+const DUMMY_P2_IDS = new Set(["p2-1", "p2-2"]);
 
 function IntakeViewToggle({ view, onChange }) {
   const options = [
@@ -55,73 +60,45 @@ function formatChangeAt(date = new Date()) {
   });
 }
 
-/** Dummy history so Change summary shows sample OTP-verified edits. */
-const DEMO_CHANGE_LOG = [
-  {
-    id: "demo-mobile-1",
-    fieldKey: "mobile",
-    label: "Mobile",
-    from: "98••• ••771",
-    to: "98••• ••164",
-    at: "07 Sep 2026, 11:24 am",
-    by: "Neha Sharma",
-    via: "OTP verified",
-  },
-  {
-    id: "demo-email-1",
-    fieldKey: "email",
-    label: "E-mail",
-    from: "priya.r@outlook.com",
-    to: "priya.raheja@gmail.com",
-    at: "05 Sep 2026, 04:12 pm",
-    by: "Neha Sharma",
-    via: "OTP verified",
-  },
-  {
-    id: "demo-height-1",
-    fieldKey: "height",
-    label: "Height",
-    from: "5 ft 3 in / 160 cms",
-    to: "5 ft 4 in / 163 cms",
-    at: "02 Sep 2026, 10:05 am",
-    by: "Rohit Khanna",
-    via: "OTP verified",
-  },
-  {
-    id: "demo-marital-1",
-    fieldKey: "maritalStatus",
-    label: "Marital status",
-    from: "Draft — pending confirm",
-    to: "Never married",
-    at: "28 Aug 2026, 03:40 pm",
-    by: "Neha Sharma",
-    via: "OTP verified",
-  },
-];
+function seedIntakeValues(lead) {
+  const fromLead = mapLeadToIntake(lead);
+  const stored = lead?.intakeValues || {};
+  const dummyDemo = DUMMY_P2_IDS.has(lead?.id)
+    ? {
+        ...SECTION_DEMO_VALUES,
+        gender: lead.id === "p2-1" ? "Male" : SECTION_DEMO_VALUES.gender,
+        lookingFor: lead.id === "p2-1" ? "Bride" : SECTION_DEMO_VALUES.lookingFor,
+        firstName: fromLead.firstName || SECTION_DEMO_VALUES.firstName,
+        lastName: fromLead.lastName || SECTION_DEMO_VALUES.lastName,
+        mobile: fromLead.mobile || SECTION_DEMO_VALUES.mobile,
+        email: fromLead.email || SECTION_DEMO_VALUES.email,
+      }
+    : {};
+  return {
+    ...dummyDemo,
+    ...fromLead,
+    ...stored,
+  };
+}
+
+function seedHasValues(values = {}) {
+  return Object.values(values).some((value) => isFilled(value) || (Array.isArray(value) && value.some((row) => isFilled(row) || (row && typeof row === "object" && Object.values(row).some(isFilled)))));
+}
 
 /**
  * Intake Form tab — toggles between Fill the form and Client record views.
  * Client-record section edits require Send OTP → verify before data updates.
  */
 export default function IntakeFormTab({ empty = false, lead = null }) {
-  const draft = lead?.id ? consumeBiodataDraft(lead.id) : null;
-  const intakeFromBiodata = draft ? mapBiodataToIntake(draft) : {};
-  const seedValues = {
-    ...(empty ? {} : SECTION_DEMO_VALUES),
-    ...intakeFromBiodata,
-  };
-
-  const [view, setView] = useState(draft ? "record" : "fill");
+  const [view, setView] = useState("fill");
   const [activeKey, setActiveKey] = useState("personal");
-  const [values, setValues] = useState(seedValues);
-  const [chips, setChips] = useState({
-    aadhaarFiles: empty && !draft ? [] : DEMO_PERSONAL_VALUES.aadhaarFiles,
-  });
+  const [values, setValues] = useState(() => seedIntakeValues(lead));
+  const [chips, setChips] = useState({ aadhaarFiles: [] });
   const [personalBaseline, setPersonalBaseline] = useState(() =>
-    snapshotPersonalValues(seedValues)
+    snapshotPersonalValues(seedIntakeValues(lead))
   );
   const [personalUnlocked, setPersonalUnlocked] = useState(true);
-  const [changeLog, setChangeLog] = useState(() => (empty && !draft ? [] : DEMO_CHANGE_LOG));
+  const [changeLog, setChangeLog] = useState([]);
   const [otpState, setOtpState] = useState({
     open: false,
     mode: "unlock",
@@ -131,9 +108,42 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
   const [editSectionKey, setEditSectionKey] = useState(null);
   const [pendingSectionDraft, setPendingSectionDraft] = useState(null);
 
+  useEffect(() => {
+    const next = seedIntakeValues(lead);
+    setValues(next);
+    setPersonalBaseline(snapshotPersonalValues(next));
+    setChips({ aadhaarFiles: [] });
+    setChangeLog([]);
+    setView("fill");
+    setActiveKey("personal");
+  }, [lead?.id]);
+
+  const formEmpty = empty && !seedHasValues(values);
+
   const setField = (key, value) => setValues((prev) => ({ ...prev, [key]: value }));
   const removeChip = (chipsKey, chip) =>
     setChips((prev) => ({ ...prev, [chipsKey]: (prev[chipsKey] || []).filter((c) => c !== chip) }));
+
+  const handleBiodataFile = async (file) => {
+    if (!file) return;
+    const data = await extractBiodata(file);
+    const mapped = mapBiodataToIntake(data);
+    const next = { ...values, ...mapped };
+    if (!hasValidMobileOrEmail(next)) {
+      toast.error(CONTACT_REQUIRED_MESSAGE);
+      return;
+    }
+    setValues(next);
+    if (lead?.id) {
+      updateLead(lead.id, {
+        intakeValues: next,
+        biodataFile: file.name,
+        mobile: next.mobile || lead.mobile,
+        email: next.email || lead.email,
+      });
+    }
+    toast.success(`Biodata applied to Profile Create: ${file.name}`);
+  };
 
   const applySectionDraft = (draftValues, draftChips) => {
     setValues((prev) => ({ ...prev, ...draftValues }));
@@ -152,6 +162,10 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
   };
 
   const requestPersonalSave = ({ onSuccess }) => {
+    if (!hasValidMobileOrEmail(values)) {
+      toast.error(CONTACT_REQUIRED_MESSAGE);
+      return;
+    }
     const current = snapshotPersonalValues(values);
     const changes = diffPersonalValues(personalBaseline, current);
     if (!changes.length) {
@@ -169,6 +183,13 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
   };
 
   const handleEditSectionSave = ({ values: draftValues, chips: draftChips }) => {
+    if (editSectionKey === "personal") {
+      const merged = { ...values, ...draftValues };
+      if (!hasValidMobileOrEmail(merged)) {
+        toast.error(CONTACT_REQUIRED_MESSAGE);
+        return;
+      }
+    }
     const label = SECTIONS_META.find((s) => s.key === editSectionKey)?.label || "Section";
     const blocks = SECTION_BLOCKS[editSectionKey] || [];
     const before = cloneBeforeValues(blocks, values);
@@ -276,13 +297,13 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
         <ClientRecordView
           values={values}
           chips={chips}
-          empty={empty}
+          empty={formEmpty}
           changeLog={changeLog}
           onEditSection={(key) => setEditSectionKey(key)}
         />
       ) : (
         <IntakeFillFormView
-          empty={empty}
+          empty={formEmpty}
           activeKey={activeKey}
           setActiveKey={handleSetActiveKey}
           values={values}
@@ -293,6 +314,7 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
           onRequestPersonalUnlock={requestPersonalUnlock}
           onRequestPersonalSave={requestPersonalSave}
           onFinishToRecord={() => setView("record")}
+          onBiodataFile={handleBiodataFile}
         />
       )}
 

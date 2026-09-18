@@ -164,16 +164,21 @@ export default function IntakeFillFormView({
   onRequestPersonalUnlock: _onRequestPersonalUnlock,
   onRequestPersonalSave,
   onFinishToRecord,
+  onBiodataFile,
 }) {
   const [documentsKycOpen, setDocumentsKycOpen] = useState(false);
   const [selectedDocuments, setSelectedDocuments] = useState([]);
   const biodataInputRef = useRef(null);
   const documentsKycRef = useRef(null);
 
-  const handleBiodataUpload = (e) => {
+  const handleBiodataUpload = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    if (onBiodataFile) {
+      await onBiodataFile(file);
+      return;
+    }
     toast.success(`Biodata uploaded: ${file.name}`);
   };
 

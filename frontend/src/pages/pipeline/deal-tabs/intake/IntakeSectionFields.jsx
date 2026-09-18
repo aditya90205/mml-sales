@@ -202,6 +202,7 @@ export function FormBlock({ block, values, chipValues, onFieldChange, onRemoveCh
           {filled} of {total} filled
         </span>
       </div>
+      {block.note ? <p className="text-[12px] text-[#6B7280] -mt-2 mb-4">{block.note}</p> : null}
       <div
         className={`grid grid-cols-1 ${colClass} gap-x-6 gap-y-4 ${locked ? "pointer-events-none select-none" : ""}`}
         aria-disabled={locked || undefined}

@@ -216,57 +216,7 @@ export function findDuplicatesByMobileOrEmail({ mobile = "", email = "" } = {}) 
   return results;
 }
 
-/** Mock AI extraction from an uploaded biodata file (frontend demo). */
-export function mockExtractBiodata(file) {
-  const fileName = file?.name || "biodata.pdf";
-  const sizeMb = file?.size ? (file.size / (1024 * 1024)).toFixed(1) : "1.4";
-  // PDF dummy matches Ritika (already in CRM). JPG / "new" filenames are a fresh prospect.
-  const asNew = /new|unknown|sender|\.jpe?g$/i.test(fileName);
-
-  const fields = asNew
-    ? [
-        { key: "firstName", label: "First name", value: "Kavya", confidence: 96 },
-        { key: "lastName", label: "Last name", value: "Kapoor", confidence: 94 },
-        { key: "dob", label: "Date of birth", value: "", confidence: 40 },
-        { key: "mobile", label: "Mobile number", value: "9000011122", confidence: 91 },
-        { key: "email", label: "Email", value: "kavya.kapoor@example.com", confidence: 88 },
-        { key: "city", label: "City", value: "", confidence: 35 },
-        { key: "area", label: "Area / locality", value: "", confidence: 30 },
-        { key: "lookingFor", label: "Looking for", value: "Groom", confidence: 82 },
-        { key: "relation", label: "Relation to prospect", value: "Self", confidence: 70 },
-      ]
-    : [
-        { key: "firstName", label: "First name", value: "Ritika", confidence: 99 },
-        { key: "lastName", label: "Last name", value: "Sharma", confidence: 98 },
-        { key: "dob", label: "Date of birth", value: "", confidence: 20 },
-        { key: "mobile", label: "Mobile number", value: "9876543210", confidence: 99 },
-        { key: "email", label: "Email", value: "ritika@example.com", confidence: 92 },
-        { key: "city", label: "City", value: "", confidence: 18 },
-        { key: "area", label: "Area / locality", value: "Sector 54", confidence: 78 },
-        { key: "lookingFor", label: "Looking for", value: "Groom", confidence: 88 },
-        { key: "relation", label: "Relation to prospect", value: "Self", confidence: 71 },
-      ];
-
-  return {
-    fileName,
-    sizeLabel: `${sizeMb} MB`,
-    pages: 2,
-    hasTextLayer: !/\.(jpe?g|png|webp|tiff?)$/i.test(fileName),
-    senderMobile: "9811004521",
-    senderEmail: "aman.gupta@email.com",
-    biodataName: asNew ? "Kavya Kapoor" : "Ritika Sharma",
-    fields,
-    alsoRead: [
-      { label: "Height", value: "5' 4\"" },
-      { label: "Community", value: "Aggarwal" },
-      { label: "Education", value: "MBA — IIM Indore" },
-      { label: "Occupation", value: "Product Manager" },
-      { label: "Income", value: "₹ 28 LPA" },
-      { label: "Family details", value: "Father retired banker · 1 sibling" },
-      { label: "Manglik", value: "No" },
-    ],
-  };
-}
+export { extractBiodata } from "./biodataExtract.js";
 
 export function formatDisplayMobile(mobile = "") {
   const d = digitsOnly(mobile);

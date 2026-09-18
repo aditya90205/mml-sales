@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   AlarmClock,
@@ -190,7 +190,7 @@ export default function DealDetailPage({
 }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(
-    () => STAGE_TO_TAB[currentStage] || initialTab || "overview"
+    () => initialTab || STAGE_TO_TAB[currentStage] || "overview"
   );
   const [winLossModal, setWinLossModal] = useState({ open: false, mode: "lost" });
   const [winLossOverride, setWinLossOverride] = useState(null);
@@ -227,8 +227,14 @@ export default function DealDetailPage({
     }
   }, [lead]);
 
+  const skipStageTabSync = useRef(Boolean(initialTab && initialTab !== STAGE_TO_TAB[currentStage]));
+
   // Keep the open tab aligned with the current pipeline stage (Move to P2 → Profile Create, etc.).
   useEffect(() => {
+    if (skipStageTabSync.current) {
+      skipStageTabSync.current = false;
+      return;
+    }
     const tabForStage = STAGE_TO_TAB[currentStage];
     if (tabForStage) setActiveTab(tabForStage);
   }, [currentStage]);
@@ -414,7 +420,7 @@ export default function DealDetailPage({
           />
         );
       case "intake":
-        return <IntakeFormTab empty={currentStage === "P0"} lead={lead} />;
+        return <IntakeFormTab empty={currentStage === "P0" && !lead?.intakeValues} lead={lead} />;
       case "visits":
         return <VisitsMeetingsTab empty={!atLeast(currentStage, "P3")} lead={lead} currentStage={currentStage} />;
       case "package":

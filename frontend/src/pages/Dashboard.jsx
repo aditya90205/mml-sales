@@ -76,7 +76,8 @@ import {
 } from "../utils/calendarStore.js";
 import { CLIENTS, upsertClientFromBiodata } from "../utils/clientsData.js";
 import { addP0Lead, countStageLeads, findLeadById, findLeadByName, readLeads, subscribePipeline, updateLead } from "../utils/pipelineStore.js";
-import { setBiodataDraft } from "../utils/biodataDraftStore.js";
+import { contactToLeadFields } from "../utils/leadFields.js";
+import { buildLeadIntakePayload, setPendingBiodata, takePendingBiodata } from "../utils/biodataDraftStore.js";
 import { addTaskFromForm, getTodayTaskStats, readTasks, subscribeTasks } from "../utils/tasksStore.js";
 import { buildPerformanceReport } from "../utils/performanceStats.js";
 import { VISITS } from "./pipeline/deal-tabs/VisitsMeetingsTab.jsx";
@@ -207,9 +208,10 @@ const PERFORMANCE_SEGMENTS = [
     capsuleBg: "#E7EEF8",
     iconSrc: conversionIcon,
     layout: "row",
+    minHeight: 80,
     arrow: conversionArrow,
     pos: { top: "79%", right: "0%" },
-    arrowStyle: { right: "calc(100% + 12px)", top: "-32%", width: "16.5cqw" },
+    arrowStyle: { right: "calc(100% + 0px)", top: "-17px", width: "16.5cqw" },
   },
   {
     key: "registrations",
@@ -744,8 +746,8 @@ function PerformanceScoreCard({ period, myLeads }) {
                     alignItems: "center",
                     textAlign: stacked ? "center" : "left",
                     width: stacked ? 98 : undefined,
-                    minHeight: stacked ? 112 : !stacked && s.tall ? 68 : undefined,
-                    padding: stacked ? "12px 10px 11px" : s.tall ? "11px 14px" : "9px 12px",
+                    minHeight: stacked ? 112 : s.minHeight || (!stacked && s.tall ? 68 : undefined),
+                    padding: stacked ? "12px 10px 11px" : s.tall || s.minHeight ? "11px 14px" : "9px 12px",
                     gap: stacked ? 7 : 8,
                   }}
                 >
@@ -1738,6 +1740,32 @@ export default function Dashboard() {
                     : "Initial Contact";
 
             const existingId = lead.existingLeadId || leadInitial?.existingLeadId;
+            const pendingBiodata = takePendingBiodata() || {
+              fields: leadInitial,
+              alsoRead: lead.alsoRead || leadInitial?.alsoRead,
+              intake: lead.intake || leadInitial?.intake,
+              fileName: lead.fileName || leadInitial?.fileName,
+            };
+            const fromBiodata = Boolean(
+              lead.fileName ||
+                pendingBiodata?.fileName ||
+                pendingBiodata?.alsoRead?.length ||
+                (pendingBiodata?.intake && Object.keys(pendingBiodata.intake).length)
+            );
+            const bio = fromBiodata ? buildLeadIntakePayload(lead, pendingBiodata) : null;
+            const biodataPatch = bio
+              ? {
+                  firstName: lead.firstName,
+                  lastName: lead.lastName,
+                  city: lead.city,
+                  area: lead.area,
+                  dob: lead.dob,
+                  lookingFor: lead.lookingFor,
+                  relation: lead.relation,
+                  intakeValues: bio.intakeValues,
+                  biodataFile: bio.fileName,
+                }
+              : {};
 
             if (existingId) {
               updateLead(existingId, {
@@ -1748,25 +1776,29 @@ export default function Dashboard() {
                 lastDiscussion: "Just now",
                 nextAction,
                 temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
+                ...biodataPatch,
               });
-              upsertClientFromBiodata({
-                clientId: lead.clientId || leadInitial?.clientId,
-                name: lead.name,
-                mobile: lead.mobile,
-                email: lead.email,
-                fields: {
-                  firstName: lead.firstName,
-                  lastName: lead.lastName,
-                  city: lead.city,
-                  area: lead.area,
-                  dob: lead.dob,
-                  lookingFor: lead.lookingFor,
-                  relation: lead.relation,
-                  fileName: lead.fileName,
-                },
-                owner: "Rohit Kumar",
-                linkedLeadId: existingId,
-              });
+              if (bio) {
+                upsertClientFromBiodata({
+                  clientId: lead.clientId || leadInitial?.clientId,
+                  name: lead.name,
+                  mobile: lead.mobile,
+                  email: lead.email,
+                  fields: {
+                    firstName: lead.firstName,
+                    lastName: lead.lastName,
+                    city: lead.city,
+                    area: lead.area,
+                    dob: lead.dob,
+                    lookingFor: lead.lookingFor,
+                    relation: lead.relation,
+                    fileName: lead.fileName,
+                  },
+                  alsoRead: bio?.alsoRead || [],
+                  owner: "Rohit Kumar",
+                  linkedLeadId: existingId,
+                });
+              }
               setMyLeads((prev) =>
                 prev.map((row) =>
                   row.pipelineLeadId === existingId || row.id === existingId
@@ -1787,7 +1819,11 @@ export default function Dashboard() {
               );
               setLeadInitial(null);
               setShowCreateLead(false);
-              toast.success(`Lead "${lead.name}" updated.`);
+              toast.success(
+                fromBiodata
+                  ? `Lead "${lead.name}" updated. Extra biodata fields filled in Profile Create (P2).`
+                  : `Lead "${lead.name}" updated.`
+              );
               return;
             }
 
@@ -1807,7 +1843,29 @@ export default function Dashboard() {
               mobile: lead.mobile,
               email: lead.email,
               p0Status: "new",
+              ...biodataPatch,
             });
+            if (created?.id && bio) {
+              upsertClientFromBiodata({
+                clientId: lead.clientId,
+                name: lead.name,
+                mobile: lead.mobile,
+                email: lead.email,
+                fields: {
+                  firstName: lead.firstName,
+                  lastName: lead.lastName,
+                  city: lead.city,
+                  area: lead.area,
+                  dob: lead.dob,
+                  lookingFor: lead.lookingFor,
+                  relation: lead.relation,
+                  fileName: lead.fileName,
+                },
+                alsoRead: bio.alsoRead || [],
+                owner: "Rohit Kumar",
+                linkedLeadId: created.id,
+              });
+            }
             setMyLeads((prev) => [
               {
                 id: created?.id || `MML-ID-D-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -1835,7 +1893,11 @@ export default function Dashboard() {
             ]);
             setLeadInitial(null);
             setShowCreateLead(false);
-            toast.success(`Lead "${lead.name}" created.`);
+            toast.success(
+              fromBiodata
+                ? `Lead "${lead.name}" created. Extra biodata fields filled in Profile Create (P2).`
+                : `Lead "${lead.name}" created.`
+            );
           }}
         />
       ) : null}
@@ -1857,8 +1919,8 @@ export default function Dashboard() {
 
             setShowBiodataUpload(false);
             setBiodataCompareWith(null);
+            setPendingBiodata(payload);
 
-            // Prefer existing DB lead when matched (update, don't create)
             let leadRef = null;
             if (!isNew && match) {
               leadRef =
@@ -1868,45 +1930,9 @@ export default function Dashboard() {
                 findLeadByName(fullName);
             }
 
-            let existingLeadId = leadRef?.lead?.id || null;
-            let clientId = match?.type === "client" ? match.recordId : undefined;
+            const existingLeadId = leadRef?.lead?.id || null;
+            const clientId = match?.type === "client" ? match.recordId : undefined;
 
-            if (leadRef) {
-              const leadPatch = {
-                ...(payload?.resolution === "same" && fullName ? { name: fullName } : {}),
-                mobile: f.mobile || match?.mobile,
-                email: f.email || match?.email,
-                lastDiscussion: "Just now",
-                nextAction: "Review biodata",
-              };
-              updateLead(leadRef.lead.id, leadPatch);
-              leadRef = findLeadById(leadRef.lead.id);
-              existingLeadId = leadRef?.lead?.id || existingLeadId;
-
-              const savedClient = upsertClientFromBiodata({
-                clientId,
-                name: leadPatch.name || leadRef?.lead?.name || fullName,
-                mobile: f.mobile || match?.mobile,
-                email: f.email || match?.email,
-                fields: { ...f, fileName: payload?.fileName },
-                alsoRead: payload?.alsoRead || [],
-                owner: match?.owner || "Rohit Kumar",
-                linkedLeadId: existingLeadId,
-              });
-              clientId = savedClient?.id || clientId;
-
-              if (existingLeadId) {
-                setBiodataDraft(existingLeadId, {
-                  fields: f,
-                  alsoRead: payload?.alsoRead || [],
-                  fileName: payload?.fileName,
-                  clientId: savedClient?.id,
-                  resolution: payload?.resolution,
-                });
-              }
-            }
-
-            // Always open Create Lead with biodata fields (update vs create decided by existingLeadId)
             setLeadInitial({
               ...prior,
               firstName: f.firstName || prior.firstName || "",
@@ -1917,7 +1943,8 @@ export default function Dashboard() {
               city: f.city || prior.city || "",
               area: f.area || prior.area || "",
               lookingFor: f.lookingFor || prior.lookingFor || "yes",
-              relation: f.relation || prior.relation || "Self / Prospect",
+              relation:
+                payload?.importedFields?.relation || f.relation || prior.relation || "Self / Prospect",
               contactWith: match && !isNew ? "Existing Client" : prior.contactWith || "First Contact",
               source:
                 prior.source && prior.source !== "Website Inquiry"
@@ -1927,28 +1954,27 @@ export default function Dashboard() {
               existingLeadId: existingLeadId || undefined,
               clientId: clientId || undefined,
               mode: existingLeadId ? "update" : "create",
-              fieldMeta: payload?.fieldMeta || {},
               alsoRead: payload?.alsoRead || [],
-              existingValues: payload?.existingValues || {},
+              intake: payload?.intake || {},
               biodataName: payload?.biodataName || "",
+              existingValues: {
+                ...(leadRef?.lead ? contactToLeadFields(leadRef.lead) : {}),
+                ...(payload?.existingValues || {}),
+                ...(match && !isNew ? contactToLeadFields(match) : {}),
+              },
+              importedFields: payload?.importedFields || f,
+              matchName: match?.name || leadRef?.lead?.name || "",
+              fieldMeta: payload?.fieldMeta || {},
               prefillAt: Date.now(),
             });
             setShowCreateLead(true);
 
             if (existingLeadId) {
-              toast.success(
-                payload?.resolution === "wrong"
-                  ? `Updated existing lead — flagged for review. Finish details in the form.`
-                  : `Updated existing lead in DB. Review / save details in Create Lead.`
-              );
-            } else if (payload?.matchKind === "sender" && payload?.senderMatch) {
               toast.info(
-                `Sender "${payload.senderMatch.name}" is registered — finish as a new lead.`
+                `This number is already ${match?.name || "in the system"}. Matched vs new fields are on the form. Extra biodata saves in Profile Create (P2).`
               );
-            } else if (payload?.resolution === "relative" && match) {
-              toast.info(`Linked to "${match.name}" — finish as a new lead in the form.`);
             } else {
-              toast.info("Fill missing Create Lead fields and save.");
+              toast.info("Check the filled fields, then create the lead. Extra details go to P2.");
             }
           }}
         />
