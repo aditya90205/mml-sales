@@ -732,11 +732,12 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
                   </span>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-[13.5px] font-bold text-[#111]">Upload Biodata / Bulk Import</p>
-                      <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bg-white text-[#E8395B] text-[10px] font-semibold">
+                      <p className="text-[13.5px] font-bold text-[#111]">Upload Biodata</p>
+                    { /* <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bg-white text-[#E8395B] text-[10px] font-semibold">
                         <Sparkles size={10} />
                         AI Parsing
                       </span>
+                      */}
                     </div>
                     <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 truncate">
                       {file

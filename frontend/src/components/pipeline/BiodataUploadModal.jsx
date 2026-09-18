@@ -170,7 +170,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
       open={open}
       onClose={onClose}
       title="Upload Biodata"
-      subtitle="Enter at least one of mobile or email, then upload. Extra fields go to Profile Create (P2)."
+      subtitle="Enter at least one of mobile or email, then upload."
       icon={<FileText size={18} />}
       iconBg="#E7F8EF"
       iconColor="#16A34A"
@@ -310,9 +310,9 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
               >
                 Select file
               </button>
-              <p className="text-[11.5px] text-[#9CA3AF] mt-3">
+              {/* <p className="text-[11.5px] text-[#9CA3AF] mt-3">
                 Create Lead gets name, city, and contact. Extra details save in Sales Pipeline → Profile Create (P2).
-              </p>
+              </p> */}
             </>
           )}
         </div>
