@@ -30,8 +30,8 @@ const BASIC_FORM_MEETINGS = ["Meeting Agreed", "Call Agreed", "Callback Later", 
 
 const PERSONAL_DETAILS_BLOCKS = [
   {
-    title: "Lead capture",
-    note: "Prefill from P0 Overview. At least one of mobile or email is required.",
+    title: "Overview",
+    note: "Same fields as the Overview tab.",
     fields: [
       { key: "lookingFor", label: "Looking for", required: true, type: "pill", options: ["Groom", "Bride"] },
       { key: "nri", label: "NRI", required: true, type: "pill", options: ["Yes", "No"] },
@@ -41,8 +41,8 @@ const PERSONAL_DETAILS_BLOCKS = [
       { key: "lastName", label: "Last name", required: true, type: "text" },
       { key: "dob", label: "Date of birth", type: "text" },
       { key: "profession", label: "Profession", type: "select", options: LEAD_OCCUPATIONS },
-      { key: "mobile", label: "Mobile", required: true, requiredGroup: "contact", type: "text" },
-      { key: "email", label: "E-mail", required: true, requiredGroup: "contact", type: "text" },
+      { key: "mobile", label: "Mobile number", type: "text" },
+      { key: "email", label: "Email", type: "text" },
       { key: "country", label: "Country", required: true, type: "select", options: BASIC_FORM_COUNTRIES },
       { key: "city", label: "City", required: true, type: "text" },
       { key: "area", label: "Area / Locality", type: "text" },

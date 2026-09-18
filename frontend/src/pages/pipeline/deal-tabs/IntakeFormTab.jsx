@@ -63,18 +63,19 @@ function formatChangeAt(date = new Date()) {
 function seedIntakeValues(lead) {
   const fromLead = mapLeadToIntake(lead);
   const stored = lead?.intakeValues || {};
-  const dummyDemo = DUMMY_P2_IDS.has(lead?.id)
-    ? {
-        ...SECTION_DEMO_VALUES,
-        gender: lead.id === "p2-1" ? "Male" : SECTION_DEMO_VALUES.gender,
-        lookingFor: lead.id === "p2-1" ? "Bride" : SECTION_DEMO_VALUES.lookingFor,
-        firstName: fromLead.firstName || SECTION_DEMO_VALUES.firstName,
-        lastName: fromLead.lastName || SECTION_DEMO_VALUES.lastName,
-        mobile: fromLead.mobile || SECTION_DEMO_VALUES.mobile,
-        email: fromLead.email || SECTION_DEMO_VALUES.email,
-      }
-    : {};
-  return mergeFilledValues({ ...dummyDemo, ...stored }, fromLead);
+  const dummyDemo =
+    DUMMY_P2_IDS.has(lead?.id) && !lead?.biodataFile
+      ? {
+          ...SECTION_DEMO_VALUES,
+          gender: lead.id === "p2-1" ? "Male" : SECTION_DEMO_VALUES.gender,
+          lookingFor: lead.id === "p2-1" ? "Bride" : SECTION_DEMO_VALUES.lookingFor,
+          firstName: fromLead.firstName || SECTION_DEMO_VALUES.firstName,
+          lastName: fromLead.lastName || SECTION_DEMO_VALUES.lastName,
+          mobile: fromLead.mobile || SECTION_DEMO_VALUES.mobile,
+          email: fromLead.email || SECTION_DEMO_VALUES.email,
+        }
+      : {};
+  return mergeFilledValues(mergeFilledValues(fromLead, dummyDemo), stored);
 }
 
 function leadPrefillKey(lead) {
@@ -179,7 +180,7 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
     if (!file) return;
     const data = await extractBiodata(file);
     const mapped = mapBiodataToIntake(data);
-    const next = { ...values, ...mapped };
+    const next = mergeFilledValues(values, mapped);
     if (!hasValidMobileOrEmail(next)) {
       toast.error(CONTACT_REQUIRED_MESSAGE);
       return;

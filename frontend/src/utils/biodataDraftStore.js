@@ -323,6 +323,34 @@ export function leadPatchFromIntake(values = {}) {
   return patch;
 }
 
+/** Full pipeline card + P2 payload after Upload Biodata Save Profile. */
+export function pipelinePatchFromBiodata(leadForm = {}, bio = {}, extras = {}) {
+  const values = bio.intakeValues || leadForm.intakeValues || {};
+  const identity = leadPatchFromIntake(values);
+  const name =
+    leadForm.name ||
+    identity.name ||
+    [leadForm.firstName || values.firstName, leadForm.lastName || values.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();  
+  const fileName = bio.fileName || leadForm.fileName || "";
+  const mobile = leadForm.mobile || identity.mobile || "";
+  const email = leadForm.email || identity.email || "";
+  return {
+    ...identity,
+    ...(name ? { name } : {}),
+    ...(mobile ? { mobile } : {}),
+    ...(email ? { email } : {}),
+    source: leadForm.source || identity.source || "Biodata Upload",
+    intakeValues: values,
+    ...(fileName ? { biodataFile: fileName } : {}),
+    ...(extras.lastDiscussion ? { lastDiscussion: extras.lastDiscussion } : {}),
+    ...(extras.nextAction ? { nextAction: extras.nextAction } : {}),
+    ...(extras.temperature ? { temperature: extras.temperature } : {}),
+  };
+}
+
 export function setPendingBiodata(payload) {
   pending = payload || null;
 }
@@ -413,11 +441,64 @@ function normalizeReviewValues(values = {}) {
   return next;
 }
 
+function mapClientToIntake(client = null) {
+  if (!client || typeof client !== "object") return {};
+  const names =
+    client.firstName || client.lastName
+      ? { firstName: client.firstName || "", lastName: client.lastName || "" }
+      : splitName(client.name);
+  const out = {};
+  if (names.firstName) out.firstName = names.firstName;
+  if (names.lastName) out.lastName = names.lastName;
+  if (client.mobile) out.mobile = digitsMobile(client.mobile);
+  if (client.email) out.email = client.email;
+  if (client.city) out.city = client.city;
+  if (client.area) {
+    out.area = client.area;
+    out.addrAreaLocality = client.area;
+    out.currentLocality = client.area;
+  }
+  if (client.gender === "Male") {
+    out.gender = "Male";
+    out.lookingFor = "Bride";
+  } else if (client.gender === "Female") {
+    out.gender = "Female";
+    out.lookingFor = "Groom";
+  }
+  return out;
+}
+
+/**
+ * Existing profile from every surface that already has this client:
+ * search match, Client Database, pipeline lead / Overview, then P2 intakeValues.
+ * Later sources win; empty values never wipe earlier filled ones.
+ */
+export function collectExistingIntake({
+  lead = null,
+  contact = null,
+  client = null,
+  extra = {},
+} = {}) {
+  const fromContact = mergeFilledValues(
+    leadFieldsToIntake(contact || {}),
+    mapLeadToIntake(contact || {})
+  );
+  const fromClient = mapClientToIntake(client);
+  const fromExtra = mergeFilledValues(leadFieldsToIntake(extra || {}), extra || {});
+  const fromLead = mapLeadToIntake(lead || {});
+  const fromStored =
+    lead?.intakeValues && typeof lead.intakeValues === "object" ? lead.intakeValues : {};
+  return mergeFilledValues(
+    mergeFilledValues(mergeFilledValues(mergeFilledValues(fromContact, fromClient), fromExtra), fromLead),
+    fromStored
+  );
+}
+
 /**
  * Imported biodata vs existing CRM/P2 values, plus the seeded review form.
- * Imported filled keys win; empty biodata never wipes existing.
+ * Existing filled keys stay on the form; biodata only fills blanks (Use biodata can switch).
  */
-export function buildBiodataIntakeSnapshots(initial = {}, existingLead = null) {
+export function buildBiodataIntakeSnapshots(initial = {}, existingLead = null, extraExisting = {}) {
   const imported = normalizeReviewValues(
     mergeFilledValues(
       mapBiodataToIntake({
@@ -429,26 +510,28 @@ export function buildBiodataIntakeSnapshots(initial = {}, existingLead = null) {
     )
   );
   const existing = normalizeReviewValues(
-    mergeFilledValues(
-      mergeFilledValues(mapLeadToIntake(existingLead || {}), existingLead?.intakeValues || {}),
-      leadFieldsToIntake(initial.existingValues || {})
-    )
+    collectExistingIntake({
+      lead: existingLead,
+      contact: extraExisting.contact,
+      client: extraExisting.client,
+      extra: initial.existingValues || extraExisting.extra || {},
+    })
   );
-  const values = mergeFilledValues(
-    mergeFilledValues(
-      {
-        nri: "No",
-        country: "India",
-        enquiryBy: "Self",
-        leadSource: "Biodata Upload",
-        meeting: "Meeting Agreed",
-      },
-      existing
-    ),
-    imported
+  const defaults = {
+    nri: "No",
+    country: "India",
+    enquiryBy: "Self",
+    leadSource: "Biodata Upload",
+    meeting: "Meeting Agreed",
+  };
+  const hasExisting = Object.values(existing).some(isFilledValue);
+  const values = normalizeReviewValues(
+    hasExisting
+      ? mergeFilledValues(mergeFilledValues(defaults, imported), existing)
+      : mergeFilledValues(defaults, imported)
   );
   if (String(values.nri).toLowerCase() === "no") values.country = values.country || "India";
-  return { imported, existing, values: normalizeReviewValues(values) };
+  return { imported, existing, values };
 }
 
 const COUNTRY_DIAL = {

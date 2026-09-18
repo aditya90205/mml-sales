@@ -76,9 +76,9 @@ import {
   unscheduledToMeetingForm,
 } from "../utils/calendarStore.js";
 import { CLIENTS, upsertClientFromBiodata } from "../utils/clientsData.js";
-import { addP0Lead, countStageLeads, findLeadById, findLeadByName, readLeads, subscribePipeline, updateLead } from "../utils/pipelineStore.js";
+import { addLeadToStage, addP0Lead, countStageLeads, findLeadById, findLeadByMobileOrEmail, findLeadByName, moveLeadToStage, readLeads, subscribePipeline, updateLead } from "../utils/pipelineStore.js";
 import { contactToLeadFields } from "../utils/leadFields.js";
-import { buildLeadIntakePayload, setPendingBiodata, takePendingBiodata } from "../utils/biodataDraftStore.js";
+import { buildLeadIntakePayload, leadPatchFromIntake, pipelinePatchFromBiodata, setPendingBiodata, takePendingBiodata } from "../utils/biodataDraftStore.js";
 import { addTaskFromForm, getTodayTaskStats, readTasks, subscribeTasks } from "../utils/tasksStore.js";
 import { buildPerformanceReport } from "../utils/performanceStats.js";
 import { VISITS } from "./pipeline/deal-tabs/VisitsMeetingsTab.jsx";
@@ -1713,7 +1713,10 @@ export default function Dashboard() {
                     ? "Callback"
                     : "Initial Contact";
 
-            const existingId = lead.existingLeadId || leadInitial?.existingLeadId;
+            const existingId =
+              lead.mode === "create"
+                ? null
+                : lead.existingLeadId || (leadInitial?.mode === "create" ? null : leadInitial?.existingLeadId);
             const pendingBiodata = takePendingBiodata() || {
               fields: leadInitial,
               alsoRead: lead.alsoRead || leadInitial?.alsoRead,
@@ -1728,68 +1731,87 @@ export default function Dashboard() {
                 (pendingBiodata?.intake && Object.keys(pendingBiodata.intake).length)
             );
             const bio = buildLeadIntakePayload(lead, pendingBiodata);
-            const biodataPatch = {
-              firstName: lead.firstName,
-              lastName: lead.lastName,
-              city: lead.city,
-              area: lead.area,
-              dob: lead.dob,
-              lookingFor: lead.lookingFor,
-              relation: lead.relation,
-              intakeValues: bio.intakeValues,
-              ...(fromBiodata && bio.fileName ? { biodataFile: bio.fileName } : {}),
-            };
-            const overviewPatch = {
-              firstName: lead.firstName || "",
-              lastName: lead.lastName || "",
-              lookingFor: lead.lookingFor || "",
-              nri: lead.nri || "no",
-              country: lead.nri === "no" ? "India" : lead.country || "",
-              city: lead.city || "",
-              area: lead.area || "",
-              relation: lead.relation || "",
-              profession: lead.profession || "",
-              familyIncomeBand: lead.income || "",
-              enquiryBy: lead.relation || "",
-              dob: lead.dob || "",
-              areaOfHouse: lead.area || "",
-              notes: lead.notes || "",
-              meeting: lead.meeting || "",
-            };
+            const intakePatch = leadPatchFromIntake(bio.intakeValues || lead.intakeValues || {});
+            const biodataPatch = fromBiodata
+              ? pipelinePatchFromBiodata(lead, bio, {
+                  lastDiscussion: "Just now",
+                  nextAction,
+                  temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
+                })
+              : {
+                  ...intakePatch,
+                  intakeValues: bio.intakeValues,
+                  ...(bio.fileName ? { biodataFile: bio.fileName } : {}),
+                };
+            const overviewPatch = fromBiodata
+              ? {}
+              : {
+                  firstName: lead.firstName || "",
+                  lastName: lead.lastName || "",
+                  lookingFor: lead.lookingFor || "",
+                  nri: lead.nri || "no",
+                  country: lead.nri === "no" ? "India" : lead.country || "",
+                  city: lead.city || "",
+                  area: lead.area || "",
+                  relation: lead.relation || "",
+                  profession: lead.profession || "",
+                  familyIncomeBand: lead.income || "",
+                  enquiryBy: lead.relation || "",
+                  dob: lead.dob || "",
+                  areaOfHouse: lead.area || "",
+                  notes: lead.notes || "",
+                  meeting: lead.meeting || "",
+                };
 
-            if (existingId) {
-              updateLead(existingId, {
+            const upsertBiodataClient = (leadId) => {
+              upsertClientFromBiodata({
+                clientId: lead.clientId || leadInitial?.clientId,
                 name: lead.name,
                 mobile: lead.mobile,
                 email: lead.email,
-                source: lead.source,
+                fields: {
+                  firstName: lead.firstName,
+                  lastName: lead.lastName,
+                  city: lead.city,
+                  area: lead.area,
+                  dob: lead.dob,
+                  lookingFor: lead.lookingFor,
+                  relation: lead.relation,
+                  fileName: lead.fileName || bio.fileName,
+                },
+                alsoRead: bio?.alsoRead || [],
+                owner: "Rohit Kumar",
+                linkedLeadId: leadId,
+              });
+            };
+
+            if (existingId) {
+              const current = findLeadById(existingId);
+              const fromStage = current?.stageId || "P0";
+              const advanceToP2 = Boolean(fromBiodata && (fromStage === "P0" || fromStage === "P1"));
+              const savePatch = {
                 lastDiscussion: "Just now",
                 nextAction,
                 temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
                 ...overviewPatch,
                 ...biodataPatch,
-              });
-              if (fromBiodata) {
-                upsertClientFromBiodata({
-                  clientId: lead.clientId || leadInitial?.clientId,
-                  name: lead.name,
-                  mobile: lead.mobile,
-                  email: lead.email,
-                  fields: {
-                    firstName: lead.firstName,
-                    lastName: lead.lastName,
-                    city: lead.city,
-                    area: lead.area,
-                    dob: lead.dob,
-                    lookingFor: lead.lookingFor,
-                    relation: lead.relation,
-                    fileName: lead.fileName,
-                  },
-                  alsoRead: bio?.alsoRead || [],
-                  owner: "Rohit Kumar",
-                  linkedLeadId: existingId,
-                });
+                ...(fromBiodata
+                  ? {
+                      overviewDetails: {
+                        ...(current?.lead?.overviewDetails || {}),
+                        ...intakePatch,
+                        firstName: lead.firstName || current?.lead?.firstName || "",
+                        lastName: lead.lastName || current?.lead?.lastName || "",
+                      },
+                    }
+                  : {}),
+              };
+              if (advanceToP2) {
+                moveLeadToStage(existingId, "P2", savePatch);
+              } else {
+                updateLead(existingId, savePatch);
               }
+              if (fromBiodata) upsertBiodataClient(existingId);
               setMyLeads((prev) =>
                 prev.map((row) =>
                   row.pipelineLeadId === existingId || row.id === existingId
@@ -1802,6 +1824,10 @@ export default function Dashboard() {
                         lastDiscussion: "Just now",
                         nextAction,
                         temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
+                        stage: advanceToP2 ? "P2 - Profile Create" : row.stage,
+                        profileCompletion: advanceToP2
+                          ? Math.max(row.profileCompletion || 0, 70)
+                          : row.profileCompletion,
                         nextActionNote:
                           [lead.city, lead.area].filter(Boolean).join(" · ") || row.nextActionNote,
                       }
@@ -1811,9 +1837,66 @@ export default function Dashboard() {
               closeLeadModals();
               toast.success(
                 fromBiodata
-                  ? `Lead "${lead.name}" updated. Extra biodata fields filled in Profile Create (P2).`
+                  ? advanceToP2
+                    ? `Lead "${lead.name}" moved to Profile Create (P2). Pipeline data updated.`
+                    : `Lead "${lead.name}" updated. Biodata saved in Profile Create (P2).`
                   : `Lead "${lead.name}" updated.`
               );
+              return;
+            }
+
+            if (fromBiodata) {
+              const created = addLeadToStage("P2", {
+                starred: false,
+                mmlId: `MML - D - ${Math.floor(10000 + Math.random() * 90000)}`,
+                score: 9.0,
+                priority: "High",
+                completion: 70,
+                days: 0,
+                hrs: 24,
+                lastDiscussion: "Just now",
+                nextAction,
+                firstName: lead.firstName || "",
+                lastName: lead.lastName || "",
+                name: lead.name,
+                mobile: lead.mobile,
+                email: lead.email,
+                source: lead.source || "Biodata Upload",
+                ...biodataPatch,
+                overviewDetails: {
+                  ...intakePatch,
+                  firstName: lead.firstName || "",
+                  lastName: lead.lastName || "",
+                },
+              });
+              if (created?.id) upsertBiodataClient(created.id);
+              setMyLeads((prev) => [
+                {
+                  id: created?.id || `MML-ID-D-${Math.floor(10000 + Math.random() * 90000)}`,
+                  pipelineLeadId: created?.id,
+                  name: lead.name,
+                  starred: false,
+                  stage: "P2 - Profile Create",
+                  temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
+                  stageTone: null,
+                  priority: "High",
+                  leadScore: 9.0,
+                  profileCompletion: 70,
+                  source: lead.source,
+                  followUp: "24 HRS Left",
+                  followUpTone: "text-[#6B7280]",
+                  followUpNote: "Start Time: —",
+                  lost: false,
+                  lastDiscussion: "Just now",
+                  nextAction,
+                  nextActionNote: [lead.city, lead.area].filter(Boolean).join(" · ") || "Profile create",
+                  mobile: lead.mobile,
+                  email: lead.email,
+                },
+                ...prev,
+              ]);
+              closeLeadModals();
+              toast.success(`New profile "${lead.name}" created in Sales Pipeline.`);
               return;
             }
 
@@ -1836,27 +1919,6 @@ export default function Dashboard() {
               ...overviewPatch,
               ...biodataPatch,
             });
-            if (created?.id && fromBiodata) {
-              upsertClientFromBiodata({
-                clientId: lead.clientId,
-                name: lead.name,
-                mobile: lead.mobile,
-                email: lead.email,
-                fields: {
-                  firstName: lead.firstName,
-                  lastName: lead.lastName,
-                  city: lead.city,
-                  area: lead.area,
-                  dob: lead.dob,
-                  lookingFor: lead.lookingFor,
-                  relation: lead.relation,
-                  fileName: lead.fileName,
-                },
-                alsoRead: bio.alsoRead || [],
-                owner: "Rohit Kumar",
-                linkedLeadId: created.id,
-              });
-            }
             setMyLeads((prev) => [
               {
                 id: created?.id || `MML-ID-D-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -1883,11 +1945,7 @@ export default function Dashboard() {
               ...prev,
             ]);
             closeLeadModals();
-            toast.success(
-              fromBiodata
-                ? `Lead "${lead.name}" created. Extra biodata fields filled in Profile Create (P2).`
-                : `Lead "${lead.name}" created.`
-            );
+            toast.success(`Lead "${lead.name}" created.`);
   };
 
   const visibleLeads = useMemo(() => {
@@ -1945,41 +2003,44 @@ export default function Dashboard() {
           }}
           onFillForm={(payload) => {
             const f = payload?.fields || {};
+            const imported = payload?.importedFields || f;
             const match = payload?.match;
-            const fullName =
-              [f.firstName, f.lastName].filter(Boolean).join(" ").trim() || match?.name || "";
-            const isNew = Boolean(payload?.createNew);
             const prior = biodataCompareWith || {};
 
             setShowBiodataUpload(false);
             setBiodataCompareWith(null);
             setPendingBiodata(payload);
 
-            let leadRef = null;
-            if (!isNew && match) {
-              leadRef =
-                (match?.type === "lead" && match.recordId && findLeadById(match.recordId)) ||
-                (match?.linkedLeadId && findLeadById(match.linkedLeadId)) ||
-                findLeadByName(match?.name) ||
-                findLeadByName(fullName);
-            }
+            const contactMobile =
+              payload?.senderMobile || match?.mobile || imported.mobile || f.mobile || "";
+            const contactEmail =
+              payload?.senderEmail || match?.email || imported.email || f.email || "";
+
+            const leadRef = match
+              ? findLeadById(match.recordId) ||
+                findLeadById(match.linkedLeadId) ||
+                findLeadByName(match.name) ||
+                findLeadByMobileOrEmail({ mobile: contactMobile, email: contactEmail })
+              : findLeadByMobileOrEmail({ mobile: contactMobile, email: contactEmail });
 
             const existingLeadId = leadRef?.lead?.id || null;
+            const selectedExisting = Boolean(match || existingLeadId);
+            const isNew = !selectedExisting;
             const clientId = match?.type === "client" ? match.recordId : undefined;
 
             setLeadInitial({
               ...prior,
-              firstName: f.firstName || prior.firstName || "",
-              lastName: f.lastName || prior.lastName || "",
-              dob: f.dob || prior.dob || "",
-              mobile: f.mobile || payload?.senderMobile || match?.mobile || prior.mobile || "",
-              email: f.email || match?.email || prior.email || "",
-              city: f.city || prior.city || "",
-              area: f.area || prior.area || "",
-              lookingFor: f.lookingFor || prior.lookingFor || "yes",
+              firstName: imported.firstName || f.firstName || prior.firstName || "",
+              lastName: imported.lastName || f.lastName || prior.lastName || "",
+              dob: imported.dob || f.dob || prior.dob || "",
+              mobile: imported.mobile || contactMobile || prior.mobile || "",
+              email: imported.email || contactEmail || prior.email || "",
+              city: imported.city || f.city || prior.city || "",
+              area: imported.area || f.area || prior.area || "",
+              lookingFor: imported.lookingFor || f.lookingFor || prior.lookingFor || "yes",
               relation:
-                payload?.importedFields?.relation || f.relation || prior.relation || "Self",
-              contactWith: match && !isNew ? "Existing Client" : prior.contactWith || "First Contact",
+                imported.relation || f.relation || prior.relation || "Self",
+              contactWith: selectedExisting ? "Existing Client" : "First Contact",
               source:
                 prior.source && prior.source !== "Website Inquiry"
                   ? prior.source
@@ -1987,28 +2048,31 @@ export default function Dashboard() {
               fileName: payload?.fileName || prior.fileName || "",
               existingLeadId: existingLeadId || undefined,
               clientId: clientId || undefined,
-              mode: existingLeadId || (match && !isNew) ? "update" : "create",
+              mode: isNew ? "create" : "update",
               alsoRead: payload?.alsoRead || [],
               intake: payload?.intake || {},
               biodataName: payload?.biodataName || "",
-              existingValues: {
-                ...(leadRef?.lead ? contactToLeadFields(leadRef.lead) : {}),
-                ...(payload?.existingValues || {}),
-                ...(match && !isNew ? contactToLeadFields(match) : {}),
-              },
-              importedFields: payload?.importedFields || f,
-              matchName: match?.name || leadRef?.lead?.name || "",
+              match: selectedExisting ? match || leadRef?.lead || null : null,
+              existingValues: isNew
+                ? {}
+                : {
+                    ...(payload?.existingValues || {}),
+                    ...(match ? contactToLeadFields(match) : {}),
+                    ...(leadRef?.lead?.intakeValues || {}),
+                  },
+              importedFields: imported,
+              matchName: isNew ? "" : match?.name || leadRef?.lead?.name || "",
               fieldMeta: payload?.fieldMeta || {},
               prefillAt: Date.now(),
             });
             setShowBiodataProfile(true);
 
-            if (existingLeadId) {
+            if (selectedExisting) {
               toast.info(
-                `This number is already ${match?.name || "in the system"}. Check New / Same / Existing, then save to Profile Create (P2).`
+                `Existing client ${match?.name || leadRef?.lead?.name || "found"}. New biodata fields stay New; the rest is compared with the client.`
               );
             } else {
-              toast.info("Check the biodata fields, then save. Extra details go to Profile Create (P2).");
+              toast.info("New biodata — check the fields, then save to create this profile in Sales Pipeline.");
             }
           }}
         />

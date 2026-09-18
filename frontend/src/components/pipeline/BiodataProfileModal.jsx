@@ -28,6 +28,7 @@ import {
   intakeToLeadForm,
 } from "../../utils/biodataDraftStore.js";
 import { findLeadById } from "../../utils/pipelineStore.js";
+import { findClientById } from "../../utils/clientsData.js";
 
 const COUNTRIES = ["India", "USA", "UK", "Canada", "UAE", "Australia", "Singapore", "Other"];
 const CITIES = [
@@ -126,13 +127,13 @@ const CHIP_META = {
   [FIELD_STATUS.neu]: { label: "New", className: "bg-[#EFF6FF] text-[#1D4ED8] border-[#93C5FD]" },
   [FIELD_STATUS.match]: { label: "Same", className: "bg-[#F0FDF4] text-[#15803D] border-[#86EFAC]" },
   [FIELD_STATUS.keep]: { label: "Existing", className: "bg-[#FFF7ED] text-[#C2410C] border-[#FDBA74]" },
-  [FIELD_STATUS.mismatch]: { label: "Existing", className: "bg-[#FFF7ED] text-[#C2410C] border-[#FDBA74]" },
+  [FIELD_STATUS.mismatch]: { label: "Different", className: "bg-[#FFF7ED] text-[#C2410C] border-[#FDBA74]" },
 };
 
 const SECTIONS = [
   {
     key: "basic",
-    title: "Basic Details",
+    title: "Overview",
     icon: UserRound,
     fields: [
       { key: "lookingFor", label: "Looking for", required: true, type: "select", options: ["Groom", "Bride"] },
@@ -143,10 +144,10 @@ const SECTIONS = [
       { key: "profession", label: "Profession", required: true, type: "select", options: LEAD_OCCUPATIONS },
       { key: "dob", label: "Date of Birth", required: true, type: "date" },
       { key: "country", label: "Country", required: true, type: "select", options: COUNTRIES },
-      { key: "mobile", label: "Mobile Number", required: true, type: "mobile" },
+      { key: "mobile", label: "Mobile Number", required: false, type: "mobile" },
       { key: "city", label: "City", required: true, type: "select", options: CITIES },
       { key: "area", label: "Area / Locality", required: true, type: "text" },
-      { key: "email", label: "Email", required: true, type: "text", placeholder: "name@email.com" },
+      { key: "email", label: "Email", required: false, type: "text", placeholder: "name@email.com" },
       { key: "leadSource", label: "Source", required: true, type: "select", options: SOURCES },
       { key: "familyIncomeBand", label: "Family Income Bracket", required: true, type: "select", options: LEAD_INCOME_BANDS },
       { key: "meeting", label: "Agree to a meeting or call", required: true, type: "select", options: MEETINGS },
@@ -249,13 +250,14 @@ function fieldChip(key, values, imported, existing, hasExisting) {
   const current = values[key];
   if (!isFilled(current)) return null;
   if (!hasExisting) return FIELD_STATUS.neu;
+  const hasExistingVal = isFilled(existing[key]);
   const sameExisting = sameValue(key, current, existing[key]);
   const sameImported = sameValue(key, current, imported[key]);
+  if (!hasExistingVal) return FIELD_STATUS.neu;
   if (sameExisting && sameImported) return FIELD_STATUS.match;
   if (sameExisting) return FIELD_STATUS.keep;
-  if (sameImported) return FIELD_STATUS.neu;
-  if (isFilled(existing[key])) return FIELD_STATUS.mismatch;
-  return FIELD_STATUS.neu;
+  if (sameImported) return FIELD_STATUS.mismatch;
+  return FIELD_STATUS.mismatch;
 }
 
 function formatHintValue(key, value) {
@@ -415,8 +417,16 @@ function DropProfileConfirm({ reason, onReasonChange, error, onCancel, onConfirm
 }
 
 function seedValues(initial) {
-  const existingLead = initial?.existingLeadId ? findLeadById(initial.existingLeadId)?.lead : null;
-  return buildBiodataIntakeSnapshots(initial || {}, existingLead);
+  const isNew = initial?.mode === "create";
+  if (isNew) return buildBiodataIntakeSnapshots(initial || {}, null, {});
+  const existingLead = initial?.existingLeadId
+    ? findLeadById(initial.existingLeadId)?.lead
+    : null;
+  const client = initial?.clientId ? findClientById(initial.clientId) : null;
+  return buildBiodataIntakeSnapshots(initial || {}, existingLead, {
+    client,
+    contact: initial?.match || null,
+  });
 }
 
 export default function BiodataProfileModal({ open, onClose, onSave, initial = null }) {
@@ -430,13 +440,9 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
 
   const hasExisting = useMemo(
     () =>
-      Boolean(
-        initial?.existingLeadId ||
-          initial?.mode === "update" ||
-          initial?.matchName ||
-          Object.values(existing || {}).some(isFilled)
-      ),
-    [initial, existing]
+      initial?.mode !== "create" &&
+      Boolean(initial?.existingLeadId || initial?.mode === "update" || initial?.match || initial?.matchName),
+    [initial]
   );
 
   const setField = (key, value) => {
@@ -456,7 +462,7 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
     setField(key, existing[key]);
   };
 
-  const useImported = (key) => {
+  const applyImported = (key) => {
     if (!isFilled(imported[key])) return;
     setField(key, imported[key]);
   };
@@ -482,7 +488,7 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
       clientId: initial?.clientId,
       mode: initial?.existingLeadId || initial?.mode === "update" ? "update" : "create",
     });
-    const msg = firstValidationMessage(validateCreateLeadFields(lead));
+    const msg = firstValidationMessage(validateCreateLeadFields(lead, { requireContact: false }));
     if (msg) {
       setError(msg);
       return;
@@ -571,8 +577,12 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
       <Modal
         open={open}
         onClose={onClose}
-        title="Upload Biodata"
-        subtitle="Filled from biodata. Extra details go to Profile Create (P2)."
+        title={hasExisting ? "Update Profile" : "Create Profile"}
+        subtitle={
+          hasExisting
+            ? "Existing client. Extra details go to Profile Create (P2)."
+            : "New biodata. Save to create this profile in Sales Pipeline."
+        }
         icon={<UserPlus size={18} />}
         iconBg="#F3E8F0"
         iconColor="#7A0A17"
@@ -605,7 +615,7 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
                 onClick={submit}
                 className="h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712]"
               >
-                Save Profile
+                {hasExisting ? "Save Profile" : "Save & Create Profile"}
               </button>
             </div>
           </div>
@@ -650,7 +660,7 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
                                 existing={existing[field.key]}
                                 hasExisting={hasExisting}
                                 onKeep={() => keepExisting(field.key)}
-                                onUseImported={() => useImported(field.key)}
+                                onUseImported={() => applyImported(field.key)}
                               />
                             }
                           >
@@ -679,7 +689,7 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
                                 existing={existing[field.noteKey]}
                                 hasExisting={hasExisting}
                                 onKeep={() => keepExisting(field.noteKey)}
-                                onUseImported={() => useImported(field.noteKey)}
+                                onUseImported={() => applyImported(field.noteKey)}
                               />
                             </div>
                           ) : null}

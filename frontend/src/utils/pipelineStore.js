@@ -363,20 +363,35 @@ export function countStageLeads(stageId = "P0") {
 }
 
 export function addP0Lead(lead) {
-  const id = lead?.id || `p0-${Date.now()}`;
+  return addLeadToStage("P0", { p0Status: lead?.p0Status || "new", ...lead });
+}
+
+export function addLeadToStage(stageId, lead = {}) {
+  const stage = STAGE_IDS.includes(stageId) ? stageId : "P0";
+  const id = lead?.id || `${stage.toLowerCase()}-${Date.now()}`;
   leads = cloneLeads(leads);
-  const next = { ...lead, id, p0Status: lead?.p0Status || "new" };
+  const next = { ...lead, id };
+  if (stage === "P0") next.p0Status = lead?.p0Status || "new";
+  if (stage === "P2") {
+    next.completion = Math.max(Number(next.completion) || 0, 70);
+    next.score = Math.max(Number(next.score) || 0, 9);
+    next.temperature = next.temperature || "Hot";
+  }
   next.intakeValues = syncIntakeValues(next);
-  leads.P0 = [next, ...(leads.P0 || [])];
-  const created = leads.P0[0];
+  leads[stage] = [next, ...(leads[stage] || [])];
   emit();
-  addLeadActivity(created.id, {
+  addLeadActivity(next.id, {
     type: "created",
-    title: `Lead ${created.name} created`,
-    detail: created.source ? `Source: ${created.source}` : "Added to P0 New",
-    stage: "P0",
+    title: `Lead ${next.name || "client"} created`,
+    detail:
+      stage === "P2"
+        ? "Created from biodata in Profile Create (P2)"
+        : next.source
+          ? `Source: ${next.source}`
+          : `Added to ${stage}`,
+    stage,
   });
-  return created;
+  return next;
 }
 
 export function findLeadById(leadId) {
@@ -407,12 +422,65 @@ export function updateLead(leadId, patch = {}) {
   return { lead: { ...updated }, stageId: foundStage };
 }
 
+/** Move a lead to another pipeline column. Same-stage calls just patch in place. */
+export function moveLeadToStage(leadId, toStage, patch = {}) {
+  if (!leadId || !STAGE_IDS.includes(toStage)) return null;
+  const found = findLeadById(leadId);
+  if (!found) return null;
+  if (found.stageId === toStage) {
+    return updateLead(leadId, patch) || { lead: found.lead, stageId: toStage, fromStage: toStage };
+  }
+
+  leads = cloneLeads(leads);
+  leads[found.stageId] = (leads[found.stageId] || []).filter((l) => l.id !== leadId);
+  let updated = { ...found.lead, ...patch, id: found.lead.id };
+  if (toStage === "P2") {
+    updated.temperature = updated.temperature || "Hot";
+    updated.score = Math.max(Number(updated.score) || 0, 9);
+    updated.completion = Math.max(Number(updated.completion) || 0, 70);
+  }
+  updated.intakeValues = syncIntakeValues(updated);
+  leads[toStage] = [updated, ...(leads[toStage] || [])];
+  emit();
+  addLeadActivity(updated.id, {
+    type: "stage",
+    title: `Stage advanced ${found.stageId} → ${toStage}`,
+    detail: toStage === "P2" ? "Biodata uploaded — moved to Profile Create (P2)" : "",
+    stage: toStage,
+  });
+  return { lead: { ...updated }, stageId: toStage, fromStage: found.stageId };
+}
+
 export function findLeadByName(name) {
   const q = String(name || "").trim().toLowerCase();
   if (!q) return null;
   for (const stageId of STAGE_IDS) {
     const lead = (leads[stageId] || []).find((l) => String(l.name || "").toLowerCase() === q);
     if (lead) return { lead: { ...lead }, stageId };
+  }
+  return null;
+}
+
+/** Match a pipeline lead by exact mobile (last 10) and/or email — not by name. */
+export function findLeadByMobileOrEmail({ mobile = "", email = "" } = {}) {
+  const qMobile = String(mobile || "").replace(/\D/g, "").slice(-10);
+  const qEmail = String(email || "").trim().toLowerCase();
+  const hasMobile = qMobile.length >= 8;
+  const hasEmail = qEmail.includes("@");
+  if (!hasMobile && !hasEmail) return null;
+  for (const stageId of STAGE_IDS) {
+    for (const lead of leads[stageId] || []) {
+      const extra = DUMMY_CONTACTS[lead.id] || {};
+      const leadMobile = String(lead.mobile || extra.mobile || lead.intakeValues?.mobile || "")
+        .replace(/\D/g, "")
+        .slice(-10);
+      const leadEmail = String(lead.email || extra.email || lead.intakeValues?.email || "")
+        .trim()
+        .toLowerCase();
+      const mobileOk = hasMobile && leadMobile.length >= 8 && leadMobile === qMobile;
+      const emailOk = hasEmail && Boolean(leadEmail) && leadEmail === qEmail;
+      if (mobileOk || emailOk) return { lead: { ...lead }, stageId };
+    }
   }
   return null;
 }

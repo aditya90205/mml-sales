@@ -212,7 +212,15 @@ export function contactToLeadFields(row) {
     area: row.area || "",
     dob: row.dob || "",
     lookingFor: row.lookingFor || "",
-    relation: row.relation || "",
+    relation: row.relation || row.enquiryBy || "",
+    enquiryBy: row.enquiryBy || row.relation || "",
+    profession: row.profession || row.occupation || "",
+    nri: row.nri || "",
+    country: row.country || "",
+    familyIncomeBand: row.familyIncomeBand || "",
+    meeting: row.meeting || "",
+    source: row.source || row.leadSource || "",
+    leadSource: row.leadSource || row.source || "",
   };
 }
 
@@ -290,7 +298,7 @@ export function listLeadFieldChanges(nextValues = {}, existingValues = {}) {
 }
 
 /** Same rules as Create Lead submit. Returns { fieldKey: message }. */
-export function validateCreateLeadFields(form = {}) {
+export function validateCreateLeadFields(form = {}, { requireContact = true } = {}) {
   const errors = {};
   if (!String(form.firstName || "").trim()) {
     errors.firstName = "First name is required.";
@@ -306,7 +314,7 @@ export function validateCreateLeadFields(form = {}) {
   if (email && !isValidEmail(email)) {
     errors.email = "Enter a valid email address.";
   }
-  if (!hasValidMobileOrEmail(form)) {
+  if (requireContact && !hasValidMobileOrEmail(form)) {
     errors.mobile = CONTACT_REQUIRED_MESSAGE;
     errors.email = CONTACT_REQUIRED_MESSAGE;
   }

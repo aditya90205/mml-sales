@@ -3,6 +3,7 @@ import { CheckCircle2, CloudUpload, FileText, Loader2 } from "lucide-react";
 import Modal from "../ui/Modal.jsx";
 import SearchField from "../common/SearchField.jsx";
 import {
+  findDuplicatesByMobileOrEmail,
   formatDisplayId,
   formatDisplayMobile,
   searchContactsByQuery,
@@ -12,7 +13,6 @@ import {
   classifyLeadFields,
   contactToLeadFields,
   formToLeadFields,
-  hasValidMobileOrEmail,
   isValidEmail,
 } from "../../utils/leadFields.js";
 
@@ -25,8 +25,8 @@ function importedFromExtract(data) {
 }
 
 function seedFieldValues(imported, existing) {
-  const values = { ...existing };
-  for (const [key, value] of Object.entries(imported || {})) {
+  const values = { ...(imported || {}) };
+  for (const [key, value] of Object.entries(existing || {})) {
     if (String(value || "").trim()) values[key] = value;
   }
   return values;
@@ -95,22 +95,13 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
   const listOpen = hasQuery && !match;
   const digits = String(match?.mobile || typedContact.mobile || "").replace(/\D/g, "").slice(-10);
   const emailTrimmed = String(match?.email || typedContact.email || "").trim();
-  const canUpload = Boolean(match) || isValidEmail(emailTrimmed) || digits.length === 10;
 
-  const contactUploadError = () => {
-    if (hasQuery && results.length && !match) {
-      return "Select an existing client from the list, then upload.";
-    }
-    if (hasQuery && !results.length && !canUpload) {
-      return "No existing client found. Search by mobile or email to upload a new profile.";
-    }
-    return "Search and select an existing client, then upload the biodata.";
-  };
-
-  const emitFill = (data, prospect) => {
+  const emitFill = (data, prospect, identity = {}) => {
     const imported = importedFromExtract(data);
-    if (digits) imported.mobile = digits;
-    if (emailTrimmed) imported.email = emailTrimmed;
+    const idMobile = String(identity.mobile || "").replace(/\D/g, "").slice(-10);
+    const idEmail = String(identity.email || "").trim();
+    if (!imported.mobile && idMobile) imported.mobile = idMobile;
+    if (!imported.email && idEmail) imported.email = idEmail;
     if (!imported.lookingFor && data.intake?.lookingFor) imported.lookingFor = data.intake.lookingFor;
     if (!imported.city && data.intake?.addrCity) imported.city = data.intake.addrCity;
     if (!imported.area && data.intake?.addrAreaLocality) imported.area = data.intake.addrAreaLocality;
@@ -119,7 +110,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
 
     const crmExisting = prospect ? contactToLeadFields(prospect) : {};
     const formExisting = formToLeadFields(compareWith);
-    const existing = { ...formExisting, ...crmExisting };
+    const existing = prospect ? { ...formExisting, ...crmExisting } : {};
     const values = seedFieldValues(imported, existing);
     const nextStatuses = classifyLeadFields(imported, crmExisting);
 
@@ -134,8 +125,8 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
       matchKind: prospect ? "prospect" : "none",
       manualMode: !prospect,
       resolution: prospect ? "same" : "new",
-      senderMobile: digits,
-      senderEmail: emailTrimmed,
+      senderMobile: imported.mobile || idMobile,
+      senderEmail: imported.email || idEmail,
       createNew: !prospect,
       fieldMeta: nextStatuses,
       picks: {},
@@ -147,28 +138,25 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
 
   const takeFile = (next) => {
     if (!next) return;
-    if (!canUpload) {
-      setError(contactUploadError());
-      return;
-    }
     setFile(next);
     setParsing(true);
     setError("");
     window.setTimeout(async () => {
       try {
-        const prospect = match || null;
         const data = await extractBiodata(next);
         const imported = importedFromExtract(data);
-        const profileContact = {
-          mobile: digits || imported.mobile || data.intake?.mobile || "",
-          email: emailTrimmed || imported.email || data.intake?.email || "",
-        };
-        if (!hasValidMobileOrEmail(profileContact)) {
-          setError("This profile needs at least one valid mobile or email.");
-          setParsing(false);
-          return;
-        }
-        emitFill(data, prospect);
+        const extractedMobile = String(imported.mobile || data.intake?.mobile || "")
+          .replace(/\D/g, "")
+          .slice(-10);
+        const extractedEmail = String(imported.email || data.intake?.email || "").trim();
+        const mobile = digits.length === 10 ? digits : extractedMobile;
+        const email = emailTrimmed || extractedEmail;
+        const selected = match || null;
+        const dupes = selected
+          ? []
+          : findDuplicatesByMobileOrEmail({ mobile, email });
+        const prospect = selected || dupes[0] || null;
+        emitFill(data, prospect, { mobile, email });
       } catch {
         setError("Could not read this file. Try a PDF with selectable text.");
       } finally {
@@ -184,7 +172,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
       open={open}
       onClose={onClose}
       title="Upload Biodata"
-      subtitle="Search an existing client by name, mobile, or email, then upload."
+      subtitle="Search an existing client to update, or upload a new biodata to create a profile."
       icon={<FileText size={18} />}
       iconBg="#E7F8EF"
       iconColor="#16A34A"
@@ -194,7 +182,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
       <div className="relative flex flex-col gap-5">
         <div className="relative z-20 rounded-2xl border border-black/10 bg-[#FAFAFB] px-4 py-4">
           <p className="text-[12px] font-semibold text-[#6B7280] uppercase tracking-wide">
-            1. Search existing client
+            1. Search existing client (optional)
           </p>
           <div className="relative mt-3">
             <SearchField
@@ -251,10 +239,10 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
           ) : (
             <p className="text-[12.5px] text-[#9CA3AF] mt-3">
               {listOpen && results.length === 0
-                ? canUpload
-                  ? "No existing client for this search. You can still upload to create a new lead."
-                  : "No existing client found. Try another name, mobile, or email."
-                : "Type a name, mobile, or email, then select a client."}
+                ? "No existing client for this search. Upload the biodata to create a new profile."
+                : listOpen && results.length > 0
+                  ? "Select a client to update, or skip selection and upload to create a new profile."
+                  : "Type a name, mobile, or email to update someone, or upload a new biodata."}
             </p>
           )}
         </div>
@@ -262,7 +250,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
         <div
           onDragOver={(e) => {
             e.preventDefault();
-            if (canUpload) setDragging(true);
+            setDragging(true);
           }}
           onDragLeave={() => setDragging(false)}
           onDrop={(e) => {
@@ -272,7 +260,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
           }}
           className={`rounded-2xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
             dragging ? "border-[#7A0A17] bg-[#FCF5F6]" : "border-black/12 bg-[#FAFAFB]"
-          } ${!canUpload ? "opacity-70" : ""}`}
+          }`}
         >
           <input
             ref={fileRef}
@@ -296,10 +284,6 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
               <button
                 type="button"
                 onClick={() => {
-                  if (!canUpload) {
-                    setError(contactUploadError());
-                    return;
-                  }
                   fileRef.current?.click();
                 }}
                 className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors mt-4"

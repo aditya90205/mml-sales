@@ -779,11 +779,8 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
 
 /* ─────────────────────── Page ─────────────────────── */
 
-// Deep link support: /pipeline?openLead=<id> (e.g. from Dashboard's Today's
-// Priority list) jumps straight to that lead's deal detail view.
-function findLeadById(leadId) {
-  return findStoredLeadById(leadId);
-}
+// Deep link support: /pipeline?openLead=<id> (e.g. from Dashboard Upload Biodata)
+// jumps straight to that lead's deal detail view.
 
 function logLeadMove(lead, fromStage, title, extra = {}) {
   recordLeadActivity(lead, fromStage, {
@@ -797,8 +794,9 @@ export default function PipelineBoard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const deepLinkedLead = useMemo(() => findLeadById(searchParams.get("openLead")), []); // eslint-disable-line react-hooks/exhaustive-deps
-  const deepLinkedTab = useMemo(() => searchParams.get("tab") || "overview", []); // eslint-disable-line react-hooks/exhaustive-deps
+  const openLeadId = searchParams.get("openLead");
+  const openTab = searchParams.get("tab");
+  const initialHit = openLeadId ? findStoredLeadById(openLeadId) : null;
   const [search, setSearch]             = useState("");
   const [perPage, setPerPage]           = useState(10);
   const [view,   setView]               = useState("table"); // "board" | "table"
@@ -807,10 +805,12 @@ export default function PipelineBoard() {
 
   // Dynamic state for pipeline lead items (shared with Dashboard P0 count)
   const [leadsData, setLeadsDataState]  = useState(readLeads);
-  const [subView, setSubView]           = useState(deepLinkedLead ? "deal-detail" : null); // null | "add-p0" | "deal-detail"
-  const [activeLead, setActiveLead]     = useState(deepLinkedLead?.lead ?? null);
-  const [dealTargetStage, setDealTargetStage] = useState(deepLinkedLead?.stageId ?? "P5");
-  const [dealInitialTab, setDealInitialTab] = useState(deepLinkedLead ? deepLinkedTab : "overview");
+  const [subView, setSubView]           = useState(initialHit ? "deal-detail" : null); // null | "add-p0" | "deal-detail"
+  const [activeLead, setActiveLead]     = useState(initialHit?.lead ?? null);
+  const [dealTargetStage, setDealTargetStage] = useState(initialHit?.stageId ?? "P5");
+  const [dealInitialTab, setDealInitialTab] = useState(
+    openTab || (initialHit?.stageId === "P2" ? "intake" : "overview")
+  );
 
   const setLeadsData = (updater) => {
     const prev = readLeads();
@@ -836,15 +836,20 @@ export default function PipelineBoard() {
   }, [stageParam]);
 
   useEffect(() => {
-    if (!deepLinkedLead) return;
+    if (!openLeadId) return;
+    const hit = findStoredLeadById(openLeadId);
+    if (!hit) return;
+    setActiveLead(hit.lead);
+    setDealTargetStage(hit.stageId);
+    setDealInitialTab(openTab || (hit.stageId === "P2" ? "intake" : "overview"));
+    setSubView("deal-detail");
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.delete("openLead");
       next.delete("tab");
       return next;
     }, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [openLeadId, openTab, setSearchParams]);
 
   // Sidebar "Sales Pipeline" re-click while already on /pipeline:
   // exit sub-views and clear filters so the full board/table shows again.
@@ -1158,7 +1163,7 @@ export default function PipelineBoard() {
   if (subView === "deal-detail") {
     return (
       <DealDetailPage
-        key={activeLead?.id}
+        key={`${activeLead?.id || "deal"}-${dealTargetStage}-${dealInitialTab}`}
         lead={activeLead}
         currentStage={dealTargetStage}
         initialTab={dealInitialTab}
