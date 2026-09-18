@@ -76,7 +76,7 @@ import {
   unscheduledToMeetingForm,
 } from "../utils/calendarStore.js";
 import { CLIENTS, upsertClientFromBiodata } from "../utils/clientsData.js";
-import { addLeadToStage, addP0Lead, countStageLeads, findLeadById, findLeadByMobileOrEmail, findLeadByName, moveLeadToStage, readLeads, subscribePipeline, updateLead } from "../utils/pipelineStore.js";
+import { addLeadToStage, addP0Lead, countStageLeads, findLeadById, findLeadByMobileOrEmail, moveLeadToStage, readLeads, subscribePipeline, updateLead } from "../utils/pipelineStore.js";
 import { contactToLeadFields } from "../utils/leadFields.js";
 import { buildLeadIntakePayload, leadPatchFromIntake, pipelinePatchFromBiodata, setPendingBiodata, takePendingBiodata } from "../utils/biodataDraftStore.js";
 import { addTaskFromForm, getTodayTaskStats, readTasks, subscribeTasks } from "../utils/tasksStore.js";
@@ -2003,7 +2003,6 @@ export default function Dashboard() {
           }}
           onFillForm={(payload) => {
             const f = payload?.fields || {};
-            const imported = payload?.importedFields || f;
             const match = payload?.match;
             const prior = biodataCompareWith || {};
 
@@ -2011,36 +2010,32 @@ export default function Dashboard() {
             setBiodataCompareWith(null);
             setPendingBiodata(payload);
 
-            const contactMobile =
-              payload?.senderMobile || match?.mobile || imported.mobile || f.mobile || "";
-            const contactEmail =
-              payload?.senderEmail || match?.email || imported.email || f.email || "";
-
-            const leadRef = match
-              ? findLeadById(match.recordId) ||
-                findLeadById(match.linkedLeadId) ||
-                findLeadByName(match.name) ||
-                findLeadByMobileOrEmail({ mobile: contactMobile, email: contactEmail })
-              : findLeadByMobileOrEmail({ mobile: contactMobile, email: contactEmail });
+            const leadRef =
+              (match?.type === "lead" && match.recordId && findLeadById(match.recordId)) ||
+              (match?.linkedLeadId && findLeadById(match.linkedLeadId)) ||
+              findLeadByMobileOrEmail({
+                mobile: payload?.senderMobile || f.mobile || payload?.importedFields?.mobile || "",
+                email: payload?.senderEmail || f.email || payload?.importedFields?.email || "",
+              }) ||
+              null;
 
             const existingLeadId = leadRef?.lead?.id || null;
-            const selectedExisting = Boolean(match || existingLeadId);
-            const isNew = !selectedExisting;
+            const isNew = !existingLeadId;
             const clientId = match?.type === "client" ? match.recordId : undefined;
 
             setLeadInitial({
               ...prior,
-              firstName: imported.firstName || f.firstName || prior.firstName || "",
-              lastName: imported.lastName || f.lastName || prior.lastName || "",
-              dob: imported.dob || f.dob || prior.dob || "",
-              mobile: imported.mobile || contactMobile || prior.mobile || "",
-              email: imported.email || contactEmail || prior.email || "",
-              city: imported.city || f.city || prior.city || "",
-              area: imported.area || f.area || prior.area || "",
-              lookingFor: imported.lookingFor || f.lookingFor || prior.lookingFor || "yes",
+              firstName: f.firstName || prior.firstName || "",
+              lastName: f.lastName || prior.lastName || "",
+              dob: f.dob || prior.dob || "",
+              mobile: f.mobile || payload?.senderMobile || match?.mobile || prior.mobile || "",
+              email: f.email || payload?.senderEmail || match?.email || prior.email || "",
+              city: f.city || prior.city || "",
+              area: f.area || prior.area || "",
+              lookingFor: f.lookingFor || prior.lookingFor || "yes",
               relation:
-                imported.relation || f.relation || prior.relation || "Self",
-              contactWith: selectedExisting ? "Existing Client" : "First Contact",
+                payload?.importedFields?.relation || f.relation || prior.relation || "Self",
+              contactWith: !isNew ? "Existing Client" : "First Contact",
               source:
                 prior.source && prior.source !== "Website Inquiry"
                   ? prior.source
@@ -2052,7 +2047,6 @@ export default function Dashboard() {
               alsoRead: payload?.alsoRead || [],
               intake: payload?.intake || {},
               biodataName: payload?.biodataName || "",
-              match: selectedExisting ? match || leadRef?.lead || null : null,
               existingValues: isNew
                 ? {}
                 : {
@@ -2060,16 +2054,16 @@ export default function Dashboard() {
                     ...(match ? contactToLeadFields(match) : {}),
                     ...(leadRef?.lead?.intakeValues || {}),
                   },
-              importedFields: imported,
+              importedFields: payload?.importedFields || f,
               matchName: isNew ? "" : match?.name || leadRef?.lead?.name || "",
               fieldMeta: payload?.fieldMeta || {},
               prefillAt: Date.now(),
             });
             setShowBiodataProfile(true);
 
-            if (selectedExisting) {
+            if (existingLeadId) {
               toast.info(
-                `Existing client ${match?.name || leadRef?.lead?.name || "found"}. New biodata fields stay New; the rest is compared with the client.`
+                `Existing client ${match?.name || leadRef?.lead?.name || "found"}. Check the fields, then save to update Profile Create (P2).`
               );
             } else {
               toast.info("New biodata — check the fields, then save to create this profile in Sales Pipeline.");

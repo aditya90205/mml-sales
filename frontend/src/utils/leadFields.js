@@ -212,15 +212,7 @@ export function contactToLeadFields(row) {
     area: row.area || "",
     dob: row.dob || "",
     lookingFor: row.lookingFor || "",
-    relation: row.relation || row.enquiryBy || "",
-    enquiryBy: row.enquiryBy || row.relation || "",
-    profession: row.profession || row.occupation || "",
-    nri: row.nri || "",
-    country: row.country || "",
-    familyIncomeBand: row.familyIncomeBand || "",
-    meeting: row.meeting || "",
-    source: row.source || row.leadSource || "",
-    leadSource: row.leadSource || row.source || "",
+    relation: row.relation || "",
   };
 }
 

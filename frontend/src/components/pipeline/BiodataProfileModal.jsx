@@ -127,7 +127,7 @@ const CHIP_META = {
   [FIELD_STATUS.neu]: { label: "New", className: "bg-[#EFF6FF] text-[#1D4ED8] border-[#93C5FD]" },
   [FIELD_STATUS.match]: { label: "Same", className: "bg-[#F0FDF4] text-[#15803D] border-[#86EFAC]" },
   [FIELD_STATUS.keep]: { label: "Existing", className: "bg-[#FFF7ED] text-[#C2410C] border-[#FDBA74]" },
-  [FIELD_STATUS.mismatch]: { label: "Different", className: "bg-[#FFF7ED] text-[#C2410C] border-[#FDBA74]" },
+  [FIELD_STATUS.mismatch]: { label: "Existing", className: "bg-[#FFF7ED] text-[#C2410C] border-[#FDBA74]" },
 };
 
 const SECTIONS = [
@@ -246,18 +246,27 @@ function sameValue(key, a, b) {
   return isFilled(a) && isFilled(b) && classifyField(key, a, b) === FIELD_STATUS.match;
 }
 
+function hasFieldConflict(key, imported, existing, hasExisting) {
+  if (!hasExisting) return false;
+  if (!isFilled(imported) || !isFilled(existing)) return false;
+  return !sameValue(key, imported, existing);
+}
+
+const CONTROL_BASE = "w-full h-10 rounded-lg text-[13px] text-[#111] outline-none";
+const CONTROL_OK = "bg-white border border-black/12 focus:border-[#7A0A17]/45";
+const CONTROL_CONFLICT = "bg-[#FEF2F2] border-2 border-[#E8395B] focus:border-[#E8395B]";
+
 function fieldChip(key, values, imported, existing, hasExisting) {
   const current = values[key];
   if (!isFilled(current)) return null;
   if (!hasExisting) return FIELD_STATUS.neu;
-  const hasExistingVal = isFilled(existing[key]);
   const sameExisting = sameValue(key, current, existing[key]);
   const sameImported = sameValue(key, current, imported[key]);
-  if (!hasExistingVal) return FIELD_STATUS.neu;
   if (sameExisting && sameImported) return FIELD_STATUS.match;
   if (sameExisting) return FIELD_STATUS.keep;
-  if (sameImported) return FIELD_STATUS.mismatch;
-  return FIELD_STATUS.mismatch;
+  if (sameImported) return FIELD_STATUS.neu;
+  if (isFilled(existing[key])) return FIELD_STATUS.mismatch;
+  return FIELD_STATUS.neu;
 }
 
 function formatHintValue(key, value) {
@@ -319,7 +328,7 @@ function FieldHint({ fieldKey, current, imported, existing, hasExisting, onKeep,
   );
 }
 
-function CompactSelect({ value, onChange, options, disabled = false }) {
+function CompactSelect({ value, onChange, options, disabled = false, conflict = false }) {
   const list = withCurrentOption(options, value);
   return (
     <div className="relative">
@@ -327,9 +336,9 @@ function CompactSelect({ value, onChange, options, disabled = false }) {
         value={value || ""}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full h-10 pl-3 pr-8 rounded-lg bg-white border border-black/12 text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/45 appearance-none ${
-          disabled ? "bg-[#F7F7F8] text-[#6B7280] cursor-not-allowed" : "cursor-pointer"
-        }`}
+        className={`${CONTROL_BASE} pl-3 pr-8 appearance-none ${
+          conflict ? CONTROL_CONFLICT : CONTROL_OK
+        } ${disabled ? "bg-[#F7F7F8] text-[#6B7280] cursor-not-allowed" : "cursor-pointer"}`}
       >
         <option value="">Select</option>
         {list.map((opt) => (
@@ -417,16 +426,12 @@ function DropProfileConfirm({ reason, onReasonChange, error, onCancel, onConfirm
 }
 
 function seedValues(initial) {
-  const isNew = initial?.mode === "create";
-  if (isNew) return buildBiodataIntakeSnapshots(initial || {}, null, {});
-  const existingLead = initial?.existingLeadId
+  const isNew = initial?.mode === "create" || !initial?.existingLeadId;
+  const existingLead = !isNew && initial?.existingLeadId
     ? findLeadById(initial.existingLeadId)?.lead
     : null;
-  const client = initial?.clientId ? findClientById(initial.clientId) : null;
-  return buildBiodataIntakeSnapshots(initial || {}, existingLead, {
-    client,
-    contact: initial?.match || null,
-  });
+  const client = !isNew && initial?.clientId ? findClientById(initial.clientId) : null;
+  return buildBiodataIntakeSnapshots(initial || {}, existingLead, { client });
 }
 
 export default function BiodataProfileModal({ open, onClose, onSave, initial = null }) {
@@ -439,9 +444,7 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
   const [dropError, setDropError] = useState("");
 
   const hasExisting = useMemo(
-    () =>
-      initial?.mode !== "create" &&
-      Boolean(initial?.existingLeadId || initial?.mode === "update" || initial?.match || initial?.matchName),
+    () => initial?.mode !== "create" && Boolean(initial?.existingLeadId || initial?.mode === "update"),
     [initial]
   );
 
@@ -507,8 +510,10 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
     onClose?.();
   };
 
-  const renderControl = (field) => {
+  const renderControl = (field, conflict) => {
     const value = values[field.key] || "";
+    const pickerClass =
+      "[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer";
     if (field.type === "select") {
       return (
         <CompactSelect
@@ -516,6 +521,7 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
           onChange={(next) => setField(field.key, next)}
           options={field.options || []}
           disabled={field.key === "country" && nriNo}
+          conflict={conflict}
         />
       );
     }
@@ -526,7 +532,7 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
             type="date"
             value={toDateInput(value)}
             onChange={(e) => setField(field.key, e.target.value)}
-            className="w-full h-10 pl-3 pr-9 rounded-lg bg-white border border-black/12 text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/45 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+            className={`${CONTROL_BASE} pl-3 pr-9 ${conflict ? CONTROL_CONFLICT : CONTROL_OK} ${pickerClass}`}
           />
           <Calendar size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
         </div>
@@ -539,7 +545,7 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
             type="time"
             value={toTimeInput(value)}
             onChange={(e) => setField(field.key, e.target.value)}
-            className="w-full h-10 pl-3 pr-9 rounded-lg bg-white border border-black/12 text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/45 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+            className={`${CONTROL_BASE} pl-3 pr-9 ${conflict ? CONTROL_CONFLICT : CONTROL_OK} ${pickerClass}`}
           />
           <Clock size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
         </div>
@@ -547,7 +553,13 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
     }
     if (field.type === "mobile") {
       return (
-        <div className="flex h-10 rounded-lg border border-black/12 overflow-hidden focus-within:border-[#7A0A17]/45">
+        <div
+          className={`flex h-10 rounded-lg overflow-hidden ${
+            conflict
+              ? "border-2 border-[#E8395B] bg-[#FEF2F2] focus-within:border-[#E8395B]"
+              : "border border-black/12 focus-within:border-[#7A0A17]/45"
+          }`}
+        >
           <span className="px-2.5 grid place-items-center text-[12.5px] font-semibold text-[#6B7280] bg-[#FAFAFB] border-r border-black/10 shrink-0">
             {dial}
           </span>
@@ -555,7 +567,7 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
             value={String(value).replace(/\D/g, "").replace(/^91/, "").slice(-10)}
             onChange={(e) => setField(field.key, e.target.value.replace(/\D/g, "").slice(-10))}
             placeholder="9876543210"
-            className="flex-1 min-w-0 px-3 text-[13px] text-[#111] outline-none"
+            className={`flex-1 min-w-0 px-3 text-[13px] text-[#111] outline-none ${conflict ? "bg-[#FEF2F2]" : ""}`}
           />
         </div>
       );
@@ -565,7 +577,7 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
         value={value}
         onChange={(e) => setField(field.key, e.target.value)}
         placeholder={field.placeholder || ""}
-        className="w-full h-10 px-3 rounded-lg bg-white border border-black/12 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/45"
+        className={`${CONTROL_BASE} px-3 placeholder:text-[#9CA3AF] ${conflict ? CONTROL_CONFLICT : CONTROL_OK}`}
       />
     );
   };
@@ -646,6 +658,20 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
                   <div className={`p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3.5 ${cols === 3 ? "lg:grid-cols-3" : "lg:grid-cols-5"}`}>
                     {section.fields.map((field) => {
                       const chip = fieldChip(field.key, values, imported, existing, hasExisting);
+                      const conflict = hasFieldConflict(
+                        field.key,
+                        imported[field.key],
+                        existing[field.key],
+                        hasExisting
+                      );
+                      const noteConflict = field.noteKey
+                        ? hasFieldConflict(
+                            field.noteKey,
+                            imported[field.noteKey],
+                            existing[field.noteKey],
+                            hasExisting
+                          )
+                        : false;
                       return (
                         <div key={field.key} className="min-w-0">
                           <FieldShell
@@ -664,7 +690,7 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
                               />
                             }
                           >
-                            {renderControl(field)}
+                            {renderControl(field, conflict)}
                           </FieldShell>
                           {field.noteKey ? (
                             <div className="mt-2">
@@ -680,7 +706,9 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
                                       : "e.g. Pure veg, egg, non-veg etc."
                                 }
                                 rows={2}
-                                className="w-full px-3 py-2 rounded-lg bg-white border border-black/12 text-[12.5px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/45 resize-none"
+                                className={`w-full px-3 py-2 rounded-lg text-[12.5px] text-[#111] placeholder:text-[#9CA3AF] outline-none resize-none ${
+                                  noteConflict ? CONTROL_CONFLICT : `bg-white ${CONTROL_OK}`
+                                }`}
                               />
                               <FieldHint
                                 fieldKey={field.noteKey}
