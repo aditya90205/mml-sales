@@ -1,12 +1,40 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Calendar, Star, Video } from "lucide-react";
+import {
+  Briefcase,
+  Building2,
+  Calendar,
+  FileText,
+  Globe,
+  Handshake,
+  Hash,
+  Heart,
+  IndianRupee,
+  Layers,
+  Mail,
+  MapPin,
+  MessageSquare,
+  Phone,
+  Send,
+  Star,
+  User,
+  Users,
+  Video,
+  Wallet,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
 import LeadActivityHistory from "./LeadActivityHistory";
+import { recordLeadActivity } from "../../../utils/leadActivityStore.js";
+import {
+  coerceCreateLeadValue,
+  formatLookingForLabel,
+  formatYesNoLabel,
+  isLookingToggleValue,
+} from "../../../utils/leadFields.js";
 
 const SLA_STATUS_STYLES = {
   "Within SLA":         { color: "#16A34A", bg: "#E7F8EF" },
@@ -26,15 +54,6 @@ const TEMPERATURE_TONES = {
   Cold: { color: "#3B82F6", bg: "#E8F2FE" },
   Lost: { color: "#7A0A17", bg: "#FCF5F6" },
 };
-
-function DetailField({ label, value }) {
-  return (
-    <div>
-      <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{label}</p>
-      <p className="text-[13px] font-semibold text-[#111] mt-1">{value || "-"}</p>
-    </div>
-  );
-}
 
 function toIsoDate(value) {
   const raw = String(value || "").trim();
@@ -61,75 +80,107 @@ function formatDob(value) {
   return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function MeetingField({ label, value }) {
-  return (
-    <div>
-      <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{label}</p>
-      <p className="text-[13px] font-semibold text-[#111] mt-1 flex items-center gap-1.5">
-        <Video size={13} className="text-[#3B82F6] shrink-0" />
-        {value || "-"}
-      </p>
-    </div>
-  );
+function viewInitials(name = "") {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
-function WinLossReasonsField({ label, value, tone }) {
-  const toneStyle = TEMPERATURE_TONES[tone] || TEMPERATURE_TONES.Cold;
+function ViewField({ icon: Icon, label, value, children, full }) {
   return (
-    <div>
-      <div className="flex items-center gap-2 flex-wrap">
-        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{label}</p>
-        <span
-          className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
-          style={{ color: toneStyle.color, backgroundColor: toneStyle.bg }}
-        >
-          {tone}
+    <div className={`flex items-start gap-2.5 min-w-0 ${full ? "sm:col-span-2" : ""}`}>
+      {Icon ? (
+        <span className="size-8 rounded-xl bg-[#FCF5F6] text-[#7A0A17] grid place-items-center shrink-0 mt-0.5">
+          <Icon size={14} />
         </span>
+      ) : null}
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{label}</p>
+        {children || (
+          <p className="text-[13px] font-semibold text-[#111] mt-1 break-words leading-snug">{value || "-"}</p>
+        )}
       </div>
-      <p className="text-[13px] font-semibold text-[#111] mt-1">{value || "-"}</p>
     </div>
   );
 }
 
-function DiscussionField({ label, at, note, urgency, onFollowUp }) {
+function ViewPill({ children, color = "#7A0A17", bg = "#FCF5F6" }) {
+  if (!children) return <p className="text-[13px] font-semibold text-[#111] mt-1">-</p>;
   return (
-    <div>
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{label}</p>
-        {urgency && <span className="text-[11px] font-bold text-[#E8395B] shrink-0">{urgency}</span>}
-      </div>
-      <p className="text-[13px] font-semibold text-[#111] mt-1">{at || "-"}</p>
-      {note && <p className="text-[12px] text-[#4B5563] mt-0.5">{note}</p>}
-      {onFollowUp && (
-        <button
-          type="button"
-          onClick={onFollowUp}
-          className="text-[11.5px] font-semibold text-[#2563EB] hover:underline mt-1"
-        >
-          Follow up History
-        </button>
+    <span
+      className="inline-flex mt-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
+      style={{ color, backgroundColor: bg }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function AssignedView({ label, name }) {
+  const text = String(name || "").trim();
+  return (
+    <ViewField icon={User} label={label}>
+      {text ? (
+        <div className="flex items-center gap-2 mt-1 min-w-0">
+          <span className="size-7 rounded-full bg-[#7A0A17] text-white text-[10px] font-bold grid place-items-center shrink-0">
+            {viewInitials(text) || "—"}
+          </span>
+          <p className="text-[13px] font-semibold text-[#111] truncate">{text}</p>
+        </div>
+      ) : (
+        <p className="text-[13px] font-semibold text-[#111] mt-1">-</p>
       )}
-    </div>
+    </ViewField>
   );
 }
 
 const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
-const EDIT_FIELDS = [
-  { key: "dealCode", label: "Deal code" },
-  { key: "stageLabel", label: "Stage" },
+const RELATIONS = ["Self", "Parent", "Sibling", "Relative", "Friend", "Other"];
+const SOURCES = [
+  "Website Inquiry",
+  "Referral",
+  "Walk-in",
+  "Campaign",
+  "Instagram",
+  "Google Ads",
+  "Newspaper",
+  "Cold Call",
+  "Biodata Upload",
+];
+const INCOME = [
+  "Under ₹15 Lakh",
+  "₹15 Lakh to ₹30 Lakh",
+  "₹30 Lakh to ₹50 Lakh",
+  "₹50 Lakh to ₹1 Crore",
+  "₹1 Crore to ₹5 Crore",
+  "Above ₹5 Crore",
+];
+const OCCUPATIONS = [
+  "Independent",
+  "Business (joint / nuclear)",
+  "Professional",
+  "Self employed",
+  "Industrialist",
+  "Bureaucrat",
+  "Private sector",
+  "Student",
+];
+const COUNTRIES = ["India", "USA", "UK", "Canada", "UAE", "Australia", "Singapore", "Other"];
+
+const DEAL_EDIT_FIELDS = [
+  { key: "dealCode", label: "Deal code", readOnly: true },
+  { key: "stageLabel", label: "Stage", readOnly: true },
+  { key: "leadSource", label: "Lead source" },
   { key: "packageInterest", label: "Package interest" },
   { key: "premium", label: "Premium client", type: "select", options: ["Yes", "No"] },
   { key: "dealValue", label: "Deal value" },
-  { key: "leadSource", label: "Lead source" },
   { key: "leadScore", label: "Lead score" },
-  { key: "enquiryBy", label: "Enquiry made by" },
-  { key: "lookingFor", label: "Looking for" },
-  { key: "dob", label: "Date of birth", type: "date" },
-  { key: "areaOfHouse", label: "Area of house" },
-  { key: "profession", label: "Profession" },
-  { key: "familyIncomeBand", label: "Family income band" },
   { key: "nextMeeting", label: "Next schedule meeting" },
   { key: "winLossReasons", label: "Win / loss analysis - reasons", full: true },
   { key: "winLossTone", label: "Win / loss tone", type: "select", options: ["Hot", "Warm", "Cold", "Lost"] },
@@ -137,41 +188,245 @@ const EDIT_FIELDS = [
   { key: "lastDiscussionNote", label: "Last discussion note", full: true },
   { key: "nextActionAt", label: "Next action (date / time)" },
   { key: "nextAction", label: "Next action note", full: true },
-  { key: "nextActionUrgency", label: "Next action urgency" },
   { key: "assignedTo", label: "Assigned to" },
   { key: "assignedBy", label: "Assigned by" },
 ];
 
+function YesNoToggle({ value, onChange }) {
+  return (
+    <div className="flex items-center gap-2">
+      {[
+        { id: "yes", label: "Yes" },
+        { id: "no", label: "No" },
+      ].map((opt) => {
+        const active = value === opt.id;
+        return (
+          <button
+            key={opt.id}
+            type="button"
+            onClick={() => onChange(opt.id)}
+            className={`inline-flex items-center h-10 px-4 rounded-xl text-[13px] font-semibold border transition-colors ${
+              active
+                ? "bg-[#7A0A17] text-white border-[#7A0A17]"
+                : "bg-white text-[#374151] border-black/12 hover:bg-[#FAFAFB]"
+            }`}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function EditInput({ field, value, onChange }) {
+  if (field.type === "select") {
+    return (
+      <select value={value} onChange={(e) => onChange(e.target.value)} className={FIELD}>
+        {field.options.map((opt) => (
+          <option key={opt} value={opt}>{opt}</option>
+        ))}
+      </select>
+    );
+  }
+  if (field.type === "date") {
+    return (
+      <div className="relative">
+        <input
+          type="date"
+          value={toIsoDate(value)}
+          onChange={(e) => onChange(e.target.value)}
+          className={`${FIELD} pr-10 relative [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+        />
+        <Calendar size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
+      </div>
+    );
+  }
+  if (field.full) {
+    return (
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={2}
+        className={`${FIELD} resize-none`}
+      />
+    );
+  }
+  return (
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      readOnly={field.readOnly}
+      className={`${FIELD} ${field.readOnly ? "bg-[#FAFAFB] text-[#6B7280]" : ""}`}
+    />
+  );
+}
+
 function detailsFromDeal(deal) {
+  const lookingRaw = deal.lookingFor || "";
+  const lookingToggle = isLookingToggleValue(lookingRaw);
   return {
     dealCode: deal.dealCode || "",
     stageLabel: deal.stageLabel || "",
     packageInterest: deal.packageInterest || "",
-    premium: deal.premium ? "Yes" : "No",
-    dealValue: deal.dealValue || "",
-    leadSource: deal.leadSource || "",
-    leadScore: deal.leadScore || "",
-    enquiryBy: deal.enquiryBy || "",
-    lookingFor: deal.lookingFor || "",
+    premium: deal.premium === true || deal.premium === "Yes" ? "Yes" : "No",
+    dealValue: dashToEmpty(deal.dealValue),
+    leadSource: dashToEmpty(deal.leadSource || deal.source),
+    leadScore: dashToEmpty(deal.leadScore),
+    enquiryBy: dashToEmpty(deal.enquiryBy),
+    lookingFor: lookingToggle ? coerceCreateLeadValue("lookingFor", lookingRaw) || "yes" : lookingRaw,
+    lookingCustom: lookingToggle ? "" : lookingRaw,
+    nri: (() => {
+      const raw = String(deal.nri ?? "").trim().toLowerCase();
+      if (!raw || raw === "-") return "";
+      if (raw === "yes") return "yes";
+      if (raw === "no") return "no";
+      return raw;
+    })(),
+    country: dashToEmpty(deal.country),
+    city: dashToEmpty(deal.city),
+    area: dashToEmpty(deal.area || deal.areaOfHouse),
+    mobile: dashToEmpty(deal.mobile || deal.phone),
+    email: dashToEmpty(deal.email),
+    notes: deal.notes || "",
     dob: toIsoDate(deal.dob) || "",
-    areaOfHouse: deal.areaOfHouse || "",
-    profession: deal.profession || "",
-    familyIncomeBand: deal.familyIncomeBand || "",
-    nextMeeting: deal.nextMeeting || "",
-    winLossReasons: deal.winLossReasons || "",
+    areaOfHouse: dashToEmpty(deal.areaOfHouse || deal.area),
+    profession: dashToEmpty(deal.profession || deal.occupation),
+    familyIncomeBand: dashToEmpty(deal.familyIncomeBand),
+    nextMeeting: dashToEmpty(deal.nextMeeting),
+    winLossReasons: dashToEmpty(deal.winLossReasons),
     winLossTone: deal.winLossTone || "Cold",
-    lastDiscussionAt: deal.lastDiscussionAt || "",
-    lastDiscussionNote: deal.lastDiscussionNote || "",
-    nextActionAt: deal.nextActionAt || "",
-    nextAction: deal.nextAction || "",
+    lastDiscussionAt: dashToEmpty(deal.lastDiscussionAt),
+    lastDiscussionNote: dashToEmpty(deal.lastDiscussionNote),
+    nextActionAt: dashToEmpty(deal.nextActionAt),
+    nextAction: dashToEmpty(deal.nextAction),
     nextActionUrgency: deal.nextActionUrgency || "",
-    assignedTo: deal.assignedTo || "",
-    assignedBy: deal.assignedBy || "",
+    assignedTo: dashToEmpty(deal.assignedTo),
+    assignedBy: dashToEmpty(deal.assignedBy),
   };
+}
+
+function dashToEmpty(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw || raw === "-" || raw === "—") return "";
+  return String(value);
+}
+
+function SendFormModal({ open, onClose, deal, currentStage }) {
+  const [channel, setChannel] = useState("email");
+  const email = String(deal.email || "").trim();
+  const mobile = String(deal.mobile || deal.phone || "").trim();
+  const to = channel === "email" ? email : mobile;
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setChannel(email && email !== "—" ? "email" : "whatsapp");
+    setMessage(
+      `Hi ${deal.name || "there"}, please fill your MML profile form so we can complete your record.`
+    );
+  }, [open, deal.name, email]);
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    if (!to || to === "—") {
+      toast.error(channel === "email" ? "This client has no email yet." : "This client has no mobile yet.");
+      return;
+    }
+    recordLeadActivity(deal, currentStage, {
+      type: "details",
+      title: "Profile form sent to client",
+      detail: channel === "email" ? `Email · ${to}` : `WhatsApp · ${to}`,
+    });
+    toast.success(
+      channel === "email"
+        ? `Profile form sent to ${deal.name || "client"} by email.`
+        : `Profile form sent to ${deal.name || "client"} on WhatsApp.`
+    );
+    onClose?.();
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Send form"
+      subtitle="Share the Profile Create form with this client"
+      icon={<Send size={18} />}
+      iconBg="#FDF2F3"
+      iconColor="#7A0A17"
+      width="max-w-lg"
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="send-profile-form"
+            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            <Send size={14} />
+            Send form
+          </button>
+        </>
+      }
+    >
+      <form id="send-profile-form" onSubmit={handleSend} className="flex flex-col gap-4">
+        <div>
+          <p className="text-[13px] font-bold text-[#111] mb-1.5">Channel</p>
+          <div className="flex items-center gap-2">
+            {[
+              { id: "email", label: "Email", icon: Mail },
+              { id: "whatsapp", label: "WhatsApp", icon: Send },
+            ].map((opt) => {
+              const active = channel === opt.id;
+              const Icon = opt.icon;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setChannel(opt.id)}
+                  className={`inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-[13px] font-semibold border transition-colors ${
+                    active
+                      ? "bg-[#7A0A17] text-white border-[#7A0A17]"
+                      : "bg-white text-[#374151] border-black/12 hover:bg-[#FAFAFB]"
+                  }`}
+                >
+                  <Icon size={14} />
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div>
+          <label className="block text-[13px] font-bold text-[#111] mb-1.5">
+            {channel === "email" ? "Email" : "Mobile"}
+          </label>
+          <input value={to && to !== "—" ? to : ""} readOnly className={`${FIELD} bg-[#FAFAFB]`} />
+        </div>
+        <div>
+          <label className="block text-[13px] font-bold text-[#111] mb-1.5">Message</label>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={4}
+            className={`${FIELD} resize-none`}
+          />
+        </div>
+      </form>
+    </Modal>
+  );
 }
 
 function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved }) {
   const [open, setOpen] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
   const [details, setDetails] = useState(() => detailsFromDeal(deal));
   const [draft, setDraft] = useState(() => detailsFromDeal(deal));
 
@@ -190,10 +445,22 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved }
     setDraft((prev) => ({ ...prev, [key]: value }));
   };
 
+  const lookingToggle = isLookingToggleValue(details.lookingCustom || details.lookingFor);
+  const lookingLabel = formatLookingForLabel(details.lookingCustom || details.lookingFor) || details.lookingFor;
+
   const handleSave = (e) => {
     e.preventDefault();
-    const next =
-      currentStage === "P0" ? { ...draft, stageLabel: "P0 Contacted" } : draft;
+    const lookingFor = lookingToggle
+      ? draft.lookingFor
+      : (draft.lookingCustom || draft.lookingFor);
+    const next = {
+      ...draft,
+      lookingFor,
+      areaOfHouse: draft.area || draft.areaOfHouse,
+      area: draft.area || draft.areaOfHouse,
+      country: draft.nri === "no" ? "India" : draft.country,
+      stageLabel: currentStage === "P0" ? "P0 Contacted" : draft.stageLabel,
+    };
     setDetails(next);
     onPremiumChange?.(next.premium === "Yes");
     onDetailsSaved?.(next);
@@ -213,14 +480,26 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved }
               "0 of 14 mandatory fields filled. please fill/edit all the details to move to Contacted"}
           </p>
         </div>
-        <TabHeaderButton onClick={openModal}>Edit details</TabHeaderButton>
+        <div className="flex items-center gap-2 shrink-0">
+          <TabHeaderButton onClick={() => setSendOpen(true)}>Send form</TabHeaderButton>
+          <TabHeaderButton onClick={openModal}>Edit details</TabHeaderButton>
+        </div>
       </div>
+      <SendFormModal
+        open={sendOpen}
+        onClose={() => setSendOpen(false)}
+        deal={deal}
+        currentStage={currentStage}
+      />
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Edit details"
-        subtitle="Update deal fields for this client"
-        width="max-w-3xl"
+        title="Deal Details"
+        subtitle="View and manage complete deal information"
+        icon={<Handshake size={18} />}
+        iconBg="#FDF2F3"
+        iconColor="#7A0A17"
+        width="max-w-5xl"
         footer={
           <>
             <button
@@ -235,92 +514,276 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved }
               form="edit-deal-form"
               className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
             >
-              Save
+              Save changes
             </button>
           </>
         }
       >
-        <form id="edit-deal-form" onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {EDIT_FIELDS.map((field) => (
-            <div key={field.key} className={field.full ? "sm:col-span-2" : ""}>
-              <label className="block text-[13px] font-bold text-[#111] mb-1.5">{field.label}</label>
-              {field.type === "select" ? (
-                <select
-                  value={draft[field.key]}
-                  onChange={(e) => setField(field.key, e.target.value)}
-                  className={FIELD}
-                >
-                  {field.options.map((opt) => (
+        <form id="edit-deal-form" onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <section className="rounded-2xl border border-black/8 overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 bg-[#FCF5F6] border-b border-[#7A0A17]/10">
+              <User size={15} className="text-[#7A0A17]" />
+              <h3 className="text-[13px] font-bold text-[#7A0A17]">Personal Details</h3>
+            </div>
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">
+                  Looking for a bride or groom <span className="text-[#E8395B]">*</span>
+                </label>
+                {isLookingToggleValue(draft.lookingCustom || draft.lookingFor) ? (
+                  <YesNoToggle value={draft.lookingFor === "no" ? "no" : "yes"} onChange={(value) => setField("lookingFor", value)} />
+                ) : (
+                  <input
+                    value={draft.lookingCustom || draft.lookingFor}
+                    onChange={(e) => setField("lookingCustom", e.target.value)}
+                    className={FIELD}
+                  />
+                )}
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">
+                  NRI <span className="text-[#E8395B]">*</span>
+                </label>
+                <YesNoToggle
+                  value={draft.nri === "yes" ? "yes" : "no"}
+                  onChange={(value) => {
+                    setDraft((prev) => ({
+                      ...prev,
+                      nri: value,
+                      country: value === "no" ? "India" : prev.country,
+                    }));
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">
+                  Enquiry made by <span className="text-[#E8395B]">*</span>
+                </label>
+                <select value={draft.enquiryBy || "Self"} onChange={(e) => setField("enquiryBy", e.target.value)} className={FIELD}>
+                  {(RELATIONS.includes(draft.enquiryBy) || !draft.enquiryBy ? RELATIONS : [draft.enquiryBy, ...RELATIONS]).map((opt) => (
                     <option key={opt} value={opt}>{opt}</option>
                   ))}
                 </select>
-              ) : field.type === "date" ? (
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={toIsoDate(draft[field.key])}
-                    onChange={(e) => setField(field.key, e.target.value)}
-                    className={`${FIELD} pr-10 relative [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
-                  />
-                  <Calendar size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
-                </div>
-              ) : field.full ? (
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">Date of birth</label>
+                <EditInput field={{ type: "date" }} value={draft.dob} onChange={(value) => setField("dob", value)} />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">
+                  Country <span className="text-[#E8395B]">*</span>
+                </label>
+                <select
+                  value={draft.nri === "no" ? "India" : draft.country || "India"}
+                  onChange={(e) => setField("country", e.target.value)}
+                  disabled={draft.nri === "no"}
+                  className={`${FIELD} ${draft.nri === "no" ? "bg-[#FAFAFB] text-[#6B7280]" : ""}`}
+                >
+                  {(draft.nri === "yes" ? COUNTRIES : ["India"]).map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">Mobile number</label>
+                <input value={draft.mobile} onChange={(e) => setField("mobile", e.target.value)} className={FIELD} />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">
+                  City <span className="text-[#E8395B]">*</span>
+                </label>
+                <input value={draft.city} onChange={(e) => setField("city", e.target.value)} placeholder="Mumbai, Maharashtra" className={FIELD} />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">Area</label>
+                <input value={draft.area} onChange={(e) => setField("area", e.target.value)} placeholder="Andheri West" className={FIELD} />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">Email</label>
+                <input type="email" value={draft.email} onChange={(e) => setField("email", e.target.value)} className={FIELD} />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">
+                  Source <span className="text-[#E8395B]">*</span>
+                </label>
+                <select
+                  value={draft.leadSource || ""}
+                  onChange={(e) => setField("leadSource", e.target.value)}
+                  className={FIELD}
+                >
+                  <option value="">Select source</option>
+                  {(SOURCES.includes(draft.leadSource) || !draft.leadSource ? SOURCES : [draft.leadSource, ...SOURCES]).map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">Family income bracket</label>
+                <select
+                  value={draft.familyIncomeBand || ""}
+                  onChange={(e) => setField("familyIncomeBand", e.target.value)}
+                  className={FIELD}
+                >
+                  <option value="">Select income</option>
+                  {(INCOME.includes(draft.familyIncomeBand) || !draft.familyIncomeBand ? INCOME : [draft.familyIncomeBand, ...INCOME]).map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">Industry / Profession</label>
+                <select
+                  value={draft.profession || ""}
+                  onChange={(e) => setField("profession", e.target.value)}
+                  className={FIELD}
+                >
+                  <option value="">Select profession</option>
+                  {(OCCUPATIONS.includes(draft.profession) || !draft.profession ? OCCUPATIONS : [draft.profession, ...OCCUPATIONS]).map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">Additional notes</label>
                 <textarea
-                  value={draft[field.key]}
-                  onChange={(e) => setField(field.key, e.target.value)}
-                  rows={2}
+                  value={draft.notes}
+                  onChange={(e) => setField("notes", e.target.value)}
+                  rows={3}
                   className={`${FIELD} resize-none`}
                 />
-              ) : (
-                <input
-                  value={draft[field.key]}
-                  onChange={(e) => setField(field.key, e.target.value)}
-                  className={FIELD}
-                />
-              )}
+              </div>
             </div>
-          ))}
+          </section>
+
+          <section className="rounded-2xl border border-black/8 overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 bg-[#FCF5F6] border-b border-[#7A0A17]/10">
+              <Handshake size={15} className="text-[#7A0A17]" />
+              <h3 className="text-[13px] font-bold text-[#7A0A17]">Deal Information</h3>
+            </div>
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {DEAL_EDIT_FIELDS.map((field) => (
+                <div key={field.key} className={field.full ? "sm:col-span-2" : ""}>
+                  <label className="block text-[13px] font-bold text-[#111] mb-1.5">{field.label}</label>
+                  <EditInput field={field} value={draft[field.key] || ""} onChange={(value) => setField(field.key, value)} />
+                </div>
+              ))}
+            </div>
+          </section>
         </form>
       </Modal>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
-        <DetailField label="Deal code" value={details.dealCode} />
-        <DetailField label="Stage" value={details.stageLabel} />
-        <DetailField label="Package interest" value={details.packageInterest} />
-        <div>
-          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Premium client</p>
-          <div className="mt-1 flex items-center gap-1.5 min-h-[20px]">
-            {details.premium === "Yes" ? (
-              <Star size={14} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />
-            ) : (
-              <p className="text-[13px] font-semibold text-[#111]">-</p>
-            )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <section className="rounded-2xl border border-black/8 overflow-hidden bg-white shadow-[0_8px_24px_rgba(122,10,23,0.04)]">
+          <div className="flex items-center gap-2 px-4 py-3 bg-[#FCF5F6] border-b border-[#7A0A17]/10">
+            <User size={15} className="text-[#7A0A17]" />
+            <h3 className="text-[13px] font-bold text-[#7A0A17]">Personal Details</h3>
           </div>
-        </div>
-        <DetailField label="Deal value" value={details.dealValue} />
-        <DetailField label="Lead source" value={details.leadSource} />
-        <DetailField label="Lead score" value={details.leadScore} />
-        <DetailField label="Enquiry made by" value={details.enquiryBy} />
-        <DetailField label="Looking for" value={details.lookingFor} />
-        <DetailField label="Date of birth" value={formatDob(details.dob) || "-"} />
-        <DetailField label="Area of house" value={details.areaOfHouse} />
-        <DetailField label="Profession" value={details.profession} />
-        <DetailField label="Family income band" value={details.familyIncomeBand} />
-        <MeetingField label="Next schedule meeting" value={details.nextMeeting} />
-        <WinLossReasonsField label="Win / loss analysis - reasons" value={details.winLossReasons} tone={details.winLossTone} />
-        <DiscussionField
-          label="Last discussion"
-          at={details.lastDiscussionAt}
-          note={details.lastDiscussionNote}
-          onFollowUp={() => toast.info("Follow-up history coming soon.")}
-        />
-        <DiscussionField
-          label="Next action"
-          at={details.nextActionAt}
-          note={details.nextAction}
-          urgency={details.nextActionUrgency}
-        />
-        <DetailField label="Assigned to" value={details.assignedTo} />
-        <DetailField label="Assigned by" value={details.assignedBy} />
+          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+            <ViewField icon={Heart} label="Looking for a bride or groom">
+              {lookingLabel ? (
+                <ViewPill color="#7A0A17" bg="#FCF5F6">{lookingLabel}</ViewPill>
+              ) : (
+                <p className="text-[13px] font-semibold text-[#111] mt-1">-</p>
+              )}
+            </ViewField>
+            <ViewField icon={Globe} label="NRI">
+              {formatYesNoLabel(details.nri) ? (
+                <ViewPill
+                  color={details.nri === "yes" ? "#16A34A" : "#4B5563"}
+                  bg={details.nri === "yes" ? "#E7F8EF" : "#F3F4F6"}
+                >
+                  {formatYesNoLabel(details.nri)}
+                </ViewPill>
+              ) : (
+                <p className="text-[13px] font-semibold text-[#111] mt-1">-</p>
+              )}
+            </ViewField>
+            <ViewField icon={Users} label="Enquiry made by" value={details.enquiryBy} />
+            <ViewField icon={Calendar} label="Date of birth" value={formatDob(details.dob)} />
+            <ViewField icon={Globe} label="Country" value={details.nri === "no" ? "India" : details.country} />
+            <ViewField icon={Phone} label="Mobile number" value={details.mobile} />
+            <ViewField icon={Building2} label="City" value={details.city} />
+            <ViewField icon={MapPin} label="Area" value={details.area || details.areaOfHouse} />
+            <ViewField icon={Mail} label="Email" value={details.email} />
+            <ViewField icon={Layers} label="Source" value={details.leadSource} />
+            <ViewField icon={Wallet} label="Family income bracket" value={details.familyIncomeBand} />
+            <ViewField icon={Briefcase} label="Industry / Profession" value={details.profession} />
+            <ViewField icon={FileText} label="Additional notes" value={details.notes} full />
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-black/8 overflow-hidden bg-white shadow-[0_8px_24px_rgba(122,10,23,0.04)]">
+          <div className="flex items-center gap-2 px-4 py-3 bg-[#FCF5F6] border-b border-[#7A0A17]/10">
+            <Handshake size={15} className="text-[#7A0A17]" />
+            <h3 className="text-[13px] font-bold text-[#7A0A17]">Deal Information</h3>
+          </div>
+          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+            <ViewField icon={Hash} label="Deal code" value={details.dealCode} />
+            <ViewField icon={Layers} label="Stage">
+              <ViewPill>{details.stageLabel}</ViewPill>
+            </ViewField>
+            <ViewField icon={Star} label="Package interest" value={details.packageInterest} />
+            <ViewField icon={Star} label="Premium client">
+              {details.premium === "Yes" ? (
+                <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full text-[#16A34A] bg-[#E7F8EF]">
+                  <Star size={11} fill="#16A34A" strokeWidth={0} />
+                  Yes
+                </span>
+              ) : (
+                <p className="text-[13px] font-semibold text-[#111] mt-1">-</p>
+              )}
+            </ViewField>
+            <ViewField icon={IndianRupee} label="Deal value" value={details.dealValue} />
+            <ViewField icon={Layers} label="Lead source" value={details.leadSource} />
+            <ViewField icon={Star} label="Lead score">
+              {details.leadScore ? (
+                <ViewPill color="#16A34A" bg="#E7F8EF">{details.leadScore}</ViewPill>
+              ) : (
+                <p className="text-[13px] font-semibold text-[#111] mt-1">-</p>
+              )}
+            </ViewField>
+            <ViewField icon={Video} label="Next schedule meeting" value={details.nextMeeting} />
+            <ViewField icon={MessageSquare} label="Win / loss analysis - reasons" full>
+              <div className="flex items-center gap-2 flex-wrap mt-1">
+                <span
+                  className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
+                  style={{
+                    color: (TEMPERATURE_TONES[details.winLossTone] || TEMPERATURE_TONES.Cold).color,
+                    backgroundColor: (TEMPERATURE_TONES[details.winLossTone] || TEMPERATURE_TONES.Cold).bg,
+                  }}
+                >
+                  {details.winLossTone || "Cold"}
+                </span>
+              </div>
+              <p className="text-[13px] font-semibold text-[#111] mt-1">{details.winLossReasons || "-"}</p>
+            </ViewField>
+            <ViewField icon={MessageSquare} label="Last discussion">
+              <p className="text-[13px] font-semibold text-[#111] mt-1">{details.lastDiscussionAt || "-"}</p>
+              {details.lastDiscussionNote ? (
+                <p className="text-[12px] text-[#4B5563] mt-0.5">{details.lastDiscussionNote}</p>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => toast.info("Follow-up history coming soon.")}
+                className="text-[11.5px] font-semibold text-[#2563EB] hover:underline mt-1"
+              >
+                Follow up History
+              </button>
+            </ViewField>
+            <ViewField icon={Calendar} label="Next action">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[13px] font-semibold text-[#111] mt-1">{details.nextActionAt || "-"}</p>
+                {details.nextActionUrgency ? (
+                  <span className="text-[11px] font-bold text-[#E8395B] shrink-0">{details.nextActionUrgency}</span>
+                ) : null}
+              </div>
+              {details.nextAction ? (
+                <p className="text-[12px] text-[#4B5563] mt-0.5">{details.nextAction}</p>
+              ) : null}
+            </ViewField>
+            <AssignedView label="Assigned to" name={details.assignedTo} />
+            <AssignedView label="Assigned by" name={details.assignedBy} />
+          </div>
+        </section>
       </div>
     </div>
   );

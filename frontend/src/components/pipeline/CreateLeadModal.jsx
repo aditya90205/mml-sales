@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Ban,
   Building2,
@@ -6,14 +7,10 @@ import {
   Check,
   ChevronDown,
   Clock,
-  CloudUpload,
-  FileSpreadsheet,
-  Lock,
   Mail,
   MapPin,
   Phone,
   Search,
-  Sparkles,
   Trash2,
   UserPlus,
   X,
@@ -41,8 +38,7 @@ import {
   validateCreateLeadFields,
 } from "../../utils/leadFields.js";
 
-const RELATIONS = ["Self / Prospect", "Parent", "Sibling", "Relative", "Friend", "Other"];
-const CONTACT_WITH = ["First Contact", "Follow-up", "Existing Client", "Referred Contact"];
+const RELATIONS = ["Self", "Parent", "Sibling", "Relative", "Friend", "Other"];
 const SOURCES = [
   "Website Inquiry",
   "Referral",
@@ -61,6 +57,16 @@ const INCOME = [
   "₹50 Lakh to ₹1 Crore",
   "₹1 Crore to ₹5 Crore",
   "Above ₹5 Crore",
+];
+const OCCUPATIONS = [
+  "Independent",
+  "Business (joint / nuclear)",
+  "Professional",
+  "Self employed",
+  "Industrialist",
+  "Bureaucrat",
+  "Private sector",
+  "Student",
 ];
 const CITIES = [
   "Mumbai, Maharashtra",
@@ -110,7 +116,7 @@ function emptyForm() {
   return {
     lookingFor: "yes",
     nri: "no",
-    relation: "Self / Prospect",
+    relation: "Self",
     firstName: "",
     lastName: "",
     contactWith: "First Contact",
@@ -121,7 +127,8 @@ function emptyForm() {
     country: "India",
     city: "",
     area: "",
-    income: "₹5 Lakh to ₹10 Lakh",
+    income: "",
+    profession: "",
     meeting: "Meeting Agreed",
   };
 }
@@ -263,30 +270,16 @@ function ComparedField({ fieldKey, label, required, compare, onKeep, onUseImport
   );
 }
 
-function Chip({ active, onClick, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-[12.5px] font-medium border transition-colors ${
-        active
-          ? "bg-[#7A0A17] text-white border-[#7A0A17]"
-          : "bg-white text-[#374151] border-black/12 hover:bg-[#FAFAFB]"
-      }`}
-    >
-      {active ? <Check size={12} strokeWidth={2.6} /> : null}
-      {children}
-    </button>
-  );
-}
-
-function NativeSelect({ value, onChange, options, className = "" }) {
+function NativeSelect({ value, onChange, options, className = "", disabled = false }) {
   return (
     <div className="relative">
       <select
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className={`${INPUT} appearance-none pr-9 cursor-pointer ${className}`}
+        className={`${INPUT} appearance-none pr-9 ${
+          disabled ? "bg-[#F7F7F8] text-[#6B7280] cursor-not-allowed pointer-events-none" : "cursor-pointer"
+        } ${className}`}
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
@@ -294,26 +287,61 @@ function NativeSelect({ value, onChange, options, className = "" }) {
           </option>
         ))}
       </select>
-      <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
+      {!disabled ? (
+        <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
+      ) : null}
     </div>
   );
 }
 
 function ReasonSelect({ value, onChange, options, placeholder = "Select reason" }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [menuStyle, setMenuStyle] = useState(null);
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+
+  const placeMenu = () => {
+    const el = btnRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const menuH = Math.min(options.length * 36 + 8, 176);
+    const gap = 6;
+    const spaceBelow = window.innerHeight - r.bottom - gap;
+    const shouldUp = spaceBelow < menuH && r.top > spaceBelow;
+    setMenuStyle({
+      position: "fixed",
+      left: r.left,
+      width: r.width,
+      zIndex: 80,
+      ...(shouldUp ? { bottom: window.innerHeight - r.top + gap } : { top: r.bottom + gap }),
+    });
+  };
 
   useEffect(() => {
     const close = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (btnRef.current?.contains(e.target) || menuRef.current?.contains(e.target)) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, []);
 
+  useEffect(() => {
+    if (!open) return;
+    placeMenu();
+    const onMove = () => placeMenu();
+    window.addEventListener("resize", onMove);
+    window.addEventListener("scroll", onMove, true);
+    return () => {
+      window.removeEventListener("resize", onMove);
+      window.removeEventListener("scroll", onMove, true);
+    };
+  }, [open, options.length]);
+
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative">
       <button
+        ref={btnRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={`${INPUT} flex items-center text-left pr-9 ${value ? "text-[#111]" : "text-[#9CA3AF]"}`}
@@ -326,33 +354,40 @@ function ReasonSelect({ value, onChange, options, placeholder = "Select reason" 
         size={15}
         className={`absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none transition-transform ${open ? "rotate-180" : ""}`}
       />
-      {open ? (
-        <div
-          className="absolute left-0 right-0 top-[calc(100%+6px)] bg-white border border-black/8 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-30 py-1 max-h-44 overflow-y-auto"
-          role="listbox"
-        >
-          {options.map((opt) => {
-            const active = opt === value;
-            return (
-              <button
-                key={opt}
-                type="button"
-                role="option"
-                aria-selected={active}
-                onClick={() => {
-                  onChange(opt);
-                  setOpen(false);
-                }}
-                className={`w-full text-left px-3.5 py-2 text-[13px] ${
-                  active ? "bg-[#FCF5F6] text-[#7A0A17] font-semibold" : "text-[#374151] hover:bg-[#FCF5F6] hover:text-[#7A0A17]"
-                }`}
-              >
-                {opt}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
+      {open && menuStyle
+        ? createPortal(
+            <div
+              ref={menuRef}
+              style={menuStyle}
+              className="bg-white border border-black/8 rounded-l-xl rounded-r-none shadow-[0_8px_30px_rgba(0,0,0,0.10)] py-1 max-h-44 overflow-y-auto scrollbar-thin"
+              role="listbox"
+            >
+              {options.map((opt) => {
+                const active = opt === value;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    onClick={() => {
+                      onChange(opt);
+                      setOpen(false);
+                    }}
+                    className={`w-full text-left px-3.5 py-2 text-[13px] ${
+                      active
+                        ? "bg-[#FCF5F6] text-[#7A0A17] font-semibold"
+                        : "text-[#374151] hover:bg-[#FCF5F6] hover:text-[#7A0A17]"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
@@ -432,7 +467,7 @@ function applyInitial(initial) {
   }
   if (initial.relation) {
     const r = String(initial.relation).toLowerCase();
-    if (r.includes("self")) next.relation = "Self / Prospect";
+    if (r.includes("self")) next.relation = "Self";
     else if (r.includes("parent")) next.relation = "Parent";
     else if (r.includes("sibling")) next.relation = "Sibling";
     else if (r.includes("relative")) next.relation = "Relative";
@@ -443,15 +478,17 @@ function applyInitial(initial) {
     const hit = CITIES.find((c) => c.toLowerCase().startsWith(String(initial.city).toLowerCase()));
     if (hit) next.city = hit;
   }
+  if (String(next.nri).toLowerCase() !== "yes") {
+    next.nri = "no";
+    next.country = "India";
+  }
+  if (!next.profession && initial.occupation) next.profession = initial.occupation;
   return next;
 }
 
-export default function CreateLeadModal({ open, onClose, onCreate, onUploadBiodata, initial = null }) {
-  const fileRef = useRef(null);
+export default function CreateLeadModal({ open, onClose, onCreate, initial = null }) {
   const cityRef = useRef(null);
   const [form, setForm] = useState(() => applyInitial(initial));
-  const [file, setFile] = useState(() => (initial?.fileName ? { name: initial.fileName } : null));
-  const [dragging, setDragging] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
   const [error, setError] = useState("");
   const [dropOpen, setDropOpen] = useState(false);
@@ -515,20 +552,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
     return CITIES.filter((c) => c.toLowerCase().includes(q));
   }, [form.city]);
 
-  const dialCode = COUNTRY_DIAL[form.country] || "+91";
-
-  const takeFile = (next) => {
-    if (!next) return;
-    setFile(next);
-  };
-
-  const openBiodataUpload = () => {
-    if (onUploadBiodata) {
-      onUploadBiodata(form);
-      return;
-    }
-    fileRef.current?.click();
-  };
+  const dialCode = COUNTRY_DIAL[form.nri === "no" ? "India" : form.country] || "+91";
 
   const duplicateHits = useMemo(() => {
     const digits = digitsOnly(form.mobile);
@@ -628,9 +652,10 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
     const digits = form.mobile.replace(/\D/g, "");
     onCreate?.({
       ...form,
+      country: form.nri === "no" ? "India" : form.country,
       name: `${form.firstName.trim()} ${form.lastName.trim()}`.replace(/\s+/g, " "),
       mobile: digits ? `${dialCode} ${digits}` : "",
-      fileName: file?.name || initial?.fileName || "",
+      fileName: initial?.fileName || "",
       alsoRead: initial?.alsoRead,
       intake: initial?.intake,
       existingLeadId:
@@ -675,7 +700,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
         aria-hidden
       />
       <div
-        className={`relative z-10 w-full max-w-[640px] bg-white rounded-2xl shadow-xl border border-black/8 max-h-[90vh] flex flex-col overflow-hidden ${
+                  className={`relative z-10 w-full max-w-[720px] bg-white rounded-2xl shadow-xl border border-black/8 max-h-[90vh] flex flex-col overflow-hidden ${
           dropOpen ? "opacity-0 pointer-events-none" : ""
         }`}
         role="dialog"
@@ -708,64 +733,6 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
           </div>
 
           <div className="px-6 pb-5 overflow-y-auto scrollbar-thin flex flex-col gap-5">
-            {!fromBiodata ? (
-              <div
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragging(true);
-                }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragging(false);
-                  if (onUploadBiodata) {
-                    onUploadBiodata(form);
-                    return;
-                  }
-                  takeFile(e.dataTransfer.files?.[0]);
-                }}
-                className={`flex items-center justify-between gap-4 rounded-2xl px-4 py-3.5 transition-colors ${
-                  dragging ? "bg-[#EDE7F6]" : "bg-[#F5F2FB]"
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="size-10 rounded-xl bg-white text-[#7A0A17] grid place-items-center shrink-0 shadow-sm">
-                    <FileSpreadsheet size={18} />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-[13.5px] font-bold text-[#111]">Upload Biodata</p>
-                    { /* <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bg-white text-[#E8395B] text-[10px] font-semibold">
-                        <Sparkles size={10} />
-                        AI Parsing
-                      </span>
-                      */}
-                    </div>
-                    <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 truncate">
-                      {file
-                        ? file.name
-                        : "PDF, Word, or scanned image (JPG / PNG) · match by mobile & email"}
-                    </p>
-                  </div>
-                </div>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.xls,.xlsx"
-                  className="hidden"
-                  onChange={(e) => takeFile(e.target.files?.[0])}
-                />
-                <button
-                  type="button"
-                  onClick={openBiodataUpload}
-                  className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-white border border-black/10 text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] shrink-0"
-                >
-                  <CloudUpload size={15} />
-                  Select File
-                </button>
-              </div>
-            ) : null}
-
             {duplicateHits[0] ? (
               <div className="rounded-xl border border-[#F5D78E] bg-[#FFF8E8] px-3.5 py-3 flex flex-col sm:flex-row sm:items-center gap-2.5">
                 <div className="min-w-0 flex-1">
@@ -816,7 +783,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
 
             <ComparedField
               fieldKey="relation"
-              label="Relation to Prospect"
+              label="Enquiry Made by"
               required
               compare={fieldCompare}
               onKeep={keepField}
@@ -828,7 +795,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <ComparedField
                 fieldKey="firstName"
-                label="Prospect's First Name"
+                label="First Name"
                 required
                 compare={fieldCompare}
                 onKeep={keepField}
@@ -843,7 +810,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
               </ComparedField>
               <ComparedField
                 fieldKey="lastName"
-                label="Prospect's Last Name"
+                label="Last Name"
                 required
                 compare={fieldCompare}
                 onKeep={keepField}
@@ -856,9 +823,6 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
                   className={`${INPUT} ${mismatchClass("lastName")}`}
                 />
               </ComparedField>
-              <Field label="Already in Contact With" required>
-                <NativeSelect value={form.contactWith} onChange={set("contactWith")} options={CONTACT_WITH} />
-              </Field>
               <ComparedField
                 fieldKey="dob"
                 label="Date of Birth"
@@ -876,16 +840,17 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
                   <Calendar size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
                 </div>
               </ComparedField>
+              <Field label="Profession">
+                <ReasonSelect
+                  value={form.profession}
+                  onChange={set("profession")}
+                  options={OCCUPATIONS}
+                  placeholder="Select profession"
+                />
+              </Field>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-              <Field label="Country" required>
-                <NativeSelect
-                  value={form.country}
-                  onChange={set("country")}
-                  options={form.nri === "yes" ? COUNTRIES : ["India"]}
-                />
-              </Field>
               <ComparedField
                 fieldKey="mobile"
                 label="Mobile Number"
@@ -915,9 +880,36 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
                   />
                 </div>
               </ComparedField>
+              <ComparedField
+                fieldKey="email"
+                label="Email"
+                required={!isValidMobile(form.mobile)}
+                compare={fieldCompare}
+                onKeep={keepField}
+                onUseImported={useBiodataField}
+              >
+                <div className="relative">
+                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => set("email")(e.target.value)}
+                    placeholder="kabir.vaidya@enterprise-group.in"
+                    className={`${INPUT} pl-10 ${mismatchClass("email")}`}
+                  />
+                </div>
+              </ComparedField>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
+              <Field label="Country" required>
+                <NativeSelect
+                  value={form.nri === "no" ? "India" : form.country}
+                  onChange={set("country")}
+                  options={form.nri === "yes" ? COUNTRIES : ["India"]}
+                  disabled={form.nri === "no"}
+                />
+              </Field>
               <ComparedField
                 fieldKey="city"
                 label="City"
@@ -978,53 +970,32 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
               </ComparedField>
             </div>
 
-            <ComparedField
-              fieldKey="email"
-              label="Email"
-              required={!isValidMobile(form.mobile)}
-              compare={fieldCompare}
-              onKeep={keepField}
-              onUseImported={useBiodataField}
-            >
-              <div className="relative">
-                <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => set("email")(e.target.value)}
-                  placeholder="kabir.vaidya@enterprise-group.in"
-                  className={`${INPUT} pl-10 ${mismatchClass("email")}`}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <Field
+                label="Family Income Bracket"
+                extra={<span className="text-[11px] text-[#9CA3AF]">Annual Gross</span>}
+              >
+                <ReasonSelect
+                  value={form.income}
+                  onChange={set("income")}
+                  options={INCOME}
+                  placeholder="Select income"
                 />
-              </div>
-            </ComparedField>
-
-            <Field label="Source" required>
-              <div className="flex flex-wrap gap-2">
-                {SOURCES.map((source) => (
-                  <Chip key={source} active={form.source === source} onClick={() => set("source")(source)}>
-                    {source}
-                  </Chip>
-                ))}
-              </div>
-            </Field>
-
-            <Field
-              label="Family Income Bracket"
-              extra={<span className="text-[11px] text-[#9CA3AF]">Annual Gross</span>}
-            >
-              <div className="flex flex-wrap gap-2">
-                {INCOME.map((band) => (
-                  <Chip key={band} active={form.income === band} onClick={() => set("income")(band)}>
-                    {band}
-                  </Chip>
-                ))}
-              </div>
-            </Field>
+              </Field>
+              <Field label="Source" required>
+                <ReasonSelect
+                  value={form.source}
+                  onChange={set("source")}
+                  options={SOURCES}
+                  placeholder="Select source"
+                />
+              </Field>
+            </div>
 
             <Field label="Agree to a Meeting or Call" required>
               <div className="flex flex-wrap gap-2">
                 {MEETINGS.map(({ id, label, icon: Icon }) => {
-                  const active = form.meeting === id;
+                  const active = form.meeting === id && !dropOpen;
                   return (
                     <button
                       key={id}
@@ -1041,6 +1012,18 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
                     </button>
                   );
                 })}
+                <button
+                  type="button"
+                  onClick={openDropModal}
+                  className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-[12.5px] font-semibold border transition-colors ${
+                    dropOpen
+                      ? "bg-[#7A0A17] text-white border-[#7A0A17]"
+                      : "bg-white text-[#4B5563] border-black/12 hover:bg-[#FAFAFB]"
+                  }`}
+                >
+                  <Trash2 size={14} />
+                  Drop Lead
+                </button>
               </div>
             </Field>
 
@@ -1055,37 +1038,21 @@ export default function CreateLeadModal({ open, onClose, onCreate, onUploadBioda
             {error ? <p className="text-[12.5px] font-semibold text-[#E8395B] -mt-2">{error}</p> : null}
           </div>
 
-          <div className="flex items-center justify-between gap-3 px-6 py-3.5 bg-[#F5F2FB] shrink-0">
-            <div className="flex items-center gap-3 min-w-0">
-              <button
-                type="button"
-                onClick={openDropModal}
-                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-[#7A0A17]/35 text-[13px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors shrink-0"
-              >
-                <Trash2 size={14} />
-                Drop Lead
-              </button>
-              <p className="hidden sm:inline-flex items-center gap-1.5 text-[12px] text-[#9CA3AF] truncate">
-                <Lock size={13} className="shrink-0" />
-                Enterprise encrypted pipeline
-              </p>
-            </div>
-            <div className="flex items-center gap-2.5 shrink-0">
-              <button
-                type="button"
-                onClick={onClose}
-                className="h-9 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-              >
-                <UserPlus size={14} />
-                Create Lead
-              </button>
-            </div>
+          <div className="flex items-center justify-end gap-2.5 px-6 py-3.5 bg-[#F5F2FB] shrink-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-9 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+            >
+              <UserPlus size={14} />
+              Create Lead
+            </button>
           </div>
         </form>
       </div>

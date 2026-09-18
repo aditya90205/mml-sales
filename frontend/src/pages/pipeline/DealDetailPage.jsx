@@ -41,8 +41,9 @@ import PaymentsTab from "./deal-tabs/PaymentsTab";
 import P6ChecklistTab from "./deal-tabs/P6ChecklistTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
 import { EMPTY, atLeast, historyUntil, maybeDash, stageGateFor } from "./deal-tabs/stageContent.jsx";
-import { p0StatusOf, updateLead } from "../../utils/pipelineStore.js";
+import { isSampleLead, p0StatusOf, updateLead } from "../../utils/pipelineStore.js";
 import { ensureLeadHistory, recordLeadActivity } from "../../utils/leadActivityStore.js";
+import { formatLookingForLabel, formatYesNoLabel } from "../../utils/leadFields.js";
 import eyeIcon from "../../assets/eye.png";
 
 const BASE_TABS = [
@@ -166,14 +167,52 @@ function buildClientSummaryPoints(deal) {
 }
 
 function getDealContact(lead, name) {
+  const email = String(lead?.email || "").trim();
+  const phone = String(lead?.phone || lead?.mobile || "").trim();
+  if (email || phone) {
+    return { email: email || "—", phone: phone || "—" };
+  }
+  if (!isSampleLead(lead)) {
+    return { email: "—", phone: "—" };
+  }
   const parts = (name || lead?.name || "client").trim().split(/\s+/);
   const first = (parts[0] || "client").toLowerCase();
   const last = (parts.slice(1).join("") || "user").toLowerCase();
   const digits = String(lead?.id || "10471").replace(/\D/g, "").slice(-5).padStart(5, "4");
   return {
-    email: lead?.email || `${first}.${last}@gmail.com`,
-    phone: lead?.phone || lead?.mobile || `+91 98765 ${digits}`,
+    email: `${first}.${last}@gmail.com`,
+    phone: `+91 98765 ${digits}`,
   };
+}
+
+function fromLeadOrDummy(leadValue, dummyValue, sample, allowDummy) {
+  const raw = String(leadValue ?? "").trim();
+  if (raw && raw !== "-") return leadValue;
+  return sample ? maybeDash(allowDummy, dummyValue) : EMPTY;
+}
+
+const MANDATORY_OVERVIEW_KEYS = [
+  "lookingFor",
+  "nri",
+  "enquiryBy",
+  "dob",
+  "country",
+  "mobile",
+  "city",
+  "email",
+  "leadSource",
+  "familyIncomeBand",
+  "profession",
+  "packageInterest",
+  "dealValue",
+  "leadScore",
+];
+
+function countFilledKeys(obj, keys) {
+  return keys.filter((key) => {
+    const value = String(obj?.[key] ?? "").trim();
+    return value && value !== "-" && value !== "—";
+  }).length;
 }
 
 /**
@@ -251,92 +290,133 @@ export default function DealDetailPage({
 
   const deal = useMemo(() => {
     const dealCode = (lead?.mmlId || "MML - D - 10471").replace(/\s*-\s*/g, "-");
+    const sample = isSampleLead(lead);
     const detailsFilled = atLeast(currentStage, "P1") || Boolean(savedDetails);
     const flagsFilled = atLeast(currentStage, "P2");
-    const name = lead?.name || "Ananya Gupta";
+    const name = lead?.name || (sample ? "Ananya Gupta" : "");
     const contact = getDealContact(lead, name);
+    const pick = (leadValue, dummyValue) => fromLeadOrDummy(leadValue, dummyValue, sample, detailsFilled);
+    const lookingFromLead = formatLookingForLabel(lead?.lookingFor) || lead?.lookingFor || "";
+    const nriFromLead = formatYesNoLabel(lead?.nri) || lead?.nri || "";
+    const cityFromLead = lead?.city || "";
+    const areaFromLead = lead?.areaOfHouse || lead?.area || "";
+    const mobileFromLead = lead?.mobile || lead?.phone || contact.phone;
+    const emailFromLead = lead?.email || contact.email;
+    const sourceFromLead = lead?.source || "";
+
     const base = {
       ...DEAL_DEFAULTS,
       id: lead?.id,
       mmlId: lead?.mmlId,
-      source: lead?.source || DEAL_DEFAULTS.leadSource,
+      sample,
+      source: sourceFromLead || (sample ? DEAL_DEFAULTS.leadSource : EMPTY),
+      leadSource: sourceFromLead || pick("", DEAL_DEFAULTS.leadSource),
       p0Status: p0StatusOf(lead),
       owner: lead?.owner,
       dealCode,
       stageLabel: currentStage === "P0" ? p0StageLabel : STAGE_LABELS[currentStage] || STAGE_LABELS.P4,
       name,
-      email: contact.email,
-      phone: contact.phone,
+      email: emailFromLead,
+      phone: mobileFromLead,
+      mobile: mobileFromLead,
       premium: isPremium,
-      dealValue: currentStage === "P0" && !savedDetails ? "₹25,000" : DEAL_DEFAULTS.dealValue,
-      packageInterest: maybeDash(detailsFilled, DEAL_DEFAULTS.packageInterest),
-      leadScore: maybeDash(detailsFilled, DEAL_DEFAULTS.leadScore),
-      enquiryBy: maybeDash(detailsFilled, DEAL_DEFAULTS.enquiryBy),
-      lookingFor: maybeDash(detailsFilled, DEAL_DEFAULTS.lookingFor),
-      dob: maybeDash(
-        detailsFilled,
-        lead?.dob || lead?.intakeValues?.dob || DEAL_DEFAULTS.dob
-      ),
-      areaOfHouse: maybeDash(detailsFilled, DEAL_DEFAULTS.areaOfHouse),
-      profession: maybeDash(detailsFilled, DEAL_DEFAULTS.profession),
-      familyIncomeBand: maybeDash(detailsFilled, DEAL_DEFAULTS.familyIncomeBand),
-      nextAction: maybeDash(detailsFilled, DEAL_DEFAULTS.nextAction),
-      nextMeeting: maybeDash(detailsFilled, DEAL_DEFAULTS.nextMeeting),
-      winLossReasons: winLossOverride?.reasons ?? maybeDash(detailsFilled, DEAL_DEFAULTS.winLossReasons),
+      dealValue: sample
+        ? currentStage === "P0" && !savedDetails
+          ? "₹25,000"
+          : DEAL_DEFAULTS.dealValue
+        : lead?.dealValue || lead?.overviewDetails?.dealValue || EMPTY,
+      packageInterest: pick(lead?.packageInterest, DEAL_DEFAULTS.packageInterest),
+      leadScore: pick(lead?.leadScore ?? (lead?.score != null ? String(lead.score) : ""), DEAL_DEFAULTS.leadScore),
+      enquiryBy: pick(lead?.enquiryBy || lead?.relation, DEAL_DEFAULTS.enquiryBy),
+      lookingFor: pick(lookingFromLead, DEAL_DEFAULTS.lookingFor),
+      nri: nriFromLead || EMPTY,
+      country: lead?.country || (String(lead?.nri).toLowerCase() === "no" ? "India" : EMPTY),
+      city: cityFromLead || EMPTY,
+      dob: pick(lead?.dob || lead?.intakeValues?.dob, DEAL_DEFAULTS.dob),
+      areaOfHouse: pick(areaFromLead, DEAL_DEFAULTS.areaOfHouse),
+      area: cityFromLead ? areaFromLead : pick(areaFromLead, DEAL_DEFAULTS.areaOfHouse),
+      profession: pick(lead?.profession || lead?.occupation, DEAL_DEFAULTS.profession),
+      familyIncomeBand: pick(lead?.familyIncomeBand || lead?.income, DEAL_DEFAULTS.familyIncomeBand),
+      notes: lead?.notes || lead?.overviewDetails?.notes || "",
+      nextAction: sample ? pick("", DEAL_DEFAULTS.nextAction) : (lead?.nextActionNote || EMPTY),
+      nextMeeting: pick(lead?.nextMeeting, DEAL_DEFAULTS.nextMeeting),
+      winLossReasons: winLossOverride?.reasons ?? pick("", DEAL_DEFAULTS.winLossReasons),
       winLossTone: winLossOverride?.tone ?? (lead?.temperature || "Cold"),
-      lastDiscussionAt: maybeDash(detailsFilled, lead?.lastDiscussion || DEAL_DEFAULTS.lastDiscussionAt),
-      lastDiscussionNote: maybeDash(detailsFilled, DEAL_DEFAULTS.lastDiscussionNote),
-      nextActionAt: maybeDash(detailsFilled, lead?.nextAction || DEAL_DEFAULTS.nextActionAt),
-      nextActionUrgency: detailsFilled ? (lead?.hrs != null ? `${lead.hrs} Hrs Left` : DEAL_DEFAULTS.nextActionUrgency) : null,
-      assignedTo: maybeDash(detailsFilled, lead?.owner || DEAL_DEFAULTS.assignedTo),
-      assignedBy: maybeDash(detailsFilled, DEAL_DEFAULTS.assignedBy),
+      lastDiscussionAt: pick(lead?.lastDiscussion, DEAL_DEFAULTS.lastDiscussionAt),
+      lastDiscussionNote: pick(lead?.lastDiscussionNote, DEAL_DEFAULTS.lastDiscussionNote),
+      nextActionAt: sample ? pick(lead?.nextAction, DEAL_DEFAULTS.nextActionAt) : (lead?.nextAction || EMPTY),
+      nextActionUrgency: detailsFilled
+        ? lead?.hrs != null
+          ? `${lead.hrs} Hrs Left`
+          : sample
+            ? DEAL_DEFAULTS.nextActionUrgency
+            : null
+        : null,
+      assignedTo: pick(lead?.owner, DEAL_DEFAULTS.assignedTo),
+      assignedBy: pick("", DEAL_DEFAULTS.assignedBy),
       rmFlags: DEAL_DEFAULTS.rmFlags.map((flag) =>
         flagsFilled ? flag : { ...flag, label: EMPTY }
       ),
       stageGate: stageGateFor(currentStage),
       stageHistory: historyUntil(currentStage, { p0Contacted: isContactedP0 }),
-      fieldsFilledNote:
-        currentStage === "P0" && !savedDetails
-          ? "0 of 14 mandatory fields filled. please fill/edit all the details to move to Contacted"
-          : currentStage === "P0"
-            ? "14 of 14 mandatory fields filled. Move to P1 when ready."
-            : "14 of 14 mandatory fields filled.",
-      weightedValue: maybeDash(detailsFilled, DEAL_DEFAULTS.weightedValue),
-      weightedValueNote: maybeDash(detailsFilled, DEAL_DEFAULTS.weightedValueNote),
+      weightedValue: pick("", DEAL_DEFAULTS.weightedValue),
+      weightedValueNote: pick("", DEAL_DEFAULTS.weightedValueNote),
     };
 
-    if (!savedDetails) return base;
+    const merged = savedDetails
+      ? {
+          ...base,
+          dealCode: savedDetails.dealCode || base.dealCode,
+          stageLabel:
+            currentStage === "P0"
+              ? p0StageLabel
+              : STAGE_LABELS[currentStage] || savedDetails.stageLabel || base.stageLabel,
+          packageInterest: savedDetails.packageInterest || base.packageInterest,
+          premium: savedDetails.premium === "Yes",
+          dealValue: savedDetails.dealValue || base.dealValue,
+          leadSource: savedDetails.leadSource || savedDetails.source || base.leadSource,
+          source: savedDetails.leadSource || savedDetails.source || base.source,
+          leadScore: savedDetails.leadScore || base.leadScore,
+          enquiryBy: savedDetails.enquiryBy || base.enquiryBy,
+          lookingFor: savedDetails.lookingFor || base.lookingFor,
+          nri: savedDetails.nri || base.nri,
+          country: savedDetails.country || base.country,
+          city: savedDetails.city || base.city,
+          mobile: savedDetails.mobile || base.mobile,
+          email: savedDetails.email || base.email,
+          notes: savedDetails.notes ?? base.notes,
+          dob: savedDetails.dob || base.dob,
+          areaOfHouse: savedDetails.area || savedDetails.areaOfHouse || base.areaOfHouse,
+          area: savedDetails.area || savedDetails.areaOfHouse || base.area,
+          profession: savedDetails.profession || base.profession,
+          familyIncomeBand: savedDetails.familyIncomeBand || base.familyIncomeBand,
+          nextMeeting: savedDetails.nextMeeting || base.nextMeeting,
+          winLossReasons: savedDetails.winLossReasons || base.winLossReasons,
+          winLossTone: savedDetails.winLossTone || base.winLossTone,
+          lastDiscussionAt: savedDetails.lastDiscussionAt || base.lastDiscussionAt,
+          lastDiscussionNote: savedDetails.lastDiscussionNote || base.lastDiscussionNote,
+          nextActionAt: savedDetails.nextActionAt || base.nextActionAt,
+          nextAction: savedDetails.nextAction || base.nextAction,
+          nextActionUrgency: savedDetails.nextActionUrgency || base.nextActionUrgency,
+          assignedTo: savedDetails.assignedTo || base.assignedTo,
+          assignedBy: savedDetails.assignedBy || base.assignedBy,
+        }
+      : base;
 
-    return {
-      ...base,
-      dealCode: savedDetails.dealCode || base.dealCode,
-      stageLabel:
-        currentStage === "P0"
-          ? p0StageLabel
-          : STAGE_LABELS[currentStage] || savedDetails.stageLabel || base.stageLabel,
-      packageInterest: savedDetails.packageInterest || base.packageInterest,
-      premium: savedDetails.premium === "Yes",
-      dealValue: savedDetails.dealValue || base.dealValue,
-      leadSource: savedDetails.leadSource || base.leadSource,
-      leadScore: savedDetails.leadScore || base.leadScore,
-      enquiryBy: savedDetails.enquiryBy || base.enquiryBy,
-      lookingFor: savedDetails.lookingFor || base.lookingFor,
-      dob: savedDetails.dob || base.dob,
-      areaOfHouse: savedDetails.areaOfHouse || base.areaOfHouse,
-      profession: savedDetails.profession || base.profession,
-      familyIncomeBand: savedDetails.familyIncomeBand || base.familyIncomeBand,
-      nextMeeting: savedDetails.nextMeeting || base.nextMeeting,
-      winLossReasons: savedDetails.winLossReasons || base.winLossReasons,
-      winLossTone: savedDetails.winLossTone || base.winLossTone,
-      lastDiscussionAt: savedDetails.lastDiscussionAt || base.lastDiscussionAt,
-      lastDiscussionNote: savedDetails.lastDiscussionNote || base.lastDiscussionNote,
-      nextActionAt: savedDetails.nextActionAt || base.nextActionAt,
-      nextAction: savedDetails.nextAction || base.nextAction,
-      nextActionUrgency: savedDetails.nextActionUrgency || base.nextActionUrgency,
-      assignedTo: savedDetails.assignedTo || base.assignedTo,
-      assignedBy: savedDetails.assignedBy || base.assignedBy,
-    };
-  }, [lead, currentStage, winLossOverride, isPremium, savedDetails]);
+    const filled = sample
+      ? detailsFilled
+        ? 14
+        : 0
+      : countFilledKeys(merged, MANDATORY_OVERVIEW_KEYS);
+    merged.fieldsFilledNote =
+      currentStage === "P0" && !savedDetails
+        ? `${filled} of 14 mandatory fields filled. please fill/edit all the details to move to Contacted`
+        : currentStage === "P0"
+          ? `${Math.max(filled, 1)} of 14 mandatory fields filled. Move to P1 when ready.`
+          : `${Math.max(filled, 1)} of 14 mandatory fields filled.`;
+
+    return merged;
+  }, [lead, currentStage, winLossOverride, isPremium, savedDetails, p0StageLabel, isContactedP0]);
 
   const openHandoverSuccess = () => {
     setServiceAssigned({
@@ -402,6 +482,20 @@ export default function DealDetailPage({
     if (lead?.id) {
       updateLead(lead.id, {
         dob: draft.dob || "",
+        lookingFor: draft.lookingFor || "",
+        nri: draft.nri || "",
+        country: draft.country || "",
+        city: draft.city || "",
+        area: draft.area || draft.areaOfHouse || "",
+        areaOfHouse: draft.area || draft.areaOfHouse || "",
+        relation: draft.enquiryBy || "",
+        enquiryBy: draft.enquiryBy || "",
+        mobile: draft.mobile || "",
+        email: draft.email || "",
+        source: draft.leadSource || draft.source || "",
+        profession: draft.profession || "",
+        familyIncomeBand: draft.familyIncomeBand || "",
+        notes: draft.notes || "",
         overviewDetails: draft,
       });
     }

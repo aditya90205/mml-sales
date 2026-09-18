@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, CloudUpload, FileText, Loader2, Search } from "lucide-react";
+import { CheckCircle2, CloudUpload, FileText, Loader2 } from "lucide-react";
 import Modal from "../ui/Modal.jsx";
+import SearchField from "../common/SearchField.jsx";
 import {
-  findDuplicatesByMobileOrEmail,
+  formatDisplayId,
   formatDisplayMobile,
+  searchContactsByQuery,
 } from "../../utils/contactSearch.js";
 import { extractBiodata } from "../../utils/biodataExtract.js";
 import {
@@ -14,11 +16,7 @@ import {
   isValidEmail,
 } from "../../utils/leadFields.js";
 
-const CONTACT_UPLOAD_ERROR = "Enter at least one valid mobile or email, then upload the biodata.";
-
 const ACCEPT = ".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.tif,.tiff";
-const INPUT =
-  "w-full h-10 px-3.5 rounded-xl bg-white border border-black/12 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/45 transition-colors";
 
 function importedFromExtract(data) {
   const values = {};
@@ -34,22 +32,39 @@ function seedFieldValues(imported, existing) {
   return values;
 }
 
+function queryAsContact(query = "") {
+  const raw = String(query || "").trim();
+  const digits = raw.replace(/\D/g, "").slice(-10);
+  const email = isValidEmail(raw) ? raw : "";
+  return {
+    mobile: digits.length === 10 ? digits : "",
+    email,
+  };
+}
+
+function ContactMeta({ row, compact = false }) {
+  const mobile = row?.mobile ? formatDisplayMobile(row.mobile) : "";
+  const email = String(row?.email || "").trim();
+  const line = [mobile, email].filter(Boolean).join(" · ");
+  return (
+    <p className={`text-[#6B7280] truncate ${compact ? "text-[11.5px] mt-0.5" : "text-[12.5px] mt-1"}`}>
+      {line || "No mobile or email on file"}
+    </p>
+  );
+}
+
 export default function BiodataUploadModal({ open, onClose, onFillForm, compareWith = null }) {
   const fileRef = useRef(null);
-  const [mobile, setMobile] = useState("");
-  const [email, setEmail] = useState("");
+  const [query, setQuery] = useState("");
   const [match, setMatch] = useState(null);
-  const [searched, setSearched] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [file, setFile] = useState(null);
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
 
   const reset = () => {
-    setMobile("");
-    setEmail("");
+    setQuery("");
     setMatch(null);
-    setSearched(false);
     setDragging(false);
     setFile(null);
     setParsing(false);
@@ -64,33 +79,32 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const snap = compareWith || {};
-    if (snap.mobile) setMobile(String(snap.mobile).replace(/\D/g, "").slice(-10));
-    if (snap.email) setEmail(String(snap.email).trim());
+    const seed = String(snap.mobile || snap.email || snap.name || "").trim();
+    if (seed) {
+      setQuery(seed);
+      const hits = searchContactsByQuery(seed).results;
+      if (hits[0]) setMatch(hits[0]);
+    }
     return () => {
       document.body.style.overflow = prev;
     };
   }, [open]);
 
-  const digits = useMemo(() => String(mobile || "").replace(/\D/g, "").slice(-10), [mobile]);
-  const emailTrimmed = String(email || "").trim();
-  const canSearch = digits.length === 10 || Boolean(emailTrimmed);
-  const canUpload = digits.length === 10 || isValidEmail(emailTrimmed);
+  const { hasQuery, results } = useMemo(() => searchContactsByQuery(query), [query]);
+  const typedContact = useMemo(() => queryAsContact(query), [query]);
+  const listOpen = hasQuery && !match;
+  const digits = String(match?.mobile || typedContact.mobile || "").replace(/\D/g, "").slice(-10);
+  const emailTrimmed = String(match?.email || typedContact.email || "").trim();
+  const canUpload = Boolean(match) || isValidEmail(emailTrimmed) || digits.length === 10;
 
   const contactUploadError = () => {
-    if (digits.length && digits.length !== 10) return "Enter a valid 10-digit mobile, or a valid email.";
-    if (emailTrimmed && !isValidEmail(emailTrimmed)) return "Enter a valid email, or a 10-digit mobile.";
-    return CONTACT_UPLOAD_ERROR;
-  };
-
-  const runSearch = (nextMobile = mobile, nextEmail = email) => {
-    const hits = findDuplicatesByMobileOrEmail({
-      mobile: String(nextMobile || "").replace(/\D/g, "").slice(-10),
-      email: String(nextEmail || "").trim(),
-    });
-    setMatch(hits[0] || null);
-    setSearched(true);
-    setError("");
-    return hits[0] || null;
+    if (hasQuery && results.length && !match) {
+      return "Select an existing client from the list, then upload.";
+    }
+    if (hasQuery && !results.length && !canUpload) {
+      return "No existing client found. Search by mobile or email to upload a new profile.";
+    }
+    return "Search and select an existing client, then upload the biodata.";
   };
 
   const emitFill = (data, prospect) => {
@@ -101,7 +115,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
     if (!imported.city && data.intake?.addrCity) imported.city = data.intake.addrCity;
     if (!imported.area && data.intake?.addrAreaLocality) imported.area = data.intake.addrAreaLocality;
     if (!imported.relation && data.intake?.enquiryBy) imported.relation = data.intake.enquiryBy;
-    if (!imported.relation) imported.relation = "Self / Prospect";
+    if (!imported.relation) imported.relation = "Self";
 
     const crmExisting = prospect ? contactToLeadFields(prospect) : {};
     const formExisting = formToLeadFields(compareWith);
@@ -142,7 +156,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
     setError("");
     window.setTimeout(async () => {
       try {
-        const prospect = searched ? match : runSearch();
+        const prospect = match || null;
         const data = await extractBiodata(next);
         const imported = importedFromExtract(data);
         const profileContact = {
@@ -170,95 +184,77 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
       open={open}
       onClose={onClose}
       title="Upload Biodata"
-      subtitle="Enter at least one of mobile or email, then upload."
+      subtitle="Search an existing client by name, mobile, or email, then upload."
       icon={<FileText size={18} />}
       iconBg="#E7F8EF"
       iconColor="#16A34A"
       width="max-w-xl"
       zClass="z-[70]"
     >
-      <div className="flex flex-col gap-5">
-        <div className="rounded-2xl border border-black/10 bg-[#FAFAFB] px-4 py-4">
+      <div className="relative flex flex-col gap-5">
+        <div className="relative z-20 rounded-2xl border border-black/10 bg-[#FAFAFB] px-4 py-4">
           <p className="text-[12px] font-semibold text-[#6B7280] uppercase tracking-wide">
-            1. Mobile or email (at least one)
+            1. Search existing client
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-            <div>
-              <label className="text-[12.5px] font-semibold text-[#111]">
-                Mobile{!isValidEmail(emailTrimmed) ? " *" : ""}
-              </label>
-              <input
-                value={mobile}
-                onChange={(e) => {
-                  setMobile(e.target.value.replace(/[^\d]/g, "").slice(0, 10));
-                  setSearched(false);
-                  setMatch(null);
-                  setError("");
-                }}
-                className={`${INPUT} mt-1`}
-                placeholder="9876543210"
-                inputMode="numeric"
-              />
-            </div>
-            <div>
-              <label className="text-[12.5px] font-semibold text-[#111]">
-                Email{digits.length !== 10 ? " *" : ""}
-              </label>
-              <input
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setSearched(false);
-                  setMatch(null);
-                  setError("");
-                }}
-                className={`${INPUT} mt-1`}
-                placeholder="name@email.com"
-                type="email"
-              />
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              if (!canSearch) {
-                setError("Enter mobile or email to search.");
-                return;
-              }
-              if (digits.length && digits.length !== 10) {
-                setError("Enter a valid 10-digit mobile, or search by email.");
-                return;
-              }
-              if (emailTrimmed && !isValidEmail(emailTrimmed)) {
-                setError("Enter a valid email, or search by mobile.");
-                return;
-              }
-              runSearch();
-            }}
-            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/12 text-[13px] font-semibold text-[#374151] hover:bg-white mt-3"
-          >
-            <Search size={14} />
-            Search existing client
-          </button>
-
-          {searched ? (
-            match ? (
-              <div className="flex items-start gap-2 mt-3 rounded-xl bg-[#F0FDF4] border border-[#86EFAC] px-3 py-2.5">
-                <CheckCircle2 size={16} className="text-[#16A34A] mt-0.5 shrink-0" />
-                <p className="text-[13px] text-[#166534]">
-                  Already in the system: <span className="font-semibold">{match.name}</span>
-                  {match.mobile ? ` · ${formatDisplayMobile(match.mobile)}` : ""}
-                  {match.email ? ` · ${match.email}` : ""}. Extra biodata will go to this client&apos;s Profile (P2).
-                </p>
+          <div className="relative mt-3">
+            <SearchField
+              value={query}
+              onChange={(value) => {
+                setQuery(value);
+                setMatch(null);
+                setError("");
+              }}
+              placeholder="Name, mobile, or email"
+              className="w-full"
+            />
+            {listOpen && results.length > 0 ? (
+              <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-30 rounded-xl border border-black/10 bg-white shadow-[0_12px_32px_rgba(0,0,0,0.12)] overflow-hidden">
+                <div className="max-h-48 overflow-y-auto">
+                  {results.slice(0, 12).map((row) => (
+                    <button
+                      key={row.id}
+                      type="button"
+                      onClick={() => {
+                        setMatch(row);
+                        setQuery(row.name || query);
+                        setError("");
+                      }}
+                      className="w-full text-left px-3 py-2.5 hover:bg-[#FCF5F6] border-b border-black/5 last:border-b-0"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-[13px] font-semibold text-[#111] truncate">{row.name || "Unnamed"}</p>
+                        <span className="text-[11px] font-semibold text-[#7A0A17] shrink-0 tabular-nums">
+                          {formatDisplayId(row)}
+                        </span>
+                      </div>
+                      <ContactMeta row={row} compact />
+                    </button>
+                  ))}
+                </div>
               </div>
-            ) : (
-              <p className="text-[13px] text-[#6B7280] mt-3">
-                No existing client for this number / email. We will create a new lead after upload.
-              </p>
-            )
+            ) : null}
+          </div>
+
+          {match ? (
+            <div className="flex items-start gap-2.5 mt-3 rounded-xl bg-[#F0FDF4] border border-[#86EFAC] px-3 py-2.5">
+              <CheckCircle2 size={16} className="text-[#16A34A] mt-0.5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-[13px] font-semibold text-[#166534] truncate">{match.name}</p>
+                  <span className="text-[11px] font-semibold text-[#166534] shrink-0 tabular-nums">
+                    {formatDisplayId(match)}
+                  </span>
+                </div>
+                <ContactMeta row={match} />
+              </div>
+            </div>
           ) : (
             <p className="text-[12.5px] text-[#9CA3AF] mt-3">
-              Search first so we know if this person is already a client. At least one of mobile or email is required to upload.
+              {listOpen && results.length === 0
+                ? canUpload
+                  ? "No existing client for this search. You can still upload to create a new lead."
+                  : "No existing client found. Try another name, mobile, or email."
+                : "Type a name, mobile, or email, then select a client."}
             </p>
           )}
         </div>
@@ -310,14 +306,11 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
               >
                 Select file
               </button>
-              {/* <p className="text-[11.5px] text-[#9CA3AF] mt-3">
-                Create Lead gets name, city, and contact. Extra details save in Sales Pipeline → Profile Create (P2).
-              </p> */}
             </>
           )}
         </div>
 
-        {error ? <p className="text-[12.5px] font-semibold text-[#E8395B] -mt-2">{error}</p> : null}
+        <p className="text-[12.5px] font-semibold text-[#E8395B] min-h-[18px] -mt-2">{error || "\u00a0"}</p>
       </div>
     </Modal>
   );

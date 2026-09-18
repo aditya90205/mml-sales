@@ -14,7 +14,7 @@ export const CREATE_LEAD_COMPARE_FIELDS = [
   { key: "area", label: "Area / locality", required: false },
   { key: "dob", label: "Date of birth", required: false },
   { key: "lookingFor", label: "Looking for", required: false },
-  { key: "relation", label: "Relation to prospect", required: false },
+  { key: "relation", label: "Enquiry made by", required: false },
 ];
 
 export const CONTACT_REQUIRED_MESSAGE = "Enter at least one valid mobile number or email.";
@@ -118,6 +118,28 @@ export function displayFieldValue(key, value) {
   return raw;
 }
 
+/** Overview label for Create Lead looking-profile (Groom / Bride), else the stored text. */
+export function formatLookingForLabel(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw || raw === "-") return "";
+  const shown = displayFieldValue("lookingFor", raw);
+  return shown === "—" ? raw : shown;
+}
+
+export function isLookingToggleValue(value) {
+  const v = String(value ?? "").trim().toLowerCase();
+  if (!v) return true;
+  return v === "yes" || v === "no" || v.includes("groom") || v.includes("bride");
+}
+
+export function formatYesNoLabel(value) {
+  const v = String(value ?? "").trim().toLowerCase();
+  if (!v || v === "-") return "";
+  if (v === "yes" || v === "true") return "Yes";
+  if (v === "no" || v === "false") return "No";
+  return String(value).trim();
+}
+
 export function contactToLeadFields(row) {
   if (!row || typeof row !== "object") return {};
   const names =
@@ -182,7 +204,7 @@ export function coerceCreateLeadValue(key, value) {
   }
   if (key === "relation") {
     const v = raw.toLowerCase();
-    if (v.includes("self")) return "Self / Prospect";
+    if (v.includes("self")) return "Self";
     if (v.includes("parent")) return "Parent";
     if (v.includes("sibling")) return "Sibling";
     if (v.includes("relative")) return "Relative";
@@ -213,10 +235,10 @@ export function listLeadFieldChanges(nextValues = {}, existingValues = {}) {
 export function validateCreateLeadFields(form = {}) {
   const errors = {};
   if (!String(form.firstName || "").trim()) {
-    errors.firstName = "Prospect's first name is required.";
+    errors.firstName = "First name is required.";
   }
   if (!String(form.lastName || "").trim()) {
-    errors.lastName = "Prospect's last name is required.";
+    errors.lastName = "Last name is required.";
   }
   const mobile = String(form.mobile || "").trim();
   const email = String(form.email || "").trim();

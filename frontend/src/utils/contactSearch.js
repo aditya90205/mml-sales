@@ -133,6 +133,23 @@ export function listAllContacts() {
   return out;
 }
 
+/** One box: search leads + clients by name, mobile, or email. */
+export function searchContactsByQuery(query = "") {
+  const q = String(query || "").trim();
+  const digits = digitsOnly(q);
+  if (q.includes("@")) return searchContacts({ email: q });
+  if (digits.length >= 3 && /^[\d\s+()-]+$/.test(q)) return searchContacts({ mobile: q });
+  if (q.length < 2) return { hasQuery: false, results: [] };
+  return searchContacts({ name: q, email: q.includes(".") ? q : "" });
+}
+
+export function formatDisplayId(row = {}) {
+  const id = String(row.mmlId || "").replace(/\s+/g, " ").trim();
+  if (id) return id;
+  if (row.type === "client" && row.recordId) return `Client #${row.recordId}`;
+  return String(row.recordId || row.id || "—");
+}
+
 /**
  * Search leads + clients by name, mobile, and/or email.
  * Returns rows with match flags: nameOk, mobileOk, emailOk, matched (any hit).

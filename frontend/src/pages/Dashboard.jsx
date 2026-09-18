@@ -1725,10 +1725,6 @@ export default function Dashboard() {
             setShowCreateLead(false);
             setLeadInitial(null);
           }}
-          onUploadBiodata={(formSnapshot) => {
-            setBiodataCompareWith(formSnapshot || null);
-            setShowBiodataUpload(true);
-          }}
           onCreate={(lead) => {
             const nextAction =
               lead.meeting === "Meeting Agreed"
@@ -1766,6 +1762,23 @@ export default function Dashboard() {
                   biodataFile: bio.fileName,
                 }
               : {};
+            const overviewPatch = {
+              firstName: lead.firstName || "",
+              lastName: lead.lastName || "",
+              lookingFor: lead.lookingFor || "",
+              nri: lead.nri || "no",
+              country: lead.nri === "no" ? "India" : lead.country || "",
+              city: lead.city || "",
+              area: lead.area || "",
+              relation: lead.relation || "",
+              profession: lead.profession || "",
+              familyIncomeBand: lead.income || "",
+              enquiryBy: lead.relation || "",
+              dob: lead.dob || "",
+              areaOfHouse: lead.area || "",
+              notes: lead.notes || "",
+              meeting: lead.meeting || "",
+            };
 
             if (existingId) {
               updateLead(existingId, {
@@ -1776,6 +1789,7 @@ export default function Dashboard() {
                 lastDiscussion: "Just now",
                 nextAction,
                 temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
+                ...overviewPatch,
                 ...biodataPatch,
               });
               if (bio) {
@@ -1843,6 +1857,7 @@ export default function Dashboard() {
               mobile: lead.mobile,
               email: lead.email,
               p0Status: "new",
+              ...overviewPatch,
               ...biodataPatch,
             });
             if (created?.id && bio) {
@@ -1944,7 +1959,7 @@ export default function Dashboard() {
               area: f.area || prior.area || "",
               lookingFor: f.lookingFor || prior.lookingFor || "yes",
               relation:
-                payload?.importedFields?.relation || f.relation || prior.relation || "Self / Prospect",
+                payload?.importedFields?.relation || f.relation || prior.relation || "Self",
               contactWith: match && !isNew ? "Existing Client" : prior.contactWith || "First Contact",
               source:
                 prior.source && prior.source !== "Website Inquiry"

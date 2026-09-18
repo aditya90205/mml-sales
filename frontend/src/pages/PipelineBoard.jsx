@@ -76,15 +76,27 @@ function leadPatchFromDetails(details = {}) {
   const patch = {
     profession: details.profession,
     familyIncomeBand: details.familyIncomeBand,
-    areaOfHouse: details.areaOfHouse,
+    areaOfHouse: details.area || details.areaOfHouse,
+    area: details.area || details.areaOfHouse,
     starred: details.premium === "Yes",
   };
   if (details.lastDiscussionAt) patch.lastDiscussion = details.lastDiscussionAt;
   if (details.nextActionAt || details.nextAction) {
     patch.nextAction = details.nextActionAt || details.nextAction;
   }
-  if (details.leadSource) patch.source = details.leadSource;
+  if (details.leadSource || details.source) patch.source = details.leadSource || details.source;
   if (details.dob) patch.dob = details.dob;
+  if (details.lookingFor != null) patch.lookingFor = details.lookingFor;
+  if (details.nri != null) patch.nri = details.nri;
+  if (details.country) patch.country = details.country;
+  if (details.city) patch.city = details.city;
+  if (details.enquiryBy) {
+    patch.enquiryBy = details.enquiryBy;
+    patch.relation = details.enquiryBy;
+  }
+  if (details.mobile) patch.mobile = details.mobile;
+  if (details.email) patch.email = details.email;
+  if (details.notes != null) patch.notes = details.notes;
   return patch;
 }
 

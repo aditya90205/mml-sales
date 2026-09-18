@@ -63,6 +63,8 @@ export function mapBiodataToIntake(payload = {}) {
   }
   if (f.lookingFor) out.lookingFor = mapLookingFor(f.lookingFor);
   if (f.relation) out.enquiryBy = out.enquiryBy || mapEnquiryBy(f.relation);
+  if (f.occupation) out.occupation = out.occupation || f.occupation;
+  if (f.profession) out.occupation = out.occupation || f.profession;
 
   if (alsoMap.height) out.height = out.height || alsoMap.height;
   if (alsoMap.community) out.sectCaste = out.sectCaste || alsoMap.community;
@@ -105,9 +107,11 @@ export function mapLeadToIntake(lead = {}) {
     email: lead.email || "",
     lookingFor: mapLookingFor(lead.lookingFor),
     enquiryBy: mapEnquiryBy(lead.relation),
+    occupation: lead.profession || lead.occupation || "",
     addrCity: lead.city ? String(lead.city).split(",")[0].trim() : "",
     addrAreaLocality: lead.area || "",
     dob: lead.dob || "",
+    occupation: lead.occupation || "",
   };
 }
 
@@ -138,6 +142,7 @@ export function buildLeadIntakePayload(leadForm = {}, payload = {}) {
     area: leadForm.area || srcFields.area || "",
     lookingFor: leadForm.lookingFor || srcFields.lookingFor || "",
     relation: leadForm.relation || srcFields.relation || "",
+    occupation: leadForm.profession || leadForm.occupation || srcFields.occupation || srcFields.profession || "",
   };
   const alsoRead = leadForm.alsoRead || payload.alsoRead || [];
   const intake = leadForm.intake || payload.intake || {};

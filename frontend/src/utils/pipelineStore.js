@@ -121,6 +121,15 @@ export const LEADS_BY_STAGE = {
 };
 
 const STAGE_IDS = Object.keys(LEADS_BY_STAGE);
+const SAMPLE_LEAD_IDS = new Set(
+  STAGE_IDS.flatMap((stageId) => (LEADS_BY_STAGE[stageId] || []).map((lead) => lead.id))
+);
+
+/** Board roster leads keep dummy overview values. Created clients do not. */
+export function isSampleLead(lead) {
+  const id = typeof lead === "string" ? lead : lead?.id;
+  return SAMPLE_LEAD_IDS.has(id);
+}
 
 function cloneLeads(data = LEADS_BY_STAGE) {
   const next = {};
