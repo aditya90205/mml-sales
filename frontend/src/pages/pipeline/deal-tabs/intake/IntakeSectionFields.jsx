@@ -11,21 +11,19 @@ function FieldLabel({ label, required }) {
   );
 }
 
-function Pill({ selected, onClick, children }) {
+function Pill({ selected, onClick, children, readOnly }) {
+  const className = `inline-flex items-center h-9 px-3.5 rounded-xl text-[12.5px] font-semibold whitespace-nowrap ${
+    selected ? "bg-[#7A0A17] text-white" : "bg-white border border-black/12 text-[#374151]"
+  } ${readOnly ? "" : "transition-colors hover:bg-[#FAFAFB]"}`;
+  if (readOnly) return <span className={className}>{children}</span>;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`h-9 px-3.5 rounded-xl text-[12.5px] font-semibold transition-colors whitespace-nowrap ${
-        selected ? "bg-[#7A0A17] text-white" : "bg-white border border-black/12 text-[#374151] hover:bg-[#FAFAFB]"
-      }`}
-    >
+    <button type="button" onClick={onClick} className={className}>
       {children}
     </button>
   );
 }
 
-function RowsField({ def, value, onChange }) {
+function RowsField({ def, value, onChange, readOnly }) {
   const rows = value && value.length ? value : Array.from({ length: def.rowCount }, () => ({}));
   const rowLabel = def.rowLabel || "Row";
 
@@ -49,8 +47,9 @@ function RowsField({ def, value, onChange }) {
                   <label className="block text-[11px] text-[#9CA3AF] mb-1">{rf.label}</label>
                   <input
                     value={row[rf.key] || ""}
-                    onChange={(e) => updateRow(i, rf.key, e.target.value)}
-                    className="w-full h-9 border border-black/12 rounded-lg px-2.5 text-[12.5px] text-[#111] outline-none focus:border-[#7A0A17] bg-white"
+                    readOnly={readOnly}
+                    onChange={readOnly ? undefined : (e) => updateRow(i, rf.key, e.target.value)}
+                    className={`w-full h-9 border border-black/12 rounded-lg px-2.5 text-[12.5px] text-[#111] outline-none focus:border-[#7A0A17] ${readOnly ? "bg-[#FAFAFB]" : "bg-white"}`}
                   />
                 </div>
               ))}
@@ -62,7 +61,7 @@ function RowsField({ def, value, onChange }) {
   );
 }
 
-function ChecklistField({ def, value, onChange }) {
+function ChecklistField({ def, value, onChange, readOnly }) {
   const checked = value || [];
   const toggle = (opt) => {
     const next = checked.includes(opt) ? checked.filter((c) => c !== opt) : [...checked, opt];
@@ -79,10 +78,11 @@ function ChecklistField({ def, value, onChange }) {
             <button
               type="button"
               key={opt}
-              onClick={() => toggle(opt)}
-              className={`flex items-center gap-2 h-11 px-3 rounded-lg border text-[12.5px] font-medium text-left transition-colors ${
-                isChecked ? "bg-[#ECFDF3] border-[#16A34A]/30 text-[#111]" : "bg-white border-black/12 text-[#374151] hover:bg-[#FAFAFB]"
-              }`}
+              onClick={readOnly ? undefined : () => toggle(opt)}
+              disabled={readOnly}
+              className={`flex items-center gap-2 h-11 px-3 rounded-lg border text-[12.5px] font-medium text-left ${
+                isChecked ? "bg-[#ECFDF3] border-[#16A34A]/30 text-[#111]" : "bg-white border-black/12 text-[#374151]"
+              } ${readOnly ? "" : "transition-colors hover:bg-[#FAFAFB]"}`}
             >
               <span
                 className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${
@@ -100,14 +100,42 @@ function ChecklistField({ def, value, onChange }) {
   );
 }
 
-function IntakeField({ def, value, chips, onChange, onRemoveChip }) {
+function IntakeField({ def, value, chips, onChange, onRemoveChip, readOnly }) {
+  if (def.type === "select") {
+    const options = def.options || [];
+    const list = value && !options.includes(value) ? [value, ...options] : options;
+    return (
+      <div>
+        <FieldLabel label={def.label} required={def.required} />
+        <select
+          value={value || ""}
+          disabled={readOnly}
+          onChange={readOnly ? undefined : (e) => onChange(e.target.value)}
+          className={`${INPUT} ${readOnly ? "bg-[#FAFAFB]" : ""}`}
+        >
+          <option value="">Select</option>
+          {list.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
   if (def.type === "pill") {
     return (
       <div>
         <FieldLabel label={def.label} required={def.required} />
         <div className="flex flex-wrap gap-2">
           {def.options.map((opt) => (
-            <Pill key={opt} selected={value === opt} onClick={() => onChange(opt === value ? "" : opt)}>
+            <Pill
+              key={opt}
+              selected={value === opt}
+              readOnly={readOnly}
+              onClick={() => onChange(opt === value ? "" : opt)}
+            >
               {opt}
             </Pill>
           ))}
@@ -122,21 +150,22 @@ function IntakeField({ def, value, chips, onChange, onRemoveChip }) {
         <FieldLabel label={def.label} required={def.required} />
         <textarea
           value={value || ""}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Write here"
+          readOnly={readOnly}
+          onChange={readOnly ? undefined : (e) => onChange(e.target.value)}
+          placeholder={readOnly ? "" : "Write here"}
           rows={4}
-          className={`${INPUT} h-auto py-2.5 resize-none`}
+          className={`${INPUT} h-auto py-2.5 resize-none ${readOnly ? "bg-[#FAFAFB]" : ""}`}
         />
       </div>
     );
   }
 
   if (def.type === "rows") {
-    return <RowsField def={def} value={value} onChange={onChange} />;
+    return <RowsField def={def} value={value} onChange={onChange} readOnly={readOnly} />;
   }
 
   if (def.type === "checklist") {
-    return <ChecklistField def={def} value={value} onChange={onChange} />;
+    return <ChecklistField def={def} value={value} onChange={onChange} readOnly={readOnly} />;
   }
 
   if (def.type === "upload") {
@@ -144,14 +173,21 @@ function IntakeField({ def, value, chips, onChange, onRemoveChip }) {
       <div>
         <FieldLabel label={def.label} required={def.required} />
         <div className="flex items-center gap-2">
-          <input value={value || ""} onChange={(e) => onChange(e.target.value)} className={INPUT} />
-          <button
-            type="button"
-            onClick={() => toast.info("Upload coming soon.")}
-            className="h-11 px-4 rounded-xl border border-black/12 text-[12.5px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors shrink-0 whitespace-nowrap"
-          >
-            Upload
-          </button>
+          <input
+            value={value || ""}
+            readOnly={readOnly}
+            onChange={readOnly ? undefined : (e) => onChange(e.target.value)}
+            className={`${INPUT} ${readOnly ? "bg-[#FAFAFB]" : ""}`}
+          />
+          {readOnly ? null : (
+            <button
+              type="button"
+              onClick={() => toast.info("Upload coming soon.")}
+              className="h-11 px-4 rounded-xl border border-black/12 text-[12.5px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors shrink-0 whitespace-nowrap"
+            >
+              Upload
+            </button>
+          )}
         </div>
         {def.note && <p className="text-[11px] text-[#9CA3AF] mt-1.5">{def.note}</p>}
         {def.chipsKey && (
@@ -176,16 +212,22 @@ function IntakeField({ def, value, chips, onChange, onRemoveChip }) {
   return (
     <div>
       <FieldLabel label={def.label} required={def.required} />
-      <input value={value || ""} onChange={(e) => onChange(e.target.value)} className={INPUT} />
+      <input
+        value={value || ""}
+        readOnly={readOnly}
+        onChange={readOnly ? undefined : (e) => onChange(e.target.value)}
+        className={`${INPUT} ${readOnly ? "bg-[#FAFAFB]" : ""}`}
+      />
     </div>
   );
 }
 
-export function FormBlock({ block, values, chipValues, onFieldChange, onRemoveChip, locked }) {
+export function FormBlock({ block, values, chipValues, onFieldChange, onRemoveChip, locked, readOnly }) {
   const visibleFields = block.fields.filter((f) => isFieldVisible(f, values));
   const filled = visibleFields.filter((f) => isFieldFilled(f, values, chipValues)).length;
   const total = visibleFields.length;
   const colClass = block.columns === 1 ? "" : block.columns === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3";
+  const inert = locked || readOnly;
 
   return (
     <div className={`bg-white border border-black/8 rounded-2xl p-5 ${locked ? "opacity-70" : ""}`}>
@@ -204,8 +246,8 @@ export function FormBlock({ block, values, chipValues, onFieldChange, onRemoveCh
       </div>
       {block.note ? <p className="text-[12px] text-[#6B7280] -mt-2 mb-4">{block.note}</p> : null}
       <div
-        className={`grid grid-cols-1 ${colClass} gap-x-6 gap-y-4 ${locked ? "pointer-events-none select-none" : ""}`}
-        aria-disabled={locked || undefined}
+        className={`grid grid-cols-1 ${colClass} gap-x-6 gap-y-4 ${inert ? "pointer-events-none select-none" : ""}`}
+        aria-disabled={inert || undefined}
       >
         {visibleFields.map((f) => (
           <div
@@ -216,8 +258,9 @@ export function FormBlock({ block, values, chipValues, onFieldChange, onRemoveCh
               def={f}
               value={values[f.key]}
               chips={f.chipsKey ? chipValues[f.chipsKey] : undefined}
-              onChange={(v) => onFieldChange(f.key, v)}
-              onRemoveChip={f.chipsKey ? (chip) => onRemoveChip(f.chipsKey, chip) : undefined}
+              readOnly={readOnly}
+              onChange={(v) => onFieldChange?.(f.key, v)}
+              onRemoveChip={f.chipsKey ? (chip) => onRemoveChip?.(f.chipsKey, chip) : undefined}
             />
           </div>
         ))}

@@ -22,8 +22,19 @@ function mapEnquiryBy(value) {
   if (v.includes("self")) return "Self";
   if (v.includes("parent")) return "Parent";
   if (v.includes("sibling")) return "Sibling";
-  if (v.includes("relative") || v.includes("friend")) return "Relative";
+  if (v.includes("relative")) return "Relative";
+  if (v.includes("friend")) return "Friend";
+  if (v.includes("other")) return "Other";
   return String(value || "").trim();
+}
+
+function mapNriYesNo(value) {
+  const v = String(value || "").trim().toLowerCase();
+  if (!v || v === "-") return "";
+  if (v === "yes" || v === "nri" || v.includes("nri")) return "Yes";
+  if (v === "no" || v === "indian" || v.includes("resident")) return "No";
+  if (v === "yes") return "Yes";
+  return "";
 }
 
 function mapManglik(value) {
@@ -186,17 +197,20 @@ export function mapLeadToIntake(lead = {}) {
   const { city, state } = splitCityState(cityRaw);
   const area = pickFilled(lead.area, details.area, lead.areaOfHouse, details.areaOfHouse);
   const nri = pickFilled(lead.nri, details.nri);
+  const nriYesNo = mapNriYesNo(nri);
   const residentialStatus = mapResidentialStatus(nri);
   const country = pickFilled(
     lead.country,
     details.country,
-    residentialStatus === "Indian" ? "India" : ""
+    nriYesNo === "No" || residentialStatus === "Indian" ? "India" : ""
   );
   const profession = pickFilled(lead.profession, lead.occupation, details.profession, details.occupation);
   const { occupation, designation } = mapOccupation(profession);
   const familyIncome = pickFilled(lead.familyIncomeBand, lead.income, details.familyIncomeBand);
   const notes = pickFilled(lead.notes, details.notes);
   const clientType = mapClientType(lead, details);
+  const leadSource = pickFilled(lead.leadSource, lead.source, details.leadSource, details.source);
+  const meeting = pickFilled(lead.meeting, details.meeting);
 
   const out = {};
   if (names.firstName) out.firstName = names.firstName;
@@ -210,24 +224,34 @@ export function mapLeadToIntake(lead = {}) {
     if (lookingFor === "Bride") out.gender = "Male";
   }
   if (enquiryBy) out.enquiryBy = enquiryBy;
+  if (nriYesNo) out.nri = nriYesNo;
   if (city) {
+    out.city = cityRaw || city;
     out.addrCity = city;
     out.addrResidingCity = city;
     out.currentCity = city;
   }
   if (state) out.addrState = state;
   if (area) {
+    out.area = area;
     out.addrAreaLocality = area;
     out.currentLocality = area;
   }
   if (residentialStatus) out.residentialStatus = residentialStatus;
   if (country) {
+    out.country = country;
     out.addrCountry = country;
     out.addrResidingCountry = country;
   }
+  if (profession) out.profession = profession;
   if (occupation) out.occupation = occupation;
   if (designation) out.designation = designation;
-  if (familyIncome) out.annualFamilyIncome = familyIncome;
+  if (familyIncome) {
+    out.familyIncomeBand = familyIncome;
+    out.annualFamilyIncome = familyIncome;
+  }
+  if (leadSource) out.leadSource = leadSource;
+  if (meeting) out.meeting = meeting;
   if (notes) out.extraInfo = notes;
   if (clientType) out.clientType = clientType;
   return out;
@@ -257,22 +281,31 @@ export function leadPatchFromIntake(values = {}) {
     patch.enquiryBy = values.enquiryBy;
     patch.relation = values.enquiryBy;
   }
-  if (city) patch.city = city;
-  if (values.addrAreaLocality) {
-    patch.area = values.addrAreaLocality;
-    patch.areaOfHouse = values.addrAreaLocality;
+  if (city || values.city) patch.city = values.city || city;
+  if (values.area || values.addrAreaLocality) {
+    patch.area = values.area || values.addrAreaLocality;
+    patch.areaOfHouse = values.area || values.addrAreaLocality;
   }
-  if (values.occupation || values.designation) {
-    patch.profession = values.occupation || values.designation;
+  if (values.occupation || values.designation || values.profession) {
+    patch.profession = values.profession || values.occupation || values.designation;
   }
-  if (values.annualFamilyIncome) patch.familyIncomeBand = values.annualFamilyIncome;
-  if (nri) {
+  if (values.familyIncomeBand || values.annualFamilyIncome) {
+    patch.familyIncomeBand = values.familyIncomeBand || values.annualFamilyIncome;
+  }
+  if (values.nri === "Yes" || values.nri === "yes") {
+    patch.nri = "yes";
+  } else if (values.nri === "No" || values.nri === "no") {
+    patch.nri = "no";
+    patch.country = "India";
+  } else if (nri) {
     patch.nri = nri;
     if (nri === "no") patch.country = "India";
   }
-  if (values.addrCountry || values.addrResidingCountry) {
-    patch.country = values.addrCountry || values.addrResidingCountry;
+  if (patch.nri !== "no" && (values.country || values.addrCountry || values.addrResidingCountry)) {
+    patch.country = values.country || values.addrCountry || values.addrResidingCountry;
   }
+  if (values.leadSource) patch.source = values.leadSource;
+  if (values.meeting) patch.meeting = values.meeting;
   if (values.extraInfo) patch.notes = values.extraInfo;
   return patch;
 }

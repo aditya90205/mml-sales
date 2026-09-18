@@ -77,6 +77,31 @@ function seedIntakeValues(lead) {
   return mergeFilledValues({ ...dummyDemo, ...stored }, fromLead);
 }
 
+function leadPrefillKey(lead) {
+  const mapped = mapLeadToIntake(lead || {});
+  return [
+    lead?.id,
+    mapped.firstName,
+    mapped.lastName,
+    mapped.dob,
+    mapped.lookingFor,
+    mapped.gender,
+    mapped.enquiryBy,
+    mapped.mobile,
+    mapped.email,
+    mapped.extraInfo,
+    mapped.clientType,
+    mapped.occupation,
+    mapped.addrCity,
+    mapped.nri,
+    mapped.city,
+    mapped.profession,
+    mapped.familyIncomeBand,
+    mapped.leadSource,
+    mapped.meeting,
+  ].join("|");
+}
+
 function seedHasValues(values = {}) {
   return Object.values(values).some((value) => isFilled(value) || (Array.isArray(value) && value.some((row) => isFilled(row) || (row && typeof row === "object" && Object.values(row).some(isFilled)))));
 }
@@ -112,6 +137,8 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
     });
   };
 
+  const prefillKey = leadPrefillKey(lead);
+
   useEffect(() => {
     const next = seedIntakeValues(lead);
     setValues(next);
@@ -128,11 +155,23 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
     ) {
       updateLead(lead.id, { intakeValues: next });
     }
-  }, [lead?.id]);
+  }, [lead?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const fromLead = mapLeadToIntake(lead);
+    setValues((prev) => mergeFilledValues(prev, fromLead));
+  }, [prefillKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const formEmpty = empty && !seedHasValues(values);
 
-  const setField = (key, value) => setValues((prev) => pairGenderAndLookingFor(prev, key, value));
+  const setField = (key, value) =>
+    setValues((prev) => {
+      const next = pairGenderAndLookingFor(prev, key, value);
+      if (key === "nri") {
+        return { ...next, nri: value, country: value === "No" ? "India" : next.country };
+      }
+      return next;
+    });
   const removeChip = (chipsKey, chip) =>
     setChips((prev) => ({ ...prev, [chipsKey]: (prev[chipsKey] || []).filter((c) => c !== chip) }));
 

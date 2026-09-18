@@ -193,8 +193,10 @@ export default function IntakeFillFormView({
     }
   };
 
-  const activeIndex = SECTIONS_META.findIndex((s) => s.key === activeKey);
-  const activeBlocks = SECTION_BLOCKS[activeKey];
+  const activeIndexRaw = SECTIONS_META.findIndex((s) => s.key === activeKey);
+  const activeIndex = activeIndexRaw >= 0 ? activeIndexRaw : 0;
+  const resolvedKey = SECTIONS_META[activeIndex].key;
+  const activeBlocks = SECTION_BLOCKS[resolvedKey];
   const activeCounts = empty
     ? { filled: 0, total: activeBlocks?.reduce((sum, b) => sum + b.fields.length, 0) || 0 }
     : countSectionFields(activeBlocks, values, chips);
@@ -206,7 +208,7 @@ export default function IntakeFillFormView({
 
   const overall = countOverallFields(values, chips, { empty });
   const overallPercent = overall.total ? Math.round((overall.filled / overall.total) * 100) : 0;
-  const isPersonal = activeKey === "personal";
+  const isPersonal = resolvedKey === "personal";
   // Fill-the-form fields stay editable at P2; OTP is only required when committing to the client record.
   const personalLocked = false;
 
@@ -256,14 +258,16 @@ export default function IntakeFillFormView({
           label={SECTIONS_META[activeIndex].label}
           filled={activeCounts.filled}
           total={activeCounts.total}
-          tip={SECTION_TIPS[activeKey]}
+          tip={SECTION_TIPS[resolvedKey]}
           onOpenDocumentsKyc={() => setDocumentsKycOpen(true)}
         />
 
         {isPersonal && (
           <div className="rounded-xl border px-4 py-3 flex items-start justify-between gap-3 flex-wrap bg-[#E7F8EF] border-[#BBF7D0]">
             <div className="min-w-0">
-              <p className="text-[13px] font-semibold text-[#166534]">Personal details are editable</p>
+              <p className="text-[13px] font-semibold text-[#166534]">
+                Personal details are editable
+              </p>
               <p className="text-[12.5px] mt-0.5 text-[#166534]/90">
                 Update fields freely here. When you save, OTP confirms before changes are written to the client-record summary.
               </p>

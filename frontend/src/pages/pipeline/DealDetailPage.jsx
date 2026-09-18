@@ -559,6 +559,8 @@ export default function DealDetailPage({
       premium: deal?.premium ?? lead?.premium,
       starred: deal?.premium || lead?.starred,
       name: deal?.name || lead?.name,
+      leadSource: deal?.leadSource || deal?.source || lead?.leadSource || lead?.source,
+      source: deal?.leadSource || deal?.source || lead?.source,
       overviewDetails: savedDetails || lead?.overviewDetails,
       intakeValues: lead?.intakeValues,
     };
@@ -586,7 +588,12 @@ export default function DealDetailPage({
           />
         );
       case "intake":
-        return <IntakeFormTab empty={currentStage === "P0" && !lead?.intakeValues && !savedDetails} lead={intakeLead} />;
+        return (
+          <IntakeFormTab
+            empty={currentStage === "P0" && !lead?.intakeValues && !savedDetails}
+            lead={intakeLead}
+          />
+        );
       case "visits":
         return <VisitsMeetingsTab empty={!atLeast(currentStage, "P3")} lead={lead} currentStage={currentStage} />;
       case "package":

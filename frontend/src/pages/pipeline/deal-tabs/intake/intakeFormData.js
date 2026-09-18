@@ -1,24 +1,61 @@
 /** Shared intake booklet schema, demo values, and field helpers. */
 
+import { LEAD_INCOME_BANDS, LEAD_OCCUPATIONS, LEAD_RELATIONS } from "../../../../utils/leadFields.js";
+
 export const SECTIONS_META = [
   { key: "personal", label: "Personal details" },
   { key: "education", label: "Education & career" },
   { key: "residency", label: "Residency & previous marriage" },
-  { key: "family", label: "Family â€” father & mother" },
+  { key: "family", label: "Family — father & mother" },
   { key: "siblings", label: "Siblings & family standing" },
   { key: "match", label: "Match desired" },
   { key: "essential", label: "Essential questions for relationship success" },
   { key: "communication", label: "Communication, consent & privacy" },
 ];
 
+const BASIC_FORM_COUNTRIES = ["India", "USA", "UK", "Canada", "UAE", "Australia", "Singapore", "Other"];
+const BASIC_FORM_SOURCES = [
+  "Website Inquiry",
+  "Referral",
+  "Walk-in",
+  "Campaign",
+  "Instagram",
+  "Google Ads",
+  "Newspaper",
+  "Cold Call",
+  "Biodata Upload",
+  "Outbound Calls",
+];
+const BASIC_FORM_MEETINGS = ["Meeting Agreed", "Call Agreed", "Callback Later", "Not Yet"];
+
 const PERSONAL_DETAILS_BLOCKS = [
+  {
+    title: "Lead capture",
+    note: "Prefill from P0 Overview. At least one of mobile or email is required.",
+    fields: [
+      { key: "lookingFor", label: "Looking for", required: true, type: "pill", options: ["Groom", "Bride"] },
+      { key: "nri", label: "NRI", required: true, type: "pill", options: ["Yes", "No"] },
+      { key: "enquiryBy", label: "Enquiry made by", required: true, type: "select", options: LEAD_RELATIONS },
+      { key: "firstName", label: "First name", required: true, type: "text" },
+      { key: "middleName", label: "Middle name", type: "text" },
+      { key: "lastName", label: "Last name", required: true, type: "text" },
+      { key: "dob", label: "Date of birth", type: "text" },
+      { key: "profession", label: "Profession", type: "select", options: LEAD_OCCUPATIONS },
+      { key: "mobile", label: "Mobile", required: true, requiredGroup: "contact", type: "text" },
+      { key: "email", label: "E-mail", required: true, requiredGroup: "contact", type: "text" },
+      { key: "country", label: "Country", required: true, type: "select", options: BASIC_FORM_COUNTRIES },
+      { key: "city", label: "City", required: true, type: "text" },
+      { key: "area", label: "Area / Locality", type: "text" },
+      { key: "familyIncomeBand", label: "Family income bracket", type: "select", options: LEAD_INCOME_BANDS },
+      { key: "leadSource", label: "Source", required: true, type: "select", options: BASIC_FORM_SOURCES },
+      { key: "meeting", label: "Agree to a meeting or call", required: true, type: "pill", options: BASIC_FORM_MEETINGS },
+      { key: "extraInfo", label: "Additional notes", type: "textarea", fullWidth: true },
+    ],
+  },
   {
     title: "Who is this",
     fields: [
       { key: "gender", label: "Gender", required: true, type: "pill", options: ["Male", "Female"] },
-      { key: "firstName", label: "First name", required: true, type: "text" },
-      { key: "middleName", label: "Middle name", type: "text" },
-      { key: "lastName", label: "Last name", required: true, type: "text" },
       { key: "clientType", label: "Client type", required: true, type: "pill", options: ["Classic", "Premium", "Exclusive"] },
       { key: "profileStatus", label: "Profile status", type: "pill", options: ["Draft", "Under review", "Complete"] },
       { key: "maritalStatus", label: "Marital status", required: true, type: "pill", options: ["Never married", "Divorced", "Widow / Widower", "Annulled"] },
@@ -70,23 +107,17 @@ const PERSONAL_DETAILS_BLOCKS = [
         fullWidth: true,
         showWhen: { key: "maritalStatus", values: ["Divorced"] },
       },
-      { key: "lookingFor", label: "Looking for", required: true, type: "pill", options: ["Groom", "Bride"] },
-      { key: "enquiryBy", label: "Enquiry made by", type: "pill", options: ["Self", "Parent", "Sibling", "Relative"] },
     ],
   },
   {
     title: "Contact",
-    note: "At least one of mobile or email is required",
     fields: [
-      { key: "mobile", label: "Mobile", required: true, requiredGroup: "contact", type: "text" },
       { key: "alternateContact", label: "Alternate contact", type: "text" },
-      { key: "email", label: "E-mail", required: true, requiredGroup: "contact", type: "text" },
     ],
   },
   {
     title: "Birth & astrology",
     fields: [
-      { key: "dob", label: "Date of birth", required: true, type: "text" },
       { key: "timeOfBirth", label: "Time of birth", type: "text" },
       { key: "placeOfBirth", label: "Place of birth", required: true, type: "text" },
       { key: "nativePlace", label: "Native place", type: "text" },
@@ -132,9 +163,9 @@ const PERSONAL_DETAILS_BLOCKS = [
       { key: "drinking", label: "Drinking", type: "pill", options: ["Teetotaller", "Occasionally", "Regularly", "Socially"] },
       { key: "smoking", label: "Smoking", type: "pill", options: ["Non smoker", "Occasionally", "Regular", "Socially", "Hukka"] },
       { key: "eating", label: "Eating", type: "pill", options: ["Vegetarian", "Eggetarian", "Non vegetarian", "Occasionally non-veg", "Socially", "Vegan"] },
-      { key: "drinkingNote", label: "Drinking â€” note", type: "text" },
-      { key: "smokingNote", label: "Smoking â€” note", type: "text" },
-      { key: "eatingNote", label: "Eating â€” note", type: "text" },
+      { key: "drinkingNote", label: "Drinking — note", type: "text" },
+      { key: "smokingNote", label: "Smoking — note", type: "text" },
+      { key: "eatingNote", label: "Eating — note", type: "text" },
     ],
   },
   {
@@ -142,7 +173,6 @@ const PERSONAL_DETAILS_BLOCKS = [
     columns: 1,
     fields: [
       { key: "characteristics", label: "Characteristics", type: "textarea" },
-      { key: "extraInfo", label: "Extra info (personal)", type: "textarea" },
     ],
   },
 ];
@@ -254,7 +284,7 @@ const RESIDENCY_BLOCKS = [
   },
   {
     title: "If NRI",
-    badge: "NOT APPLICABLE â€” resident client",
+    badge: "NOT APPLICABLE — resident client",
     fields: [
       { key: "visaType", label: "Visa type", type: "text" },
       { key: "accommodationAbroad", label: "Accommodation abroad", type: "pill", options: ["Own house", "Rented accommodation", "Company accommodation"] },
@@ -264,7 +294,7 @@ const RESIDENCY_BLOCKS = [
   },
   {
     title: "Previous marriage",
-    badge: "NOT APPLICABLE â€” first marriage",
+    badge: "NOT APPLICABLE — first marriage",
     fields: [
       { key: "prevMarriageCase", label: "Case", type: "pill", options: ["For divorcee", "For annulled"] },
       { key: "marriageDate", label: "Marriage date", type: "text" },
@@ -307,8 +337,8 @@ const FAMILY_BLOCKS = [
       { key: "fatherName", label: "Father's name", required: true, type: "text" },
       { key: "fatherAge", label: "Age", type: "text" },
       { key: "fatherEducation", label: "Education", type: "text" },
-      { key: "fatherPanNo", label: "PAN No", type: "upload", note: "Card image optional â€” front and back" },
-      { key: "fatherAadhaarNo", label: "Aadhaar No", type: "upload", note: "Card image optional â€” front and back" },
+      { key: "fatherPanNo", label: "PAN No", type: "upload", note: "Card image optional — front and back" },
+      { key: "fatherAadhaarNo", label: "Aadhaar No", type: "upload", note: "Card image optional — front and back" },
       {
         key: "fatherOccupation",
         label: "Occupation",
@@ -332,8 +362,8 @@ const FAMILY_BLOCKS = [
       { key: "motherMaidenName", label: "Maiden name", type: "text" },
       { key: "motherAge", label: "Age", type: "text" },
       { key: "motherEducation", label: "Education", type: "text" },
-      { key: "motherPanNo", label: "PAN No", type: "upload", note: "Card image optional â€” front and back" },
-      { key: "motherAadhaarNo", label: "Aadhaar No", type: "upload", note: "Card image optional â€” front and back" },
+      { key: "motherPanNo", label: "PAN No", type: "upload", note: "Card image optional — front and back" },
+      { key: "motherAadhaarNo", label: "Aadhaar No", type: "upload", note: "Card image optional — front and back" },
       {
         key: "motherOccupation",
         label: "Occupation",
@@ -414,17 +444,17 @@ const MATCH_BLOCKS = [
     title: "Basics",
     fields: [
       { key: "preferenceGivenBy", label: "Preference given by", required: true, type: "pill", options: ["Candidate", "Parent", "RM"] },
-      { key: "desiredAgeFrom", label: "Desired age â€” from", required: true, type: "text" },
-      { key: "desiredAgeTo", label: "Desired age â€” to", required: true, type: "text" },
-      { key: "matchHeightFrom", label: "Height â€” from", required: true, type: "text" },
-      { key: "matchHeightTo", label: "Height â€” to", required: true, type: "text" },
+      { key: "desiredAgeFrom", label: "Desired age — from", required: true, type: "text" },
+      { key: "desiredAgeTo", label: "Desired age — to", required: true, type: "text" },
+      { key: "matchHeightFrom", label: "Height — from", required: true, type: "text" },
+      { key: "matchHeightTo", label: "Height — to", required: true, type: "text" },
       { key: "preferredSectCaste", label: "Preferred sect / caste options", type: "text" },
       { key: "preferredMaritalStatus", label: "Preferred marital status", type: "pill", options: ["Single", "Divorced", "Widow / Widower", "Doesn't matter"] },
       { key: "childrenAcceptable", label: "Children acceptable", type: "pill", options: ["Without children only", "With children", "Doesn't matter"] },
       { key: "minimumEducation", label: "Minimum education", type: "pill", options: ["Under graduate", "Graduate", "Post graduate", "Doctorate", "Doesn't matter"] },
       { key: "preferredReligion", label: "Preferred religion", type: "text" },
       { key: "preferredOccupation", label: "Preferred occupation", type: "text" },
-      { key: "occupationPreferenceNote", label: "Occupation preference â€” note", type: "text" },
+      { key: "occupationPreferenceNote", label: "Occupation preference — note", type: "text" },
       { key: "minPersonalIncome", label: "Min personal income per month", type: "text" },
     ],
   },
@@ -441,9 +471,9 @@ const MATCH_BLOCKS = [
     title: "Location & expectations",
     fields: [
       { key: "openOutOfIndia", label: "Open for out of India", type: "pill", options: ["Yes", "No"] },
-      { key: "outOfIndiaSpecify", label: "Out of India â€” specify", type: "text" },
+      { key: "outOfIndiaSpecify", label: "Out of India — specify", type: "text" },
       { key: "openOutOfCity", label: "Open for out of city", type: "pill", options: ["Yes", "No"] },
-      { key: "outOfCitySpecify", label: "Out of city â€” specify", type: "text" },
+      { key: "outOfCitySpecify", label: "Out of city — specify", type: "text" },
       { key: "partnerExpectations", label: "Expectations from your life partner / family", type: "textarea" },
     ],
   },
@@ -532,7 +562,7 @@ const MEDICAL_BLOCKS = [
       { key: "familyIllnessDetails", label: "Illness details", type: "text" },
       { key: "familyGeneticDisorders", label: "Family history of genetic disorders", type: "pill", options: ["Yes", "No"] },
       { key: "familyDisorderDetails", label: "Disorder details", type: "text" },
-      { key: "familyPsychiatricBipolar", label: "Psychiatric illness â€” bipolar", type: "pill", options: ["Yes", "No"] },
+      { key: "familyPsychiatricBipolar", label: "Psychiatric illness — bipolar", type: "pill", options: ["Yes", "No"] },
       { key: "familyOtherPsychiatricHistory", label: "Other psychiatric history", type: "text" },
     ],
   },
@@ -599,8 +629,8 @@ const COMMUNICATION_BLOCKS = [
     title: "How to reach the client",
     fields: [
       { key: "preferredChannel", label: "Preferred channel", type: "pill", options: ["WhatsApp", "Phone call", "E-mail", "SMS", "In-app"] },
-      { key: "callBetweenFrom", label: "Call between â€” from", type: "text" },
-      { key: "callBetweenTo", label: "Call between â€” to", type: "text" },
+      { key: "callBetweenFrom", label: "Call between — from", type: "text" },
+      { key: "callBetweenTo", label: "Call between — to", type: "text" },
       { key: "preferredLanguage", label: "Preferred language", type: "pill", options: ["Hindi", "English", "Punjabi", "Other"] },
       { key: "doNotDisturb", label: "Do not disturb", type: "pill", options: ["On", "Off"] },
       { key: "smsOptIn", label: "SMS opt-in", type: "pill", options: ["Yes", "No"] },
@@ -703,7 +733,7 @@ export const SECTION_BLOCKS = {
   communication: COMMUNICATION_BLOCKS,
 };
 
-/** Flat map of personal-detail field key â†’ label (for change summary / OTP diffs). */
+/** Flat map of personal field key ? label (for change summary / OTP diffs). */
 export function getPersonalFieldLabels() {
   const labels = {};
   for (const block of PERSONAL_DETAILS_BLOCKS) {
@@ -738,14 +768,22 @@ export function diffPersonalValues(before = {}, after = {}) {
     changes.push({
       key,
       label: labels[key],
-      from: from.trim() || "â€”",
-      to: to.trim() || "â€”",
+      from: from.trim() || "—",
+      to: to.trim() || "—",
     });
   }
   return changes;
 }
 
 export const DEMO_PERSONAL_VALUES = {
+  nri: "No",
+  country: "India",
+  city: "Gurugram, Haryana",
+  area: "Sector 43",
+  profession: "Professional",
+  familyIncomeBand: "?30 Lakh to ?50 Lakh",
+  leadSource: "Referral",
+  meeting: "Meeting Agreed",
   gender: "Female",
   firstName: "Priya",
   lastName: "Raheja",
@@ -785,20 +823,20 @@ const DEMO_EDUCATION_VALUES = {
   languagesKnown: "Hindi, English, Punjabi",
   distinctAchievements: "AIR 41 in CA finals",
   courses: [
-    { level: "Professional", course: "CA â€” 4 yrs", stream: "Audit & taxation", institution: "ICAI", year: "2019", pct: "AIR 214" },
-    { level: "Graduation", course: "B.Com (H) â€” 3 yrs", stream: "Commerce", institution: "SRCC, Delhi University", year: "2016", pct: "8.4 CGPA" },
+    { level: "Professional", course: "CA — 4 yrs", stream: "Audit & taxation", institution: "ICAI", year: "2019", pct: "AIR 214" },
+    { level: "Graduation", course: "B.Com (H) — 3 yrs", stream: "Commerce", institution: "SRCC, Delhi University", year: "2016", pct: "8.4 CGPA" },
     { level: "12th", course: "Class XII", stream: "Commerce", institution: "DPS R.K. Puram", year: "2013", pct: "94.2%" },
     {},
   ],
   occupation: "Professional",
-  designation: "Manager â€” Audit",
+  designation: "Manager — Audit",
   workingSince: "Jul 2019",
-  personalAnnualIncome: "â‚¹18â€“24L p.a.",
-  organisationSpec: "Sharma & Associates, Gurugram â€” statutory audit, mid-size firm",
+  personalAnnualIncome: "?18–24L p.a.",
+  organisationSpec: "Sharma & Associates, Gurugram — statutory audit, mid-size firm",
   currentlyReside: "Parental house",
   householdType: "Joint house",
   stayingSince: "2011",
-  residenceContact: "98â€¢â€¢â€¢ â€¢â€¢164",
+  residenceContact: "98••• ••164",
   currentAddress: "House 214, Sector 43, Gurugram, Haryana 122009",
 };
 
@@ -815,8 +853,8 @@ const DEMO_FAMILY_VALUES = {
   paternalSisters: "1",
   fatherOriginallyBelongsTo: "Hisar, Haryana",
   fatherLiving: "Jointly",
-  fatherPhone: "98â€¢â€¢â€¢ â€¢â€¢771",
-  fatherBusinessDetails: "Raheja Textiles â€” textile trading, 28 years",
+  fatherPhone: "98••• ••771",
+  fatherBusinessDetails: "Raheja Textiles — textile trading, 28 years",
   fatherCompanyAddress: "Raheja Textiles, 41 Katra Neel, Chandni Chowk, Delhi",
   motherName: "Sunita Raheja",
   motherMaidenName: "Sunita Bansal",
@@ -824,7 +862,7 @@ const DEMO_FAMILY_VALUES = {
   motherEducation: "B.A.",
   motherOccupation: "House wife",
   motherOriginallyBelongsTo: "Delhi",
-  motherPhone: "98â€¢â€¢â€¢ â€¢â€¢902",
+  motherPhone: "98••• ••902",
 };
 
 const DEMO_SIBLINGS_VALUES = {
@@ -838,15 +876,15 @@ const DEMO_SIBLINGS_VALUES = {
       age: "34",
       personalDetails: "Architect, own practice in Delhi",
       maritalStatus: "Married",
-      spouseDetails: "Doctor â€” orthopaedic, Sir Ganga Ram",
+      spouseDetails: "Doctor — orthopaedic, Sir Ganga Ram",
     },
     {},
     {},
   ],
-  turnover: "â‚¹6â€“8 Cr",
-  annualFamilyIncome: "â‚¹25â€“50L p.a.",
+  turnover: "?6–8 Cr",
+  annualFamilyIncome: "?25–50L p.a.",
   numberOfEmployees: "24",
-  familyBudget: "â‚¹60â€“80L",
+  familyBudget: "?60–80L",
   vehicles: "Fortuner, Baleno",
   countriesTravelled: "9",
   otherPropertyDetails: "Plot in Hisar (approx. 300 sq yd), shop at Chandni Chowk",
@@ -863,7 +901,7 @@ const DEMO_MATCH_VALUES = {
   childrenAcceptable: "Without children only",
   minimumEducation: "Post graduate",
   preferredOccupation: "CA, doctor, senior corporate",
-  minPersonalIncome: "â‚¹2L",
+  minPersonalIncome: "?2L",
   matchDrinking: "Occasional drinker",
   matchSmoking: "Non smoker",
   matchEating: "Vegetarian",
@@ -885,7 +923,7 @@ const DEMO_ESSENTIAL_VALUES = {
   comfortableWithPets: "Yes",
   socialMediaActivity: "Moderately active",
   travelPreference: "With family",
-  callYourselfSociable: "Selective â€” small circle",
+  callYourselfSociable: "Selective — small circle",
   wellbeingWorkLifeBalance: "Long audit seasons, protective of weekends",
   wellbeingPhysicalFitness: "Yoga four days a week",
   wellbeingGoalsAspirations: "Partner track, wants to travel more",
@@ -896,10 +934,10 @@ const DEMO_MEDICAL_VALUES = {
   majorSurgeries: "No",
   geneticHereditaryConditions: "No",
   longTermMedication: "Yes",
-  medicationDetails: "Thyroid â€” since 2021",
+  medicationDetails: "Thyroid — since 2021",
   physicalDisability: "No",
   familyHereditaryConditions: "Yes",
-  familyConditionSpecified: "Diabetes â€” father",
+  familyConditionSpecified: "Diabetes — father",
   familyGeneticDisorders: "No",
   familyPsychiatricBipolar: "No",
   dietaryRestrictionsMedical: "Low iodine",
@@ -910,8 +948,8 @@ const DEMO_MEDICAL_VALUES = {
 const DEMO_DECLARATION_VALUES = {
   declaredBy: "Rajesh Raheja",
   relationToCandidate: "Father",
-  registrationAmountAgreed: "â‚¹53,100",
-  rokaSuccessFeeAgreed: "â‚¹1,11,000",
+  registrationAmountAgreed: "?53,100",
+  rokaSuccessFeeAgreed: "?1,11,000",
   declarationDate: "02 Aug 2026",
   declarationPlace: "New Delhi",
   signatureMode: "e-Signed by OTP",
@@ -933,13 +971,13 @@ const DEMO_CASESHEET_VALUES = {
   caseInvoiceNo: "MML/26-27/0412",
   paymentDetails: [
     {
-      amount: "â‚¹31,860",
+      amount: "?31,860",
       mode: "UPI",
-      details: "Registration â€” part 1",
+      details: "Registration — part 1",
       invoiceNo: "MML/26-27/0412",
       date: "02 Aug 2026",
       creBd: "Neha Sharma",
-      balance: "â‚¹21,240",
+      balance: "?21,240",
     },
     {},
     {},
@@ -1068,8 +1106,8 @@ function normalizeDiffValue(value) {
 
 function displayDiffValue(value) {
   const normalized = normalizeDiffValue(value);
-  if (!normalized || normalized === "[]" || normalized === "{}") return "â€”";
-  if (normalized.length > 80) return `${normalized.slice(0, 77)}â€¦`;
+  if (!normalized || normalized === "[]" || normalized === "{}") return "—";
+  if (normalized.length > 80) return `${normalized.slice(0, 77)}…`;
   return normalized;
 }
 
@@ -1094,9 +1132,9 @@ export function diffSectionValues(blocks, beforeValues = {}, afterValues = {}) {
 
 export const SECTION_TIPS = {
   personal:
-    "Ask like this: Profile ID and date fill in on save. Read the name back to the client before moving on.",
+    "Ask like this: Confirm the P0 lead fields first — name, looking for, contact, family income and source — then complete the remaining profile.",
   education:
-    "Ask like this: Most recent qualification first. Income can be a band â€” write what the client actually says.",
+    "Ask like this: Most recent qualification first. Income can be a band — write what the client actually says.",
   residency:
     "Ask like this: Confirm current city first, then previous addresses. Note any visa or NRI details clearly.",
   family:
@@ -1106,7 +1144,7 @@ export const SECTION_TIPS = {
   match:
     "Ask like this: Start with must-haves, then nice-to-haves. Confirm flexibility on caste, city and age.",
   essential:
-    "Ask like this: These answers affect match quality â€” pause and confirm each one with the client.",
+    "Ask like this: These answers affect match quality — pause and confirm each one with the client.",
   communication:
     "Ask like this: Confirm preferred contact channel and who can receive updates about this profile.",
 };

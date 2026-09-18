@@ -20,7 +20,14 @@ function SectionEditBody({ sectionKey, values, chips, onClose, onSave }) {
 
   if (!meta) return null;
 
-  const setField = (key, value) => setDraftValues((prev) => pairGenderAndLookingFor(prev, key, value));
+  const setField = (key, value) =>
+    setDraftValues((prev) => {
+      const next = pairGenderAndLookingFor(prev, key, value);
+      if (key === "nri") {
+        return { ...next, nri: value, country: value === "No" ? "India" : next.country };
+      }
+      return next;
+    });
   const removeChip = (chipsKey, chip) =>
     setDraftChips((prev) => ({
       ...prev,
