@@ -84,6 +84,7 @@ function leadPatchFromDetails(details = {}) {
     patch.nextAction = details.nextActionAt || details.nextAction;
   }
   if (details.leadSource) patch.source = details.leadSource;
+  if (details.dob) patch.dob = details.dob;
   return patch;
 }
 

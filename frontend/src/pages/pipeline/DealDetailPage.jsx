@@ -41,7 +41,7 @@ import PaymentsTab from "./deal-tabs/PaymentsTab";
 import P6ChecklistTab from "./deal-tabs/P6ChecklistTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
 import { EMPTY, atLeast, historyUntil, maybeDash, stageGateFor } from "./deal-tabs/stageContent.jsx";
-import { p0StatusOf } from "../../utils/pipelineStore.js";
+import { p0StatusOf, updateLead } from "../../utils/pipelineStore.js";
 import { ensureLeadHistory, recordLeadActivity } from "../../utils/leadActivityStore.js";
 import eyeIcon from "../../assets/eye.png";
 
@@ -63,6 +63,7 @@ const DEAL_DEFAULTS = {
   leadScore: "Warm",
   enquiryBy: "Parent (father)",
   lookingFor: "Girl · 26–30 · NCR",
+  dob: "1992-09-30",
   areaOfHouse: "Greater Kailash II",
   profession: "Chartered Accountant",
   familyIncomeBand: "₹60L–₹1Cr p.a.",
@@ -272,6 +273,10 @@ export default function DealDetailPage({
       leadScore: maybeDash(detailsFilled, DEAL_DEFAULTS.leadScore),
       enquiryBy: maybeDash(detailsFilled, DEAL_DEFAULTS.enquiryBy),
       lookingFor: maybeDash(detailsFilled, DEAL_DEFAULTS.lookingFor),
+      dob: maybeDash(
+        detailsFilled,
+        lead?.dob || lead?.intakeValues?.dob || DEAL_DEFAULTS.dob
+      ),
       areaOfHouse: maybeDash(detailsFilled, DEAL_DEFAULTS.areaOfHouse),
       profession: maybeDash(detailsFilled, DEAL_DEFAULTS.profession),
       familyIncomeBand: maybeDash(detailsFilled, DEAL_DEFAULTS.familyIncomeBand),
@@ -316,6 +321,7 @@ export default function DealDetailPage({
       leadScore: savedDetails.leadScore || base.leadScore,
       enquiryBy: savedDetails.enquiryBy || base.enquiryBy,
       lookingFor: savedDetails.lookingFor || base.lookingFor,
+      dob: savedDetails.dob || base.dob,
       areaOfHouse: savedDetails.areaOfHouse || base.areaOfHouse,
       profession: savedDetails.profession || base.profession,
       familyIncomeBand: savedDetails.familyIncomeBand || base.familyIncomeBand,
@@ -393,8 +399,14 @@ export default function DealDetailPage({
   const handleDetailsSaved = (draft) => {
     setSavedDetails(draft);
     handlePremiumChange(draft.premium === "Yes");
+    if (lead?.id) {
+      updateLead(lead.id, {
+        dob: draft.dob || "",
+        overviewDetails: draft,
+      });
+    }
     if (currentStage === "P0") {
-      onP0DetailsSaved?.({ ...lead, p0Status: "contacted", overviewDetails: draft }, draft);
+      onP0DetailsSaved?.({ ...lead, p0Status: "contacted", dob: draft.dob, overviewDetails: draft }, draft);
     } else {
       recordLeadActivity(lead, currentStage, {
         type: "details",

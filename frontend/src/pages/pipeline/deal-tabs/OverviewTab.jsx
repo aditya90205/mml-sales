@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Star, Video } from "lucide-react";
+import { Calendar, Star, Video } from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
@@ -34,6 +34,31 @@ function DetailField({ label, value }) {
       <p className="text-[13px] font-semibold text-[#111] mt-1">{value || "-"}</p>
     </div>
   );
+}
+
+function toIsoDate(value) {
+  const raw = String(value || "").trim();
+  if (!raw || raw === "-") return "";
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+  const slash = raw.match(/^(\d{1,2})[/. -](\d{1,2})[/. -](\d{4})$/);
+  if (slash) {
+    return `${slash[3]}-${slash[2].padStart(2, "0")}-${slash[1].padStart(2, "0")}`;
+  }
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return "";
+  const y = parsed.getFullYear();
+  const m = String(parsed.getMonth() + 1).padStart(2, "0");
+  const d = String(parsed.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function formatDob(value) {
+  const iso = toIsoDate(value);
+  if (!iso) return value && value !== "-" ? value : "";
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  if (Number.isNaN(dt.getTime())) return value;
+  return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 function MeetingField({ label, value }) {
@@ -101,6 +126,7 @@ const EDIT_FIELDS = [
   { key: "leadScore", label: "Lead score" },
   { key: "enquiryBy", label: "Enquiry made by" },
   { key: "lookingFor", label: "Looking for" },
+  { key: "dob", label: "Date of birth", type: "date" },
   { key: "areaOfHouse", label: "Area of house" },
   { key: "profession", label: "Profession" },
   { key: "familyIncomeBand", label: "Family income band" },
@@ -127,6 +153,7 @@ function detailsFromDeal(deal) {
     leadScore: deal.leadScore || "",
     enquiryBy: deal.enquiryBy || "",
     lookingFor: deal.lookingFor || "",
+    dob: toIsoDate(deal.dob) || "",
     areaOfHouse: deal.areaOfHouse || "",
     profession: deal.profession || "",
     familyIncomeBand: deal.familyIncomeBand || "",
@@ -227,6 +254,16 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved }
                     <option key={opt} value={opt}>{opt}</option>
                   ))}
                 </select>
+              ) : field.type === "date" ? (
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={toIsoDate(draft[field.key])}
+                    onChange={(e) => setField(field.key, e.target.value)}
+                    className={`${FIELD} pr-10 relative [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                  />
+                  <Calendar size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
+                </div>
               ) : field.full ? (
                 <textarea
                   value={draft[field.key]}
@@ -264,6 +301,7 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved }
         <DetailField label="Lead score" value={details.leadScore} />
         <DetailField label="Enquiry made by" value={details.enquiryBy} />
         <DetailField label="Looking for" value={details.lookingFor} />
+        <DetailField label="Date of birth" value={formatDob(details.dob) || "-"} />
         <DetailField label="Area of house" value={details.areaOfHouse} />
         <DetailField label="Profession" value={details.profession} />
         <DetailField label="Family income band" value={details.familyIncomeBand} />

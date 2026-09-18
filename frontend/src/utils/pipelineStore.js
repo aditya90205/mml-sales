@@ -14,6 +14,7 @@ const SAMPLE_P0_CONTACTED_DETAILS = {
   leadScore: "Warm",
   enquiryBy: "Parent (father)",
   lookingFor: "Girl · 26–30 · NCR",
+  dob: "1992-09-30",
   areaOfHouse: "Greater Kailash II",
   profession: "Chartered Accountant",
   familyIncomeBand: "₹60L–₹1Cr p.a.",
