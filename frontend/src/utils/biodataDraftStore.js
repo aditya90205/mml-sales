@@ -11,8 +11,9 @@ function digitsMobile(value = "") {
 
 function mapLookingFor(value) {
   const v = String(value || "").toLowerCase();
-  if (v.includes("bride") || v === "no") return "Bride";
-  if (v.includes("groom") || v === "yes") return "Groom";
+  if (!v) return "";
+  if (v.includes("bride") || v.includes("girl") || v === "no") return "Bride";
+  if (v.includes("groom") || v.includes("boy") || v === "yes") return "Groom";
   return String(value || "").trim();
 }
 
@@ -93,26 +94,187 @@ export function mapBiodataToIntake(payload = {}) {
   return out;
 }
 
-/** Prefill P2 from the pipeline lead contact only. */
+const OCCUPATION_PILLS = [
+  "Independent",
+  "Business (joint / nuclear)",
+  "Professional",
+  "Self employed",
+  "Industrialist",
+  "Bureaucrat",
+  "Private sector",
+  "Student",
+];
+
+function isFilledValue(value) {
+  if (value == null) return false;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object") return Object.values(value).some(isFilledValue);
+  return String(value).trim() !== "" && String(value).trim() !== "-" && String(value).trim() !== "—";
+}
+
+/** Overlay filled keys onto a base object. Empty overlay values never wipe existing data. */
+export function mergeFilledValues(base = {}, overlay = {}) {
+  const out = { ...(base || {}) };
+  for (const [key, value] of Object.entries(overlay || {})) {
+    if (isFilledValue(value)) out[key] = value;
+  }
+  return out;
+}
+
+function pickFilled(...vals) {
+  for (const value of vals) {
+    if (isFilledValue(value)) return value;
+  }
+  return "";
+}
+
+function splitCityState(raw) {
+  const text = String(raw || "").trim();
+  if (!text) return { city: "", state: "" };
+  const parts = text.split(",").map((part) => part.trim()).filter(Boolean);
+  return { city: parts[0] || "", state: parts.slice(1).join(", ") };
+}
+
+function mapResidentialStatus(nri) {
+  const v = String(nri || "").trim().toLowerCase();
+  if (!v || v === "-") return "";
+  if (v === "yes" || v === "nri" || v.includes("nri")) return "NRI";
+  if (v === "no" || v === "indian" || v.includes("resident")) return "Indian";
+  return "";
+}
+
+function mapClientType(lead = {}, details = {}) {
+  const pkg = String(pickFilled(lead.packageInterest, details.packageInterest)).toLowerCase();
+  if (pkg.includes("exclusive")) return "Exclusive";
+  if (pkg.includes("premium")) return "Premium";
+  if (pkg.includes("classic") || pkg.includes("economic")) return "Classic";
+  if (lead.starred || lead.premium === true || lead.premium === "Yes" || details.premium === "Yes") {
+    return "Premium";
+  }
+  return "";
+}
+
+function mapOccupation(profession) {
+  const raw = String(profession || "").trim();
+  if (!raw) return { occupation: "", designation: "" };
+  const match = OCCUPATION_PILLS.find((opt) => opt.toLowerCase() === raw.toLowerCase());
+  if (match) return { occupation: match, designation: "" };
+  return { occupation: "", designation: raw };
+}
+
+/**
+ * Prefill P2 Profile Create from the same lead record used on Overview
+ * (Create Lead + P0/P1 details). One source — do not make the client re-type.
+ */
 export function mapLeadToIntake(lead = {}) {
   if (!lead) return {};
+  const details = lead.overviewDetails && typeof lead.overviewDetails === "object" ? lead.overviewDetails : {};
   const names =
-    lead.firstName || lead.lastName
-      ? { firstName: lead.firstName || "", lastName: lead.lastName || "" }
-      : splitName(lead.name);
-  return {
-    firstName: names.firstName || "",
-    lastName: names.lastName || "",
-    mobile: digitsMobile(lead.mobile || lead.phone),
-    email: lead.email || "",
-    lookingFor: mapLookingFor(lead.lookingFor),
-    enquiryBy: mapEnquiryBy(lead.relation),
-    occupation: lead.profession || lead.occupation || "",
-    addrCity: lead.city ? String(lead.city).split(",")[0].trim() : "",
-    addrAreaLocality: lead.area || "",
-    dob: lead.dob || "",
-    occupation: lead.occupation || "",
-  };
+    lead.firstName || lead.lastName || details.firstName || details.lastName
+      ? {
+          firstName: pickFilled(lead.firstName, details.firstName),
+          lastName: pickFilled(lead.lastName, details.lastName),
+        }
+      : splitName(pickFilled(lead.name, details.name));
+
+  const lookingFor = mapLookingFor(pickFilled(lead.lookingFor, details.lookingFor));
+  const enquiryBy = mapEnquiryBy(pickFilled(lead.enquiryBy, lead.relation, details.enquiryBy, details.relation));
+  const mobile = digitsMobile(pickFilled(lead.mobile, lead.phone, details.mobile, details.phone));
+  const email = pickFilled(lead.email, details.email);
+  const dob = pickFilled(lead.dob, details.dob);
+  const cityRaw = pickFilled(lead.city, details.city);
+  const { city, state } = splitCityState(cityRaw);
+  const area = pickFilled(lead.area, details.area, lead.areaOfHouse, details.areaOfHouse);
+  const nri = pickFilled(lead.nri, details.nri);
+  const residentialStatus = mapResidentialStatus(nri);
+  const country = pickFilled(
+    lead.country,
+    details.country,
+    residentialStatus === "Indian" ? "India" : ""
+  );
+  const profession = pickFilled(lead.profession, lead.occupation, details.profession, details.occupation);
+  const { occupation, designation } = mapOccupation(profession);
+  const familyIncome = pickFilled(lead.familyIncomeBand, lead.income, details.familyIncomeBand);
+  const notes = pickFilled(lead.notes, details.notes);
+  const clientType = mapClientType(lead, details);
+
+  const out = {};
+  if (names.firstName) out.firstName = names.firstName;
+  if (names.lastName) out.lastName = names.lastName;
+  if (mobile) out.mobile = mobile;
+  if (email) out.email = email;
+  if (dob) out.dob = dob;
+  if (lookingFor) {
+    out.lookingFor = lookingFor;
+    if (lookingFor === "Groom") out.gender = "Female";
+    if (lookingFor === "Bride") out.gender = "Male";
+  }
+  if (enquiryBy) out.enquiryBy = enquiryBy;
+  if (city) {
+    out.addrCity = city;
+    out.addrResidingCity = city;
+    out.currentCity = city;
+  }
+  if (state) out.addrState = state;
+  if (area) {
+    out.addrAreaLocality = area;
+    out.currentLocality = area;
+  }
+  if (residentialStatus) out.residentialStatus = residentialStatus;
+  if (country) {
+    out.addrCountry = country;
+    out.addrResidingCountry = country;
+  }
+  if (occupation) out.occupation = occupation;
+  if (designation) out.designation = designation;
+  if (familyIncome) out.annualFamilyIncome = familyIncome;
+  if (notes) out.extraInfo = notes;
+  if (clientType) out.clientType = clientType;
+  return out;
+}
+
+/** Keep P2 intakeValues aligned with P0/P1 lead + Overview fields. */
+export function syncIntakeValues(lead = {}) {
+  return mergeFilledValues(lead.intakeValues || {}, mapLeadToIntake(lead));
+}
+
+/** Shared P2 fields written back onto the pipeline lead / Overview. */
+export function leadPatchFromIntake(values = {}) {
+  const looking = mapLookingFor(values.lookingFor);
+  const city = [values.addrCity, values.addrState].filter(Boolean).join(", ") || values.addrCity || "";
+  const nri =
+    values.residentialStatus === "NRI" ? "yes" : values.residentialStatus === "Indian" ? "no" : "";
+  const name = [values.firstName, values.lastName].filter(Boolean).join(" ").trim();
+  const patch = {};
+  if (values.firstName) patch.firstName = values.firstName;
+  if (values.lastName) patch.lastName = values.lastName;
+  if (name) patch.name = name;
+  if (values.mobile) patch.mobile = digitsMobile(values.mobile);
+  if (values.email) patch.email = values.email;
+  if (values.dob) patch.dob = values.dob;
+  if (looking) patch.lookingFor = looking === "Groom" ? "yes" : looking === "Bride" ? "no" : looking;
+  if (values.enquiryBy) {
+    patch.enquiryBy = values.enquiryBy;
+    patch.relation = values.enquiryBy;
+  }
+  if (city) patch.city = city;
+  if (values.addrAreaLocality) {
+    patch.area = values.addrAreaLocality;
+    patch.areaOfHouse = values.addrAreaLocality;
+  }
+  if (values.occupation || values.designation) {
+    patch.profession = values.occupation || values.designation;
+  }
+  if (values.annualFamilyIncome) patch.familyIncomeBand = values.annualFamilyIncome;
+  if (nri) {
+    patch.nri = nri;
+    if (nri === "no") patch.country = "India";
+  }
+  if (values.addrCountry || values.addrResidingCountry) {
+    patch.country = values.addrCountry || values.addrResidingCountry;
+  }
+  if (values.extraInfo) patch.notes = values.extraInfo;
+  return patch;
 }
 
 export function setPendingBiodata(payload) {
@@ -147,12 +309,23 @@ export function buildLeadIntakePayload(leadForm = {}, payload = {}) {
   const alsoRead = leadForm.alsoRead || payload.alsoRead || [];
   const intake = leadForm.intake || payload.intake || {};
   const fileName = leadForm.fileName || payload.fileName || "";
+  const fromBiodata = mapBiodataToIntake({ fields, alsoRead, intake });
+  const fromLead = mapLeadToIntake({
+    ...leadForm,
+    ...fields,
+    profession: leadForm.profession || fields.occupation,
+    income: leadForm.income,
+    nri: leadForm.nri,
+    country: leadForm.country,
+    notes: leadForm.notes,
+    familyIncomeBand: leadForm.income || leadForm.familyIncomeBand,
+  });
   return {
     fields,
     alsoRead,
     intake,
     fileName,
-    intakeValues: mapBiodataToIntake({ fields, alsoRead, intake }),
+    intakeValues: mergeFilledValues(fromBiodata, fromLead),
   };
 }
 

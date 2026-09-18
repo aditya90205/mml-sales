@@ -1,23 +1,45 @@
 import { addLeadActivity } from "./leadActivityStore.js";
+import { syncIntakeValues } from "./biodataDraftStore.js";
+import { splitName, lookingForFromGender } from "./leadFields.js";
 
 const EVENT = "mml-sales-pipeline";
 const STORAGE_KEY = "mml-sales-pipeline-leads";
+
+/** One dummy client record shared by Overview and P2 Profile Create. */
+export const SAMPLE_CLIENT_PROFILE = {
+  enquiryBy: "Parent",
+  relation: "Parent",
+  dob: "1992-09-30",
+  nri: "no",
+  country: "India",
+  city: "Delhi, NCR",
+  area: "Greater Kailash II",
+  areaOfHouse: "Greater Kailash II",
+  profession: "Professional",
+  familyIncomeBand: "₹50 Lakh to ₹1 Crore",
+  packageInterest: "Premium",
+  meeting: "Meeting Agreed",
+};
 
 /** Sample Overview fields carried from P0 New → P0 Contacted. */
 const SAMPLE_P0_CONTACTED_DETAILS = {
   dealCode: "MML-D-10429",
   stageLabel: "P0 Contacted",
-  packageInterest: "Premium",
+  packageInterest: SAMPLE_CLIENT_PROFILE.packageInterest,
   premium: "Yes",
   dealValue: "₹51,000",
   leadSource: "Outbound Calls",
   leadScore: "Warm",
-  enquiryBy: "Parent (father)",
-  lookingFor: "Girl · 26–30 · NCR",
-  dob: "1992-09-30",
-  areaOfHouse: "Greater Kailash II",
-  profession: "Chartered Accountant",
-  familyIncomeBand: "₹60L–₹1Cr p.a.",
+  enquiryBy: SAMPLE_CLIENT_PROFILE.enquiryBy,
+  lookingFor: "no",
+  dob: SAMPLE_CLIENT_PROFILE.dob,
+  nri: SAMPLE_CLIENT_PROFILE.nri,
+  country: SAMPLE_CLIENT_PROFILE.country,
+  city: SAMPLE_CLIENT_PROFILE.city,
+  areaOfHouse: SAMPLE_CLIENT_PROFILE.areaOfHouse,
+  profession: SAMPLE_CLIENT_PROFILE.profession,
+  familyIncomeBand: SAMPLE_CLIENT_PROFILE.familyIncomeBand,
+  meeting: SAMPLE_CLIENT_PROFILE.meeting,
   nextMeeting: "04/09/26",
   winLossReasons: "No decision / Think about it, Competitor / Existing solution",
   winLossTone: "Hot",
@@ -59,6 +81,91 @@ function withDummyContact(lead) {
   };
 }
 
+const SKIP_SAMPLE_PROFILE_IDS = new Set(["p0-1", "p0-ritika"]);
+const SAMPLE_FEMALE_FIRST = new Set(["kuhu", "ritika", "priya", "ananya"]);
+
+function sampleGender(lead = {}) {
+  const first = String(lead.firstName || lead.name || "")
+    .trim()
+    .split(/\s+/)[0]
+    .toLowerCase();
+  return SAMPLE_FEMALE_FIRST.has(first) ? "Female" : "Male";
+}
+
+function isLegacyDummyLookingFor(value) {
+  const v = String(value || "").toLowerCase();
+  return v.includes("girl ·") || v.includes("26–30") || v.includes("26-30");
+}
+
+/** Keep Overview dummy personal details on the same lead P2 reads. */
+function withSampleClient(lead) {
+  const names =
+    lead.firstName || lead.lastName
+      ? { firstName: lead.firstName || "", lastName: lead.lastName || "" }
+      : splitName(lead.name);
+  const gender = sampleGender({ ...lead, firstName: names.firstName, name: lead.name });
+  const lookingFor =
+    lead.lookingFor && !isLegacyDummyLookingFor(lead.lookingFor)
+      ? lead.lookingFor
+      : lookingForFromGender(gender, "lead");
+  const profession =
+    lead.profession === "Chartered Accountant" || !lead.profession
+      ? SAMPLE_CLIENT_PROFILE.profession
+      : lead.profession;
+  const familyIncomeBand =
+    lead.familyIncomeBand === "₹60L–₹1Cr p.a." || !lead.familyIncomeBand
+      ? SAMPLE_CLIENT_PROFILE.familyIncomeBand
+      : lead.familyIncomeBand;
+  const enquiryBy = String(lead.enquiryBy || lead.relation || "").includes("father")
+    ? SAMPLE_CLIENT_PROFILE.enquiryBy
+    : lead.enquiryBy || lead.relation || SAMPLE_CLIENT_PROFILE.enquiryBy;
+  const next = {
+    ...SAMPLE_CLIENT_PROFILE,
+    ...lead,
+    firstName: lead.firstName || names.firstName,
+    lastName: lead.lastName || names.lastName,
+    lookingFor,
+    enquiryBy,
+    relation: enquiryBy,
+    nri: lead.nri || SAMPLE_CLIENT_PROFILE.nri,
+    country: lead.country || (String(lead.nri || SAMPLE_CLIENT_PROFILE.nri).toLowerCase() === "no" ? "India" : lead.country),
+    city: lead.city || SAMPLE_CLIENT_PROFILE.city,
+    dob: lead.dob || SAMPLE_CLIENT_PROFILE.dob,
+    area: lead.area || lead.areaOfHouse || SAMPLE_CLIENT_PROFILE.area,
+    areaOfHouse: lead.areaOfHouse || lead.area || SAMPLE_CLIENT_PROFILE.areaOfHouse,
+    profession,
+    familyIncomeBand,
+    meeting: lead.meeting || SAMPLE_CLIENT_PROFILE.meeting,
+    packageInterest: lead.packageInterest || SAMPLE_CLIENT_PROFILE.packageInterest,
+    overviewDetails: {
+      ...SAMPLE_P0_CONTACTED_DETAILS,
+      premium: lead.starred ? "Yes" : "No",
+      leadSource: lead.source || SAMPLE_P0_CONTACTED_DETAILS.leadSource,
+      ...(lead.overviewDetails || {}),
+      lookingFor,
+      enquiryBy,
+      firstName: lead.firstName || names.firstName,
+      lastName: lead.lastName || names.lastName,
+      nri: lead.nri || SAMPLE_CLIENT_PROFILE.nri,
+      country: lead.country || SAMPLE_CLIENT_PROFILE.country,
+      city: lead.city || SAMPLE_CLIENT_PROFILE.city,
+      profession,
+      familyIncomeBand,
+      meeting: lead.meeting || SAMPLE_CLIENT_PROFILE.meeting,
+      dob: lead.dob || lead.overviewDetails?.dob || SAMPLE_CLIENT_PROFILE.dob,
+      areaOfHouse: lead.areaOfHouse || lead.area || SAMPLE_CLIENT_PROFILE.areaOfHouse,
+    },
+  };
+  next.intakeValues = syncIntakeValues(next);
+  return next;
+}
+
+function sampleLead(lead, { profile = true } = {}) {
+  const withContact = withDummyContact(lead);
+  if (!profile || SKIP_SAMPLE_PROFILE_IDS.has(lead.id)) return withContact;
+  return withSampleClient(withContact);
+}
+
 function leadHasContact(lead) {
   const mobile = String(lead?.mobile || "").replace(/\D/g, "");
   const email = String(lead?.email || "").trim();
@@ -68,9 +175,9 @@ function leadHasContact(lead) {
 /** Two sample cards per stage, mirroring the pipeline board roster. */
 export const LEADS_BY_STAGE = {
   P0: [
-    withDummyContact({ id: "p0-1", name: "Kuhu Sharma",  starred: true,  mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", p0Status: "new" }),
-    withDummyContact({ id: "p0-2", name: "Ankit Sharma", starred: true,  mmlId: "MML - D - 10429", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", p0Status: "contacted", profession: SAMPLE_P0_CONTACTED_DETAILS.profession, familyIncomeBand: SAMPLE_P0_CONTACTED_DETAILS.familyIncomeBand, areaOfHouse: SAMPLE_P0_CONTACTED_DETAILS.areaOfHouse, overviewDetails: SAMPLE_P0_CONTACTED_DETAILS }),
-    withDummyContact({
+    sampleLead({ id: "p0-1", name: "Kuhu Sharma",  starred: true,  mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", p0Status: "new" }, { profile: false }),
+    sampleLead({ id: "p0-2", name: "Ankit Sharma", starred: true,  mmlId: "MML - D - 10429", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", p0Status: "contacted", overviewDetails: SAMPLE_P0_CONTACTED_DETAILS }),
+    sampleLead({
       id: "p0-ritika",
       name: "Ritika Sharma",
       firstName: "Ritika",
@@ -92,31 +199,31 @@ export const LEADS_BY_STAGE = {
       dob: "",
       lookingFor: "yes",
       relation: "Parent",
-    }),
+    }, { profile: false }),
   ],
   P1: [
-    withDummyContact({ id: "p1-1", name: "Harshit Sharma", starred: false, mmlId: "MML - D - 10430", temperature: "Hot",  score: 8.5, priority: "High",   completion: 40,  days: 4,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
-    withDummyContact({ id: "p1-2", name: "Arjun Rampal",   starred: false, mmlId: "MML - D - 10431", temperature: "Hot",  score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p1-1", name: "Harshit Sharma", starred: false, mmlId: "MML - D - 10430", temperature: "Hot",  score: 8.5, priority: "High",   completion: 40,  days: 4,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p1-2", name: "Arjun Rampal",   starred: false, mmlId: "MML - D - 10431", temperature: "Hot",  score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
   ],
   P2: [
-    withDummyContact({ id: "p2-1", name: "Ankur Sharma",   firstName: "Ankur", lastName: "Sharma", starred: false, mmlId: "MML - D - 10432", temperature: "Cold", score: 7.5, priority: "Medium", completion: 75,  days: 6,  hrs: 24, source: "Community Events",  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
-    withDummyContact({ id: "p2-2", name: "Priya Raheja",   firstName: "Priya", lastName: "Raheja", starred: true,  mmlId: "MML - D - 10433", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 6,  source: "Community Events",  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p2-1", name: "Ankur Sharma",   firstName: "Ankur", lastName: "Sharma", starred: false, mmlId: "MML - D - 10432", temperature: "Cold", score: 7.5, priority: "Medium", completion: 75,  days: 6,  hrs: 24, source: "Community Events",  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p2-2", name: "Priya Raheja",   firstName: "Priya", lastName: "Raheja", starred: true,  mmlId: "MML - D - 10433", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 6,  source: "Community Events",  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
   ],
   P3: [
-    withDummyContact({ id: "p3-1", name: "Aditya Sharma",  starred: true,  mmlId: "MML - D - 10434", temperature: "Cold", score: 8.5, priority: "Medium", completion: 85,  days: 8,  hrs: 24, source: "Channel Partner",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
-    withDummyContact({ id: "p3-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10435", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Channel Partner",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p3-1", name: "Aditya Sharma",  starred: true,  mmlId: "MML - D - 10434", temperature: "Cold", score: 8.5, priority: "Medium", completion: 85,  days: 8,  hrs: 24, source: "Channel Partner",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p3-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10435", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Channel Partner",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
   ],
   P4: [
-    withDummyContact({ id: "p4-1", name: "Vivek Sharma",   starred: true,  mmlId: "MML - D - 10436", temperature: "Cold", score: 9.0, priority: "Low",    completion: 90,  days: 10, hrs: 6,  source: "Reference - Satish", lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
-    withDummyContact({ id: "p4-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10437", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Reference - Satish", lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p4-1", name: "Vivek Sharma",   starred: true,  mmlId: "MML - D - 10436", temperature: "Cold", score: 9.0, priority: "Low",    completion: 90,  days: 10, hrs: 6,  source: "Reference - Satish", lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p4-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10437", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Reference - Satish", lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
   ],
   P5: [
-    withDummyContact({ id: "p5-1", name: "Rohit Sharma",   starred: true,  mmlId: "MML - D - 10438", temperature: "Warm", score: 7.5, priority: "Medium", completion: 60,  days: 12, hrs: 24, source: "Manual Sourcing",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
-    withDummyContact({ id: "p5-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10439", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Manual Sourcing",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p5-1", name: "Rohit Sharma",   starred: true,  mmlId: "MML - D - 10438", temperature: "Warm", score: 7.5, priority: "Medium", completion: 60,  days: 12, hrs: 24, source: "Manual Sourcing",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p5-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10439", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Manual Sourcing",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
   ],
   P6: [
-    withDummyContact({ id: "p6-1", name: "Virat Sharma",   starred: true,  mmlId: "MML - D - 10440", temperature: "Warm", score: 8.5, priority: "Low",    completion: 55,  days: 14, hrs: 24, source: "Online - Insta",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
-    withDummyContact({ id: "p6-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10441", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Online - Insta",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p6-1", name: "Virat Sharma",   starred: true,  mmlId: "MML - D - 10440", temperature: "Warm", score: 8.5, priority: "Low",    completion: 55,  days: 14, hrs: 24, source: "Online - Insta",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p6-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10441", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Online - Insta",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
   ],
 };
 
@@ -166,6 +273,27 @@ function hydrateMissingContacts(data) {
   return { next, changed };
 }
 
+function hydrateSampleProfiles(data) {
+  const next = cloneLeads(data);
+  let changed = false;
+  for (const stageId of STAGE_IDS) {
+    next[stageId] = (next[stageId] || []).map((lead) => {
+      if (!SAMPLE_LEAD_IDS.has(lead.id) || SKIP_SAMPLE_PROFILE_IDS.has(lead.id)) return lead;
+      if (lead.p0Status === "new" && !lead.overviewDetails) return lead;
+      const synced = withSampleClient(lead);
+      const same =
+        lead.lookingFor === synced.lookingFor &&
+        lead.profession === synced.profession &&
+        lead.familyIncomeBand === synced.familyIncomeBand &&
+        lead.enquiryBy === synced.enquiryBy;
+      if (same && lead.dob && lead.intakeValues) return lead;
+      changed = true;
+      return synced;
+    });
+  }
+  return { next, changed };
+}
+
 function loadLeads() {
   if (typeof window === "undefined") return cloneLeads(LEADS_BY_STAGE);
   try {
@@ -173,8 +301,10 @@ function loadLeads() {
     if (!raw) return cloneLeads(LEADS_BY_STAGE);
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return cloneLeads(LEADS_BY_STAGE);
-    const { next, changed } = hydrateMissingContacts(parsed);
-    if (changed) {
+    const contacts = hydrateMissingContacts(parsed);
+    const profiles = hydrateSampleProfiles(contacts.next);
+    const next = profiles.next;
+    if (contacts.changed || profiles.changed) {
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       } catch {
@@ -235,7 +365,9 @@ export function countStageLeads(stageId = "P0") {
 export function addP0Lead(lead) {
   const id = lead?.id || `p0-${Date.now()}`;
   leads = cloneLeads(leads);
-  leads.P0 = [{ ...lead, id, p0Status: lead?.p0Status || "new" }, ...(leads.P0 || [])];
+  const next = { ...lead, id, p0Status: lead?.p0Status || "new" };
+  next.intakeValues = syncIntakeValues(next);
+  leads.P0 = [next, ...(leads.P0 || [])];
   const created = leads.P0[0];
   emit();
   addLeadActivity(created.id, {
@@ -265,6 +397,7 @@ export function updateLead(leadId, patch = {}) {
     leads[stageId] = (leads[stageId] || []).map((l) => {
       if (l.id !== leadId) return l;
       updated = { ...l, ...patch, id: l.id };
+      updated.intakeValues = syncIntakeValues(updated);
       foundStage = stageId;
       return updated;
     });

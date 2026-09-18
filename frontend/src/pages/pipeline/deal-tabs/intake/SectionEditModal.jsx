@@ -7,7 +7,7 @@ import {
   SECTION_TIPS,
   cloneSectionDraft,
 } from "./intakeFormData";
-import { FormBlock } from "./IntakeSectionFields";
+import { pairGenderAndLookingFor } from "../../../../utils/leadFields.js";
 
 function SectionEditBody({ sectionKey, values, chips, onClose, onSave }) {
   const meta = SECTIONS_META.find((s) => s.key === sectionKey);
@@ -20,7 +20,7 @@ function SectionEditBody({ sectionKey, values, chips, onClose, onSave }) {
 
   if (!meta) return null;
 
-  const setField = (key, value) => setDraftValues((prev) => ({ ...prev, [key]: value }));
+  const setField = (key, value) => setDraftValues((prev) => pairGenderAndLookingFor(prev, key, value));
   const removeChip = (chipsKey, chip) =>
     setDraftChips((prev) => ({
       ...prev,

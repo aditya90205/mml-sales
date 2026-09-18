@@ -1748,20 +1748,18 @@ export default function Dashboard() {
                 pendingBiodata?.alsoRead?.length ||
                 (pendingBiodata?.intake && Object.keys(pendingBiodata.intake).length)
             );
-            const bio = fromBiodata ? buildLeadIntakePayload(lead, pendingBiodata) : null;
-            const biodataPatch = bio
-              ? {
-                  firstName: lead.firstName,
-                  lastName: lead.lastName,
-                  city: lead.city,
-                  area: lead.area,
-                  dob: lead.dob,
-                  lookingFor: lead.lookingFor,
-                  relation: lead.relation,
-                  intakeValues: bio.intakeValues,
-                  biodataFile: bio.fileName,
-                }
-              : {};
+            const bio = buildLeadIntakePayload(lead, pendingBiodata);
+            const biodataPatch = {
+              firstName: lead.firstName,
+              lastName: lead.lastName,
+              city: lead.city,
+              area: lead.area,
+              dob: lead.dob,
+              lookingFor: lead.lookingFor,
+              relation: lead.relation,
+              intakeValues: bio.intakeValues,
+              ...(fromBiodata && bio.fileName ? { biodataFile: bio.fileName } : {}),
+            };
             const overviewPatch = {
               firstName: lead.firstName || "",
               lastName: lead.lastName || "",
@@ -1792,7 +1790,7 @@ export default function Dashboard() {
                 ...overviewPatch,
                 ...biodataPatch,
               });
-              if (bio) {
+              if (fromBiodata) {
                 upsertClientFromBiodata({
                   clientId: lead.clientId || leadInitial?.clientId,
                   name: lead.name,
@@ -1860,7 +1858,7 @@ export default function Dashboard() {
               ...overviewPatch,
               ...biodataPatch,
             });
-            if (created?.id && bio) {
+            if (created?.id && fromBiodata) {
               upsertClientFromBiodata({
                 clientId: lead.clientId,
                 name: lead.name,

@@ -13,11 +13,11 @@ import IntakeFillFormView from "./intake/IntakeFillFormView";
 import ClientRecordView from "./intake/ClientRecordView";
 import PersonalChangeOtpModal from "./intake/PersonalChangeOtpModal";
 import SectionEditModal from "./intake/SectionEditModal";
-import { mapBiodataToIntake, mapLeadToIntake } from "../../../utils/biodataDraftStore.js";
+import { mapBiodataToIntake, mapLeadToIntake, mergeFilledValues, leadPatchFromIntake } from "../../../utils/biodataDraftStore.js";
 import { extractBiodata } from "../../../utils/biodataExtract.js";
 import { recordLeadActivity } from "../../../utils/leadActivityStore.js";
 import { updateLead } from "../../../utils/pipelineStore.js";
-import { CONTACT_REQUIRED_MESSAGE, hasValidMobileOrEmail } from "../../../utils/leadFields.js";
+import { CONTACT_REQUIRED_MESSAGE, hasValidMobileOrEmail, pairGenderAndLookingFor } from "../../../utils/leadFields.js";
 
 const DUMMY_P2_IDS = new Set(["p2-1", "p2-2"]);
 
@@ -74,11 +74,7 @@ function seedIntakeValues(lead) {
         email: fromLead.email || SECTION_DEMO_VALUES.email,
       }
     : {};
-  return {
-    ...dummyDemo,
-    ...fromLead,
-    ...stored,
-  };
+  return mergeFilledValues({ ...dummyDemo, ...stored }, fromLead);
 }
 
 function seedHasValues(values = {}) {
@@ -108,6 +104,14 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
   const [editSectionKey, setEditSectionKey] = useState(null);
   const [pendingSectionDraft, setPendingSectionDraft] = useState(null);
 
+  const persistIntake = (nextValues) => {
+    if (!lead?.id) return;
+    updateLead(lead.id, {
+      intakeValues: nextValues,
+      ...leadPatchFromIntake(nextValues),
+    });
+  };
+
   useEffect(() => {
     const next = seedIntakeValues(lead);
     setValues(next);
@@ -116,11 +120,19 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
     setChangeLog([]);
     setView("fill");
     setActiveKey("personal");
+    if (
+      lead?.id &&
+      !DUMMY_P2_IDS.has(lead.id) &&
+      seedHasValues(next) &&
+      (!lead.intakeValues || !Object.keys(lead.intakeValues).length)
+    ) {
+      updateLead(lead.id, { intakeValues: next });
+    }
   }, [lead?.id]);
 
   const formEmpty = empty && !seedHasValues(values);
 
-  const setField = (key, value) => setValues((prev) => ({ ...prev, [key]: value }));
+  const setField = (key, value) => setValues((prev) => pairGenderAndLookingFor(prev, key, value));
   const removeChip = (chipsKey, chip) =>
     setChips((prev) => ({ ...prev, [chipsKey]: (prev[chipsKey] || []).filter((c) => c !== chip) }));
 
@@ -134,13 +146,9 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
       return;
     }
     setValues(next);
+    persistIntake(next);
     if (lead?.id) {
-      updateLead(lead.id, {
-        intakeValues: next,
-        biodataFile: file.name,
-        mobile: next.mobile || lead.mobile,
-        email: next.email || lead.email,
-      });
+      updateLead(lead.id, { biodataFile: file.name });
     }
     toast.success(`Biodata applied to Profile Create: ${file.name}`);
   };
@@ -170,6 +178,7 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
     const changes = diffPersonalValues(personalBaseline, current);
     if (!changes.length) {
       setPersonalUnlocked(false);
+      persistIntake(values);
       onSuccess?.();
       return;
     }
@@ -251,6 +260,7 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
     }
     setPersonalBaseline(current);
     setPersonalUnlocked(false);
+    persistIntake(nextValues);
     closeOtp();
     toast.success(
       logEntries.length === 1
@@ -283,6 +293,7 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
         return;
       }
       setPersonalUnlocked(false);
+      persistIntake(values);
     }
     setActiveKey(key);
   };
@@ -313,7 +324,10 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
           personalUnlocked={personalUnlocked}
           onRequestPersonalUnlock={requestPersonalUnlock}
           onRequestPersonalSave={requestPersonalSave}
-          onFinishToRecord={() => setView("record")}
+          onFinishToRecord={() => {
+            persistIntake(values);
+            setView("record");
+          }}
           onBiodataFile={handleBiodataFile}
         />
       )}

@@ -41,9 +41,9 @@ import PaymentsTab from "./deal-tabs/PaymentsTab";
 import P6ChecklistTab from "./deal-tabs/P6ChecklistTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
 import { EMPTY, atLeast, historyUntil, maybeDash, stageGateFor } from "./deal-tabs/stageContent.jsx";
-import { isSampleLead, p0StatusOf, updateLead } from "../../utils/pipelineStore.js";
+import { isSampleLead, p0StatusOf, updateLead, SAMPLE_CLIENT_PROFILE } from "../../utils/pipelineStore.js";
 import { ensureLeadHistory, recordLeadActivity } from "../../utils/leadActivityStore.js";
-import { formatLookingForLabel, formatYesNoLabel } from "../../utils/leadFields.js";
+import { formatLookingForLabel, splitName } from "../../utils/leadFields.js";
 import eyeIcon from "../../assets/eye.png";
 
 const BASE_TABS = [
@@ -62,12 +62,12 @@ const DEAL_DEFAULTS = {
   dealValue: "₹51,000",
   leadSource: "Instagram Ads",
   leadScore: "Warm",
-  enquiryBy: "Parent (father)",
-  lookingFor: "Girl · 26–30 · NCR",
-  dob: "1992-09-30",
-  areaOfHouse: "Greater Kailash II",
-  profession: "Chartered Accountant",
-  familyIncomeBand: "₹60L–₹1Cr p.a.",
+  enquiryBy: SAMPLE_CLIENT_PROFILE.enquiryBy,
+  lookingFor: "no",
+  dob: SAMPLE_CLIENT_PROFILE.dob,
+  areaOfHouse: SAMPLE_CLIENT_PROFILE.areaOfHouse,
+  profession: SAMPLE_CLIENT_PROFILE.profession,
+  familyIncomeBand: SAMPLE_CLIENT_PROFILE.familyIncomeBand,
   nextAction: "Call Client for pricing confirmation at 8 PM",
   nextMeeting: "04/09/26",
   winLossReasons: "No decision / Think about it, Competitor / Existing solution",
@@ -88,7 +88,7 @@ const DEAL_DEFAULTS = {
     { label: "Parent is decision maker", tone: "blue" },
     { label: "Cross-branch price enquiry", tone: "amber" },
   ],
-  fieldsFilledNote: "0 of 14 mandatory fields filled. please fill/edit all the details to move to Contacted",
+  fieldsFilledNote: "0 of 17 mandatory fields filled. please fill/edit all the details to move to Contacted",
 };
 
 const STAGE_LABELS = {
@@ -195,6 +195,8 @@ const MANDATORY_OVERVIEW_KEYS = [
   "lookingFor",
   "nri",
   "enquiryBy",
+  "firstName",
+  "lastName",
   "dob",
   "country",
   "mobile",
@@ -203,6 +205,7 @@ const MANDATORY_OVERVIEW_KEYS = [
   "leadSource",
   "familyIncomeBand",
   "profession",
+  "meeting",
   "packageInterest",
   "dealValue",
   "leadScore",
@@ -294,10 +297,13 @@ export default function DealDetailPage({
     const detailsFilled = atLeast(currentStage, "P1") || Boolean(savedDetails);
     const flagsFilled = atLeast(currentStage, "P2");
     const name = lead?.name || (sample ? "Ananya Gupta" : "");
+    const names =
+      lead?.firstName || lead?.lastName
+        ? { firstName: lead.firstName || "", lastName: lead.lastName || "" }
+        : splitName(name);
     const contact = getDealContact(lead, name);
     const pick = (leadValue, dummyValue) => fromLeadOrDummy(leadValue, dummyValue, sample, detailsFilled);
     const lookingFromLead = formatLookingForLabel(lead?.lookingFor) || lead?.lookingFor || "";
-    const nriFromLead = formatYesNoLabel(lead?.nri) || lead?.nri || "";
     const cityFromLead = lead?.city || "";
     const areaFromLead = lead?.areaOfHouse || lead?.area || "";
     const mobileFromLead = lead?.mobile || lead?.phone || contact.phone;
@@ -328,10 +334,16 @@ export default function DealDetailPage({
       packageInterest: pick(lead?.packageInterest, DEAL_DEFAULTS.packageInterest),
       leadScore: pick(lead?.leadScore ?? (lead?.score != null ? String(lead.score) : ""), DEAL_DEFAULTS.leadScore),
       enquiryBy: pick(lead?.enquiryBy || lead?.relation, DEAL_DEFAULTS.enquiryBy),
+      firstName: names.firstName || EMPTY,
+      lastName: names.lastName || EMPTY,
       lookingFor: pick(lookingFromLead, DEAL_DEFAULTS.lookingFor),
-      nri: nriFromLead || EMPTY,
-      country: lead?.country || (String(lead?.nri).toLowerCase() === "no" ? "India" : EMPTY),
-      city: cityFromLead || EMPTY,
+      nri: pick(lead?.nri, SAMPLE_CLIENT_PROFILE.nri),
+      country: pick(
+        lead?.country || (String(lead?.nri).toLowerCase() === "no" ? "India" : ""),
+        SAMPLE_CLIENT_PROFILE.country
+      ),
+      city: pick(cityFromLead, SAMPLE_CLIENT_PROFILE.city),
+      meeting: pick(lead?.meeting || lead?.overviewDetails?.meeting, SAMPLE_CLIENT_PROFILE.meeting),
       dob: pick(lead?.dob || lead?.intakeValues?.dob, DEAL_DEFAULTS.dob),
       areaOfHouse: pick(areaFromLead, DEAL_DEFAULTS.areaOfHouse),
       area: cityFromLead ? areaFromLead : pick(areaFromLead, DEAL_DEFAULTS.areaOfHouse),
@@ -378,6 +390,11 @@ export default function DealDetailPage({
           source: savedDetails.leadSource || savedDetails.source || base.source,
           leadScore: savedDetails.leadScore || base.leadScore,
           enquiryBy: savedDetails.enquiryBy || base.enquiryBy,
+          firstName: savedDetails.firstName || base.firstName,
+          lastName: savedDetails.lastName || base.lastName,
+          name:
+            [savedDetails.firstName, savedDetails.lastName].filter(Boolean).join(" ").trim() ||
+            base.name,
           lookingFor: savedDetails.lookingFor || base.lookingFor,
           nri: savedDetails.nri || base.nri,
           country: savedDetails.country || base.country,
@@ -390,6 +407,7 @@ export default function DealDetailPage({
           area: savedDetails.area || savedDetails.areaOfHouse || base.area,
           profession: savedDetails.profession || base.profession,
           familyIncomeBand: savedDetails.familyIncomeBand || base.familyIncomeBand,
+          meeting: savedDetails.meeting || base.meeting,
           nextMeeting: savedDetails.nextMeeting || base.nextMeeting,
           winLossReasons: savedDetails.winLossReasons || base.winLossReasons,
           winLossTone: savedDetails.winLossTone || base.winLossTone,
@@ -403,17 +421,18 @@ export default function DealDetailPage({
         }
       : base;
 
+    const totalMandatory = MANDATORY_OVERVIEW_KEYS.length;
     const filled = sample
       ? detailsFilled
-        ? 14
+        ? totalMandatory
         : 0
       : countFilledKeys(merged, MANDATORY_OVERVIEW_KEYS);
     merged.fieldsFilledNote =
       currentStage === "P0" && !savedDetails
-        ? `${filled} of 14 mandatory fields filled. please fill/edit all the details to move to Contacted`
+        ? `${filled} of ${totalMandatory} mandatory fields filled. please fill/edit all the details to move to Contacted`
         : currentStage === "P0"
-          ? `${Math.max(filled, 1)} of 14 mandatory fields filled. Move to P1 when ready.`
-          : `${Math.max(filled, 1)} of 14 mandatory fields filled.`;
+          ? `${Math.max(filled, 1)} of ${totalMandatory} mandatory fields filled. Move to P1 when ready.`
+          : `${Math.max(filled, 1)} of ${totalMandatory} mandatory fields filled.`;
 
     return merged;
   }, [lead, currentStage, winLossOverride, isPremium, savedDetails, p0StageLabel, isContactedP0]);
@@ -469,8 +488,10 @@ export default function DealDetailPage({
     onAdvance?.(
       {
         ...lead,
+        ...(savedDetails || {}),
         p0Status: isContactedP0 ? "contacted" : lead?.p0Status,
         overviewDetails: savedDetails || lead?.overviewDetails,
+        intakeValues: lead?.intakeValues,
       },
       currentStage
     );
@@ -481,6 +502,9 @@ export default function DealDetailPage({
     handlePremiumChange(draft.premium === "Yes");
     if (lead?.id) {
       updateLead(lead.id, {
+        firstName: draft.firstName || "",
+        lastName: draft.lastName || "",
+        name: draft.name || `${draft.firstName || ""} ${draft.lastName || ""}`.replace(/\s+/g, " ").trim(),
         dob: draft.dob || "",
         lookingFor: draft.lookingFor || "",
         nri: draft.nri || "",
@@ -495,6 +519,7 @@ export default function DealDetailPage({
         source: draft.leadSource || draft.source || "",
         profession: draft.profession || "",
         familyIncomeBand: draft.familyIncomeBand || "",
+        meeting: draft.meeting || "",
         notes: draft.notes || "",
         overviewDetails: draft,
       });
@@ -508,6 +533,36 @@ export default function DealDetailPage({
       });
     }
   };
+
+  const intakeLead = useMemo(() => {
+    if (!lead && !deal) return lead;
+    return {
+      ...lead,
+      lookingFor: deal?.lookingFor || lead?.lookingFor,
+      nri: deal?.nri || lead?.nri,
+      country: deal?.country || lead?.country,
+      city: deal?.city || lead?.city,
+      area: deal?.area || deal?.areaOfHouse || lead?.area,
+      areaOfHouse: deal?.areaOfHouse || deal?.area || lead?.areaOfHouse,
+      enquiryBy: deal?.enquiryBy || lead?.enquiryBy,
+      relation: deal?.enquiryBy || lead?.relation,
+      firstName: deal?.firstName || lead?.firstName,
+      lastName: deal?.lastName || lead?.lastName,
+      meeting: deal?.meeting || lead?.meeting,
+      mobile: deal?.mobile || deal?.phone || lead?.mobile,
+      email: deal?.email || lead?.email,
+      dob: deal?.dob || lead?.dob,
+      profession: deal?.profession || lead?.profession,
+      familyIncomeBand: deal?.familyIncomeBand || lead?.familyIncomeBand,
+      notes: deal?.notes ?? lead?.notes,
+      packageInterest: deal?.packageInterest || lead?.packageInterest,
+      premium: deal?.premium ?? lead?.premium,
+      starred: deal?.premium || lead?.starred,
+      name: deal?.name || lead?.name,
+      overviewDetails: savedDetails || lead?.overviewDetails,
+      intakeValues: lead?.intakeValues,
+    };
+  }, [lead, deal, savedDetails]);
 
   const handlePackageSelect = (pkg) => {
     setSelectedPackage(pkg);
@@ -531,7 +586,7 @@ export default function DealDetailPage({
           />
         );
       case "intake":
-        return <IntakeFormTab empty={currentStage === "P0" && !lead?.intakeValues} lead={lead} />;
+        return <IntakeFormTab empty={currentStage === "P0" && !lead?.intakeValues && !savedDetails} lead={intakeLead} />;
       case "visits":
         return <VisitsMeetingsTab empty={!atLeast(currentStage, "P3")} lead={lead} currentStage={currentStage} />;
       case "package":

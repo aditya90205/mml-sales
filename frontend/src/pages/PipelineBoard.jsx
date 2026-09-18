@@ -42,6 +42,7 @@ import {
   subscribePipeline,
   writeLeads,
 } from "../utils/pipelineStore.js";
+import { syncIntakeValues } from "../utils/biodataDraftStore.js";
 import { recordLeadActivity } from "../utils/leadActivityStore.js";
 
 /* ───────────────────────── Data ───────────────────────── */
@@ -879,6 +880,8 @@ export default function PipelineBoard() {
       completion: Math.max(lead.completion || 0, 40),
     };
     const updatedLead = { ...lead, ...patch };
+    updatedLead.intakeValues = syncIntakeValues(updatedLead);
+    patch.intakeValues = updatedLead.intakeValues;
     setLeadsData((prev) => ({
       ...prev,
       P0: (prev.P0 || []).map((l) => (l.id === lead.id ? { ...l, ...patch } : l)),
@@ -899,16 +902,16 @@ export default function PipelineBoard() {
   };
 
   const handleMoveToP1 = (lead, updatedData = {}) => {
+    const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 8.5, completion: 45 };
+    updatedLead.intakeValues = syncIntakeValues(updatedLead);
     setLeadsData((prev) => {
       const p0Filtered = (prev.P0 || []).filter((l) => l.id !== lead.id);
-      const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 8.5, completion: 45 };
       return {
         ...prev,
         P0: p0Filtered,
         P1: [updatedLead, ...(prev.P1 || [])],
       };
     });
-    const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 8.5, completion: 45 };
     setActiveLead(updatedLead);
     setDealTargetStage("P1");
     logLeadMove(updatedLead, "P0", "Stage advanced P0 Contacted → P1 Qualified", { stage: "P1" });
@@ -920,7 +923,14 @@ export default function PipelineBoard() {
     setLeadsData((prev) => {
       const fromP0 = (prev.P0 || []).filter((l) => l.id !== lead.id);
       const fromP1 = (prev.P1 || []).filter((l) => l.id !== lead.id);
-      const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 9.0, completion: 70 };
+      const updatedLead = {
+        ...lead,
+        ...updatedData,
+        temperature: "Hot",
+        score: 9.0,
+        completion: 70,
+      };
+      updatedLead.intakeValues = syncIntakeValues(updatedLead);
       return {
         ...prev,
         P0: fromP0,
@@ -928,7 +938,14 @@ export default function PipelineBoard() {
         P2: [updatedLead, ...(prev.P2 || [])],
       };
     });
-    const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 9.0, completion: 70 };
+    const updatedLead = {
+      ...lead,
+      ...updatedData,
+      temperature: "Hot",
+      score: 9.0,
+      completion: 70,
+    };
+    updatedLead.intakeValues = syncIntakeValues(updatedLead);
     setActiveLead(updatedLead);
     setDealTargetStage("P2");
     logLeadMove(updatedLead, "P1", "Stage advanced P1 Qualified → P2 Data Collection", { stage: "P2" });

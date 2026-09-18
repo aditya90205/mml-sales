@@ -26,6 +26,9 @@ import {
   EMAIL_RE,
   FIELD_STATUS,
   FIELD_STATUS_META,
+  LEAD_INCOME_BANDS,
+  LEAD_OCCUPATIONS,
+  LEAD_RELATIONS,
   classifyField,
   coerceCreateLeadValue,
   contactToLeadFields,
@@ -38,7 +41,7 @@ import {
   validateCreateLeadFields,
 } from "../../utils/leadFields.js";
 
-const RELATIONS = ["Self", "Parent", "Sibling", "Relative", "Friend", "Other"];
+const RELATIONS = LEAD_RELATIONS;
 const SOURCES = [
   "Website Inquiry",
   "Referral",
@@ -50,24 +53,8 @@ const SOURCES = [
   "Cold Call",
   "Biodata Upload",
 ];
-const INCOME = [
-  "Under ₹15 Lakh",
-  "₹15 Lakh to ₹30 Lakh",
-  "₹30 Lakh to ₹50 Lakh",
-  "₹50 Lakh to ₹1 Crore",
-  "₹1 Crore to ₹5 Crore",
-  "Above ₹5 Crore",
-];
-const OCCUPATIONS = [
-  "Independent",
-  "Business (joint / nuclear)",
-  "Professional",
-  "Self employed",
-  "Industrialist",
-  "Bureaucrat",
-  "Private sector",
-  "Student",
-];
+const INCOME = LEAD_INCOME_BANDS;
+const OCCUPATIONS = LEAD_OCCUPATIONS;
 const CITIES = [
   "Mumbai, Maharashtra",
   "Pune, Maharashtra",
@@ -131,6 +118,34 @@ function emptyForm() {
     profession: "",
     meeting: "Meeting Agreed",
   };
+}
+
+function LookingForToggle({ value, onChange }) {
+  return (
+    <div className="flex items-center gap-2">
+      {[
+        { id: "yes", label: "Groom" },
+        { id: "no", label: "Bride" },
+      ].map((opt) => {
+        const active = value === opt.id;
+        return (
+          <button
+            key={opt.id}
+            type="button"
+            onClick={() => onChange(opt.id)}
+            className={`inline-flex items-center gap-1.5 h-8 px-4 rounded-full text-[13px] font-semibold border transition-colors ${
+              active
+                ? "bg-[#7A0A17] text-white border-[#7A0A17]"
+                : "bg-white text-[#374151] border-black/12 hover:bg-[#FAFAFB]"
+            }`}
+          >
+            {active ? <Check size={13} strokeWidth={2.6} /> : null}
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function YesNoToggle({ value, onChange }) {
@@ -764,7 +779,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
                 onKeep={keepField}
                 onUseImported={useBiodataField}
               >
-                <YesNoToggle value={form.lookingFor} onChange={set("lookingFor")} />
+                <LookingForToggle value={form.lookingFor} onChange={set("lookingFor")} />
               </ComparedField>
               <Field label="NRI" required>
                 <YesNoToggle

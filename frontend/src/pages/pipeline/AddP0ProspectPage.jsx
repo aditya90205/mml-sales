@@ -47,6 +47,8 @@ export default function AddP0ProspectPage({ onBack, onAddProspect }) {
       hrs: 24,
       lastDiscussion: "Lead Created",
       nextAction: "Initial Contact",
+      firstName: formData.firstName,
+      lastName: formData.lastName,
       mobile: formData.mobile,
       email: formData.email,
       p0Status: "new",

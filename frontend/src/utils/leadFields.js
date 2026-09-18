@@ -1,3 +1,25 @@
+export const LEAD_RELATIONS = ["Self", "Parent", "Sibling", "Relative", "Friend", "Other"];
+
+export const LEAD_INCOME_BANDS = [
+  "Under ₹15 Lakh",
+  "₹15 Lakh to ₹30 Lakh",
+  "₹30 Lakh to ₹50 Lakh",
+  "₹50 Lakh to ₹1 Crore",
+  "₹1 Crore to ₹5 Crore",
+  "Above ₹5 Crore",
+];
+
+export const LEAD_OCCUPATIONS = [
+  "Independent",
+  "Business (joint / nuclear)",
+  "Professional",
+  "Self employed",
+  "Industrialist",
+  "Bureaucrat",
+  "Private sector",
+  "Student",
+];
+
 function digitsOnly(value = "") {
   return String(value).replace(/\D/g, "");
 }
@@ -108,8 +130,8 @@ export function displayFieldValue(key, value) {
   if (!raw) return "—";
   if (key === "lookingFor") {
     const v = raw.toLowerCase();
-    if (v === "yes" || v.includes("groom")) return "Groom";
-    if (v === "no" || v.includes("bride")) return "Bride";
+    if (v === "yes" || v.includes("groom") || v.includes("boy")) return "Groom";
+    if (v === "no" || v.includes("bride") || v.includes("girl")) return "Bride";
   }
   if (key === "mobile") {
     const d = digitsOnly(raw);
@@ -129,7 +151,42 @@ export function formatLookingForLabel(value) {
 export function isLookingToggleValue(value) {
   const v = String(value ?? "").trim().toLowerCase();
   if (!v) return true;
-  return v === "yes" || v === "no" || v.includes("groom") || v.includes("bride");
+  return (
+    v === "yes" ||
+    v === "no" ||
+    v.includes("groom") ||
+    v.includes("bride") ||
+    v.includes("girl") ||
+    v.includes("boy")
+  );
+}
+
+/** Bride → Male, Groom → Female — one client profile across Create Lead / Overview / P2. */
+export function genderFromLookingFor(value) {
+  const looking = displayFieldValue("lookingFor", value);
+  if (looking === "Groom") return "Female";
+  if (looking === "Bride") return "Male";
+  return "";
+}
+
+export function lookingForFromGender(gender, format = "intake") {
+  const g = String(gender || "").trim().toLowerCase();
+  if (g === "male") return format === "lead" ? "no" : "Bride";
+  if (g === "female") return format === "lead" ? "yes" : "Groom";
+  return "";
+}
+
+export function pairGenderAndLookingFor(values = {}, key, value) {
+  const next = { ...values, [key]: value };
+  if (key === "lookingFor") {
+    const gender = genderFromLookingFor(value);
+    if (gender) next.gender = gender;
+  }
+  if (key === "gender") {
+    const looking = lookingForFromGender(value, "intake");
+    if (looking) next.lookingFor = looking;
+  }
+  return next;
 }
 
 export function formatYesNoLabel(value) {
@@ -199,7 +256,8 @@ export function coerceCreateLeadValue(key, value) {
   if (key === "mobile") return digitsOnly(raw).replace(/^91/, "").slice(-10);
   if (key === "lookingFor") {
     const v = raw.toLowerCase();
-    if (v.includes("no") || v.includes("bride")) return "no";
+    if (v.includes("bride") || v.includes("girl") || v === "no") return "no";
+    if (v.includes("groom") || v.includes("boy") || v === "yes") return "yes";
     return "yes";
   }
   if (key === "relation") {
