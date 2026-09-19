@@ -562,8 +562,8 @@ export default function TasksPage() {
   const [tasks, setTasksState] = useState(readTasks);
   const [search, setSearch] = useState("");
   const [perPage, setPerPage] = useState(10);
-  const [view, setView] = useState(() => (todayOnly || sortByPriority ? "list" : "grid"));
-  const [kpiFilter, setKpiFilter] = useState("total");
+  const [view, setView] = useState("list");
+  const [kpiFilter, setKpiFilter] = useState(null);
   const [viewing, setViewing] = useState(null);
   const [editing, setEditing] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -581,13 +581,18 @@ export default function TasksPage() {
     if (todayOnly || sortByPriority) setView("list");
   }, [todayOnly, sortByPriority]);
 
+  useEffect(() => {
+    if (todayOnly) setKpiFilter(null);
+  }, [todayOnly]);
+
   const kpiStats = useMemo(() => {
-    const unassigned = tasks.filter(isTaskUnassigned).length;
-    const assigned = tasks.length - unassigned;
-    const high = tasks.filter(isHighPriority).length;
-    const counts = { total: tasks.length, unassigned, assigned, high };
+    const scope = todayOnly ? tasks.filter(isDueToday) : tasks;
+    const unassigned = scope.filter(isTaskUnassigned).length;
+    const assigned = scope.length - unassigned;
+    const high = scope.filter(isHighPriority).length;
+    const counts = { total: scope.length, unassigned, assigned, high };
     return STAT_DEFS.map((def) => ({ ...def, value: counts[def.id] }));
-  }, [tasks]);
+  }, [tasks, todayOnly]);
 
   const filteredTasks = useMemo(() => {
     let list = tasks.filter((t) => matchesKpiFilter(t, kpiFilter));
@@ -633,7 +638,7 @@ export default function TasksPage() {
   };
 
   const handleKpiSelect = (id) => {
-    setKpiFilter((prev) => (id === "total" || prev === id ? "total" : id));
+    setKpiFilter((prev) => (prev === id ? null : id));
   };
 
   const handleView = (task) => setViewing(task);

@@ -9,6 +9,7 @@ import {
   Activity,
   Users,
   ArrowRight,
+  ArrowUpRight,
   X,
   Paperclip,
   Copy,
@@ -433,13 +434,15 @@ function tempDotColor(temperature) {
   return TEMP_DOT_COLORS[key] || "#9CA3AF";
 }
 
+const PIPELINE_BOARD_HREF = "/pipeline?view=table";
+
 const MY_LEADS = [
-  { id: "MML-ID-D-10428", name: "Kuhu Sharma",    starred: true,  stage: "P0 - New",              temperature: "Hot",  stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Outbound follow-up call" },
-  { id: "MML-ID-D-10428", name: "Harshit Sharma", starred: false, stage: "P1 - Qualified",        temperature: "Hot",  stageTone: "Lost", priority: "High",   leadScore: 8.5, profileCompletion: 50,  source: "Brand Walking",    followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: true,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Re-engagement call" },
-  { id: "MML-ID-D-10428", name: "Aditya Sharma",  starred: false, stage: "P3 - Video Call/Visit", temperature: "Cold", stageTone: "Cold", priority: "Medium", leadScore: 8.5, profileCompletion: 85,  source: "Channel Partner",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm video call slot" },
-  { id: "MML-ID-D-10428", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      temperature: "Cold", stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
-  { id: "MML-ID-D-10429", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      temperature: "Warm", stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
-  { id: "MML-ID-D-10428", name: "Virat Sharma",   starred: false, stage: "P6 - Service Handover", temperature: "Warm", stageTone: null,   priority: "Low",    leadScore: 8.5, profileCompletion: 90,  source: "Online - Insta",   followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm handover checklist" },
+  { id: "MML-ID-D-10428", pipelineId: "p0-1", name: "Kuhu Sharma",    starred: true,  stage: "P0 - New",              temperature: "Hot",  stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Outbound follow-up call" },
+  { id: "MML-ID-D-10428", pipelineId: "p1-1", name: "Harshit Sharma", starred: false, stage: "P1 - Qualified",        temperature: "Hot",  stageTone: "Lost", priority: "High",   leadScore: 8.5, profileCompletion: 50,  source: "Brand Walking",    followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: true,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Re-engagement call" },
+  { id: "MML-ID-D-10428", pipelineId: "p3-1", name: "Aditya Sharma",  starred: false, stage: "P3 - Video Call/Visit", temperature: "Cold", stageTone: "Cold", priority: "Medium", leadScore: 8.5, profileCompletion: 85,  source: "Channel Partner",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm video call slot" },
+  { id: "MML-ID-D-10428", pipelineId: "p4-1", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      temperature: "Cold", stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
+  { id: "MML-ID-D-10429", pipelineId: "p4-1", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      temperature: "Warm", stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
+  { id: "MML-ID-D-10428", pipelineId: "p6-1", name: "Virat Sharma",   starred: false, stage: "P6 - Service Handover", temperature: "Warm", stageTone: null,   priority: "Low",    leadScore: 8.5, profileCompletion: 90,  source: "Online - Insta",   followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm handover checklist" },
 ];
 
 /* ───────────────────────── Header controls ───────────────────────── */
@@ -1309,10 +1312,20 @@ function MyLeadsCard({
       <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
 
       <div className="flex items-center justify-between gap-3 mb-4">
-        <h2 className="text-[16px] font-bold text-[#111] flex items-center gap-2 shrink-0">
-          <Heart size={15} className="text-[#E8395B]" fill="#E8395B" strokeWidth={0} />
-          Lead Health
-        </h2>
+        <div className="flex items-center gap-2.5 min-w-0 shrink-0">
+          <h2 className="text-[16px] font-bold text-[#111] flex items-center gap-2">
+            <Heart size={15} className="text-[#E8395B]" fill="#E8395B" strokeWidth={0} />
+            Lead Health
+          </h2>
+          <Link
+            to={PIPELINE_BOARD_HREF}
+            className="inline-flex items-center gap-1 h-7 pl-2 pr-1.5 rounded-lg text-[11px] font-semibold text-[#7A0A17] bg-[#FCF5F6] border border-[#7A0A17]/12 hover:bg-[#F9EDEF] transition-colors"
+            title="View all pipeline leads"
+          >
+            View All
+            <ArrowRight size={12} />
+          </Link>
+        </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
           {(() => {
             const allCount =
@@ -1526,7 +1539,14 @@ function MyLeadsCard({
                       />
                       <div className="min-w-0">
                         <span className="inline-flex items-center gap-1.5 min-w-0">
-                          <p className="text-[13px] font-bold text-[#111] truncate">{lead.name}</p>
+                          <Link
+                            to={PIPELINE_BOARD_HREF}
+                            className="group/name inline-flex items-center gap-1 min-w-0"
+                            title={`Open ${lead.name} on the pipeline board`}
+                          >
+                            <p className="text-[13px] font-bold text-[#111] truncate group-hover/name:text-[#7A0A17]">{lead.name}</p>
+                            <ArrowUpRight size={12} className="text-[#C4C9D1] opacity-0 group-hover/name:opacity-100 group-hover/name:text-[#7A0A17] shrink-0 transition-opacity" />
+                          </Link>
                           {lead.starred && <Star size={12} className="text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={0} />}
                         </span>
                         <p className="text-[10px] text-[#9CA3AF] truncate">{lead.id}</p>
@@ -1594,6 +1614,14 @@ function MyLeadsCard({
                         hasUnread={i % 2 === 0}
                         recipientName={lead.name}
                       />
+                      <Link
+                        to={PIPELINE_BOARD_HREF}
+                        className="p-1.5 text-[#6B7280] hover:text-[#7A0A17] hover:bg-[#FCF5F6] rounded-lg transition-colors"
+                        title="Open pipeline board"
+                        aria-label={`Open pipeline board for ${lead.name}`}
+                      >
+                        <ArrowUpRight size={14} />
+                      </Link>
                       <button type="button" className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors" title="More Options" aria-label="More Options">
                         <MoreVertical size={14} />
                       </button>

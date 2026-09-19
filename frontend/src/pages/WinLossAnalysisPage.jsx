@@ -4,6 +4,7 @@ import { Download, Eye } from "lucide-react";
 import { toast } from "react-toastify";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import { AppPage, MetricCard, NativeSelect, OutlineBtn, Panel, PrimaryBtn, Td } from "../components/common/AppPage.jsx";
+import { GoalsPerformanceCard, LeadsConversionCard } from "../components/reports/GoalsAndConversionCharts.jsx";
 
 const STATS = [
   { label: "Deals closed", value: "7", note: "▲ 2 vs June", noteTone: "green" },
@@ -343,6 +344,10 @@ export default function WinLossAnalysisPage() {
           </table>
         </div>
       </Panel>
+
+      <GoalsPerformanceCard />
+
+      <LeadsConversionCard />
     </AppPage>
   );
 }

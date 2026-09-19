@@ -22,6 +22,7 @@ import PostSalesPage from "./pages/PostSalesPage";
 import ProfileSettings from "./pages/ProfileSettings";
 import DocumentsPage from "./pages/DocumentsPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import AnnouncementsPage from "./pages/AnnouncementsPage";
 import HomeOfficeVisitsPage from "./pages/pipeline/desk/HomeOfficeVisitsPage";
 import CrossBranchFlagsPage from "./pages/pipeline/desk/CrossBranchFlagsPage";
 import QuotationsPage from "./pages/pipeline/desk/QuotationsPage";
@@ -185,7 +186,7 @@ export default function App() {
         />
         <Route
           path="/announcements"
-          element={<LayoutRoute><Placeholder title="Announcements" /></LayoutRoute>}
+          element={<LayoutRoute><AnnouncementsPage /></LayoutRoute>}
         />
 
         {/* ── Reports & Media ── */}

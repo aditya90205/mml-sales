@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
+  AlarmClock,
   ArrowRight,
   Calendar,
   ChevronDown,
@@ -27,6 +28,7 @@ import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 // TopBar is now provided by Layout
+import eyeIcon from "../assets/eye.png";
 import CreateLeadModal from "../components/pipeline/CreateLeadModal";
 import DealDetailPage from "./pipeline/DealDetailPage";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
@@ -174,6 +176,12 @@ function stageFromSearch(searchParams) {
   return PIPELINE_STAGE_IDS.has(raw) ? raw : null;
 }
 
+function viewFromSearch(searchParams) {
+  const raw = String(searchParams.get("view") || "").toLowerCase();
+  if (raw === "board" || raw === "table") return raw;
+  return null;
+}
+
 /* ───────────────────────── Small pieces ───────────────────────── */
 
 function InitialsAvatar({ name, size = 28 }) {
@@ -201,6 +209,44 @@ function Pill({ tone, children }) {
     >
       {children}
     </span>
+  );
+}
+
+/* ───────────────────────── Alert banner ───────────────────────── */
+
+function ActionAlertBanner() {
+  return (
+    <div className="flex-1 min-w-0 bg-[#FDECEE] border border-[#F7D3D9] rounded-2xl px-4 py-3.5 flex items-center gap-3.5 flex-wrap">
+      <span className="size-9 rounded-xl bg-[#FFE1CC] grid place-items-center shrink-0">
+        <AlarmClock size={18} className="text-[#F97316]" strokeWidth={1.8} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[13px] font-bold text-[#111]">2 items need action today</p>
+        <p className="text-[12px] text-[#6B7280] mt-0.5">
+          Sanjay Mehta has been in P4 for 9 days, 1 discount request is awaiting sales head approval.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ───────────────────────── Oversight quick link ───────────────────────── */
+
+function OversightCard() {
+  return (
+    <Link
+      to="/pipeline/cross-branch"
+      className="shrink-0 w-full lg:w-[230px] bg-white border border-black/8 rounded-2xl px-4 py-3.5 hover:bg-[#FAFAFB] transition-colors"
+    >
+      <div className="flex items-center gap-2 mb-2.5 whitespace-nowrap">
+        <img src={eyeIcon} alt="Oversight" style={{ width: 15, height: 15, objectFit: "contain" }} />
+        <p className="text-[13px] font-bold text-[#111]">Oversight</p>
+      </div>
+      <span className="flex items-center justify-between gap-2 w-full text-[11.5px] font-medium rounded-lg px-2.5 py-[9px] text-[#111] bg-[#E7F8EF]">
+        Cross Branch Flags
+        <span className="shrink-0 text-[10px] font-semibold bg-white/70 rounded px-1.5 py-0.5 text-[#111]">3</span>
+      </span>
+    </Link>
   );
 }
 
@@ -804,7 +850,7 @@ export default function PipelineBoard() {
   const initialHit = openLeadId ? findStoredLeadById(openLeadId) : null;
   const [search, setSearch]             = useState("");
   const [perPage, setPerPage]           = useState(10);
-  const [view,   setView]               = useState("table"); // "board" | "table"
+  const [view,   setView]               = useState(() => viewFromSearch(searchParams) || "table"); // "board" | "table"
   const [stageFilter, setStageFilter]   = useState(() => stageFromSearch(searchParams)); // stage id, or null for all stages (table view)
   const [selectedScoreLead, setSelectedScoreLead] = useState(null);
   const [showCreateLead, setShowCreateLead] = useState(false);
@@ -834,12 +880,27 @@ export default function PipelineBoard() {
   }), []);
 
   const stageParam = searchParams.get("stage");
+  const viewParam = searchParams.get("view");
   useEffect(() => {
     const next = stageFromSearch(searchParams);
     setStageFilter(next);
+    const nextView = viewFromSearch(searchParams);
+    if (nextView) {
+      setView(nextView);
+      return;
+    }
     if (next) setView("table");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stageParam]);
+  }, [stageParam, viewParam]);
+
+  const handleViewChange = (nextView) => {
+    setView(nextView);
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      p.set("view", nextView);
+      return p;
+    }, { replace: true });
+  };
 
   useEffect(() => {
     if (!openLeadId) return;
@@ -1159,10 +1220,14 @@ export default function PipelineBoard() {
 
       {/* Body */}
       <div className="px-5 pb-8 flex flex-col gap-4 min-w-0">
+        <div className="flex items-stretch gap-3 flex-wrap lg:flex-nowrap">
+          <ActionAlertBanner />
+          <OversightCard />
+        </div>
         <BoardToolbar
           search={search} onSearchChange={setSearch}
           perPage={perPage} onPerPageChange={setPerPage}
-          view={view} onViewChange={setView}
+          view={view} onViewChange={handleViewChange}
         />
         {view === "table" && (
           <PipelineStageStrip

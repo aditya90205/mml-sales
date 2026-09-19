@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { toast } from "react-toastify";
 import {
@@ -15,6 +15,13 @@ import {
   Activity,
   Send,
   Calendar,
+  Gift,
+  GraduationCap,
+  Megaphone,
+  MessageCircle,
+  Monitor,
+  Sparkles,
+  Users,
   Eye,
   Edit,
   Trash2,
@@ -37,11 +44,14 @@ import {
   Info,
   Coffee,
   ArrowLeftRight,
-  Hand,
   CalendarCheck,
   CalendarPlus,
 } from "lucide-react";
 import { USER } from "../components/layout/TopBar";
+import {
+  readAnnouncements,
+  subscribeAnnouncements,
+} from "../utils/announcements.js";
 import Modal from "../components/ui/Modal";
 import TimesheetDetailsModal from "../components/hrms/TimesheetDetailsModal";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
@@ -322,13 +332,6 @@ const MY_REQUESTS = [
   { id: 3, title: "Work From Home on July 22",  submitted: "Submitted on July 22 at 9:15 AM",  status: "Approved" },
 ];
 
-const LEADERBOARD_MEMBERS = [
-  { rank: 1, name: "Kuhu Sharma", location: "Rajouri Garden", xp: "140 XP", avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face" },
-  { rank: 2, name: "Ankur Sharma", isYou: true, location: "South Extension", xp: "140 XP", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" },
-  { rank: 3, name: "Arjun Mehta", location: "Rajouri Garden", xp: "140 XP", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face" },
-  { rank: 4, name: "Priya Singh", location: "Gurugram", xp: "135 XP", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&crop=face" },
-  { rank: 5, name: "Rohan Verma", location: "Noida", xp: "120 XP", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face" },
-];
 
 const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const WEEKDAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -514,14 +517,75 @@ function AttendanceDayCell({ d, onRegularize }) {
   );
 }
 
-function YouHandIcon() {
+const ANNOUNCEMENT_ROW_ICONS = {
+  "Policy Update": { Icon: FileText, bg: "bg-[#EEF2FF]", color: "text-[#4F46E5]" },
+  Holiday: { Icon: Calendar, bg: "bg-[#ECFDF5]", color: "text-[#059669]" },
+  Training: { Icon: GraduationCap, bg: "bg-[#EFF6FF]", color: "text-[#2563EB]" },
+  HR: { Icon: Users, bg: "bg-[#FDF2F8]", color: "text-[#DB2777]" },
+  IT: { Icon: Monitor, bg: "bg-[#F8FAFC]", color: "text-[#475569]" },
+  Benefits: { Icon: Gift, bg: "bg-[#FFFBEB]", color: "text-[#D97706]" },
+  Shift: { Icon: Clock, bg: "bg-[#F0FDFA]", color: "text-[#0D9488]" },
+  Event: { Icon: Sparkles, bg: "bg-[#F5F3FF]", color: "text-[#7C3AED]" },
+  Contest: { Icon: Trophy, bg: "bg-[#FFF7ED]", color: "text-[#EA580C]" },
+};
+
+function RecentAnnouncementsCard() {
+  const [items, setItems] = useState(readAnnouncements);
+  useEffect(() => subscribeAnnouncements(setItems), []);
+  const preview = items.slice(0, 3);
+
   return (
-    <span className="relative inline-flex shrink-0 group/you">
-      <Hand size={13} className="text-[#7A0A17]" strokeWidth={2.2} />
-      <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 whitespace-nowrap rounded-md bg-[#111] px-2 py-1 text-[10px] font-semibold text-white opacity-0 group-hover/you:opacity-100 transition-opacity z-20 shadow-sm">
-        it's you
-      </span>
-    </span>
+    <div className="bg-white border border-black/10 rounded-2xl p-4 flex flex-col justify-between shadow-sm hover:border-black/20 transition-all">
+      <div>
+        <div className="flex items-center justify-between mb-2.5 gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="size-8 rounded-full bg-[#E8F2FE] text-[#3B82F6] grid place-items-center shrink-0">
+              <Megaphone size={15} />
+            </span>
+            <p className="text-xs font-bold text-[#111827] truncate">Recent Announcements</p>
+          </div>
+          <Link
+            to="/announcements"
+            className="border border-black/15 hover:border-[#3B82F6] text-[#4B5563] hover:text-[#3B82F6] px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0"
+          >
+            View All
+          </Link>
+        </div>
+        <div className="space-y-1.5">
+          {preview.map((a) => {
+            const typeStyle = ANNOUNCEMENT_ROW_ICONS[a.type] || {
+              Icon: Megaphone,
+              bg: "bg-[#E8F2FE]",
+              color: "text-[#3B82F6]",
+            };
+            const TypeIcon = typeStyle.Icon;
+            return (
+            <Link
+              key={a.id}
+              to="/announcements"
+              className="flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg bg-[#FAFAFB] hover:bg-[#F3F4F6] transition-colors"
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className={`size-6 rounded-md ${typeStyle.bg} grid place-items-center shrink-0`}>
+                  <TypeIcon size={12} className={typeStyle.color} strokeWidth={2.2} />
+                </span>
+                <span className="text-[11px] font-bold text-[#111827] truncate">{a.title}</span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[9px] font-semibold text-[#E8395B] bg-[#FDECEE] rounded px-1.5 py-0.5">{a.priority}</span>
+                <span
+                  className="size-6 rounded-md bg-[#FFF3E4] text-[#F59E0B] grid place-items-center"
+                  aria-label="Comment"
+                >
+                  <MessageCircle size={11} />
+                </span>
+              </div>
+            </Link>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1205,7 +1269,6 @@ export default function HrmsPage() {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [noticeModalOpen, setNoticeModalOpen] = useState(false);
   const [shiftModalOpen, setShiftModalOpen] = useState(false);
-  const [leaderboardModalOpen, setLeaderboardModalOpen] = useState(false);
   const [timesheetModal, setTimesheetModal] = useState(null);
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [viewExpense, setViewExpense] = useState(null);
@@ -1631,45 +1694,7 @@ export default function HrmsPage() {
                 </div>
               </div>
 
-              <div className="bg-white border border-black/10 rounded-2xl p-4 flex flex-col justify-between shadow-sm hover:border-black/20 transition-all">
-                <div>
-                  <div className="flex items-center justify-between mb-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="size-8 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                        <Trophy size={15} />
-                      </span>
-                      <p className="text-xs font-bold text-[#111827]">This Month Leaderboard</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setLeaderboardModalOpen(true)}
-                      className="border border-black/15 hover:border-[#7A0A17] text-[#4B5563] hover:text-[#7A0A17] px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all"
-                    >
-                      View All
-                    </button>
-                  </div>
-                  <div className="space-y-1.5">
-                    {LEADERBOARD_MEMBERS.slice(0, 3).map((item) => (
-                      <div
-                        key={item.rank}
-                        className={`flex items-center justify-between px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                          item.isYou ? "bg-[#FCF5F6] border border-[#7A0A17]/20" : "bg-[#FAFAFB]"
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="font-bold text-[#6B7280] text-[11px] w-3 shrink-0">{item.rank}.</span>
-                          {item.isYou && <YouHandIcon />}
-                          <span className="text-[#111827] truncate font-bold">{item.name}</span>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-[10px] text-[#6B7280] hidden xl:inline">{item.location}</span>
-                          <span className="font-extrabold text-[#111827] text-[11px]">{item.xp}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <RecentAnnouncementsCard />
             </div>
 
             {/* Row 2: Today's Timesheet */}
@@ -3420,54 +3445,6 @@ export default function HrmsPage() {
           </div>
         </form>
       </Modal>
-
-      {/* 4. Leaderboard Modal */}
-      {leaderboardModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
-            <button onClick={() => setLeaderboardModalOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
-              <X size={18} />
-            </button>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="size-10 rounded-xl bg-[#7A0A17] text-white grid place-items-center">
-                <Trophy size={20} />
-              </span>
-              <div>
-                <h3 className="text-lg font-bold text-[#111]">This Month Leaderboard</h3>
-                <p className="text-xs text-[#6B7280]">Top Performing Team Members</p>
-              </div>
-            </div>
-            <div className="space-y-2 max-h-[300px] overflow-y-auto">
-              {LEADERBOARD_MEMBERS.map((member) => (
-                <div
-                  key={member.rank}
-                  className={`flex items-center justify-between p-3 rounded-xl border ${
-                    member.isYou ? "bg-[#FCF5F6] border-[#7A0A17]/30" : "bg-[#FAFAFB] border-black/6"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="font-extrabold text-sm text-[#7A0A17] w-4">#{member.rank}</span>
-                    <img src={member.avatar} alt="" className="size-8 rounded-full object-cover" />
-                    <div>
-                      <p className="text-xs font-bold text-[#111] flex items-center gap-1.5">
-                        {member.isYou && <YouHandIcon />}
-                        {member.name}
-                      </p>
-                      <p className="text-[10px] text-[#6B7280]">{member.location}</p>
-                    </div>
-                  </div>
-                  <span className="font-black text-xs text-[#111]">{member.xp}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 flex justify-end">
-              <button type="button" onClick={() => setLeaderboardModalOpen(false)} className="px-4 py-2 bg-[#7A0A17] text-white rounded-xl text-xs font-bold">
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <TimesheetDetailsModal
         open={!!timesheetModal}

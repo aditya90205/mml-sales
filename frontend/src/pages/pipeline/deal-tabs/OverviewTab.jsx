@@ -782,7 +782,7 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved }
                 <p className="text-[13px] font-semibold text-[#111] mt-1">-</p>
               )}
             </ViewField>
-            <ViewField icon={Users} label="Enquiry made by" value={details.enquiryBy} />
+            <ViewField icon={Users} label="Enquiry made by" value={details.enquiryBy} full />
             <ViewField icon={User} label="First name" value={details.firstName} />
             <ViewField icon={User} label="Last name" value={details.lastName} />
             <ViewField icon={Calendar} label="Date of birth" value={formatDob(details.dob)} />
