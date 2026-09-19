@@ -130,23 +130,34 @@ export function SectionCard({ title, subtitle, meta, action, children, footnote,
   );
 }
 
-export function CheckRow({ done, title, note, status, tone, onToggle }) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className="w-full flex items-center gap-3 py-3.5 border-b border-black/5 last:border-0 text-left cursor-pointer"
-    >
+export function CheckRow({ done, title, note, status, tone, onToggle, action }) {
+  const inner = (
+    <>
       <ChecklistCheck done={done} />
       <div className="min-w-0 flex-1 flex items-center justify-between gap-2 flex-wrap">
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-semibold text-[#111] leading-snug">{title}</p>
           {note && <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 leading-snug break-words">{note}</p>}
         </div>
-        {status && <StatusPill tone={tone}>{status}</StatusPill>}
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
+          {status && <StatusPill tone={tone}>{status}</StatusPill>}
+          {action}
+        </div>
       </div>
-    </button>
+    </>
   );
+
+  const rowClass = "w-full flex items-center gap-3 py-3.5 border-b border-black/5 last:border-0 text-left";
+
+  if (onToggle && !action) {
+    return (
+      <button type="button" onClick={onToggle} className={`${rowClass} cursor-pointer`}>
+        {inner}
+      </button>
+    );
+  }
+
+  return <div className={rowClass}>{inner}</div>;
 }
 
 export function TimelineItem({ tone = "green", title, note, time, last }) {
