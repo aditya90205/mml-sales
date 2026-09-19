@@ -873,6 +873,7 @@ function UnscheduledCard({ item, onSchedule }) {
 function RecentUpdatesCard() {
   const [items, setItems] = useState(readNotifications);
   const [selected, setSelected] = useState(null);
+  const [viewAllOpen, setViewAllOpen] = useState(false);
   useEffect(() => subscribeNotifications(setItems), []);
   const preview = items.slice(0, 5);
 
@@ -881,42 +882,66 @@ function RecentUpdatesCard() {
     setSelected(u);
   };
 
+  const renderUpdateRow = (u) => (
+    <button
+      key={u.id}
+      type="button"
+      onClick={() => openUpdate(u)}
+      className={`w-full flex items-start gap-3 py-3.5 text-left rounded-xl transition-colors hover:bg-[#FAFAFB] -mx-1 px-1 ${
+        u.unread ? "" : "opacity-90"
+      }`}
+    >
+      <NotificationTypeIcon type={u.type} title={u.title} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <p
+            className={`text-[13px] leading-tight ${
+              u.unread ? "font-bold text-[#111]" : "font-semibold text-[#111]"
+            }`}
+          >
+            {u.title}
+          </p>
+          {u.unread && <span className="size-1.5 rounded-full bg-[#E8395B] shrink-0" />}
+        </div>
+        <p className="text-[12px] text-[#9CA3AF] leading-snug mt-0.5 line-clamp-2">{u.message}</p>
+      </div>
+      <span className="text-[11px] text-[#9CA3AF] whitespace-nowrap shrink-0 pt-0.5">{u.time}</span>
+    </button>
+  );
+
   return (
     <>
       <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col flex-1 min-h-[420px]">
-        <div className="mb-1 px-0.5">
+        <div className="mb-1 px-0.5 flex items-center justify-between gap-2">
           <h2 className="text-[15px] font-bold text-[#111]">Recent Updates</h2>
+          <button
+            type="button"
+            onClick={() => setViewAllOpen(true)}
+            className="inline-flex items-center gap-1 h-7 text-[11px] font-semibold text-[#7A0A17] hover:text-[#5C0811] transition-colors"
+            title="View all recent updates"
+          >
+            View All
+            <ArrowRight size={12} />
+          </button>
         </div>
 
         <div className="flex flex-col divide-y divide-black/6 flex-1">
-          {preview.map((u) => (
-            <button
-              key={u.id}
-              type="button"
-              onClick={() => openUpdate(u)}
-              className={`w-full flex items-start gap-3 py-3.5 text-left rounded-xl transition-colors hover:bg-[#FAFAFB] -mx-1 px-1 ${
-                u.unread ? "" : "opacity-90"
-              }`}
-            >
-              <NotificationTypeIcon type={u.type} title={u.title} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <p
-                    className={`text-[13px] leading-tight ${
-                      u.unread ? "font-bold text-[#111]" : "font-semibold text-[#111]"
-                    }`}
-                  >
-                    {u.title}
-                  </p>
-                  {u.unread && <span className="size-1.5 rounded-full bg-[#E8395B] shrink-0" />}
-                </div>
-                <p className="text-[12px] text-[#9CA3AF] leading-snug mt-0.5 line-clamp-2">{u.message}</p>
-              </div>
-              <span className="text-[11px] text-[#9CA3AF] whitespace-nowrap shrink-0 pt-0.5">{u.time}</span>
-            </button>
-          ))}
+          {preview.map(renderUpdateRow)}
         </div>
       </div>
+
+      <Modal
+        open={viewAllOpen}
+        onClose={() => setViewAllOpen(false)}
+        title="Recent Updates"
+        subtitle={`${items.length} update${items.length === 1 ? "" : "s"}`}
+        width="max-w-lg"
+        zClass="z-50"
+      >
+        <div className="flex flex-col divide-y divide-black/6 -my-1">
+          {items.map(renderUpdateRow)}
+        </div>
+      </Modal>
 
       <Modal
         open={Boolean(selected)}
@@ -930,6 +955,7 @@ function RecentUpdatesCard() {
         }
         iconBg="transparent"
         width="max-w-md"
+        zClass="z-[60]"
       >
         {selected && (
           <div className="flex flex-col gap-2">
