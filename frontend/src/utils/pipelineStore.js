@@ -432,12 +432,30 @@ export function moveLeadToStage(leadId, toStage, patch = {}) {
   }
 
   leads = cloneLeads(leads);
-  leads[found.stageId] = (leads[found.stageId] || []).filter((l) => l.id !== leadId);
-  let updated = { ...found.lead, ...patch, id: found.lead.id };
+  let current = { ...found.lead };
+  for (const stageId of STAGE_IDS) {
+    leads[stageId] = (leads[stageId] || []).filter((row) => {
+      if (row.id !== leadId) return true;
+      current = { ...current, ...row };
+      return false;
+    });
+  }
+  let updated = { ...current, ...patch, id: found.lead.id };
+  if (toStage === "P1") {
+    updated.temperature = updated.temperature || "Hot";
+    updated.score = Math.max(Number(updated.score) || 0, 8.5);
+    updated.completion = Math.max(Number(updated.completion) || 0, 45);
+  }
   if (toStage === "P2") {
     updated.temperature = updated.temperature || "Hot";
     updated.score = Math.max(Number(updated.score) || 0, 9);
     updated.completion = Math.max(Number(updated.completion) || 0, 70);
+  }
+  if (toStage === "P3") updated.completion = Math.max(Number(updated.completion) || 0, 80);
+  if (toStage === "P4") updated.completion = Math.max(Number(updated.completion) || 0, 90);
+  if (toStage === "P5" || toStage === "P6") {
+    updated.temperature = updated.temperature || "Warm";
+    updated.completion = Math.max(Number(updated.completion) || 0, 100);
   }
   updated.intakeValues = syncIntakeValues(updated);
   leads[toStage] = [updated, ...(leads[toStage] || [])];
@@ -445,7 +463,7 @@ export function moveLeadToStage(leadId, toStage, patch = {}) {
   addLeadActivity(updated.id, {
     type: "stage",
     title: `Stage advanced ${found.stageId} → ${toStage}`,
-    detail: toStage === "P2" ? "Biodata uploaded — moved to Profile Create (P2)" : "",
+    detail: toStage === "P2" ? "Moved to Profile Create (P2)" : "",
     stage: toStage,
   });
   return { lead: { ...updated }, stageId: toStage, fromStage: found.stageId };

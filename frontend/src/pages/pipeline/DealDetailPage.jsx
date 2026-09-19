@@ -223,15 +223,19 @@ function countFilledKeys(obj, keys) {
 export default function DealDetailPage({
   lead,
   onBack,
-  currentStage = "P4",
+  currentStage: stageFromBoard = "P4",
   onAdvance,
   onP0DetailsSaved,
   initialTab = "overview",
   onPremiumChange,
 }) {
   const navigate = useNavigate();
+  const [currentStage, setCurrentStage] = useState(stageFromBoard);
+  const [p0Contacted, setP0Contacted] = useState(
+    () => p0StatusOf(lead) === "contacted" || Boolean(lead?.overviewDetails)
+  );
   const [activeTab, setActiveTab] = useState(
-    () => initialTab || STAGE_TO_TAB[currentStage] || "overview"
+    () => initialTab || STAGE_TO_TAB[stageFromBoard] || "overview"
   );
   const [winLossModal, setWinLossModal] = useState({ open: false, mode: "lost" });
   const [winLossOverride, setWinLossOverride] = useState(null);
@@ -245,7 +249,8 @@ export default function DealDetailPage({
   const [followUpOpen, setFollowUpOpen] = useState(false);
   const lateTabsUnlocked = atLeast(currentStage, "P5");
   const isContactedP0 =
-    currentStage === "P0" && (p0StatusOf(lead) === "contacted" || Boolean(savedDetails));
+    currentStage === "P0" &&
+    (p0Contacted || p0StatusOf(lead) === "contacted" || Boolean(savedDetails));
   const p0StageLabel = isContactedP0 || atLeast(currentStage, "P1") ? "P0 Contacted" : "P0 New";
   const nextStage = currentStage === "P0" && !isContactedP0 ? "Contacted" : NEXT_STAGE[currentStage];
   const lockNoteKey = currentStage === "P0" && isContactedP0 ? "Contacted" : currentStage;
@@ -253,6 +258,10 @@ export default function DealDetailPage({
     tab.key === "payments" || tab.key === "p6" ? { ...tab, locked: !lateTabsUnlocked } : tab
   );
   const isLost = (winLossOverride?.tone || lead?.temperature) === "Lost";
+
+  useEffect(() => {
+    setCurrentStage(stageFromBoard);
+  }, [stageFromBoard]);
 
   useEffect(() => {
     setIsPremium(Boolean(lead?.starred));
@@ -476,22 +485,24 @@ export default function DealDetailPage({
 
   const handleConfirmMove = () => {
     if (!nextStage) return;
-    if (currentStage === "P4" && !selectedPackage) {
-      setActiveTab("package");
-      toast.error("Select a package before moving to P5.");
-      return;
+    const fromStage = currentStage;
+    if (nextStage === "Contacted") {
+      setP0Contacted(true);
+      setActiveTab("overview");
+    } else {
+      setCurrentStage(nextStage);
+      const tabForNext = STAGE_TO_TAB[nextStage];
+      if (tabForNext) setActiveTab(tabForNext);
     }
-    const tabForNext = STAGE_TO_TAB[nextStage];
-    if (tabForNext) setActiveTab(tabForNext);
     onAdvance?.(
       {
         ...lead,
         ...(savedDetails || {}),
-        p0Status: isContactedP0 ? "contacted" : lead?.p0Status,
+        p0Status: nextStage === "Contacted" || isContactedP0 ? "contacted" : lead?.p0Status,
         overviewDetails: savedDetails || lead?.overviewDetails,
         intakeValues: lead?.intakeValues,
       },
-      currentStage
+      fromStage
     );
   };
 
@@ -523,6 +534,7 @@ export default function DealDetailPage({
       });
     }
     if (currentStage === "P0") {
+      setP0Contacted(true);
       onP0DetailsSaved?.({ ...lead, p0Status: "contacted", dob: draft.dob, overviewDetails: draft }, draft);
     } else {
       recordLeadActivity(lead, currentStage, {
@@ -638,8 +650,8 @@ export default function DealDetailPage({
       <div className="p-5 flex flex-col gap-4 overflow-y-auto scrollbar-thin">
         {/* Lock note + actions (same button chrome as pipeline board) */}
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex-1 min-w-0 bg-[#FFFBEB] border border-[#FDE68A] rounded-2xl px-4 py-3 flex items-center gap-3 flex-wrap">
-            <p className="text-[13px] text-[#111] min-w-0 flex-1">
+          <div className="flex-1 min-w-0 bg-[#FFFBEB] border border-[#FDE68A] rounded-2xl px-4 py-3">
+            <p className="text-[13px] text-[#111] min-w-0">
               {nextStage ? (
                 <>
                   <span className="font-bold">{nextStage} is locked.</span>{" "}
@@ -663,12 +675,6 @@ export default function DealDetailPage({
                 </>
               )}
             </p>
-            <button
-              type="button"
-              className="shrink-0 h-8 px-3.5 rounded-lg bg-white border border-[#FDE68A] text-[12px] font-semibold text-[#92400E] hover:bg-[#FFFBEB] transition-colors"
-            >
-              See blockers
-            </button>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">

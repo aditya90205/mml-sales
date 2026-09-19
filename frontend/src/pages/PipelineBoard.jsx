@@ -35,9 +35,11 @@ import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx"
 import {
   addP0Lead,
   findLeadById as findStoredLeadById,
+  moveLeadToStage,
   p0StatusOf,
   readLeads,
   subscribePipeline,
+  updateLead,
   writeLeads,
 } from "../utils/pipelineStore.js";
 import { syncIntakeValues } from "../utils/biodataDraftStore.js";
@@ -66,6 +68,55 @@ const BOARD_COLUMNS = [
   { key: "P5",           id: "P5", label: "Closed",                  color: "#16A34A" },
   { key: "P6",           id: "P6", label: "Handover to services", color: "#EAB308" },
 ];
+
+const DEAL_TAB_FOR_STAGE = {
+  P0: "overview",
+  P1: "overview",
+  P2: "intake",
+  P3: "visits",
+  P4: "package",
+  P5: "payments",
+  P6: "p6",
+};
+
+const STAGE_ADVANCE = {
+  P0: {
+    to: "P1",
+    patch: { temperature: "Hot", score: 8.5, completion: 45, p0Status: "contacted" },
+    title: "Stage advanced P0 Contacted → P1 Qualified",
+    toast: (name) => `Lead "${name}" successfully moved to P1 Qualified!`,
+  },
+  P1: {
+    to: "P2",
+    patch: { temperature: "Hot", score: 9.0, completion: 70 },
+    title: "Stage advanced P1 Qualified → P2 Profile Creation",
+    toast: (name) => `Lead "${name}" successfully moved to P2 Profile Creation!`,
+  },
+  P2: {
+    to: "P3",
+    patch: { completion: 80 },
+    title: "Stage advanced P2 Profile Creation → P3 Visit / Video",
+    toast: (name) => `Lead "${name}" moved to P3 Visit / Video!`,
+  },
+  P3: {
+    to: "P4",
+    patch: { completion: 90 },
+    title: "Stage advanced P3 Visit / Video → P4 Negotiation",
+    toast: (name) => `Lead "${name}" moved to P4 Negotiation!`,
+  },
+  P4: {
+    to: "P5",
+    patch: { temperature: "Warm", completion: 100 },
+    title: "Stage advanced P4 Negotiation → P5 Payment",
+    toast: (name) => `Lead "${name}" moved to P5 Payment!`,
+  },
+  P5: {
+    to: "P6",
+    patch: { temperature: "Warm", completion: 100 },
+    title: "Stage advanced P5 Payment → P6 Handover",
+    toast: (name) => `Lead "${name}" moved to P6 Handover!`,
+  },
+};
 
 function p0BoardLabel(lead) {
   return p0StatusOf(lead) === "contacted" ? "Contacted" : "New";
@@ -863,6 +914,39 @@ export default function PipelineBoard() {
     toast.success(`Lead "${lead.name}" created.`);
   };
 
+  const stayOnDeal = (lead, stageId) => {
+    setActiveLead(lead);
+    setDealTargetStage(stageId);
+    setDealInitialTab(DEAL_TAB_FOR_STAGE[stageId] || "overview");
+    setSubView("deal-detail");
+  };
+
+  const applyStageMove = (lead, fromStage, { stay = true } = {}) => {
+    const spec = STAGE_ADVANCE[fromStage];
+    if (!spec || !lead?.id) {
+      toast.error("Could not move this lead.");
+      return null;
+    }
+    const moved = moveLeadToStage(lead.id, spec.to, {
+      ...spec.patch,
+      overviewDetails: lead.overviewDetails,
+      intakeValues: lead.intakeValues,
+      p0Status: lead.p0Status || spec.patch.p0Status,
+    });
+    if (!moved) {
+      toast.error("Could not move this lead. Refresh and try again.");
+      return null;
+    }
+    logLeadMove(moved.lead, fromStage, spec.title, { stage: spec.to });
+    toast.success(spec.toast(lead.name));
+    if (stay) stayOnDeal(moved.lead, spec.to);
+    else {
+      setSubView(null);
+      setActiveLead(null);
+    }
+    return moved;
+  };
+
   const handleMoveToP0Contacted = (lead, details = {}) => {
     const alreadyContacted = p0StatusOf(lead) === "contacted";
     const hasDetails = details && Object.keys(details).length > 0;
@@ -879,15 +963,15 @@ export default function PipelineBoard() {
       overviewDetails,
       completion: Math.max(lead.completion || 0, 40),
     };
-    const updatedLead = { ...lead, ...patch };
-    updatedLead.intakeValues = syncIntakeValues(updatedLead);
-    patch.intakeValues = updatedLead.intakeValues;
-    setLeadsData((prev) => ({
-      ...prev,
-      P0: (prev.P0 || []).map((l) => (l.id === lead.id ? { ...l, ...patch } : l)),
-    }));
-    setActiveLead(updatedLead);
-    setDealTargetStage("P0");
+    const result = updateLead(lead.id, patch);
+    const updatedLead = result?.lead || { ...lead, ...patch, intakeValues: syncIntakeValues({ ...lead, ...patch }) };
+    if (!result) {
+      setLeadsData((prev) => ({
+        ...prev,
+        P0: (prev.P0 || []).map((l) => (l.id === lead.id ? { ...l, ...patch } : l)),
+      }));
+    }
+    stayOnDeal(updatedLead, "P0");
     if (alreadyContacted) {
       logLeadMove(updatedLead, "P0", "Deal details updated", { type: "details", stage: "P0" });
       toast.success(`Deal details updated for "${lead.name}".`);
@@ -902,108 +986,17 @@ export default function PipelineBoard() {
   };
 
   const handleMoveToP1 = (lead, updatedData = {}) => {
-    const updatedLead = { ...lead, ...updatedData, temperature: "Hot", score: 8.5, completion: 45 };
-    updatedLead.intakeValues = syncIntakeValues(updatedLead);
-    setLeadsData((prev) => {
-      const p0Filtered = (prev.P0 || []).filter((l) => l.id !== lead.id);
-      return {
-        ...prev,
-        P0: p0Filtered,
-        P1: [updatedLead, ...(prev.P1 || [])],
-      };
-    });
-    setActiveLead(updatedLead);
-    setDealTargetStage("P1");
-    logLeadMove(updatedLead, "P0", "Stage advanced P0 Contacted → P1 Qualified", { stage: "P1" });
-    toast.success(`Lead "${lead.name}" successfully moved to P1 Qualified!`);
-    return updatedLead;
+    return applyStageMove({ ...lead, ...updatedData }, "P0", { stay: true });
   };
 
   const handleMoveToP2 = (lead, updatedData = {}) => {
-    setLeadsData((prev) => {
-      const fromP0 = (prev.P0 || []).filter((l) => l.id !== lead.id);
-      const fromP1 = (prev.P1 || []).filter((l) => l.id !== lead.id);
-      const updatedLead = {
-        ...lead,
-        ...updatedData,
-        temperature: "Hot",
-        score: 9.0,
-        completion: 70,
-      };
-      updatedLead.intakeValues = syncIntakeValues(updatedLead);
-      return {
-        ...prev,
-        P0: fromP0,
-        P1: fromP1,
-        P2: [updatedLead, ...(prev.P2 || [])],
-      };
-    });
-    const updatedLead = {
-      ...lead,
-      ...updatedData,
-      temperature: "Hot",
-      score: 9.0,
-      completion: 70,
-    };
-    updatedLead.intakeValues = syncIntakeValues(updatedLead);
-    setActiveLead(updatedLead);
-    setDealTargetStage("P2");
-    logLeadMove(updatedLead, "P1", "Stage advanced P1 Qualified → P2 Data Collection", { stage: "P2" });
-    toast.success(`Lead "${lead.name}" successfully moved to P2 Data Collection!`);
-    return updatedLead;
+    return applyStageMove({ ...lead, ...updatedData }, "P1", { stay: true });
   };
 
-  const handleMoveToP3 = (lead) => {
-    const updatedLead = { ...lead, completion: 80 };
-    setLeadsData((prev) => {
-      const from = (prev.P2 || []).filter((l) => l.id !== lead.id);
-      return { ...prev, P2: from, P3: [updatedLead, ...(prev.P3 || [])] };
-    });
-    setActiveLead(updatedLead);
-    logLeadMove(updatedLead, "P2", "Stage advanced P2 Data Collection → P3 Visit / Video", { stage: "P3" });
-    toast.success(`Lead "${lead.name}" moved to P3 Visit / Video!`);
-  };
-
-  const handleMoveToP4 = (lead) => {
-    const updatedLead = { ...lead, completion: 90 };
-    setLeadsData((prev) => {
-      const from = (prev.P3 || []).filter((l) => l.id !== lead.id);
-      return { ...prev, P3: from, P4: [updatedLead, ...(prev.P4 || [])] };
-    });
-    setActiveLead(updatedLead);
-    logLeadMove(updatedLead, "P3", "Stage advanced P3 Visit / Video → P4 Negotiation", { stage: "P4" });
-    toast.success(`Lead "${lead.name}" moved to P4 Negotiation!`);
-  };
-
-  const handleMoveToP5 = (lead) => {
-    const updatedLead = { ...lead, temperature: "Warm", completion: 100 };
-    setLeadsData((prev) => {
-      const p4Filtered = (prev.P4 || []).filter((l) => l.id !== lead.id);
-      return {
-        ...prev,
-        P4: p4Filtered,
-        P5: [updatedLead, ...(prev.P5 || [])],
-      };
-    });
-    setActiveLead(updatedLead);
-    logLeadMove(updatedLead, "P4", "Stage advanced P4 Negotiation → P5 Payment", { stage: "P5" });
-    toast.success(`Lead "${lead.name}" moved to P5 Payment!`);
-  };
-
-  const handleMoveToP6 = (lead) => {
-    const updatedLead = { ...lead, temperature: "Warm", completion: 100 };
-    setLeadsData((prev) => {
-      const p5Filtered = (prev.P5 || []).filter((l) => l.id !== lead.id);
-      return {
-        ...prev,
-        P5: p5Filtered,
-        P6: [updatedLead, ...(prev.P6 || [])],
-      };
-    });
-    setActiveLead(updatedLead);
-    logLeadMove(updatedLead, "P5", "Stage advanced P5 Payment → P6 Handover", { stage: "P6" });
-    toast.success(`Lead "${lead.name}" moved to P6 Handover!`);
-  };
+  const handleMoveToP3 = (lead) => applyStageMove(lead, "P2", { stay: true });
+  const handleMoveToP4 = (lead) => applyStageMove(lead, "P3", { stay: true });
+  const handleMoveToP5 = (lead) => applyStageMove(lead, "P4", { stay: true });
+  const handleMoveToP6 = (lead) => applyStageMove(lead, "P5", { stay: true });
 
   const handleOpenDeal = (lead, stageKey) => {
     const STAGE_TO_TAB = {
@@ -1036,28 +1029,11 @@ export default function PipelineBoard() {
   };
 
   const handleMoveStage = (lead, stageKey) => {
-    // P0 / P1 move buttons open the deal detail page (no separate move form).
     if (stageKey === "P0" || stageKey === "P1") {
       handleOpenDeal(lead, stageKey);
       return;
     }
-    if (stageKey === "P2") {
-      handleMoveToP3(lead);
-      setSubView(null);
-      setActiveLead(null);
-    } else if (stageKey === "P3") {
-      handleMoveToP4(lead);
-      setSubView(null);
-      setActiveLead(null);
-    } else if (stageKey === "P4") {
-      handleMoveToP5(lead);
-      setSubView(null);
-      setActiveLead(null);
-    } else if (stageKey === "P5") {
-      handleMoveToP6(lead);
-      setSubView(null);
-      setActiveLead(null);
-    }
+    applyStageMove(lead, stageKey, { stay: false });
   };
 
   /** Advance from deal detail without the old Move to P1 / P2 form pages. */
@@ -1065,34 +1041,15 @@ export default function PipelineBoard() {
     if (stageKey === "P0") {
       if (p0StatusOf(lead) !== "contacted") {
         handleMoveToP0Contacted(lead, lead.overviewDetails || {});
-        setSubView("deal-detail");
       } else {
         handleMoveToP1(lead, {
           overviewDetails: lead.overviewDetails,
           p0Status: "contacted",
         });
-        setSubView("deal-detail");
       }
-    } else if (stageKey === "P1") {
-      handleMoveToP2(lead);
-      setSubView("deal-detail");
-    } else if (stageKey === "P2") {
-      handleMoveToP3(lead);
-      setDealTargetStage("P3");
-      setSubView("deal-detail");
-    } else if (stageKey === "P3") {
-      handleMoveToP4(lead);
-      setDealTargetStage("P4");
-      setSubView("deal-detail");
-    } else if (stageKey === "P4") {
-      handleMoveToP5(lead);
-      setDealTargetStage("P5");
-      setSubView("deal-detail");
-    } else if (stageKey === "P5") {
-      handleMoveToP6(lead);
-      setDealTargetStage("P6");
-      setSubView("deal-detail");
+      return;
     }
+    applyStageMove(lead, stageKey, { stay: true });
   };
 
   const handleP0DetailsSaved = (lead, details = {}) => {
