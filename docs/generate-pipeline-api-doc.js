@@ -1491,7 +1491,7 @@ type — all|Home visit|Office visit`,
         "done": true
       },
       {
-        "title": "Selfie with client",
+        "title": "Client Selfie ",
         "note": "Staff and client in frame. Used for in-person verification.",
         "status": "Captured",
         "done": true
@@ -1752,7 +1752,7 @@ type — all|Home visit|Office visit`,
         "done": true
       },
       {
-        "title": "Selfie with client",
+        "title": "Client Selfie ",
         "status": "Captured",
         "done": true
       },
@@ -2803,6 +2803,12 @@ period — month|quarter`,
             "title": "Police verification",
             "note": "Third-party request raised 24 Jul.",
             "status": "In progress",
+            "done": false
+          },
+          {
+            "title": "Client intake OCR copy",
+            "note": "Upload the copy first. View appears after upload.",
+            "status": "Pending",
             "done": false
           }
         ]

@@ -9,8 +9,9 @@ const INITIAL_DOCUMENTS = [
   { id: "doc-2", label: "PAN card — client", fileName: "", done: false, mandatory: true },
   { id: "doc-3", label: "Parent Aadhaar & PAN", fileName: "", done: false, mandatory: false },
   { id: "doc-4", label: "Police verification", fileName: "", done: false, mandatory: false },
+  { id: "doc-intake-ocr", label: "Client intake OCR copy", fileName: "", done: false, mandatory: false },
   { id: "doc-5", label: "House / GPS photo", fileName: "", done: false, mandatory: false },
-  { id: "doc-6", label: "Selfie with client", fileName: "", done: false, mandatory: false },
+  { id: "doc-6", label: "Client Selfie ", fileName: "", done: false, mandatory: false },
   { id: "doc-7", label: "Handwritten contract — OCR", fileName: "", done: false, mandatory: false },
 ];
 

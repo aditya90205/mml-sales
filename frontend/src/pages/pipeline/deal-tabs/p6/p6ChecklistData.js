@@ -72,6 +72,15 @@ export const INITIAL_SECTIONS = [
         done: false,
         upload: "files",
       },
+      {
+        id: "intake-ocr",
+        title: "Client intake OCR copy",
+        note: "Upload the copy first. View appears after upload.",
+        status: "Pending",
+        tone: "amber",
+        done: false,
+        upload: "files",
+      },
     ],
   },
   {
@@ -90,7 +99,7 @@ export const INITIAL_SECTIONS = [
       },
       {
         id: "selfie",
-        title: "Selfie with client",
+        title: "Client Selfie ",
         note: "Open the camera and click at the visit. View will show the GPS address to compare with the profile.",
         status: "Pending",
         tone: "amber",

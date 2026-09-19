@@ -22,7 +22,7 @@ import { recordLeadActivity } from "../../../utils/leadActivityStore.js";
 
 const CAPTURE_ITEMS = [
   { title: "House / GPS photo", note: "Taken at the door with location accuracy under 15m.", status: "Captured", tone: "green", done: true },
-  { title: "Selfie with client", note: "Staff and client in frame. Used for in-person verification.", status: "Captured", tone: "green", done: true },
+  { title: "Client Selfie ", note: "Staff and client in frame. Used for in-person verification.", status: "Captured", tone: "green", done: true },
   { title: "Staff activity form", note: "Who attended, talking points and next action.", status: "Pending", tone: "amber", done: false, pending: true },
   { title: "Advance booking call log", note: "Call confirming the slot is logged against the deal.", status: "Not started", tone: "gray", done: false },
 ];
