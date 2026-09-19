@@ -13,7 +13,7 @@ import {
 } from "../../../../components/pipeline/deskUi";
 import { dashRow, dashRows } from "../stageContent.jsx";
 import P6DocumentUploadModal from "./P6DocumentUploadModal.jsx";
-import { applyItemUpload, QUEUE, QUEUE_COLUMNS } from "./p6ChecklistData.js";
+import { applyItemUpload, applyItemVerify, QUEUE, QUEUE_COLUMNS } from "./p6ChecklistData.js";
 
 const ACTION_BTN =
   "inline-flex items-center justify-center h-9 px-3.5 rounded-lg bg-white border border-black/15 text-[12.5px] font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors shrink-0";
@@ -64,8 +64,24 @@ export default function P6ChecklistContent({
   const handleUploaded = (payload) => {
     if (!uploadItem) return;
     onSectionsChange(applyItemUpload(sections, uploadItem.id, payload));
-    toast.success(`${uploadItem.title} verified.`);
+    toast.success(`${uploadItem.title} uploaded. Click Verify.`);
     setUploadItem(null);
+  };
+
+  const handleRowAction = (item) => {
+    const hasFiles = Boolean(item.files?.length);
+    if (!item.done && hasFiles) {
+      onSectionsChange(applyItemVerify(sections, item.id));
+      toast.success(`${item.title} verified.`);
+      return;
+    }
+    setUploadItem(item);
+  };
+
+  const rowActionLabel = (item) => {
+    if (item.done) return "Replace";
+    if (item.files?.length) return "Verify";
+    return "Upload";
   };
 
   return (
@@ -91,12 +107,8 @@ export default function P6ChecklistContent({
                 onToggle={item.upload || allUnchecked ? undefined : () => onToggleItem?.(item.id || item.title)}
                 action={
                   item.upload && !allUnchecked ? (
-                    <button type="button" onClick={() => setUploadItem(item)} className={ACTION_BTN}>
-                      {item.done
-                        ? "Replace"
-                        : item.upload === "id-card"
-                          ? "Verify"
-                          : "Upload"}
+                    <button type="button" onClick={() => handleRowAction(item)} className={ACTION_BTN}>
+                      {rowActionLabel(item)}
                     </button>
                   ) : null
                 }

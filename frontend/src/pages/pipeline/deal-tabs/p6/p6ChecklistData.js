@@ -6,7 +6,7 @@ export const INITIAL_SECTIONS = [
       {
         id: "aadhaar",
         title: "Aadhaar card",
-        note: "Enter Aadhaar number, submit OTP, then upload front and back to verify.",
+        note: "Upload the document first. Verify appears after upload.",
         status: "Pending",
         tone: "amber",
         done: false,
@@ -17,7 +17,7 @@ export const INITIAL_SECTIONS = [
       {
         id: "pan",
         title: "PAN card",
-        note: "Enter PAN number, submit OTP, then upload front and back to verify.",
+        note: "Upload the document first. Verify appears after upload.",
         status: "Pending",
         tone: "amber",
         done: false,
@@ -28,7 +28,7 @@ export const INITIAL_SECTIONS = [
       {
         id: "father-aadhaar",
         title: "Father Aadhaar",
-        note: "Enter father's Aadhaar number, submit OTP, then upload front and back.",
+        note: "Upload father's Aadhaar first. Verify appears after upload.",
         status: "Pending",
         tone: "amber",
         done: false,
@@ -39,7 +39,7 @@ export const INITIAL_SECTIONS = [
       {
         id: "father-pan",
         title: "Father PAN",
-        note: "Enter father's PAN number, submit OTP, then upload front and back.",
+        note: "Upload father's PAN first. Verify appears after upload.",
         status: "Pending",
         tone: "amber",
         done: false,
@@ -50,7 +50,7 @@ export const INITIAL_SECTIONS = [
       {
         id: "mother-aadhaar",
         title: "Mother Aadhaar",
-        note: "Enter mother's Aadhaar number, submit OTP, then upload front and back.",
+        note: "Upload mother's Aadhaar first. Verify appears after upload.",
         status: "Pending",
         tone: "amber",
         done: false,
@@ -61,7 +61,7 @@ export const INITIAL_SECTIONS = [
       {
         id: "mother-pan",
         title: "Mother PAN",
-        note: "Enter mother's PAN number, submit OTP, then upload front and back.",
+        note: "Upload mother's PAN first. Verify appears after upload.",
         status: "Pending",
         tone: "amber",
         done: false,
@@ -72,7 +72,7 @@ export const INITIAL_SECTIONS = [
       {
         id: "police",
         title: "Police verification",
-        note: "Third-party request raised 24 Jul.",
+        note: "Upload the report first. Verify appears after upload.",
         status: "In progress",
         tone: "blue",
         done: false,
@@ -193,17 +193,51 @@ export function formatUploadedNote(item, payload = {}) {
   const names = files.map((f) => f.name).filter(Boolean).join(", ");
   if (item.idType === "aadhaar" || item.upload === "aadhaar") {
     const shown = maskAadhaar(payload.number) || "Aadhaar";
-    return names ? `${shown} verified. Uploaded ${names}.` : `${shown} verified. Front and back uploaded.`;
+    return names ? `${shown} uploaded ${names}. Click Verify.` : `${shown} uploaded. Click Verify.`;
   }
   if (item.idType === "pan") {
     const pan = String(payload.number || "PAN").replace(/\s/g, "");
-    return names ? `${pan} verified. Uploaded ${names}.` : `${pan} verified. Front and back uploaded.`;
+    return names ? `${pan} uploaded ${names}. Click Verify.` : `${pan} uploaded. Click Verify.`;
   }
-  return names ? `Uploaded ${names}.` : "Document uploaded.";
+  return names ? `Uploaded ${names}. Click Verify.` : "Document uploaded. Click Verify.";
+}
+
+export function formatVerifiedNote(item) {
+  const files = item.files || [];
+  const names = files.map((f) => f.name).filter(Boolean).join(", ");
+  if (item.idType === "aadhaar" || item.upload === "aadhaar") {
+    const shown = maskAadhaar(item.number) || "Aadhaar";
+    return names ? `${shown} verified. Uploaded ${names}.` : `${shown} verified.`;
+  }
+  if (item.idType === "pan") {
+    const pan = String(item.number || "PAN").replace(/\s/g, "");
+    return names ? `${pan} verified. Uploaded ${names}.` : `${pan} verified.`;
+  }
+  return names ? `Verified. Uploaded ${names}.` : "Document verified.";
 }
 
 export function applyItemUpload(sections, itemId, payload) {
   const next = Array.isArray(payload) ? { files: payload } : payload || {};
+  return sections.map((section) => ({
+    ...section,
+    items: section.items.map((item) => {
+      if (item.id !== itemId) return item;
+      const files = next.files || [];
+      return {
+        ...item,
+        done: false,
+        status: "Uploaded",
+        tone: "blue",
+        files,
+        number: next.number || item.number,
+        details: next.details || item.details,
+        note: formatUploadedNote(item, next),
+      };
+    }),
+  }));
+}
+
+export function applyItemVerify(sections, itemId) {
   return sections.map((section) => ({
     ...section,
     items: section.items.map((item) => {
@@ -213,10 +247,7 @@ export function applyItemUpload(sections, itemId, payload) {
         done: true,
         status: "Verified",
         tone: "green",
-        files: next.files || [],
-        number: next.number || item.number,
-        details: next.details || item.details,
-        note: formatUploadedNote(item, next),
+        note: formatVerifiedNote(item),
       };
     }),
   }));
