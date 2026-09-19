@@ -12,12 +12,20 @@ function FieldLabel({ label, required }) {
 }
 
 function Pill({ selected, onClick, children, readOnly }) {
-  const className = `inline-flex items-center h-9 px-3.5 rounded-xl text-[12.5px] font-semibold whitespace-nowrap ${
-    selected ? "bg-[#7A0A17] text-white" : "bg-white border border-black/12 text-[#374151]"
-  } ${readOnly ? "" : "transition-colors hover:bg-[#FAFAFB]"}`;
+  const className = `inline-flex items-center h-9 px-3.5 rounded-xl text-[12.5px] font-semibold whitespace-nowrap border shrink-0 ${
+    selected
+      ? "bg-[#7A0A17] text-white border-[#7A0A17]"
+      : "bg-white border-black/12 text-[#374151]"
+  } ${
+    readOnly
+      ? ""
+      : selected
+        ? "transition-colors hover:bg-[#640712] hover:text-white"
+        : "transition-colors hover:bg-[#FAFAFB] hover:text-[#111]"
+  }`;
   if (readOnly) return <span className={className}>{children}</span>;
   return (
-    <button type="button" onClick={onClick} className={className}>
+    <button type="button" aria-pressed={selected} onClick={onClick} className={className}>
       {children}
     </button>
   );
@@ -82,7 +90,13 @@ function ChecklistField({ def, value, onChange, readOnly }) {
               disabled={readOnly}
               className={`flex items-center gap-2 h-11 px-3 rounded-lg border text-[12.5px] font-medium text-left ${
                 isChecked ? "bg-[#ECFDF3] border-[#16A34A]/30 text-[#111]" : "bg-white border-black/12 text-[#374151]"
-              } ${readOnly ? "" : "transition-colors hover:bg-[#FAFAFB]"}`}
+              } ${
+                readOnly
+                  ? ""
+                  : isChecked
+                    ? "transition-colors hover:bg-[#DCFCE7]"
+                    : "transition-colors hover:bg-[#FAFAFB]"
+              }`}
             >
               <span
                 className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${
@@ -134,7 +148,9 @@ function IntakeField({ def, value, chips, onChange, onRemoveChip, readOnly }) {
               key={opt}
               selected={value === opt}
               readOnly={readOnly}
-              onClick={() => onChange(opt === value ? "" : opt)}
+              onClick={() => {
+                if (opt !== value) onChange(opt);
+              }}
             >
               {opt}
             </Pill>

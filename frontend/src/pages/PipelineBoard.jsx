@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   AlarmClock,
   ArrowRight,
@@ -28,7 +28,6 @@ import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 // TopBar is now provided by Layout
-import eyeIcon from "../assets/eye.png";
 import CreateLeadModal from "../components/pipeline/CreateLeadModal";
 import DealDetailPage from "./pipeline/DealDetailPage";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
@@ -227,26 +226,6 @@ function ActionAlertBanner() {
         </p>
       </div>
     </div>
-  );
-}
-
-/* ───────────────────────── Oversight quick link ───────────────────────── */
-
-function OversightCard() {
-  return (
-    <Link
-      to="/pipeline/cross-branch"
-      className="shrink-0 w-full lg:w-[230px] bg-white border border-black/8 rounded-2xl px-4 py-3.5 hover:bg-[#FAFAFB] transition-colors"
-    >
-      <div className="flex items-center gap-2 mb-2.5 whitespace-nowrap">
-        <img src={eyeIcon} alt="Oversight" style={{ width: 15, height: 15, objectFit: "contain" }} />
-        <p className="text-[13px] font-bold text-[#111]">Oversight</p>
-      </div>
-      <span className="flex items-center justify-between gap-2 w-full text-[11.5px] font-medium rounded-lg px-2.5 py-[9px] text-[#111] bg-[#E7F8EF]">
-        Cross Branch Flags
-        <span className="shrink-0 text-[10px] font-semibold bg-white/70 rounded px-1.5 py-0.5 text-[#111]">3</span>
-      </span>
-    </Link>
   );
 }
 
@@ -1220,10 +1199,7 @@ export default function PipelineBoard() {
 
       {/* Body */}
       <div className="px-5 pb-8 flex flex-col gap-4 min-w-0">
-        <div className="flex items-stretch gap-3 flex-wrap lg:flex-nowrap">
-          <ActionAlertBanner />
-          <OversightCard />
-        </div>
+        <ActionAlertBanner />
         <BoardToolbar
           search={search} onSearchChange={setSearch}
           perPage={perPage} onPerPageChange={setPerPage}

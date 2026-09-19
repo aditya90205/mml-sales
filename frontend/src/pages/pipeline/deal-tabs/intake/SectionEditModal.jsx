@@ -7,6 +7,7 @@ import {
   SECTION_TIPS,
   cloneSectionDraft,
 } from "./intakeFormData";
+import { FormBlock } from "./IntakeSectionFields";
 import { pairGenderAndLookingFor } from "../../../../utils/leadFields.js";
 
 function SectionEditBody({ sectionKey, values, chips, onClose, onSave }) {

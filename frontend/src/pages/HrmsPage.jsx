@@ -1131,10 +1131,7 @@ function RegistrationIncentiveTable() {
           sort={sort}
           onSort={toggle}
           cols={[
-            { label: "Client Name", key: "client" },
-            { label: "Registration", key: "registration" },
-            { label: "Net of GST", key: "net" },
-            { label: "Slab", key: "slab" },
+            { label: "Client", key: "client" },
             { label: "Incentive", key: "incentive" },
           ]}
         />
@@ -1143,14 +1140,11 @@ function RegistrationIncentiveTable() {
         {sorted.map((row) => (
           <tr key={row.client}>
             <td className="px-4 py-2.5 font-bold">{row.client}</td>
-            <td className="px-4 py-2.5">{row.registration}</td>
-            <td className="px-4 py-2.5 text-[#6B7280]">{row.net}</td>
-            <td className="px-4 py-2.5 text-[#7A0A17] font-bold">{row.slab}</td>
             <td className="px-4 py-2.5 font-bold">{row.incentive}</td>
           </tr>
         ))}
         <tr className="bg-[#FAFAFB] font-extrabold">
-          <td className="px-4 py-3" colSpan={4}>Subtotal</td>
+          <td className="px-4 py-3">Subtotal</td>
           <td className="px-4 py-3 text-[#7A0A17]">₹67,924</td>
         </tr>
       </tbody>
@@ -1168,8 +1162,6 @@ function MeetingsIncentiveTable() {
           onSort={toggle}
           cols={[
             { label: "Item", key: "item" },
-            { label: "Count", key: "count" },
-            { label: "Rate", key: "rate" },
             { label: "Amount", key: "amount" },
           ]}
         />
@@ -1178,13 +1170,11 @@ function MeetingsIncentiveTable() {
         {sorted.map((row) => (
           <tr key={row.item}>
             <td className="px-4 py-2.5 font-bold">{row.item}</td>
-            <td className="px-4 py-2.5">{row.count}</td>
-            <td className="px-4 py-2.5">{row.rate}</td>
             <td className={`px-4 py-2.5 ${row.amount === "-" ? "text-[#9CA3AF]" : "font-bold"}`}>{row.amount}</td>
           </tr>
         ))}
         <tr className="bg-[#FAFAFB] font-extrabold">
-          <td className="px-4 py-3" colSpan={3}>Subtotal</td>
+          <td className="px-4 py-3">Subtotal</td>
           <td className="px-4 py-3 text-[#7A0A17]">₹2,100</td>
         </tr>
       </tbody>
@@ -1202,9 +1192,6 @@ function PerformanceIncentiveTable() {
           onSort={toggle}
           cols={[
             { label: "Item", key: "item" },
-            { label: "Rule", key: "rule" },
-            { label: "Count", key: "count" },
-            { label: "Rate", key: "rate" },
             { label: "Amount", key: "amount" },
           ]}
         />
@@ -1213,14 +1200,11 @@ function PerformanceIncentiveTable() {
         {sorted.map((row) => (
           <tr key={row.item}>
             <td className="px-4 py-2.5 font-bold">{row.item}</td>
-            <td className="px-4 py-2.5 text-[#6B7280]">{row.rule}</td>
-            <td className="px-4 py-2.5">{row.count}</td>
-            <td className={`px-4 py-2.5 ${row.amountTone}`}>{row.rate}</td>
             <td className={`px-4 py-2.5 font-bold ${row.amountTone}`}>{row.amount}</td>
           </tr>
         ))}
         <tr className="bg-[#FAFAFB] font-extrabold">
-          <td className="px-4 py-3" colSpan={4}>Subtotal</td>
+          <td className="px-4 py-3">Subtotal</td>
           <td className="px-4 py-3 text-[#7A0A17]">₹1,420</td>
         </tr>
       </tbody>
@@ -2398,72 +2382,53 @@ export default function HrmsPage() {
               </div>
             </div>
 
-            {/* Section 1: Registration Incentive Amount */}
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <h3 className="text-base font-extrabold text-[#111827] mb-3">1. Incentive on registration amount</h3>
-              
-              {/* 4 Rule Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                <div className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-xl p-3 text-center">
-                  <p className="text-[10px] text-[#6B7280] font-bold">Above ₹5,00,000</p>
-                  <p className="text-base font-black text-[#7A0A17] mt-0.5">6%</p>
-                </div>
-                <div className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-xl p-3 text-center">
-                  <p className="text-[10px] text-[#6B7280] font-bold">Above ₹5,00,000</p>
-                  <p className="text-base font-black text-[#7A0A17] mt-0.5">6%</p>
-                </div>
-                <div className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-xl p-3 text-center">
-                  <p className="text-[10px] text-[#6B7280] font-bold">Above ₹5,00,000</p>
-                  <p className="text-base font-black text-[#7A0A17] mt-0.5">6%</p>
-                </div>
-                <div className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-xl p-3 text-center">
-                  <p className="text-[10px] text-[#6B7280] font-bold">Above ₹5,00,000</p>
-                  <p className="text-base font-black text-[#7A0A17] mt-0.5">6%</p>
+            {/* Sections 1–3 in one row — equal height cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+              {/* Section 1: Registration Incentive Amount */}
+              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col h-full">
+                <h3 className="text-base font-extrabold text-[#111827] mb-3">1. Incentive on registration amount</h3>
+                <div className="overflow-x-auto border border-black/8 rounded-xl flex-1">
+                  <table className="w-full text-left border-collapse text-xs h-full">
+                    <RegistrationIncentiveTable />
+                  </table>
                 </div>
               </div>
 
-              {/* Table */}
-              <div className="overflow-x-auto border border-black/8 rounded-xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <RegistrationIncentiveTable />
-                </table>
-              </div>
-            </div>
+              {/* Section 2: Meetings Incentive */}
+              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col h-full">
+                <h3 className="text-base font-extrabold text-[#111827]">2. Meetings incentive (monthly)</h3>
+                <p className="text-2xl font-black text-[#111827] mt-1">42 <span className="text-xs text-[#6B7280] font-normal">qualifying meetings</span></p>
 
-            {/* Section 2: Meetings Incentive */}
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <h3 className="text-base font-extrabold text-[#111827]">2. Meetings incentive (monthly)</h3>
-              <p className="text-2xl font-black text-[#111827] mt-1">42 <span className="text-xs text-[#6B7280] font-normal">qualifying meetings</span></p>
-
-              {/* Progress Bar & Note */}
-              <div className="mt-3 max-w-xl">
-                <div className="h-3 w-full bg-black/8 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#7A0A17] w-[80%]" />
+                {/* Progress Bar & Note */}
+                <div className="mt-3">
+                  <div className="h-3 w-full bg-black/8 rounded-full overflow-hidden">
+                    <div className="h-full bg-[#7A0A17] w-[80%]" />
+                  </div>
+                  <div className="flex justify-between text-[10px] font-bold text-[#6B7280] mt-1">
+                    <span>30 - ₹50 tier</span>
+                    <span>50 - ₹100 tier</span>
+                  </div>
+                  <div className="bg-[#FFF3E4] border border-[#F59E0B]/30 rounded-xl p-2.5 mt-3 text-xs text-[#B45309] font-bold">
+                    8 more meetings unlocks the ₹100 tier - ₹4,200 for the month.
+                  </div>
                 </div>
-                <div className="flex justify-between text-[10px] font-bold text-[#6B7280] mt-1">
-                  <span>30 - ₹50 tier</span>
-                  <span>50 - ₹100 tier</span>
-                </div>
-                <div className="bg-[#FFF3E4] border border-[#F59E0B]/30 rounded-xl p-2.5 mt-3 text-xs text-[#B45309] font-bold">
-                  8 more meetings unlocks the ₹100 tier - ₹4,200 for the month.
+
+                {/* Table */}
+                <div className="mt-4 overflow-x-auto border border-black/8 rounded-xl flex-1">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <MeetingsIncentiveTable />
+                  </table>
                 </div>
               </div>
 
-              {/* Table */}
-              <div className="mt-4 overflow-x-auto border border-black/8 rounded-xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <MeetingsIncentiveTable />
-                </table>
-              </div>
-            </div>
-
-            {/* Section 3: Performance Incentives */}
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <h3 className="text-base font-extrabold text-[#111827] mb-3">3. Additional performance incentives</h3>
-              <div className="overflow-x-auto border border-black/8 rounded-xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <PerformanceIncentiveTable />
-                </table>
+              {/* Section 3: Performance Incentives */}
+              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col h-full">
+                <h3 className="text-base font-extrabold text-[#111827] mb-3">3. Additional performance incentives</h3>
+                <div className="overflow-x-auto border border-black/8 rounded-xl flex-1">
+                  <table className="w-full text-left border-collapse text-xs h-full">
+                    <PerformanceIncentiveTable />
+                  </table>
+                </div>
               </div>
             </div>
 

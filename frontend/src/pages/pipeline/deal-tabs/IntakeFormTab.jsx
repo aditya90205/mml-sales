@@ -250,13 +250,14 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
     }
 
     setPendingSectionDraft({ values: draftValues, chips: draftChips, changes });
+    setEditSectionKey(null);
     setOtpState({
       open: true,
       mode: "commit",
       changes,
       sectionLabel: label,
       onSuccess: () => {
-        closeEditSection();
+        setPendingSectionDraft(null);
       },
     });
   };

@@ -21,6 +21,7 @@ function OtpModalBody({ mode, changes, sectionLabel, onClose, onVerified }) {
     setTimeout(() => {
       setSending(false);
       setSent(true);
+      setOtp("1234");
       toast.success("OTP sent to client mobile (demo).");
     }, 400);
   };
@@ -30,12 +31,7 @@ function OtpModalBody({ mode, changes, sectionLabel, onClose, onVerified }) {
       toast.info("Send OTP to the client first.");
       return;
     }
-    const code = otp.trim();
-    if (!code.length) {
-      toast.info("Enter the OTP sent to the client.");
-      return;
-    }
-    // Demo mode: accept any OTP the user enters.
+    // Demo mode: any OTP is accepted after Send (field is prefilled with 1234).
     onVerified?.();
   };
 
@@ -49,6 +45,7 @@ function OtpModalBody({ mode, changes, sectionLabel, onClose, onVerified }) {
       iconBg="#F3E8F0"
       iconColor="#7A0A17"
       width="max-w-md"
+      zClass="z-[60]"
       footer={
         <>
           <button
@@ -91,7 +88,7 @@ function OtpModalBody({ mode, changes, sectionLabel, onClose, onVerified }) {
         <div className="rounded-xl border border-[#7A0A17]/15 bg-[#FCF5F6] px-4 py-3.5">
           <p className="text-[13px] font-semibold text-[#7A0A17]">Step 1 — Send OTP to client</p>
           <p className="text-[12.5px] text-[#6B7280] mt-1">
-            Demo mode: send OTP, then enter any code to continue.
+            Demo mode: send OTP, then enter 1234 (or any code) to continue.
           </p>
           <button
             type="button"
@@ -103,7 +100,7 @@ function OtpModalBody({ mode, changes, sectionLabel, onClose, onVerified }) {
           </button>
           {sent && (
             <p className="text-[12px] font-medium text-[#166534] mt-2">
-              OTP sent. Enter any OTP to verify (demo).
+              OTP sent. Demo code 1234 is filled — click Verify &amp; update.
             </p>
           )}
         </div>
@@ -120,7 +117,7 @@ function OtpModalBody({ mode, changes, sectionLabel, onClose, onVerified }) {
             maxLength={6}
             value={otp}
             onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder="Enter any OTP (demo)"
+            placeholder="1234"
             className="w-full h-11 rounded-xl border border-black/12 px-3.5 text-[14px] font-semibold tracking-[0.2em] text-[#111] outline-none focus:border-[#7A0A17]/40"
           />
         </div>
