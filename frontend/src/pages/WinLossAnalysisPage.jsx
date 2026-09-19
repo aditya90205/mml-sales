@@ -188,7 +188,7 @@ export default function WinLossAnalysisPage() {
 
   return (
     <AppPage
-      title="Win / Loss Analysis"
+      title="Reports and Analytics"
       actions={
         <>
           <OutlineBtn onClick={() => toast.info("Exporting win / loss report...")}>

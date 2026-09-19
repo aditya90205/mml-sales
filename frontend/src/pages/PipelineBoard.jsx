@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  AlarmClock,
   ArrowRight,
   Calendar,
   ChevronDown,
@@ -28,8 +27,7 @@ import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 // TopBar is now provided by Layout
-import eyeIcon from "../assets/eye.png";
-import AddP0ProspectPage from "./pipeline/AddP0ProspectPage";
+import CreateLeadModal from "../components/pipeline/CreateLeadModal";
 import DealDetailPage from "./pipeline/DealDetailPage";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import SearchField from "../components/common/SearchField.jsx";
@@ -152,50 +150,6 @@ function Pill({ tone, children }) {
     >
       {children}
     </span>
-  );
-}
-
-/* ───────────────────────── Alert banner ───────────────────────── */
-
-function ActionAlertBanner() {
-  return (
-    <div className="flex-1 min-w-0 bg-[#FDECEE] border border-[#F7D3D9] rounded-2xl px-4 py-3.5 flex items-center gap-3.5 flex-wrap">
-      <span className="size-9 rounded-xl bg-[#FFE1CC] grid place-items-center shrink-0">
-        <AlarmClock size={18} className="text-[#F97316]" strokeWidth={1.8} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-bold text-[#111]">2 items need action today</p>
-        <p className="text-[12px] text-[#6B7280] mt-0.5">
-          Sanjay Mehta has been in P4 for 9 days, 1 discount request is awaiting sales head approval.
-        </p>
-      </div>
-      <button
-        type="button"
-        className="shrink-0 h-9 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-      >
-        View
-      </button>
-    </div>
-  );
-}
-
-/* ───────────────────────── Oversight quick link ───────────────────────── */
-
-function OversightCard() {
-  return (
-    <Link
-      to="/pipeline/cross-branch"
-      className="shrink-0 w-full lg:w-[230px] bg-white border border-black/8 rounded-2xl px-4 py-3.5 hover:bg-[#FAFAFB] transition-colors"
-    >
-      <div className="flex items-center gap-2 mb-2.5 whitespace-nowrap">
-        <img src={eyeIcon} alt="Oversight" style={{ width: 15, height: 15, objectFit: "contain" }} />
-        <p className="text-[13px] font-bold text-[#111]">Oversight</p>
-      </div>
-      <span className="flex items-center justify-between gap-2 w-full text-[11.5px] font-medium rounded-lg px-2.5 py-[9px] text-[#111] bg-[#E7F8EF]">
-        Cross Branch Flags
-        <span className="shrink-0 text-[10px] font-semibold bg-white/70 rounded px-1.5 py-0.5 text-[#111]">3</span>
-      </span>
-    </Link>
   );
 }
 
@@ -802,10 +756,11 @@ export default function PipelineBoard() {
   const [view,   setView]               = useState("table"); // "board" | "table"
   const [stageFilter, setStageFilter]   = useState(() => stageFromSearch(searchParams)); // stage id, or null for all stages (table view)
   const [selectedScoreLead, setSelectedScoreLead] = useState(null);
+  const [showCreateLead, setShowCreateLead] = useState(false);
 
   // Dynamic state for pipeline lead items (shared with Dashboard P0 count)
   const [leadsData, setLeadsDataState]  = useState(readLeads);
-  const [subView, setSubView]           = useState(initialHit ? "deal-detail" : null); // null | "add-p0" | "deal-detail"
+  const [subView, setSubView]           = useState(initialHit ? "deal-detail" : null); // null | "deal-detail"
   const [activeLead, setActiveLead]     = useState(initialHit?.lead ?? null);
   const [dealTargetStage, setDealTargetStage] = useState(initialHit?.stageId ?? "P5");
   const [dealInitialTab, setDealInitialTab] = useState(
@@ -863,9 +818,49 @@ export default function PipelineBoard() {
     navigate(location.pathname, { replace: true, state: null });
   }, [location.state?.resetPipeline]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleAddProspect = (newLead) => {
-    addP0Lead({ p0Status: "new", ...newLead });
-    toast.success(`Prospect "${newLead.name}" created successfully in P0 New!`);
+  const handleCreateLead = (lead) => {
+    const nextAction =
+      lead.meeting === "Meeting Agreed"
+        ? "Schedule meeting"
+        : lead.meeting === "Call Agreed"
+          ? "Follow-up call"
+          : lead.meeting === "Callback Later"
+            ? "Callback"
+            : "Initial Contact";
+
+    addP0Lead({
+      name: lead.name,
+      starred: false,
+      mmlId: `MML - D - ${Math.floor(10000 + Math.random() * 90000)}`,
+      temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
+      score: 8.0,
+      priority: "High",
+      completion: 25,
+      days: 0,
+      hrs: 24,
+      source: lead.source,
+      lastDiscussion: "Just now",
+      nextAction,
+      mobile: lead.mobile,
+      email: lead.email,
+      p0Status: "new",
+      firstName: lead.firstName || "",
+      lastName: lead.lastName || "",
+      lookingFor: lead.lookingFor || "",
+      nri: lead.nri || "no",
+      country: lead.nri === "no" ? "India" : lead.country || "",
+      city: lead.city || "",
+      area: lead.area || "",
+      relation: lead.relation || "",
+      profession: lead.profession || "",
+      familyIncomeBand: lead.income || "",
+      enquiryBy: lead.relation || "",
+      dob: lead.dob || "",
+      areaOfHouse: lead.area || "",
+      notes: lead.notes || "",
+      meeting: lead.meeting || "",
+    });
+    toast.success(`Lead "${lead.name}" created.`);
   };
 
   const handleMoveToP0Contacted = (lead, details = {}) => {
@@ -1151,15 +1146,6 @@ export default function PipelineBoard() {
   );
 
   // Sub-page view rendering
-  if (subView === "add-p0") {
-    return (
-      <AddP0ProspectPage
-        onBack={() => setSubView(null)}
-        onAddProspect={handleAddProspect}
-      />
-    );
-  }
-
   if (subView === "deal-detail") {
     return (
       <DealDetailPage
@@ -1184,6 +1170,14 @@ export default function PipelineBoard() {
         onClose={() => setSelectedScoreLead(null)}
       />
 
+      {showCreateLead ? (
+        <CreateLeadModal
+          open
+          onClose={() => setShowCreateLead(false)}
+          onCreate={handleCreateLead}
+        />
+      ) : null}
+
       {/* Header row */}
       <div className="flex items-center justify-between gap-4 px-5 pt-5 pb-4 flex-wrap">
         <h1 className="text-[22px] font-bold text-[#111] tracking-tight">Pipeline Board</h1>
@@ -1198,20 +1192,16 @@ export default function PipelineBoard() {
           </button>
           <button
             type="button"
-            onClick={() => setSubView("add-p0")}
+            onClick={() => setShowCreateLead(true)}
             className="inline-flex items-center gap-2 h-[38px] px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors"
           >
-            <Plus size={15} /> Add Prospect / Lead
+            <Plus size={15} /> Create Lead
           </button>
         </div>
       </div>
 
       {/* Body */}
       <div className="px-5 pb-8 flex flex-col gap-4 min-w-0">
-        <div className="flex items-stretch gap-3 flex-wrap lg:flex-nowrap">
-          <ActionAlertBanner />
-          <OversightCard />
-        </div>
         <BoardToolbar
           search={search} onSearchChange={setSearch}
           perPage={perPage} onPerPageChange={setPerPage}

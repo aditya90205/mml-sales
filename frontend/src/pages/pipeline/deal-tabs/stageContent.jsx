@@ -58,7 +58,6 @@ export function stageGateFor(stage) {
   const r = stageRank(stage);
   return [
     { label: "Profile Created & Intake", done: r >= 3 },
-    { label: "KYC documents uploaded", done: r >= 3 },
     { label: "Video call or visit logged", done: r >= 4 },
     { label: "Package selected & quoted", done: r >= 5 },
     { label: "Discount approved (if any)", done: r >= 5 },

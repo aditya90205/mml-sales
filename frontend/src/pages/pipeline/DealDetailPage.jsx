@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
-  AlarmClock,
   ArrowLeft,
   ArrowRight,
   Calendar,
@@ -44,7 +43,6 @@ import { EMPTY, atLeast, historyUntil, maybeDash, stageGateFor } from "./deal-ta
 import { isSampleLead, p0StatusOf, updateLead, SAMPLE_CLIENT_PROFILE } from "../../utils/pipelineStore.js";
 import { ensureLeadHistory, recordLeadActivity } from "../../utils/leadActivityStore.js";
 import { formatLookingForLabel, splitName } from "../../utils/leadFields.js";
-import eyeIcon from "../../assets/eye.png";
 
 const BASE_TABS = [
   { key: "overview",  label: "Overview (P0-P1)" },
@@ -717,40 +715,6 @@ export default function DealDetailPage({
               </button>
             )}
           </div>
-        </div>
-
-        {/* Action alert + oversight — same as pipeline board */}
-        <div className="flex items-stretch gap-3 flex-wrap lg:flex-nowrap">
-          <div className="flex-1 min-w-0 bg-[#FDECEE] border border-[#F7D3D9] rounded-2xl px-4 py-3.5 flex items-center gap-3.5 flex-wrap">
-            <span className="size-9 rounded-xl bg-[#FFE1CC] grid place-items-center shrink-0">
-              <AlarmClock size={18} className="text-[#F97316]" strokeWidth={1.8} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-bold text-[#111]">2 items need action today</p>
-              <p className="text-[12px] text-[#6B7280] mt-0.5">
-                Sanjay Mehta has been in P4 for 9 days, 1 discount request is awaiting sales head approval.
-              </p>
-            </div>
-            <button
-              type="button"
-              className="shrink-0 h-9 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-            >
-              View
-            </button>
-          </div>
-          <Link
-            to="/pipeline/cross-branch"
-            className="shrink-0 w-full lg:w-[230px] bg-white border border-black/8 rounded-2xl px-4 py-3.5 hover:bg-[#FAFAFB] transition-colors"
-          >
-            <div className="flex items-center gap-2 mb-2.5 whitespace-nowrap">
-              <img src={eyeIcon} alt="Oversight" style={{ width: 15, height: 15, objectFit: "contain" }} />
-              <p className="text-[13px] font-bold text-[#111]">Oversight</p>
-            </div>
-            <span className="flex items-center justify-between gap-2 w-full text-[11.5px] font-medium rounded-lg px-2.5 py-[9px] text-[#111] bg-[#E7F8EF]">
-              Cross Branch Flags
-              <span className="shrink-0 text-[10px] font-semibold bg-white/70 rounded px-1.5 py-0.5 text-[#111]">3</span>
-            </span>
-          </Link>
         </div>
 
         {/* Stage progress */}

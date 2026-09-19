@@ -320,7 +320,7 @@ export default function TopBar({ page = "Dashboard" }) {
     "p6-handover": "P6 Handover",
     clients: "Client Database",
     "create-group": "Create Group",
-    "win-loss": "Win / Loss Analysis",
+    "win-loss": "Reports and Analytics",
     "cold-pool": "Cold & Common Pool",
     "post-sales": "Post Sales",
     sales: "Sales",

@@ -1,6 +1,4 @@
-import { useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { Upload } from "lucide-react";
 import {
   SECTIONS_META,
   SECTION_BLOCKS,
@@ -10,8 +8,6 @@ import {
   countOverallFields,
 } from "./intakeFormData";
 import { FormBlock } from "./IntakeSectionFields";
-import Modal from "../../../../components/ui/Modal";
-import DocumentsKycTab from "../DocumentsKycTab";
 
 function SectionHeader({
   index,
@@ -20,7 +16,6 @@ function SectionHeader({
   filled,
   total,
   tip,
-  onOpenDocumentsKyc,
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -44,13 +39,6 @@ function SectionHeader({
         >
           <span className="size-2.5 rounded-full bg-[#E8395B] shrink-0" />
           Record voice note for this section
-        </button>
-        <button
-          type="button"
-          onClick={onOpenDocumentsKyc}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#374151] hover:bg-[#FAFAFB] transition-colors"
-        >
-          Document & KYC
         </button>
       </div>
 
@@ -113,42 +101,6 @@ function SectionsSidebar({ sections, activeKey, onSelect }) {
   );
 }
 
-function SelectedDocumentsCard({ documents }) {
-  if (!documents?.length) return null;
-
-  return (
-    <div className="bg-white border border-black/8 rounded-2xl overflow-hidden">
-      <div className="flex items-center justify-between gap-2 px-5 pt-4 pb-3">
-        <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wide">Selected documents</p>
-        <span className="text-[11px] font-semibold text-[#7A0A17]">{documents.length}</span>
-      </div>
-      <div className="flex flex-col border-t border-black/6">
-        {documents.map((doc) => (
-          <div
-            key={doc.id}
-            className="flex items-start gap-2.5 px-5 py-3 border-b border-black/5 last:border-0"
-          >
-            <span className="mt-0.5 size-4 rounded border border-[#16A34A] bg-[#E7F8EF] grid place-items-center shrink-0">
-              <span className="text-[9px] font-bold text-[#16A34A]">✓</span>
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[12.5px] font-semibold text-[#111] leading-snug">
-                {doc.label}
-                {doc.mandatory ? <span className="text-[#E8395B]"> *</span> : null}
-              </p>
-              {doc.fileName ? (
-                <p className="text-[11px] text-[#16A34A] mt-0.5 truncate">{doc.fileName}</p>
-              ) : (
-                <p className="text-[11px] text-[#9CA3AF] mt-0.5">Selected · file pending</p>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /**
  * "Fill the form" view — section header, field blocks, progress rail.
  */
@@ -164,35 +116,8 @@ export default function IntakeFillFormView({
   onRequestPersonalUnlock: _onRequestPersonalUnlock,
   onRequestPersonalSave,
   onFinishToRecord,
-  onBiodataFile,
+  onBiodataFile: _onBiodataFile,
 }) {
-  const [documentsKycOpen, setDocumentsKycOpen] = useState(false);
-  const [selectedDocuments, setSelectedDocuments] = useState([]);
-  const biodataInputRef = useRef(null);
-  const documentsKycRef = useRef(null);
-
-  const handleBiodataUpload = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    if (onBiodataFile) {
-      await onBiodataFile(file);
-      return;
-    }
-    toast.success(`Biodata uploaded: ${file.name}`);
-  };
-
-  const handleDocumentsKycDone = () => {
-    const selected = documentsKycRef.current?.getSelectedDocs?.() || [];
-    setSelectedDocuments(selected);
-    setDocumentsKycOpen(false);
-    if (selected.length) {
-      toast.success(`${selected.length} document${selected.length === 1 ? "" : "s"} saved.`);
-    } else {
-      toast.info("No documents selected.");
-    }
-  };
-
   const activeIndexRaw = SECTIONS_META.findIndex((s) => s.key === activeKey);
   const activeIndex = activeIndexRaw >= 0 ? activeIndexRaw : 0;
   const resolvedKey = SECTIONS_META[activeIndex].key;
@@ -259,7 +184,6 @@ export default function IntakeFillFormView({
           filled={activeCounts.filled}
           total={activeCounts.total}
           tip={SECTION_TIPS[resolvedKey]}
-          onOpenDocumentsKyc={() => setDocumentsKycOpen(true)}
         />
 
         {isPersonal && (
@@ -322,46 +246,7 @@ export default function IntakeFillFormView({
       <div className="flex flex-col gap-5">
         <FormFilledCard percent={overallPercent} filled={overall.filled} total={overall.total} />
         <SectionsSidebar sections={sections} activeKey={activeKey} onSelect={setActiveKey} />
-        <SelectedDocumentsCard documents={selectedDocuments} />
       </div>
-
-      <Modal
-        open={documentsKycOpen}
-        onClose={() => setDocumentsKycOpen(false)}
-        title="Documents & KYC"
-        subtitle="Aadhaar and PAN auto-verify via KYC API"
-        width="max-w-2xl"
-        headerActions={
-          <>
-            <input
-              ref={biodataInputRef}
-              type="file"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              className="hidden"
-              onChange={handleBiodataUpload}
-            />
-            <button
-              type="button"
-              onClick={() => biodataInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/12 text-[12.5px] font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors"
-            >
-              <Upload size={14} />
-              Upload Biodata
-            </button>
-          </>
-        }
-        footer={
-          <button
-            type="button"
-            onClick={handleDocumentsKycDone}
-            className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-          >
-            Done
-          </button>
-        }
-      >
-        <DocumentsKycTab ref={documentsKycRef} empty={empty} embedded />
-      </Modal>
     </div>
   );
 }
