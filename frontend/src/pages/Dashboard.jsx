@@ -80,6 +80,7 @@ import { CLIENTS, upsertClientFromBiodata } from "../utils/clientsData.js";
 import { addLeadToStage, addP0Lead, countStageLeads, findLeadById, findLeadByMobileOrEmail, moveLeadToStage, readLeads, subscribePipeline, updateLead } from "../utils/pipelineStore.js";
 import { contactToLeadFields } from "../utils/leadFields.js";
 import { buildLeadIntakePayload, leadPatchFromIntake, pipelinePatchFromBiodata, setPendingBiodata, takePendingBiodata } from "../utils/biodataDraftStore.js";
+import { assignPendingBiodataFile, rememberBiodataFile, rememberPendingBiodataFile } from "../utils/biodataFileStore.js";
 import { addTaskFromForm, getTodayTaskStats, readTasks, subscribeTasks } from "../utils/tasksStore.js";
 import { buildPerformanceReport } from "../utils/performanceStats.js";
 import { VISITS } from "./pipeline/deal-tabs/VisitsMeetingsTab.jsx";
@@ -1839,6 +1840,15 @@ export default function Dashboard() {
               });
             };
 
+            const attachUploadedBiodata = (leadId) => {
+              if (!leadId) return;
+              if (pendingBiodata?.file) {
+                void rememberBiodataFile(leadId, pendingBiodata.file);
+                return;
+              }
+              assignPendingBiodataFile(leadId);
+            };
+
             if (existingId) {
               const current = findLeadById(existingId);
               const fromStage = current?.stageId || "P0";
@@ -1865,7 +1875,10 @@ export default function Dashboard() {
               } else {
                 updateLead(existingId, savePatch);
               }
-              if (fromBiodata) upsertBiodataClient(existingId);
+              if (fromBiodata) {
+                upsertBiodataClient(existingId);
+                attachUploadedBiodata(existingId);
+              }
               setMyLeads((prev) =>
                 prev.map((row) =>
                   row.pipelineLeadId === existingId || row.id === existingId
@@ -1923,7 +1936,10 @@ export default function Dashboard() {
                   lastName: lead.lastName || "",
                 },
               });
-              if (created?.id) upsertBiodataClient(created.id);
+              if (created?.id) {
+                upsertBiodataClient(created.id);
+                attachUploadedBiodata(created.id);
+              }
               setMyLeads((prev) => [
                 {
                   id: created?.id || `MML-ID-D-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -2063,6 +2079,7 @@ export default function Dashboard() {
             setShowBiodataUpload(false);
             setBiodataCompareWith(null);
             setPendingBiodata(payload);
+            if (payload?.file) void rememberPendingBiodataFile(payload.file);
 
             const leadRef =
               (match?.type === "lead" && match.recordId && findLeadById(match.recordId)) ||

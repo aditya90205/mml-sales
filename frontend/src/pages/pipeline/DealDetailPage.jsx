@@ -636,6 +636,7 @@ export default function DealDetailPage({
             allUnchecked={!atLeast(currentStage, "P5")}
             onHandoverToServices={openHandoverSuccess}
             serviceAssigned={serviceAssigned}
+            clientName={deal.name}
           />
         );
       default:

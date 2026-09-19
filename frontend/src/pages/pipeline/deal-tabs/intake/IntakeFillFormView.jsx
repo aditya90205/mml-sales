@@ -1,3 +1,4 @@
+import { Download, Eye } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   SECTIONS_META,
@@ -8,6 +9,9 @@ import {
   countOverallFields,
 } from "./intakeFormData";
 import { FormBlock } from "./IntakeSectionFields";
+
+const FILE_BTN =
+  "inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-white border border-black/12 text-[11.5px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors";
 
 function SectionHeader({
   index,
@@ -104,6 +108,21 @@ function SectionsSidebar({ sections, activeKey, onSelect }) {
 /**
  * "Fill the form" view — section header, field blocks, progress rail.
  */
+function BiodataFileButtons() {
+  return (
+    <>
+      <button type="button" onClick={() => toast.info("View")} className={FILE_BTN} title="View">
+        <Eye size={13} />
+        View
+      </button>
+      <button type="button" onClick={() => toast.info("Download")} className={FILE_BTN} title="Download">
+        <Download size={13} />
+        Download
+      </button>
+    </>
+  );
+}
+
 export default function IntakeFillFormView({
   empty,
   activeKey,
@@ -212,6 +231,7 @@ export default function IntakeFillFormView({
               onFieldChange={setField}
               onRemoveChip={removeChip}
               locked={personalLocked}
+              headerActions={block.title === "Overview" ? <BiodataFileButtons /> : null}
             />
           ))
         ) : (

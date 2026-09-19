@@ -238,7 +238,7 @@ function IntakeField({ def, value, chips, onChange, onRemoveChip, readOnly }) {
   );
 }
 
-export function FormBlock({ block, values, chipValues, onFieldChange, onRemoveChip, locked, readOnly }) {
+export function FormBlock({ block, values, chipValues, onFieldChange, onRemoveChip, locked, readOnly, headerActions }) {
   const visibleFields = block.fields.filter((f) => isFieldVisible(f, values));
   const filled = visibleFields.filter((f) => isFieldFilled(f, values, chipValues)).length;
   const total = visibleFields.length;
@@ -256,9 +256,12 @@ export function FormBlock({ block, values, chipValues, onFieldChange, onRemoveCh
             </span>
           )}
         </div>
-        <span className="text-[11px] text-[#9CA3AF] shrink-0">
-          {filled} of {total} filled
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          {headerActions}
+          <span className="text-[11px] text-[#9CA3AF]">
+            {filled} of {total} filled
+          </span>
+        </div>
       </div>
       {block.note ? <p className="text-[12px] text-[#6B7280] -mt-2 mb-4">{block.note}</p> : null}
       <div

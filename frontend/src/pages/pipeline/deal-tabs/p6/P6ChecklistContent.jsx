@@ -13,6 +13,7 @@ import {
 } from "../../../../components/pipeline/deskUi";
 import { dashRow, dashRows } from "../stageContent.jsx";
 import P6DocumentUploadModal from "./P6DocumentUploadModal.jsx";
+import P6DocumentViewModal from "./P6DocumentViewModal.jsx";
 import { applyItemUpload, applyItemVerify, QUEUE, QUEUE_COLUMNS } from "./p6ChecklistData.js";
 
 const ACTION_BTN =
@@ -41,11 +42,12 @@ export default function P6ChecklistContent({
   const [sortMode, setSortMode] = useState("blocked");
   const [period, setPeriod] = useState("month");
   const [uploadItem, setUploadItem] = useState(null);
+  const [viewItem, setViewItem] = useState(null);
 
   const visibleSections = allUnchecked
     ? sections.map((s) => ({
         ...s,
-        items: s.items.map((item) => dashRow({ ...item, done: false, tone: "gray", files: [] }, ["title", "note", "id", "upload", "idType", "otp"])),
+        items: s.items.map((item) => dashRow({ ...item, done: false, tone: "gray", files: [] }, ["title", "note", "id", "upload", "idType", "cameraFacing"])),
       }))
     : sections;
   const allItems = visibleSections.flatMap((s) => s.items);
@@ -63,19 +65,19 @@ export default function P6ChecklistContent({
 
   const handleUploaded = (payload) => {
     if (!uploadItem) return;
-    onSectionsChange(applyItemUpload(sections, uploadItem.id, payload));
-    toast.success(`${uploadItem.title} uploaded. Click Verify.`);
+    const nextSections = applyItemUpload(sections, uploadItem.id, payload, clientName);
+    onSectionsChange(nextSections);
+    const uploaded = nextSections.flatMap((section) => section.items).find((item) => item.id === uploadItem.id);
+    toast.success(`${uploadItem.title} uploaded. Open View to compare, then Verify.`);
     setUploadItem(null);
+    if (uploaded) setViewItem(uploaded);
   };
 
-  const handleRowAction = (item) => {
-    const hasFiles = Boolean(item.files?.length);
-    if (!item.done && hasFiles) {
-      onSectionsChange(applyItemVerify(sections, item.id));
-      toast.success(`${item.title} verified.`);
-      return;
-    }
-    setUploadItem(item);
+  const handleVerify = (item) => {
+    if (!item) return;
+    onSectionsChange((prev) => applyItemVerify(prev, item.id));
+    toast.success(`${item.title} verified.`);
+    setViewItem(null);
   };
 
   const rowActionLabel = (item) => {
@@ -107,9 +109,26 @@ export default function P6ChecklistContent({
                 onToggle={item.upload || allUnchecked ? undefined : () => onToggleItem?.(item.id || item.title)}
                 action={
                   item.upload && !allUnchecked ? (
-                    <button type="button" onClick={() => handleRowAction(item)} className={ACTION_BTN}>
-                      {rowActionLabel(item)}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {item.files?.length ? (
+                        <button type="button" onClick={() => setViewItem(item)} className={ACTION_BTN}>
+                          View
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!item.done && item.files?.length) {
+                            handleVerify(item);
+                            return;
+                          }
+                          setUploadItem(item);
+                        }}
+                        className={ACTION_BTN}
+                      >
+                        {rowActionLabel(item)}
+                      </button>
+                    </div>
                   ) : null
                 }
               />
@@ -167,6 +186,12 @@ export default function P6ChecklistContent({
         item={uploadItem}
         onClose={() => setUploadItem(null)}
         onUploaded={handleUploaded}
+      />
+      <P6DocumentViewModal
+        open={Boolean(viewItem)}
+        item={viewItem}
+        onClose={() => setViewItem(null)}
+        onVerify={() => handleVerify(viewItem)}
       />
     </>
   );

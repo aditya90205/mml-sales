@@ -116,6 +116,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
 
     onFillForm?.({
       fileName: data.fileName,
+      file: identity.file || null,
       fields: values,
       importedFields: imported,
       alsoRead: data.alsoRead,
@@ -156,7 +157,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
           ? []
           : findDuplicatesByMobileOrEmail({ mobile, email });
         const prospect = selected || dupes[0] || null;
-        emitFill(data, prospect, { mobile, email });
+        emitFill(data, prospect, { mobile, email, file: next });
       } catch {
         setError("Could not read this file. Try a PDF with selectable text.");
       } finally {

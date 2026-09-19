@@ -11,6 +11,7 @@ export default function P6ChecklistTab({
   allUnchecked = false,
   onHandoverToServices,
   serviceAssigned = null,
+  clientName,
 }) {
   const [sections, setSections] = useState(INITIAL_SECTIONS);
 
@@ -78,6 +79,7 @@ export default function P6ChecklistTab({
         sections={sections}
         onSectionsChange={setSections}
         onToggleItem={toggleItem}
+        clientName={clientName}
       />
     </div>
   );

@@ -17,6 +17,7 @@ import { mapBiodataToIntake, mapLeadToIntake, mergeFilledValues, leadPatchFromIn
 import { extractBiodata } from "../../../utils/biodataExtract.js";
 import { recordLeadActivity } from "../../../utils/leadActivityStore.js";
 import { updateLead } from "../../../utils/pipelineStore.js";
+import { rememberBiodataFile } from "../../../utils/biodataFileStore.js";
 import { CONTACT_REQUIRED_MESSAGE, hasValidMobileOrEmail, pairGenderAndLookingFor } from "../../../utils/leadFields.js";
 
 const DUMMY_P2_IDS = new Set(["p2-1", "p2-2"]);
@@ -188,6 +189,7 @@ export default function IntakeFormTab({ empty = false, lead = null }) {
     setValues(next);
     persistIntake(next);
     if (lead?.id) {
+      await rememberBiodataFile(lead.id, file);
       updateLead(lead.id, { biodataFile: file.name });
     }
     toast.success(`Biodata applied to Profile Create: ${file.name}`);
