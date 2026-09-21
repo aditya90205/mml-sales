@@ -2,14 +2,15 @@ import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
+import StatusPill from "../../../components/common/StatusPill";
 import Modal from "../../../components/ui/Modal";
 
 const INITIAL_DOCUMENTS = [
   { id: "doc-1", label: "Aadhaar card — client", fileName: "", done: false, mandatory: true },
   { id: "doc-2", label: "PAN card — client", fileName: "", done: false, mandatory: true },
   { id: "doc-3", label: "Parent Aadhaar & PAN", fileName: "", done: false, mandatory: false },
-  { id: "doc-4", label: "Police verification", fileName: "", done: false, mandatory: false },
-  { id: "doc-intake-ocr", label: "Client intake OCR copy", fileName: "", done: false, mandatory: false },
+  { id: "doc-4", label: "Police verification", fileName: "", done: false, mandatory: false, assigned: true },
+  { id: "doc-intake-ocr", label: "Client intake OCR copy", fileName: "", done: false, mandatory: false, assigned: false },
   { id: "doc-5", label: "House / GPS photo", fileName: "", done: false, mandatory: false },
   { id: "doc-6", label: "Client Selfie ", fileName: "", done: false, mandatory: false },
   { id: "doc-7", label: "Handwritten contract — OCR", fileName: "", done: false, mandatory: false },
@@ -66,7 +67,7 @@ const DocumentsKycTab = forwardRef(function DocumentsKycTab({ empty = false, emb
   }));
 
   const visibleDocs = empty
-    ? docs.map((d) => ({ ...d, label: d.label, fileName: "", done: false }))
+    ? docs.map((d) => ({ ...d, label: d.label, fileName: "", done: false, assigned: undefined }))
     : docs;
 
   const resetDraft = () => {
@@ -190,6 +191,7 @@ const DocumentsKycTab = forwardRef(function DocumentsKycTab({ empty = false, emb
               ) : null}
             </div>
             <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+              {doc.assigned === false ? <StatusPill tone="gray">Not assigned</StatusPill> : null}
               <button type="button" onClick={() => openEdit(doc)} className={ICON_BTN} title="Edit" aria-label="Edit">
                 <Pencil size={14} />
               </button>

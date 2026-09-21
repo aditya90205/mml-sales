@@ -71,6 +71,7 @@ export const INITIAL_SECTIONS = [
         tone: "blue",
         done: false,
         upload: "files",
+        assigned: true,
       },
       {
         id: "intake-ocr",
@@ -80,6 +81,7 @@ export const INITIAL_SECTIONS = [
         tone: "amber",
         done: false,
         upload: "files",
+        assigned: false,
       },
     ],
   },

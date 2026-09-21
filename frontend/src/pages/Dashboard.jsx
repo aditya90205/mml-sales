@@ -438,12 +438,12 @@ function tempDotColor(temperature) {
 const PIPELINE_BOARD_HREF = "/pipeline?view=table";
 
 const MY_LEADS = [
-  { id: "MML-ID-D-10428", pipelineId: "p0-1", name: "Kuhu Sharma",    starred: true,  stage: "P0 - New",              temperature: "Hot",  stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Outbound follow-up call" },
-  { id: "MML-ID-D-10428", pipelineId: "p1-1", name: "Harshit Sharma", starred: false, stage: "P1 - Qualified",        temperature: "Hot",  stageTone: "Lost", priority: "High",   leadScore: 8.5, profileCompletion: 50,  source: "Brand Walking",    followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: true,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Re-engagement call" },
-  { id: "MML-ID-D-10428", pipelineId: "p3-1", name: "Aditya Sharma",  starred: false, stage: "P3 - Video Call/Visit", temperature: "Cold", stageTone: "Cold", priority: "Medium", leadScore: 8.5, profileCompletion: 85,  source: "Channel Partner",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm video call slot" },
-  { id: "MML-ID-D-10428", pipelineId: "p4-1", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      temperature: "Cold", stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
-  { id: "MML-ID-D-10429", pipelineId: "p4-1", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      temperature: "Warm", stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
-  { id: "MML-ID-D-10428", pipelineId: "p6-1", name: "Virat Sharma",   starred: false, stage: "P6 - Service Handover", temperature: "Warm", stageTone: null,   priority: "Low",    leadScore: 8.5, profileCompletion: 90,  source: "Online - Insta",   followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm handover checklist" },
+  { id: "MML-ID-D-10428", pipelineId: "p0-1", name: "Kuhu Sharma",    starred: true,  stage: "P0 - New",              assignedTo: "", temperature: "Hot",  stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Outbound follow-up call" },
+  { id: "MML-ID-D-10428", pipelineId: "p1-1", name: "Harshit Sharma", starred: false, stage: "P1 - Qualified",        assignedTo: "", temperature: "Hot",  stageTone: "Lost", priority: "High",   leadScore: 8.5, profileCompletion: 50,  source: "Brand Walking",    followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: true,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Re-engagement call" },
+  { id: "MML-ID-D-10428", pipelineId: "p3-1", name: "Aditya Sharma",  starred: false, stage: "P3 - Video Call/Visit", assignedTo: "", temperature: "Cold", stageTone: "Cold", priority: "Medium", leadScore: 8.5, profileCompletion: 85,  source: "Channel Partner",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm video call slot" },
+  { id: "MML-ID-D-10428", pipelineId: "p4-1", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      assignedTo: "", temperature: "Cold", stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
+  { id: "MML-ID-D-10429", pipelineId: "p4-1", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      assignedTo: "", temperature: "Warm", stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
+  { id: "MML-ID-D-10428", pipelineId: "p6-1", name: "Virat Sharma",   starred: false, stage: "P6 - Service Handover", assignedTo: "", temperature: "Warm", stageTone: null,   priority: "Low",    leadScore: 8.5, profileCompletion: 90,  source: "Online - Insta",   followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm handover checklist" },
 ];
 
 /* ───────────────────────── Header controls ───────────────────────── */
@@ -1581,14 +1581,17 @@ function MyLeadsCard({
                     </div>
                   </td>
                   <td className="px-2 py-2.5">
-                    <p className="text-[12px] text-[#374151] leading-tight">
-                      {lead.stage}
-                      {lead.stageTone && (
-                        <span className={`ml-1 text-[11px] font-semibold ${lead.stageTone === "Won" ? "text-[#16A34A]" : lead.stageTone === "Lost" ? "text-[#E8395B]" : "text-[#3B82F6]"}`}>
-                          ({lead.stageTone})
-                        </span>
-                      )}
-                    </p>
+                    {lead.assignedTo ? (
+                      <div>
+                        <p className="text-[12px] font-semibold text-[#16A34A] leading-tight">{lead.stage}</p>
+                        <p className="text-[11px] text-[#9CA3AF] mt-0.5">with {lead.assignedTo}</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-[12px] text-[#9CA3AF] leading-tight">—</p>
+                        <p className="text-[11px] text-[#9CA3AF] mt-0.5">not assigned</p>
+                      </div>
+                    )}
                   </td>
                   <td className="px-2 py-2.5">
                     <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md whitespace-nowrap ${priority.bg}`} style={{ color: priority.color }}>
@@ -1947,6 +1950,7 @@ export default function Dashboard() {
                   name: lead.name,
                   starred: false,
                   stage: "P2 - Profile Create",
+                  assignedTo: "",
                   temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
                   stageTone: null,
                   priority: "High",
@@ -1996,6 +2000,7 @@ export default function Dashboard() {
                 name: lead.name,
                 starred: false,
                 stage: "P0 - New",
+                assignedTo: "",
                 temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
                 stageTone: null,
                 priority: "High",

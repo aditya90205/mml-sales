@@ -106,6 +106,7 @@ export default function P6ChecklistContent({
               <CheckRow
                 key={`${item.id || item.title}-${i}`}
                 {...item}
+                assigned={allUnchecked ? undefined : item.assigned}
                 onToggle={item.upload || allUnchecked ? undefined : () => onToggleItem?.(item.id || item.title)}
                 action={
                   item.upload && !allUnchecked ? (

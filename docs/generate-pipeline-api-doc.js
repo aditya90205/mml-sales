@@ -2803,13 +2803,15 @@ period — month|quarter`,
             "title": "Police verification",
             "note": "Third-party request raised 24 Jul.",
             "status": "In progress",
-            "done": false
+            "done": false,
+            "assigned": true
           },
           {
             "title": "Client intake OCR copy",
             "note": "Upload the copy first. View appears after upload.",
             "status": "Pending",
-            "done": false
+            "done": false,
+            "assigned": false
           }
         ]
       },

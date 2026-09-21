@@ -284,6 +284,75 @@ function mk(dayOffset, startH, endH, title, category, meta = {}) {
   };
 }
 
+const DUMMY_FAMILIES = ["Kapoor Family", "Sethi Family", "Agarwal Family", "Malhotra Family", "Bansal Family", "Gupta Family"];
+
+const NEXT_MONTH_SLOTS = [
+  { startH: 9, endH: 10, title: "Review Pipeline Board", category: "task", meta: { assignees: ["Priya Sharma"], description: "Review pipeline movement and flag stuck prospects." } },
+  { startH: 10, endH: 11, title: "Share Payment Link", category: "task", meta: { clientRelated: true, assignees: ["Dev Malhotra"], priority: "High", description: "Send package payment link and confirm receipt." } },
+  { startH: 11, endH: 13, title: "Home Visit Briefing", category: "meeting", meta: { meetingLink: "https://meet.google.com/mml-home-visit", link: "https://meet.google.com/mml-home-visit", assignees: ["Aditya Sharma"], description: "Sync on scheduled home visits and checklist readiness." } },
+  { startH: 14, endH: 16, title: "Profile Curation Review", category: "meeting", meta: { meetingLink: "https://meet.google.com/mml-profile-curation", link: "https://meet.google.com/mml-profile-curation", assignees: ["Sana Iqbal"], description: "Afternoon sync on profile curation blockers." } },
+  { startH: 9, endH: 10, title: "Prepare Match Shortlist", category: "task", meta: { clientRelated: true, assignees: ["Neha Kapoor"], description: "Compile match shortlist for the family review call." } },
+  { startH: 11, endH: 13, title: "Community Campaign Sync", category: "meeting", meta: { meetingLink: "https://meet.google.com/mml-campaign-sync", link: "https://meet.google.com/mml-campaign-sync", assignees: ["Aditya Sharma", "Sana Iqbal"], priority: "High", description: "Align community outreach with RM follow-up capacity." } },
+  { startH: 13, endH: 15, title: "Office Visit — Family Review", category: "meeting", meta: { meetingLink: "https://meet.google.com/mml-office-visit", link: "https://meet.google.com/mml-office-visit", clientRelated: true, assignees: ["Aditya Sharma"], priority: "High", description: "In-office review of shortlisted matches." } },
+  { startH: 14, endH: 16, title: "Branch All-Hands", category: "event", meta: { location: "Rajouri Garden Branch", venue: "Rajouri Garden Branch", eventCategory: "Internal meeting", eventType: "Internal meeting", eventMode: "In-person", assignees: ["Anjali Gupta", "Abhinav Pandey"], description: "Branch all-hands covering closures and visit targets." } },
+  { startH: 15, endH: 16, title: "Send Event Invites to Families", category: "other", meta: { clientRelated: true, client: "Multiple", assignees: ["Neha Kapoor"], description: "Send invites for the next Meet the Parents evening." } },
+  { startH: 16, endH: 17, title: "RM Follow-up Call", category: "task", meta: { assignees: ["Rahul Verma"], description: "Wrap remaining action items from visit briefings." } },
+  { startH: 17, endH: 18, title: "Update Visit Notes", category: "other", meta: { assignees: ["Priya Sharma"], description: "Capture and share notes from today’s visits." } },
+  { startH: 9, endH: 10, title: "Call Back Pending Prospects", category: "task", meta: { assignees: ["Priya Sharma"], priority: "High", description: "Return calls to P0 prospects marked pending." } },
+];
+
+function mkOn(date, startH, endH, title, category, meta = {}) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return {
+    id: `nm-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}-${startH}-${title}`,
+    date: d,
+    startH,
+    endH,
+    title,
+    category,
+    meta: {
+      priority: "Medium",
+      clientRelated: false,
+      client: "",
+      assignees: ["Priya Sharma"],
+      stage: "New",
+      dueDate: addDays(d, 3),
+      stars: 10,
+      description: "",
+      startTime: hourToTimeStr(startH),
+      endTime: hourToTimeStr(endH),
+      ...meta,
+    },
+  };
+}
+
+function buildNextMonthDummyEvents() {
+  const start = new Date(ANCHOR.getFullYear(), ANCHOR.getMonth() + 1, 1);
+  const daysInMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
+  const events = [];
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(start.getFullYear(), start.getMonth(), day);
+    const weekend = date.getDay() === 0 || date.getDay() === 6;
+    const count = weekend ? 1 : 2;
+    const usedHours = new Set();
+    for (let i = 0; i < count; i++) {
+      const slot = NEXT_MONTH_SLOTS[(day + i * 5) % NEXT_MONTH_SLOTS.length];
+      let startH = slot.startH;
+      let endH = slot.endH;
+      if (usedHours.has(startH)) {
+        startH = [9, 11, 14, 16, 17].find((h) => !usedHours.has(h)) ?? 17;
+        endH = Math.min(startH + Math.max(1, slot.endH - slot.startH), 18);
+      }
+      usedHours.add(startH);
+      const family = DUMMY_FAMILIES[(day + i) % DUMMY_FAMILIES.length];
+      const meta = { ...slot.meta };
+      if (meta.clientRelated && !meta.client) meta.client = family;
+      events.push(mkOn(date, startH, endH, slot.title, slot.category, meta));
+    }
+  }
+  return events;
+}
+
 export const INITIAL_EVENTS = [
   mk(0, 13, 15, "Video Call — Kapoor Family", "meeting", {
     link: "https://meet.google.com/mml-kapoor",
@@ -544,6 +613,7 @@ export const INITIAL_EVENTS = [
     client: "Malhotra Family",
     assignees: ["Neha Kapoor"],
   }),
+  ...buildNextMonthDummyEvents(),
 ];
 
 

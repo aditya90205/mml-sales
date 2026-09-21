@@ -130,7 +130,7 @@ export function SectionCard({ title, subtitle, meta, action, children, footnote,
   );
 }
 
-export function CheckRow({ done, title, note, status, tone, onToggle, action }) {
+export function CheckRow({ done, title, note, status, tone, assigned, onToggle, action }) {
   const inner = (
     <>
       <ChecklistCheck done={done} />
@@ -140,6 +140,7 @@ export function CheckRow({ done, title, note, status, tone, onToggle, action }) 
           {note && <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 leading-snug break-words">{note}</p>}
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-auto">
+          {assigned === false ? <StatusPill tone="gray">Not assigned</StatusPill> : null}
           {status && <StatusPill tone={tone}>{status}</StatusPill>}
           {action}
         </div>
