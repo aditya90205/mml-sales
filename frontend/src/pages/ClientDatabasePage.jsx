@@ -23,6 +23,7 @@ import { matchesAll } from "../utils/clientQuery.js";
 
 const COLUMNS = [
   { label: "Client Name", key: "name" },
+  { label: "Form ID", key: "formId" },
   { label: "Client ID", key: "clientId" },
   { label: "Status", key: "status" },
   { label: "Address", key: "area" },
@@ -291,14 +292,12 @@ export default function ClientDatabasePage() {
     return (
       <tr key={c.id} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
         <td className="px-4 py-3">
-          <span className="inline-flex items-start gap-2">
-            <Flag size={12} style={{ color: prob.color }} fill={prob.color} strokeWidth={0} className="shrink-0 mt-1" />
-            <span className="flex flex-col min-w-0">
-              <span className="text-[13px] font-bold text-[#111] whitespace-nowrap">{c.name}</span>
-              <span className="text-[11px] font-medium text-[#9CA3AF] whitespace-nowrap">{c.formId}</span>
-            </span>
+          <span className="inline-flex items-center gap-2">
+            <Flag size={12} style={{ color: prob.color }} fill={prob.color} strokeWidth={0} className="shrink-0" />
+            <span className="text-[13px] font-bold text-[#111] whitespace-nowrap">{c.name}</span>
           </span>
         </td>
+        <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.formId}</td>
         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.clientId}</td>
         <td className="px-4 py-3">
           <div className="flex justify-center">

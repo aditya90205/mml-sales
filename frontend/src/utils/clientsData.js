@@ -2,7 +2,8 @@ export const CLIENTS = [
   {
     id: 1,
     name: "Harshit Sharma",
-    clientId: "MML-D-10248",
+    clientId: "10006803",
+    clientSeries: "unpaid",
     formId: "MML-3935",
     phone: "******4598",
     status: "Inactive",
@@ -22,7 +23,8 @@ export const CLIENTS = [
   {
     id: 2,
     name: "Aditi Gupta",
-    clientId: "MML-D-10249",
+    clientId: "50006804",
+    clientSeries: "paid",
     formId: "MML-3936",
     phone: "******4598",
     status: "Inactive",
@@ -42,7 +44,8 @@ export const CLIENTS = [
   {
     id: 3,
     name: "Aslesha Singh",
-    clientId: "MML-D-10250",
+    clientId: "30006805",
+    clientSeries: "committed",
     formId: "MML-3937",
     phone: "******4412",
     status: "Active",
@@ -62,7 +65,8 @@ export const CLIENTS = [
   {
     id: 4,
     name: "Aanchal Verma",
-    clientId: "MML-D-10251",
+    clientId: "10006806",
+    clientSeries: "unpaid",
     formId: "MML-3938",
     phone: "******7781",
     status: "Inactive",
@@ -82,7 +86,8 @@ export const CLIENTS = [
   {
     id: 5,
     name: "Khushi Kumari",
-    clientId: "MML-D-10252",
+    clientId: "50006807",
+    clientSeries: "paid",
     formId: "MML-3939",
     phone: "******3304",
     status: "Inactive",
@@ -102,7 +107,8 @@ export const CLIENTS = [
   {
     id: 6,
     name: "Disha Dubey",
-    clientId: "MML-D-10253",
+    clientId: "30006808",
+    clientSeries: "committed",
     formId: "MML-3940",
     phone: "******9021",
     status: "Active",
@@ -122,7 +128,8 @@ export const CLIENTS = [
   {
     id: 7,
     name: "Virat Sharma",
-    clientId: "MML-D-10254",
+    clientId: "10006809",
+    clientSeries: "unpaid",
     formId: "MML-3941",
     phone: "******6155",
     status: "Active",
@@ -142,7 +149,8 @@ export const CLIENTS = [
   {
     id: 8,
     name: "Niharika Jain",
-    clientId: "MML-D-10255",
+    clientId: "50006810",
+    clientSeries: "paid",
     formId: "MML-3942",
     phone: "******2287",
     status: "Active",
@@ -162,7 +170,8 @@ export const CLIENTS = [
   {
     id: 9,
     name: "Arjun Mehta",
-    clientId: "MML-D-10256",
+    clientId: "30006811",
+    clientSeries: "committed",
     formId: "MML-3943",
     phone: "******8140",
     status: "Inactive",
@@ -182,7 +191,8 @@ export const CLIENTS = [
   {
     id: 10,
     name: "Priya Malhotra",
-    clientId: "MML-D-10257",
+    clientId: "10006812",
+    clientSeries: "unpaid",
     formId: "MML-3944",
     phone: "******1203",
     status: "Active",
@@ -202,7 +212,8 @@ export const CLIENTS = [
   {
     id: 11,
     name: "Rohan Kapoor",
-    clientId: "MML-D-10258",
+    clientId: "50006813",
+    clientSeries: "paid",
     formId: "MML-3945",
     phone: "******5642",
     status: "Active",
@@ -222,7 +233,8 @@ export const CLIENTS = [
   {
     id: 12,
     name: "Sneha Reddy",
-    clientId: "MML-D-10259",
+    clientId: "30006814",
+    clientSeries: "committed",
     formId: "MML-3946",
     phone: "******8831",
     status: "Inactive",
@@ -242,7 +254,8 @@ export const CLIENTS = [
   {
     id: 13,
     name: "Kabir Singh",
-    clientId: "MML-D-10260",
+    clientId: "10006815",
+    clientSeries: "unpaid",
     formId: "MML-3947",
     phone: "******4019",
     status: "Active",
@@ -262,7 +275,8 @@ export const CLIENTS = [
   {
     id: 14,
     name: "Ananya Chopra",
-    clientId: "MML-D-10261",
+    clientId: "50006816",
+    clientSeries: "paid",
     formId: "MML-3948",
     phone: "******7720",
     status: "Active",
@@ -282,7 +296,8 @@ export const CLIENTS = [
   {
     id: 15,
     name: "Devansh Agarwal",
-    clientId: "MML-D-10262",
+    clientId: "30006817",
+    clientSeries: "committed",
     formId: "MML-3949",
     phone: "******3398",
     status: "Inactive",
@@ -302,7 +317,8 @@ export const CLIENTS = [
   {
     id: 16,
     name: "Meera Iyer",
-    clientId: "MML-D-10263",
+    clientId: "10006818",
+    clientSeries: "unpaid",
     formId: "MML-3950",
     phone: "******5514",
     status: "Active",
@@ -322,7 +338,8 @@ export const CLIENTS = [
   {
     id: 17,
     name: "Ishaan Bhatia",
-    clientId: "MML-D-10264",
+    clientId: "50006819",
+    clientSeries: "paid",
     formId: "MML-3951",
     phone: "******9088",
     status: "Active",
@@ -342,7 +359,8 @@ export const CLIENTS = [
   {
     id: 18,
     name: "Riya Saxena",
-    clientId: "MML-D-10265",
+    clientId: "30006820",
+    clientSeries: "committed",
     formId: "MML-3952",
     phone: "******2167",
     status: "Inactive",
@@ -362,7 +380,8 @@ export const CLIENTS = [
   {
     id: 19,
     name: "Yash Thakur",
-    clientId: "MML-D-10266",
+    clientId: "10006821",
+    clientSeries: "unpaid",
     formId: "MML-3953",
     phone: "******6443",
     status: "Active",
@@ -382,7 +401,8 @@ export const CLIENTS = [
   {
     id: 20,
     name: "Kavya Nair",
-    clientId: "MML-D-10267",
+    clientId: "50006822",
+    clientSeries: "paid",
     formId: "MML-3954",
     phone: "******1785",
     status: "Active",
@@ -402,7 +422,8 @@ export const CLIENTS = [
   {
     id: 21,
     name: "Siddharth Rao",
-    clientId: "MML-D-10268",
+    clientId: "30006823",
+    clientSeries: "committed",
     formId: "MML-3955",
     phone: "******3902",
     status: "Inactive",
@@ -422,7 +443,8 @@ export const CLIENTS = [
   {
     id: 22,
     name: "Tanya Bajaj",
-    clientId: "MML-D-10269",
+    clientId: "10006824",
+    clientSeries: "unpaid",
     formId: "MML-3956",
     phone: "******7256",
     status: "Active",
@@ -442,7 +464,8 @@ export const CLIENTS = [
   {
     id: 23,
     name: "Aarav Khanna",
-    clientId: "MML-D-10270",
+    clientId: "50006825",
+    clientSeries: "paid",
     formId: "MML-3957",
     phone: "******4810",
     status: "Active",
@@ -462,7 +485,8 @@ export const CLIENTS = [
   {
     id: 24,
     name: "Pooja Desai",
-    clientId: "MML-D-10271",
+    clientId: "30006826",
+    clientSeries: "committed",
     formId: "MML-3958",
     phone: "******8534",
     status: "Inactive",
@@ -482,7 +506,8 @@ export const CLIENTS = [
   {
     id: 25,
     name: "Manav Joshi",
-    clientId: "MML-D-10272",
+    clientId: "10006827",
+    clientSeries: "unpaid",
     formId: "MML-3959",
     phone: "******2671",
     status: "Active",
@@ -502,7 +527,8 @@ export const CLIENTS = [
   {
     id: 26,
     name: "Shreya Banerjee",
-    clientId: "MML-D-10273",
+    clientId: "50006828",
+    clientSeries: "paid",
     formId: "MML-3960",
     phone: "******6148",
     status: "Active",
@@ -522,7 +548,8 @@ export const CLIENTS = [
   {
     id: 27,
     name: "Varun Sethi",
-    clientId: "MML-D-10274",
+    clientId: "30006829",
+    clientSeries: "committed",
     formId: "MML-3961",
     phone: "******9402",
     status: "Inactive",
@@ -542,7 +569,8 @@ export const CLIENTS = [
   {
     id: 28,
     name: "Isha Kapoor",
-    clientId: "MML-D-10275",
+    clientId: "10006830",
+    clientSeries: "unpaid",
     formId: "MML-3962",
     phone: "******3087",
     status: "Active",
@@ -562,7 +590,8 @@ export const CLIENTS = [
   {
     id: 29,
     name: "Nikhil Arora",
-    clientId: "MML-D-10276",
+    clientId: "50006831",
+    clientSeries: "paid",
     formId: "MML-3963",
     phone: "******5729",
     status: "Active",
@@ -582,7 +611,8 @@ export const CLIENTS = [
   {
     id: 30,
     name: "Anvi Sharma",
-    clientId: "MML-D-10277",
+    clientId: "30006832",
+    clientSeries: "committed",
     formId: "MML-3964",
     phone: "******1356",
     status: "Inactive",
@@ -602,7 +632,8 @@ export const CLIENTS = [
   {
     id: 31,
     name: "Harsh Vardhan",
-    clientId: "MML-D-10278",
+    clientId: "10006833",
+    clientSeries: "unpaid",
     formId: "MML-3965",
     phone: "******8894",
     status: "Active",
@@ -622,7 +653,8 @@ export const CLIENTS = [
   {
     id: 32,
     name: "Simran Kaur",
-    clientId: "MML-D-10279",
+    clientId: "50006834",
+    clientSeries: "paid",
     formId: "MML-3966",
     phone: "******2460",
     status: "Active",
@@ -642,7 +674,8 @@ export const CLIENTS = [
   {
     id: 33,
     name: "Aditya Nanda",
-    clientId: "MML-D-10280",
+    clientId: "30006835",
+    clientSeries: "committed",
     formId: "MML-3967",
     phone: "******7013",
     status: "Inactive",
@@ -662,7 +695,8 @@ export const CLIENTS = [
   {
     id: 34,
     name: "Neha Pillai",
-    clientId: "MML-D-10281",
+    clientId: "10006836",
+    clientSeries: "unpaid",
     formId: "MML-3968",
     phone: "******4582",
     status: "Active",
@@ -682,7 +716,8 @@ export const CLIENTS = [
   {
     id: 35,
     name: "Raghav Malhotra",
-    clientId: "MML-D-10282",
+    clientId: "50006837",
+    clientSeries: "paid",
     formId: "MML-3969",
     phone: "******9125",
     status: "Active",
@@ -702,7 +737,8 @@ export const CLIENTS = [
   {
     id: 36,
     name: "Diya Mehra",
-    clientId: "MML-D-10283",
+    clientId: "30006838",
+    clientSeries: "committed",
     formId: "MML-3970",
     phone: "******3671",
     status: "Inactive",
@@ -730,6 +766,28 @@ function emit() {
 
 function digitsOnly(value = "") {
   return String(value).replace(/\D/g, "");
+}
+
+const CLIENT_SERIES_PREFIX = {
+  unpaid: "1000",
+  committed: "3000",
+  paid: "5000",
+};
+
+const CLIENT_SERIAL_START = 6803;
+
+function nextClientSerial() {
+  let max = CLIENT_SERIAL_START - 1;
+  for (const client of CLIENTS) {
+    const serial = Number(String(client.clientId || "").slice(-4));
+    if (Number.isFinite(serial) && serial >= CLIENT_SERIAL_START && serial > max) max = serial;
+  }
+  return max + 1;
+}
+
+function buildClientId(series = "unpaid") {
+  const prefix = CLIENT_SERIES_PREFIX[series] || CLIENT_SERIES_PREFIX.unpaid;
+  return `${prefix}${String(nextClientSerial()).padStart(4, "0")}`;
 }
 
 function todayLabel() {
@@ -839,7 +897,8 @@ export function upsertClientFromBiodata({
   const row = {
     id: nextId,
     name: fullName,
-    clientId: `MML-D-${10240 + nextId}`,
+    clientId: buildClientId("unpaid"),
+    clientSeries: "unpaid",
     formId: `MML-${3934 + nextId}`,
     phone: phoneMask || "******0000",
     status: "Active",
