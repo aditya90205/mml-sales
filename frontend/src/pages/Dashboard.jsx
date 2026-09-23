@@ -474,6 +474,24 @@ function pipelineRowValue(row, key) {
 
 const PIPELINE_BOARD_HREF = "/pipeline?view=table";
 
+/** Same stage → tab mapping PipelineBoard uses when a row is clicked. */
+const DEAL_TAB_BY_STAGE = {
+  P0: "overview",
+  P1: "overview",
+  P2: "intake",
+  P3: "visits",
+  P4: "package",
+  P5: "payments",
+  P6: "p6",
+};
+
+function leadDetailPath(lead, stageId) {
+  const params = new URLSearchParams();
+  params.set("openLead", lead.id);
+  params.set("tab", DEAL_TAB_BY_STAGE[stageId] || "overview");
+  return `/pipeline?${params.toString()}`;
+}
+
 const MY_LEADS = [
   { id: "MML-ID-D-10428", pipelineId: "p0-1", name: "Kuhu Sharma",    starred: true,  stage: "P0 - New",              assignedTo: "", temperature: "Hot",  stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Outbound follow-up call" },
   { id: "MML-ID-D-10429", pipelineId: "p0-2", name: "Ankit Sharma",   starred: true,  stage: "P0 - Contacted",        assignedTo: "", temperature: "Hot",  stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 50,  source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm first meeting" },
@@ -1349,6 +1367,7 @@ function MyLeadsCard({
   const [scoreLead, setScoreLead] = useState(null);
   const [messageOpen, setMessageOpen] = useState(false);
   const leadsViewRef = useRef(null);
+  const navigate = useNavigate();
   const { sorted, sort, toggle } = useTableSort(rows, { defaultKey: "name", getValue: pipelineRowValue });
 
   useEffect(() => {
@@ -1594,14 +1613,20 @@ function MyLeadsCard({
               return (
                 <tr
                   key={lead.id}
-                  className="border-b border-black/6 last:border-0 hover:bg-[#FAFAFB] transition-colors"
+                  onClick={() => navigate(leadDetailPath(lead, stage.id))}
+                  className="border-b border-black/6 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
                 >
                   <td className="px-3 py-2.5 align-middle">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: stage.color }} />
                       <div className="min-w-0">
                         <div className="flex items-center gap-1">
-                          <p className="text-[12.5px] font-semibold text-[#111] truncate">{lead.name}</p>
+                          <button
+                            type="button"
+                            className="text-[12.5px] font-semibold text-[#111] hover:text-[#7A0A17] hover:underline truncate"
+                          >
+                            {lead.name}
+                          </button>
                           {lead.starred && <Star size={11} className="text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={0} />}
                         </div>
                         <p className="text-[10px] text-[#9CA3AF] truncate">{lead.mmlId}</p>
