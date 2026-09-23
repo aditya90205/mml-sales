@@ -34,6 +34,7 @@ import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import SearchField from "../components/common/SearchField.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import {
+  addLeadToStage,
   addP0Lead,
   findLeadById as findStoredLeadById,
   moveLeadToStage,
@@ -43,7 +44,15 @@ import {
   updateLead,
   writeLeads,
 } from "../utils/pipelineStore.js";
-import { syncIntakeValues } from "../utils/biodataDraftStore.js";
+import {
+  buildLeadIntakePayload,
+  leadPatchFromIntake,
+  pipelinePatchFromBiodata,
+  syncIntakeValues,
+  takePendingBiodata,
+} from "../utils/biodataDraftStore.js";
+import { assignPendingBiodataFile, rememberBiodataFile } from "../utils/biodataFileStore.js";
+import { upsertClientFromBiodata } from "../utils/clientsData.js";
 import { recordLeadActivity } from "../utils/leadActivityStore.js";
 
 /* ───────────────────────── Data ───────────────────────── */
@@ -918,6 +927,111 @@ export default function PipelineBoard() {
           : lead.meeting === "Callback Later"
             ? "Callback"
             : "Initial Contact";
+
+    const pendingBiodata = takePendingBiodata() || {
+      fields: lead,
+      alsoRead: lead.alsoRead,
+      intake: lead.intake,
+      fileName: lead.fileName,
+    };
+    const fromBiodata = Boolean(
+      lead.fileName ||
+        pendingBiodata?.fileName ||
+        pendingBiodata?.alsoRead?.length ||
+        (pendingBiodata?.intake && Object.keys(pendingBiodata.intake).length)
+    );
+
+    if (fromBiodata) {
+      const bio = buildLeadIntakePayload(lead, pendingBiodata);
+      const intakePatch = leadPatchFromIntake(bio.intakeValues || {});
+      const biodataPatch = pipelinePatchFromBiodata(lead, bio, {
+        lastDiscussion: "Just now",
+        nextAction,
+        temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
+      });
+      const attachFile = (leadId) => {
+        if (!leadId) return;
+        if (pendingBiodata?.file) {
+          void rememberBiodataFile(leadId, pendingBiodata.file);
+          return;
+        }
+        assignPendingBiodataFile(leadId);
+      };
+      const saveClient = (leadId) => {
+        upsertClientFromBiodata({
+          clientId: lead.clientId,
+          name: lead.name,
+          mobile: lead.mobile,
+          email: lead.email,
+          fields: {
+            firstName: lead.firstName,
+            lastName: lead.lastName,
+            city: lead.city,
+            area: lead.area,
+            dob: lead.dob,
+            lookingFor: lead.lookingFor,
+            relation: lead.relation,
+            fileName: lead.fileName || bio.fileName,
+          },
+          alsoRead: bio.alsoRead || [],
+          owner: "Rohit Kumar",
+          linkedLeadId: leadId,
+        });
+      };
+
+      if (lead.existingLeadId) {
+        const current = findStoredLeadById(lead.existingLeadId);
+        const fromStage = current?.stageId || "P0";
+        const patch = {
+          ...biodataPatch,
+          overviewDetails: {
+            ...(current?.lead?.overviewDetails || {}),
+            ...intakePatch,
+            firstName: lead.firstName || "",
+            lastName: lead.lastName || "",
+          },
+        };
+        if (fromStage === "P0" || fromStage === "P1") {
+          moveLeadToStage(lead.existingLeadId, "P2", patch);
+        } else {
+          updateLead(lead.existingLeadId, patch);
+        }
+        saveClient(lead.existingLeadId);
+        attachFile(lead.existingLeadId);
+        toast.success(`Lead "${lead.name}" updated. Extra biodata saved on the profile.`);
+        return;
+      }
+
+      const created = addLeadToStage("P2", {
+        starred: false,
+        mmlId: `MML - D - ${Math.floor(10000 + Math.random() * 90000)}`,
+        score: 9.0,
+        priority: "High",
+        completion: 70,
+        days: 0,
+        hrs: 24,
+        lastDiscussion: "Just now",
+        nextAction,
+        firstName: lead.firstName || "",
+        lastName: lead.lastName || "",
+        name: lead.name,
+        mobile: lead.mobile,
+        email: lead.email,
+        source: lead.source || "Biodata Upload",
+        ...biodataPatch,
+        overviewDetails: {
+          ...intakePatch,
+          firstName: lead.firstName || "",
+          lastName: lead.lastName || "",
+        },
+      });
+      if (created?.id) {
+        saveClient(created.id);
+        attachFile(created.id);
+      }
+      toast.success(`Lead "${lead.name}" created. Extra biodata saved on the profile.`);
+      return;
+    }
 
     addP0Lead({
       name: lead.name,

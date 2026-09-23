@@ -24,17 +24,30 @@ import { matchesAll } from "../utils/clientQuery.js";
 const COLUMNS = [
   { label: "Client Name", key: "name" },
   { label: "Client ID", key: "clientId" },
-  { label: "Phone", key: "phone" },
   { label: "Status", key: "status" },
-  { label: "Address", key: "address" },
-  { label: "Owner", key: "owner" },
+  { label: "Address", key: "area" },
+  { label: "Customer Service", key: "owner" },
   { label: "Branch", key: "branch" },
-  { label: "Last Contact", key: "lastContact" },
+  { label: "Income", key: "incomeLpa" },
+  { label: "Budget", key: "budgetLakh" },
+  { label: "Last Call", key: "lastContact" },
   { label: "Reason", key: "reason" },
   { label: "Actions", key: "actions", unsortable: true },
 ];
 
 const PER_PAGE_OPTIONS = [10, 15, 25, 50];
+
+function formatIncome(lpa) {
+  const n = Number(lpa);
+  if (!Number.isFinite(n) || n <= 0) return "—";
+  return `₹${n} LPA`;
+}
+
+function formatBudget(lakh) {
+  const n = Number(lakh);
+  if (!Number.isFinite(n) || n <= 0) return "—";
+  return `₹${n} Lakh`;
+}
 
 function NativeSelect({ value, onChange, options }) {
   return (
@@ -199,7 +212,7 @@ export default function ClientDatabasePage() {
     const q = search.trim().toLowerCase();
     if (q) {
       rows = rows.filter((c) =>
-        [c.name, c.clientId, c.phone, c.status, c.branch, c.reason, c.owner, c.address].some((v) =>
+        [c.name, c.clientId, c.formId, c.status, c.branch, c.reason, c.owner, c.area, c.incomeLpa, c.budgetLakh].some((v) =>
           String(v).toLowerCase().includes(q)
         )
       );
@@ -278,21 +291,25 @@ export default function ClientDatabasePage() {
     return (
       <tr key={c.id} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
         <td className="px-4 py-3">
-          <span className="inline-flex items-center gap-2">
-            <Flag size={12} style={{ color: prob.color }} fill={prob.color} strokeWidth={0} className="shrink-0" />
-            <span className="text-[13px] font-bold text-[#111] whitespace-nowrap">{c.name}</span>
+          <span className="inline-flex items-start gap-2">
+            <Flag size={12} style={{ color: prob.color }} fill={prob.color} strokeWidth={0} className="shrink-0 mt-1" />
+            <span className="flex flex-col min-w-0">
+              <span className="text-[13px] font-bold text-[#111] whitespace-nowrap">{c.name}</span>
+              <span className="text-[11px] font-medium text-[#9CA3AF] whitespace-nowrap">{c.formId}</span>
+            </span>
           </span>
         </td>
         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.clientId}</td>
-        <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.phone}</td>
         <td className="px-4 py-3">
           <div className="flex justify-center">
             <ClientStatusBadge status={c.status} married={c.married} />
           </div>
         </td>
-        <td className="px-4 py-3 text-[13px] font-medium text-[#374151] max-w-[220px] truncate">{c.address}</td>
+        <td className="px-4 py-3 text-[13px] font-medium text-[#374151] max-w-[220px] truncate">{c.area}</td>
         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.owner}</td>
         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.branch}</td>
+        <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{formatIncome(c.incomeLpa)}</td>
+        <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{formatBudget(c.budgetLakh)}</td>
         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.lastContact}</td>
         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] max-w-[200px]">{c.reason}</td>
         <td className="px-4 py-3">
@@ -423,7 +440,7 @@ export default function ClientDatabasePage() {
               { value: "none", label: "No grouping" },
               { value: "branch", label: "By branch" },
               { value: "status", label: "By status" },
-              { value: "owner", label: "By owner" },
+              { value: "owner", label: "By customer service" },
             ]}
           />
           <NativeSelect
@@ -553,7 +570,7 @@ export default function ClientDatabasePage() {
 
         <div className="border border-black/8 rounded-xl bg-white overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[980px]">
+            <table className="w-full text-left border-collapse min-w-[1180px]">
               <thead>
                 <tr className="border-b border-black/8 bg-[#FAFAFB]">
                   {COLUMNS.map((col) => (
@@ -574,7 +591,7 @@ export default function ClientDatabasePage() {
               <tbody>
                 {paged.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-4 py-12 text-center text-[13px] text-[#9CA3AF] font-medium">
+                    <td colSpan={COLUMNS.length} className="px-4 py-12 text-center text-[13px] text-[#9CA3AF] font-medium">
                       No clients found.
                     </td>
                   </tr>

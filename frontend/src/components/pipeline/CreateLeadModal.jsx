@@ -7,6 +7,8 @@ import {
   Check,
   ChevronDown,
   Clock,
+  CloudUpload,
+  Loader2,
   Mail,
   MapPin,
   Phone,
@@ -16,6 +18,9 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { extractBiodata } from "../../utils/biodataExtract.js";
+import { setPendingBiodata } from "../../utils/biodataDraftStore.js";
+import { rememberPendingBiodataFile } from "../../utils/biodataFileStore.js";
 import {
   digitsOnly,
   findDuplicatesByMobileOrEmail,
@@ -85,6 +90,8 @@ const DROP_REASONS = [
   "Other",
 ];
 const COUNTRIES = ["India", "USA", "UK", "Canada", "UAE", "Australia", "Singapore", "Other"];
+const BIO_ACCEPT = ".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.tif,.tiff";
+
 const COUNTRY_DIAL = {
   India: "+91",
   USA: "+1",
@@ -98,6 +105,18 @@ const COUNTRY_DIAL = {
 
 const INPUT =
   "w-full h-10 px-3.5 rounded-xl bg-white border border-black/12 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/45 transition-colors";
+
+function importedFromExtract(data) {
+  const values = {};
+  for (const field of data?.fields || []) values[field.key] = field.value ?? "";
+  return values;
+}
+
+function knownOption(value, options) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return "";
+  return options.find((opt) => opt.toLowerCase() === raw) || "";
+}
 
 function emptyForm() {
   return {
@@ -503,9 +522,18 @@ function applyInitial(initial) {
 
 export default function CreateLeadModal({ open, onClose, onCreate, initial = null }) {
   const cityRef = useRef(null);
+  const bioRef = useRef(null);
+  const ownedPending = useRef(false);
   const [form, setForm] = useState(() => applyInitial(initial));
   const [cityOpen, setCityOpen] = useState(false);
   const [error, setError] = useState("");
+  const [bio, setBio] = useState(() => ({
+    fileName: initial?.fileName || "",
+    alsoRead: initial?.alsoRead,
+    intake: initial?.intake,
+  }));
+  const [bioParsing, setBioParsing] = useState(false);
+  const [bioError, setBioError] = useState("");
   const [dropOpen, setDropOpen] = useState(false);
   const [dropReason, setDropReason] = useState("");
   const [dropError, setDropError] = useState("");
@@ -514,7 +542,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
     initial?.existingValues && Object.keys(initial.existingValues).length ? initial.existingValues : null
   );
   const [importedSnap, setImportedSnap] = useState(() => initial?.importedFields || {});
-  const fromBiodata = Boolean(initial?.fileName || initial?.intake);
+  const fromBiodata = Boolean(bio.fileName || bio.intake || initial?.fileName || initial?.intake);
   const isUpdate = Boolean(
     initial?.existingLeadId ||
       initial?.clientId ||
@@ -526,6 +554,93 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
   const set = (key) => (value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setError("");
+  };
+
+  const releasePendingBio = () => {
+    if (!ownedPending.current) return;
+    setPendingBiodata(null);
+    ownedPending.current = false;
+  };
+
+  const requestClose = () => {
+    releasePendingBio();
+    onClose?.();
+  };
+
+  const takeBiodata = (file) => {
+    if (!file || isUpdate) return;
+    setBioParsing(true);
+    setBioError("");
+    window.setTimeout(async () => {
+      try {
+        const data = await extractBiodata(file);
+        const imported = importedFromExtract(data);
+        const intake = data.intake || {};
+        if (!imported.lookingFor && intake.lookingFor) imported.lookingFor = intake.lookingFor;
+        if (!imported.city && intake.addrCity) imported.city = intake.addrCity;
+        if (!imported.area && intake.addrAreaLocality) imported.area = intake.addrAreaLocality;
+        if (!imported.relation && intake.enquiryBy) imported.relation = intake.enquiryBy;
+
+        const hasLeadFields = CREATE_LEAD_COMPARE_FIELDS.some((field) =>
+          String(imported[field.key] || "").trim()
+        );
+        if (!hasLeadFields && !(data.alsoRead || []).length) {
+          setBioError("Could not read lead details from this file. Try a PDF with selectable text.");
+          return;
+        }
+
+        const mobile = String(imported.mobile || intake.mobile || "").replace(/\D/g, "").slice(-10);
+        const email = String(imported.email || intake.email || "").trim();
+        const existing = findDuplicatesByMobileOrEmail({ mobile, email })[0];
+        if (existing) {
+          setBioError(
+            `This biodata matches ${existing.name}. Upload it from the dashboard to update that profile.`
+          );
+          return;
+        }
+
+        const profession = knownOption(intake.occupation || intake.profession, OCCUPATIONS);
+        const income = knownOption(intake.familyIncomeBand || intake.annualFamilyIncome, INCOME);
+        const nri = String(intake.residentialStatus || "").toLowerCase() === "nri" ? "yes" : "";
+        const filled = {};
+        for (const [key, value] of Object.entries(imported)) {
+          if (String(value ?? "").trim()) filled[key] = value;
+        }
+
+        setForm((prev) =>
+          applyInitial({
+            ...prev,
+            ...filled,
+            ...(profession ? { profession } : {}),
+            ...(income ? { income } : {}),
+            ...(nri ? { nri, country: intake.country || intake.addrCountry || prev.country } : {}),
+            source: "Biodata Upload",
+          })
+        );
+        setImportedSnap(filled);
+        setBio({
+          fileName: data.fileName || file.name || "",
+          alsoRead: data.alsoRead || [],
+          intake,
+        });
+        setPendingBiodata({
+          fields: filled,
+          alsoRead: data.alsoRead || [],
+          intake,
+          fileName: data.fileName || file.name || "",
+          file,
+          biodataName: data.biodataName || "",
+        });
+        ownedPending.current = true;
+        void rememberPendingBiodataFile(file);
+        toast.success("Biodata read. Lead fields filled. Extra profile details will save with this lead.");
+      } catch {
+        setBioError("Could not read this file. Try a PDF with selectable text.");
+      } finally {
+        setBioParsing(false);
+        if (bioRef.current) bioRef.current.value = "";
+      }
+    }, 200);
   };
 
   useEffect(() => {
@@ -544,6 +659,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
         setDropOpen(false);
         return;
       }
+      releasePendingBio();
       onClose?.();
     };
     document.addEventListener("keydown", onKey);
@@ -670,9 +786,9 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
       country: form.nri === "no" ? "India" : form.country,
       name: `${form.firstName.trim()} ${form.lastName.trim()}`.replace(/\s+/g, " "),
       mobile: digits ? `${dialCode} ${digits}` : "",
-      fileName: initial?.fileName || "",
-      alsoRead: initial?.alsoRead,
-      intake: initial?.intake,
+      fileName: bio.fileName || initial?.fileName || "",
+      alsoRead: bio.alsoRead || initial?.alsoRead,
+      intake: bio.intake || initial?.intake,
       existingLeadId:
         (linkedLead?.type === "lead" ? linkedLead.recordId : null) ||
         initial?.existingLeadId ||
@@ -683,6 +799,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
         undefined,
       mode: isUpdate ? "update" : "create",
     });
+    ownedPending.current = false;
     onClose?.();
   };
 
@@ -700,7 +817,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
     const name = `${form.firstName.trim()} ${form.lastName.trim()}`.replace(/\s+/g, " ").trim();
     toast.info(name ? `Lead "${name}" dropped.` : "Lead dropped.");
     setDropOpen(false);
-    onClose?.();
+    requestClose();
   };
 
   if (!open) return null;
@@ -710,7 +827,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
       <div
         className="absolute inset-0"
         onClick={() => {
-          if (!dropOpen) onClose?.();
+          if (!dropOpen) requestClose();
         }}
         aria-hidden
       />
@@ -739,7 +856,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
             </div>
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
               className="size-8 grid place-items-center rounded-lg text-[#6B7280] hover:bg-black/5 transition-colors shrink-0"
               aria-label="Close"
             >
@@ -748,6 +865,38 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
           </div>
 
           <div className="px-6 pb-5 overflow-y-auto scrollbar-thin flex flex-col gap-5">
+            {!isUpdate ? (
+              <div className="rounded-xl border border-dashed border-black/15 bg-[#FAFAFB] px-3.5 py-3">
+                <input
+                  ref={bioRef}
+                  type="file"
+                  accept={BIO_ACCEPT}
+                  className="hidden"
+                  onChange={(e) => takeBiodata(e.target.files?.[0])}
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-[#111]">
+                      {bio.fileName || "Drop biodata PDF here"}
+                    </p>
+                    <p className="text-[12px] text-[#6B7280] mt-0.5 truncate">
+                      PDF, DOC, DOCX, or scanned image (JPG / PNG)
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={bioParsing}
+                    onClick={() => bioRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#166534] hover:bg-[#F0FDF4] shrink-0 disabled:opacity-60"
+                  >
+                    {bioParsing ? <Loader2 size={14} className="animate-spin" /> : <CloudUpload size={14} />}
+                    {bioParsing ? "Reading…" : "Upload"}
+                  </button>
+                </div>
+                {bioError ? <p className="text-[12px] font-semibold text-[#E8395B] mt-2">{bioError}</p> : null}
+              </div>
+            ) : null}
+
             {duplicateHits[0] ? (
               <div className="rounded-xl border border-[#F5D78E] bg-[#FFF8E8] px-3.5 py-3 flex flex-col sm:flex-row sm:items-center gap-2.5">
                 <div className="min-w-0 flex-1">
@@ -1056,7 +1205,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
           <div className="flex items-center justify-end gap-2.5 px-6 py-3.5 bg-[#F5F2FB] shrink-0">
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
               className="h-9 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors"
             >
               Cancel
