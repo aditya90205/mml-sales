@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
@@ -26,13 +27,12 @@ const COLUMNS = [
   { label: "Form ID", key: "formId" },
   { label: "Client ID", key: "clientId" },
   { label: "Status", key: "status" },
-  { label: "Address", key: "area" },
+  { label: "Area", key: "area" },
   { label: "Customer Service", key: "owner" },
   { label: "Branch", key: "branch" },
   { label: "Income", key: "incomeLpa" },
   { label: "Budget", key: "budgetLakh" },
   { label: "Last Call", key: "lastContact" },
-  { label: "Reason", key: "reason" },
   { label: "Actions", key: "actions", unsortable: true },
 ];
 
@@ -48,6 +48,41 @@ function formatBudget(lakh) {
   const n = Number(lakh);
   if (!Number.isFinite(n) || n <= 0) return "—";
   return `₹${n} Lakh`;
+}
+
+/** City and country shown under the area, e.g. "New Delhi, India". */
+function cityAndCountry(client) {
+  const tail = String(client.address || "")
+    .split(",")
+    .pop()
+    ?.replace(/\*/g, "")
+    .trim() || "";
+  const blob = `${tail} ${client.city || ""} ${client.area || ""}`.toLowerCase();
+
+  let city = String(client.city || "").split(",")[0].trim();
+  let country = String(client.country || "").trim();
+
+  if (/dubai|uae|emirates/.test(blob)) {
+    city = city || "Dubai";
+    country = country && !/^india$/i.test(country) ? country : "UAE";
+  } else if (/gurgaon|gurugram/.test(blob)) {
+    city = city || "Gurgaon";
+    country = country || "India";
+  } else if (/mumbai/.test(blob)) {
+    city = city || "Mumbai";
+    country = country || "India";
+  } else if (/noida/.test(blob)) {
+    city = city || "Noida";
+    country = country || "India";
+  } else if (/delhi|ncr/.test(blob)) {
+    city = city || "New Delhi";
+    country = country || "India";
+  } else {
+    city = city || tail;
+    country = country || (city ? "India" : "");
+  }
+
+  return [city, country].filter(Boolean).join(", ") || "—";
 }
 
 function NativeSelect({ value, onChange, options }) {
@@ -66,6 +101,49 @@ function NativeSelect({ value, onChange, options }) {
       </select>
       <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
     </div>
+  );
+}
+
+function LastCallCell({ date, reason }) {
+  const anchorRef = useRef(null);
+  const [tip, setTip] = useState(null);
+  const text = String(reason || "").trim();
+
+  const show = () => {
+    if (!text || !anchorRef.current) return;
+    const r = anchorRef.current.getBoundingClientRect();
+    const width = 220;
+    const left = Math.max(12, Math.min(r.left, window.innerWidth - width - 12));
+    setTip({ top: r.bottom + 6, left });
+  };
+
+  return (
+    <td className="px-4 py-3">
+      <span
+        ref={anchorRef}
+        onMouseEnter={show}
+        onMouseLeave={() => setTip(null)}
+        onFocus={show}
+        onBlur={() => setTip(null)}
+        tabIndex={text ? 0 : undefined}
+        className={`inline-block text-[13px] font-medium text-[#374151] whitespace-nowrap ${
+          text ? "cursor-help underline decoration-dotted decoration-[#D1D5DB] underline-offset-[3px]" : ""
+        }`}
+      >
+        {date || "—"}
+      </span>
+      {tip &&
+        createPortal(
+          <div
+            role="tooltip"
+            className="fixed z-[80] max-w-[220px] rounded-lg border border-black/10 bg-white px-2.5 py-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.1)] pointer-events-none"
+            style={{ top: tip.top, left: tip.left }}
+          >
+            <p className="text-[12px] font-medium leading-snug text-[#111]">{text}</p>
+          </div>,
+          document.body
+        )}
+    </td>
   );
 }
 
@@ -304,13 +382,15 @@ export default function ClientDatabasePage() {
             <ClientStatusBadge status={c.status} married={c.married} />
           </div>
         </td>
-        <td className="px-4 py-3 text-[13px] font-medium text-[#374151] max-w-[220px] truncate">{c.area}</td>
+        <td className="px-4 py-3 max-w-[220px]">
+          <p className="text-[13px] font-medium text-[#374151] truncate">{c.area || "—"}</p>
+          <p className="text-[11px] font-medium text-[#9CA3AF] truncate">{cityAndCountry(c)}</p>
+        </td>
         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.owner}</td>
         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.branch}</td>
         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{formatIncome(c.incomeLpa)}</td>
         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{formatBudget(c.budgetLakh)}</td>
-        <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.lastContact}</td>
-        <td className="px-4 py-3 text-[13px] font-medium text-[#374151] max-w-[200px]">{c.reason}</td>
+        <LastCallCell date={c.lastContact} reason={c.reason} />
         <td className="px-4 py-3">
           <div className="flex items-center gap-0.5">
             <IconBtn label={`Call ${c.name}`} onClick={() => toast.info(`Calling ${c.name}...`)}>
@@ -569,7 +649,7 @@ export default function ClientDatabasePage() {
 
         <div className="border border-black/8 rounded-xl bg-white overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[1180px]">
+            <table className="w-full text-left border-collapse min-w-[1000px]">
               <thead>
                 <tr className="border-b border-black/8 bg-[#FAFAFB]">
                   {COLUMNS.map((col) => (
@@ -627,7 +707,7 @@ function FragmentGroup({ label, rows, renderRow }) {
     <>
       {label && (
         <tr className="bg-[#FAF3F2]">
-          <td colSpan={10} className="px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-[#7A0A17]">
+          <td colSpan={COLUMNS.length} className="px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-[#7A0A17]">
             {label}
             <span className="ml-2 font-medium text-[#9CA3AF] normal-case tracking-normal">{rows.length}</span>
           </td>
