@@ -9,7 +9,6 @@ import {
   Activity,
   Users,
   ArrowRight,
-  ArrowUpRight,
   X,
   Paperclip,
   Copy,
@@ -20,8 +19,9 @@ import {
   Flag,
   MessageSquare,
   Calendar,
-  Clock,
   MoreVertical,
+  PhoneOff,
+  Video,
   Zap,
   Flame,
   Snowflake,
@@ -77,7 +77,7 @@ import {
   unscheduledToMeetingForm,
 } from "../utils/calendarStore.js";
 import { CLIENTS, upsertClientFromBiodata } from "../utils/clientsData.js";
-import { addLeadToStage, addP0Lead, countStageLeads, findLeadById, findLeadByMobileOrEmail, moveLeadToStage, readLeads, subscribePipeline, updateLead } from "../utils/pipelineStore.js";
+import { addLeadToStage, addP0Lead, countStageLeads, findLeadById, findLeadByMobileOrEmail, moveLeadToStage, p0StatusOf, readLeads, subscribePipeline, updateLead } from "../utils/pipelineStore.js";
 import { contactToLeadFields } from "../utils/leadFields.js";
 import { buildLeadIntakePayload, leadPatchFromIntake, pipelinePatchFromBiodata, setPendingBiodata, takePendingBiodata } from "../utils/biodataDraftStore.js";
 import { assignPendingBiodataFile, rememberBiodataFile, rememberPendingBiodataFile } from "../utils/biodataFileStore.js";
@@ -419,27 +419,66 @@ const PRIORITY_ITEMS = [
 ];
 
 const PRIORITY_STYLES = {
-  High:   { color: "#E8395B", bg: "bg-[#FDECEE]" },
-  Medium: { color: "#F59E0B", bg: "bg-[#FFF3E4]" },
-  Low:    { color: "#16A34A", bg: "bg-[#E7F8EF]" },
+  High:   { color: "#E8395B", bg: "#FDECEE" },
+  Medium: { color: "#F59E0B", bg: "#FFF3E4" },
+  Low:    { color: "#16A34A", bg: "#E7F8EF" },
 };
 
-const TEMP_DOT_COLORS = {
-  hot:  "#E8395B",
-  warm: "#F59E0B",
-  cold: "#3B82F6",
+const TEMPERATURE_STYLES = {
+  Hot:  { color: "#E8395B", bg: "#FDECEE" },
+  Warm: { color: "#F59E0B", bg: "#FFF3E4" },
+  Cold: { color: "#3B82F6", bg: "#E8F2FE" },
 };
 
-function tempDotColor(temperature) {
-  const key = String(temperature || "").toLowerCase();
-  return TEMP_DOT_COLORS[key] || "#9CA3AF";
+const PIPELINE_OWNER = { name: "Aditya Sharma", role: "Sales Manager", branch: "Rajouri Garden" };
+
+/** Same short My Leads set the dashboard showed before the full pipeline list. */
+const DASHBOARD_MY_LEAD_IDS = new Set(["p0-1", "p0-2", "p1-1", "p1-2", "p3-1", "p4-1", "p6-1"]);
+
+const MY_LEADS_COL_WIDTHS = ["12%", "14%", "14%", "7%", "6%", "7%", "7%", "10%", "11%", "12%"];
+
+const DASH_STAGE_META = [
+  { id: "P0", label: "New", color: "#E8395B", p0Status: "new", filterKey: "P0-new" },
+  { id: "P0", label: "Contacted", color: "#6394D7", p0Status: "contacted", filterKey: "P0-contacted" },
+  { id: "P1", label: "Qualified", color: "#F59E0B", filterKey: "P1" },
+  { id: "P2", label: "Profile Creation", color: "#8B5CF6", filterKey: "P2" },
+  { id: "P3", label: "Video Call/Visit", color: "#7C3AED", filterKey: "P3" },
+  { id: "P4", label: "Negotiation", color: "#6366F1", filterKey: "P4" },
+  { id: "P5", label: "Closed", color: "#16A34A", filterKey: "P5" },
+  { id: "P6", label: "Handover to services", color: "#EAB308", filterKey: "P6" },
+];
+
+function flattenPipelineRows(leadsByStage) {
+  return DASH_STAGE_META.flatMap((col) => {
+    const all = leadsByStage[col.id] || [];
+    const bySub =
+      col.p0Status === "new"
+        ? all.filter((lead) => p0StatusOf(lead) !== "contacted")
+        : col.p0Status === "contacted"
+          ? all.filter((lead) => p0StatusOf(lead) === "contacted")
+          : all;
+    return bySub.map((lead) => ({
+      lead,
+      stage: { id: col.id, label: col.label, color: col.color, filterKey: col.filterKey },
+    }));
+  });
+}
+
+function pipelineRowValue(row, key) {
+  if (key === "stage") return `${row.stage.id} ${row.stage.label}`;
+  if (key === "owner") return PIPELINE_OWNER.name;
+  if (key === "followup") return row.lead.hrs;
+  if (key === "name") return row.lead.name;
+  return row.lead[key];
 }
 
 const PIPELINE_BOARD_HREF = "/pipeline?view=table";
 
 const MY_LEADS = [
   { id: "MML-ID-D-10428", pipelineId: "p0-1", name: "Kuhu Sharma",    starred: true,  stage: "P0 - New",              assignedTo: "", temperature: "Hot",  stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Outbound follow-up call" },
-  { id: "MML-ID-D-10428", pipelineId: "p1-1", name: "Harshit Sharma", starred: false, stage: "P1 - Qualified",        assignedTo: "", temperature: "Hot",  stageTone: "Lost", priority: "High",   leadScore: 8.5, profileCompletion: 50,  source: "Brand Walking",    followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: true,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Re-engagement call" },
+  { id: "MML-ID-D-10429", pipelineId: "p0-2", name: "Ankit Sharma",   starred: true,  stage: "P0 - Contacted",        assignedTo: "", temperature: "Hot",  stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 50,  source: "Outbound Calls",   followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm first meeting" },
+  { id: "MML-ID-D-10430", pipelineId: "p1-1", name: "Harshit Sharma", starred: false, stage: "P1 - Qualified",        assignedTo: "", temperature: "Hot",  stageTone: "Lost", priority: "High",   leadScore: 8.5, profileCompletion: 50,  source: "Brand Walking",    followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: true,  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Re-engagement call" },
+  { id: "MML-ID-D-10431", pipelineId: "p1-2", name: "Arjun Rampal",   starred: false, stage: "P1 - Qualified",        assignedTo: "", temperature: "Hot",  stageTone: null,   priority: "High",   leadScore: 8.5, profileCompletion: 100, source: "Brand Walking",    followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Share qualified profile" },
   { id: "MML-ID-D-10428", pipelineId: "p3-1", name: "Aditya Sharma",  starred: false, stage: "P3 - Video Call/Visit", assignedTo: "", temperature: "Cold", stageTone: "Cold", priority: "Medium", leadScore: 8.5, profileCompletion: 85,  source: "Channel Partner",  followUp: "24 HRS Left", followUpTone: "text-[#6B7280]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Confirm video call slot" },
   { id: "MML-ID-D-10428", pipelineId: "p4-1", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      assignedTo: "", temperature: "Cold", stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
   { id: "MML-ID-D-10429", pipelineId: "p4-1", name: "Vivek Sharma",   starred: false, stage: "P4 - Negotiation",      assignedTo: "", temperature: "Warm", stageTone: null,   priority: "Low",    leadScore: 9.0, profileCompletion: 90,  source: "Reference - Satish", followUp: "6 HRS Left",  followUpTone: "text-[#E8395B]", followUpNote: "Start Time: 12:00", lost: false, lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", nextActionNote: "Call Client for pricing confirmation at 8 PM" },
@@ -1149,7 +1188,7 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
   };
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 sm:p-5 pb-3 flex flex-col h-full min-w-0 [container-type:inline-size]">
+    <div className="bg-white border border-black/8 rounded-2xl p-4 sm:p-5 pb-3 flex flex-col min-w-0 [container-type:inline-size]">
 
       <div className="flex items-center justify-between gap-3 mt-4">
         <h2 className="text-[16px] font-bold text-[#111] flex items-center gap-2">
@@ -1184,7 +1223,7 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
         </div>
       </div>
 
-      <div className="flex items-end justify-center mt-auto pt-3 flex-1 min-h-[380px] [@container(min-width:420px)]:min-h-[440px]">
+      <div className="flex items-end justify-center pt-3">
         <div className="flex items-stretch gap-3 sm:gap-5 w-full">
           <div
             className="relative w-full max-w-[230px] [@container(min-width:420px)]:max-w-[270px] [@container(min-width:520px)]:max-w-[300px] shrink-0"
@@ -1296,17 +1335,8 @@ const MY_LEADS_VIEWS = [
   { id: "branch", label: "My Branch" },
 ];
 
-function stageKeyFromLead(lead) {
-  const stageText = String(lead.stage || "");
-  const match = stageText.match(/P[0-6]/);
-  const stage = match ? match[0] : "P0";
-  if (stage !== "P0") return stage;
-  if (/contacted/i.test(stageText) || lead.p0Status === "contacted") return "P0-contacted";
-  return "P0-new";
-}
-
 function MyLeadsCard({
-  leads,
+  rows,
   healthFilter,
   onHealthFilter,
   healthCounts,
@@ -1319,7 +1349,7 @@ function MyLeadsCard({
   const [scoreLead, setScoreLead] = useState(null);
   const [messageOpen, setMessageOpen] = useState(false);
   const leadsViewRef = useRef(null);
-  const { sorted, sort, toggle } = useTableSort(leads, { defaultKey: "name" });
+  const { sorted, sort, toggle } = useTableSort(rows, { defaultKey: "name", getValue: pipelineRowValue });
 
   useEffect(() => {
     const h = (e) => {
@@ -1518,18 +1548,25 @@ function MyLeadsCard({
       </div>
 
       <div className="border border-black/8 rounded-xl overflow-x-auto scrollbar-thin">
-        <table className="w-full text-left border-collapse min-w-[760px]">
+        <table className="w-full text-left border-collapse table-fixed min-w-[1280px]">
+          <colgroup>
+            {MY_LEADS_COL_WIDTHS.map((width, index) => (
+              <col key={index} style={{ width }} />
+            ))}
+          </colgroup>
           <thead>
             <tr className="border-b border-black/6 bg-[#FAFAFB]/80">
               {[
-                { label: "Client Name", key: "name", className: "pl-3 pr-2 w-[18%]" },
-                { label: "Stage", key: "stage", className: "px-2 w-[14%]" },
-                { label: "Priority", key: "priority", className: "px-2 w-[9%]" },
-                { label: "Lead\nScore", key: "leadScore", className: "px-2 w-[9%]" },
-                { label: "Profile\nCompletion", key: "profileCompletion", className: "px-2 w-[10%]" },
-                { label: "Source", key: "source", className: "px-2 w-[12%]" },
-                { label: "Follow Up\nTime Left", key: "followUp", className: "px-2 w-[14%]" },
-                { label: "Actions", key: "actions", unsortable: true, className: "px-2 w-[10%]" },
+                { label: "Client Name", key: "name" },
+                { label: "Owner", key: "owner" },
+                { label: "Stage", key: "stage" },
+                { label: "Priority", key: "priority" },
+                { label: "Lead\nScore", key: "score" },
+                { label: "Profile\nCompletion", key: "completion" },
+                { label: "Time at This\nStage", key: "days" },
+                { label: "Source", key: "source" },
+                { label: "Follow Up\nTime Left", key: "followup" },
+                { label: "Actions", key: "actions", unsortable: true },
               ].map((h) => (
                 <SortableTh
                   key={h.key}
@@ -1538,7 +1575,7 @@ function MyLeadsCard({
                   sort={sort}
                   onSort={toggle}
                   unsortable={h.unsortable}
-                  className={`text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide py-2.5 align-bottom whitespace-pre-line ${h.className}`}
+                  className="px-3 py-2.5 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide align-bottom whitespace-pre-line"
                 />
               ))}
             </tr>
@@ -1546,113 +1583,127 @@ function MyLeadsCard({
           <tbody>
             {sorted.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-[13px] text-[#9CA3AF]">
+                <td colSpan={10} className="px-3 py-10 text-center text-[13px] text-[#9CA3AF]">
                   No leads match the selected filters.
                 </td>
               </tr>
-            ) : sorted.map((lead, i) => {
-              const priority = PRIORITY_STYLES[lead.priority];
+            ) : sorted.map(({ lead, stage }, idx) => {
+              const temp = TEMPERATURE_STYLES[lead.temperature] || { color: "#6B7280" };
+              const pri = PRIORITY_STYLES[lead.priority] || { color: "#6B7280", bg: "#F3F4F6" };
+              const urgent = Number(lead.hrs) <= 8;
               return (
                 <tr
-                  key={`${lead.id}-${lead.name}-${i}`}
+                  key={lead.id}
                   className="border-b border-black/6 last:border-0 hover:bg-[#FAFAFB] transition-colors"
                 >
-                  <td className="pl-3 pr-2 py-2.5">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className="size-2 rounded-full shrink-0"
-                        style={{ backgroundColor: tempDotColor(lead.temperature) }}
-                        title={lead.temperature || "Unknown"}
-                      />
+                  <td className="px-3 py-2.5 align-middle">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: stage.color }} />
                       <div className="min-w-0">
-                        <span className="inline-flex items-center gap-1.5 min-w-0">
-                          <Link
-                            to={PIPELINE_BOARD_HREF}
-                            className="group/name inline-flex items-center gap-1 min-w-0"
-                            title={`Open ${lead.name} on the pipeline board`}
-                          >
-                            <p className="text-[13px] font-bold text-[#111] truncate group-hover/name:text-[#7A0A17]">{lead.name}</p>
-                            <ArrowUpRight size={12} className="text-[#C4C9D1] opacity-0 group-hover/name:opacity-100 group-hover/name:text-[#7A0A17] shrink-0 transition-opacity" />
-                          </Link>
-                          {lead.starred && <Star size={12} className="text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={0} />}
-                        </span>
-                        <p className="text-[10px] text-[#9CA3AF] truncate">{lead.id}</p>
+                        <div className="flex items-center gap-1">
+                          <p className="text-[12.5px] font-semibold text-[#111] truncate">{lead.name}</p>
+                          {lead.starred && <Star size={11} className="text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={0} />}
+                        </div>
+                        <p className="text-[10px] text-[#9CA3AF] truncate">{lead.mmlId}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-2 py-2.5">
-                    {lead.assignedTo ? (
-                      <div>
-                        <p className="text-[12px] font-semibold text-[#16A34A] leading-tight">{lead.stage}</p>
-                        <p className="text-[11px] text-[#9CA3AF] mt-0.5">with {lead.assignedTo}</p>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-[12px] text-[#9CA3AF] leading-tight">—</p>
-                        <p className="text-[11px] text-[#9CA3AF] mt-0.5">not assigned</p>
-                      </div>
-                    )}
+                  <td className="px-3 py-2.5 align-middle">
+                    <p className="text-[12px] font-medium text-[#374151] truncate">{PIPELINE_OWNER.name}</p>
+                    <p className="text-[10px] text-[#9CA3AF] truncate">{PIPELINE_OWNER.role} | {PIPELINE_OWNER.branch}</p>
                   </td>
-                  <td className="px-2 py-2.5">
-                    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md whitespace-nowrap ${priority.bg}`} style={{ color: priority.color }}>
+                  <td className="px-3 py-2.5 align-middle">
+                    <p className="text-[12px] text-[#374151] leading-tight">
+                      {stage.id === "P0" ? `P0 ${stage.label}` : `${stage.id} - ${stage.label}`}{" "}
+                      <span style={{ color: temp.color }} className="font-semibold">({lead.temperature || "—"})</span>
+                    </p>
+                  </td>
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    <span
+                      className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md"
+                      style={{ color: pri.color, backgroundColor: pri.bg }}
+                    >
                       {lead.priority}
                     </span>
                   </td>
-                  <td className="px-2 py-2.5">
+                  <td className="px-3 py-2.5 whitespace-nowrap">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setScoreLead(lead);
                       }}
-                      className="inline-flex items-center gap-1 text-[13px] font-bold text-[#111] hover:bg-[#F3F4F6] px-1.5 py-0.5 rounded transition-colors whitespace-nowrap"
+                      className="inline-flex items-center gap-1 text-[12px] font-bold text-[#111] hover:bg-[#F3F4F6] px-1.5 py-0.5 rounded transition-colors"
                       title="Click to view Lead Score Details"
                     >
-                      {lead.leadScore.toFixed(1)}
-                      <Flag size={11} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} />
+                      {Number(lead.score || 0).toFixed(1)}
+                      <Flag size={10} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} />
                     </button>
                   </td>
-                  <td className="px-2 py-2.5 text-[12px] text-[#6B7280] whitespace-nowrap">{lead.profileCompletion}%</td>
-                  <td className="px-2 py-2.5 text-[12px] text-[#6B7280] leading-tight whitespace-nowrap">{lead.source}</td>
-                  <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    <span className="text-[12px] font-semibold text-[#374151]">{lead.completion ?? 0}%</span>
+                  </td>
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    <span className="text-[12px] text-[#374151]">{lead.days ?? 0} Days</span>
+                  </td>
+                  <td className="px-3 py-2.5 align-middle">
+                    <span className="text-[12px] text-[#374151] leading-tight">{lead.source || "—"}</span>
+                  </td>
+                  <td className="px-3 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <FollowUpHoverCard
                       lastDiscussionAt={lead.lastDiscussion}
                       nextActionAt={lead.nextAction}
-                      nextActionNote={lead.nextActionNote}
-                      urgency={lead.followUp}
+                      nextActionNote="Follow-up call scheduled"
+                      urgency={`${lead.hrs} Hrs Left`}
                       onFollowUp={() => toast.info("Follow-up history coming soon.")}
                     >
-                      <span className={`inline-flex items-center gap-1 text-[11px] font-semibold ${lead.followUpTone}`}>
-                        <Clock size={11} className="shrink-0" /> {lead.followUp}
-                      </span>
-                      <p className="text-[10px] text-[#9CA3AF] leading-tight">{lead.followUpNote}</p>
+                      <div className="flex items-center gap-1.5 cursor-default">
+                        <span className="size-[15px] shrink-0 grid place-items-center">
+                          {(urgent || idx % 3 === 0) && (
+                            <Video size={15} className="text-[#3B82F6]" />
+                          )}
+                        </span>
+                        <div>
+                          <p className={`text-[12px] font-semibold ${urgent ? "text-[#E8395B]" : "text-[#374151]"}`}>
+                            {lead.hrs ?? 0} HRS Left
+                          </p>
+                          <p className="text-[10px] text-[#9CA3AF]">Start Time: 12:00</p>
+                        </div>
+                      </div>
                     </FollowUpHoverCard>
                   </td>
-                  <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-0 flex-nowrap">
+                  <td className="px-1.5 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-0.5">
+                      {idx % 3 === 0 ? (
+                        <button type="button" className="p-1 rounded-lg text-[#DC2626] hover:bg-[#FEE2E2] transition-colors" title="Dropped Call">
+                          <PhoneOff size={14} />
+                        </button>
+                      ) : (
+                        <button type="button" className="p-1 rounded-lg text-[#16A34A] hover:bg-[#E7F8EF] transition-colors" title="Call">
+                          <Phone size={14} />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => setMessageOpen(true)}
-                        className="p-1.5 text-[#F59E0B] hover:bg-black/4 rounded-lg transition-colors"
+                        className="p-1 rounded-lg text-[#F59E0B] hover:bg-[#FFF3E4] transition-colors"
                         title="Message"
-                        aria-label="Message"
                       >
                         <MessageSquare size={14} />
                       </button>
                       <EmailActivityButton
-                        className="relative p-1.5 text-[#3B82F6] hover:bg-black/4 rounded-lg transition-colors"
-                        hasUnread={i % 2 === 0}
+                        className="relative p-1 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] transition-colors"
+                        hasUnread={idx % 2 === 0}
                         recipientName={lead.name}
                       />
-                      <Link
-                        to={PIPELINE_BOARD_HREF}
-                        className="p-1.5 text-[#6B7280] hover:text-[#7A0A17] hover:bg-[#FCF5F6] rounded-lg transition-colors"
-                        title="Open pipeline board"
-                        aria-label={`Open pipeline board for ${lead.name}`}
+                      <button
+                        type="button"
+                        className="p-1 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] transition-colors"
+                        title="Schedule"
                       >
-                        <ArrowUpRight size={14} />
-                      </Link>
-                      <button type="button" className="p-1.5 text-[#6B7280] hover:bg-black/4 rounded-lg transition-colors" title="More Options" aria-label="More Options">
+                        <Calendar size={14} />
+                      </button>
+                      <button type="button" className="p-1 rounded-lg text-[#9CA3AF] hover:bg-black/5 transition-colors" title="More Options">
                         <MoreVertical size={14} />
                       </button>
                     </div>
@@ -1692,6 +1743,7 @@ export default function Dashboard() {
   const [selectedOtherEvent, setSelectedOtherEvent] = useState(null);
   const [stats, setStats] = useState(buildDashboardStats);
   const [myLeads, setMyLeads] = useState(MY_LEADS);
+  const [leadsByStage, setLeadsByStage] = useState(readLeads);
   const [stageFilter, setStageFilter] = useState(null);
   const [healthFilter, setHealthFilter] = useState(null);
 
@@ -1703,6 +1755,7 @@ export default function Dashboard() {
       }),
     []
   );
+  useEffect(() => subscribePipeline(() => setLeadsByStage(readLeads())), []);
   useEffect(() => {
     const refresh = () => setStats(buildDashboardStats());
     const unsubPipeline = subscribePipeline(refresh);
@@ -1720,14 +1773,21 @@ export default function Dashboard() {
     return "Good Evening";
   }, []);
 
+  const allRows = useMemo(() => flattenPipelineRows(leadsByStage), [leadsByStage]);
+
+  const dashboardRows = useMemo(() => {
+    const picked = allRows.filter((row) => DASHBOARD_MY_LEAD_IDS.has(row.lead.id));
+    return picked.length ? picked : allRows.slice(0, 6);
+  }, [allRows]);
+
   const healthCounts = useMemo(() => {
     const counts = { hot: 0, warm: 0, cold: 0 };
-    myLeads.forEach((l) => {
-      const key = String(l.temperature || "").toLowerCase();
+    dashboardRows.forEach(({ lead }) => {
+      const key = String(lead.temperature || "").toLowerCase();
       if (key in counts) counts[key] += 1;
     });
     return counts;
-  }, [myLeads]);
+  }, [dashboardRows]);
 
   const upNext = useMemo(() => findUpNextEvent(calendarEvents), [calendarEvents]);
 
@@ -2023,18 +2083,19 @@ export default function Dashboard() {
             toast.success(`Lead "${lead.name}" created.`);
   };
 
-  const visibleLeads = useMemo(() => {
-    let list = myLeads;
-    if (stageFilter) {
-      list = list.filter((l) => stageKeyFromLead(l) === stageFilter);
-    }
+  const visibleRows = useMemo(() => {
+    let list = stageFilter
+      ? allRows.filter((row) => row.stage.filterKey === stageFilter)
+      : dashboardRows;
     if (healthFilter) {
-      list = list.filter((l) => String(l.temperature || "").toLowerCase() === healthFilter);
+      list = list.filter((row) => String(row.lead.temperature || "").toLowerCase() === healthFilter);
     }
     const q = search.trim().toLowerCase();
     if (!q) return list;
-    return list.filter((l) => `${l.name} ${l.id} ${l.stage} ${l.source}`.toLowerCase().includes(q));
-  }, [myLeads, search, stageFilter, healthFilter]);
+    return list.filter(({ lead, stage }) =>
+      `${lead.name} ${lead.mmlId || ""} ${stage.id} ${stage.label} ${lead.source || ""}`.toLowerCase().includes(q)
+    );
+  }, [allRows, dashboardRows, search, stageFilter, healthFilter]);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -2260,10 +2321,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.55fr)_minmax(400px,1.05fr)] gap-4 items-stretch">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.55fr)_minmax(400px,1.05fr)] gap-4 items-start">
           <div className="min-w-0">
             <MyLeadsCard
-              leads={visibleLeads}
+              rows={visibleRows}
               healthFilter={healthFilter}
               onHealthFilter={setHealthFilter}
               healthCounts={healthCounts}
