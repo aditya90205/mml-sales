@@ -430,12 +430,10 @@ const TEMPERATURE_STYLES = {
   Cold: { color: "#3B82F6", bg: "#E8F2FE" },
 };
 
-const PIPELINE_OWNER = { name: "Aditya Sharma", role: "Sales Manager", branch: "Rajouri Garden" };
-
 /** Same short My Leads set the dashboard showed before the full pipeline list. */
 const DASHBOARD_MY_LEAD_IDS = new Set(["p0-1", "p0-2", "p1-1", "p1-2", "p3-1", "p4-1", "p6-1"]);
 
-const MY_LEADS_COL_WIDTHS = ["12%", "14%", "14%", "7%", "6%", "7%", "7%", "10%", "11%", "12%"];
+const MY_LEADS_COL_WIDTHS = ["16%", "18%", "9%", "8%", "10%", "13%", "14%", "12%"];
 
 const DASH_STAGE_META = [
   { id: "P0", label: "New", color: "#E8395B", p0Status: "new", filterKey: "P0-new" },
@@ -466,7 +464,6 @@ function flattenPipelineRows(leadsByStage) {
 
 function pipelineRowValue(row, key) {
   if (key === "stage") return `${row.stage.id} ${row.stage.label}`;
-  if (key === "owner") return PIPELINE_OWNER.name;
   if (key === "followup") return row.lead.hrs;
   if (key === "name") return row.lead.name;
   return row.lead[key];
@@ -1567,7 +1564,7 @@ function MyLeadsCard({
       </div>
 
       <div className="border border-black/8 rounded-xl overflow-x-auto scrollbar-thin">
-        <table className="w-full text-left border-collapse table-fixed min-w-[1280px]">
+        <table className="w-full text-left border-collapse table-fixed min-w-[1040px]">
           <colgroup>
             {MY_LEADS_COL_WIDTHS.map((width, index) => (
               <col key={index} style={{ width }} />
@@ -1577,12 +1574,10 @@ function MyLeadsCard({
             <tr className="border-b border-black/6 bg-[#FAFAFB]/80">
               {[
                 { label: "Client Name", key: "name" },
-                { label: "Owner", key: "owner" },
                 { label: "Stage", key: "stage" },
                 { label: "Priority", key: "priority" },
                 { label: "Lead\nScore", key: "score" },
                 { label: "Profile\nCompletion", key: "completion" },
-                { label: "Time at This\nStage", key: "days" },
                 { label: "Source", key: "source" },
                 { label: "Follow Up\nTime Left", key: "followup" },
                 { label: "Actions", key: "actions", unsortable: true },
@@ -1602,7 +1597,7 @@ function MyLeadsCard({
           <tbody>
             {sorted.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-3 py-10 text-center text-[13px] text-[#9CA3AF]">
+                <td colSpan={8} className="px-3 py-10 text-center text-[13px] text-[#9CA3AF]">
                   No leads match the selected filters.
                 </td>
               </tr>
@@ -1634,10 +1629,6 @@ function MyLeadsCard({
                     </div>
                   </td>
                   <td className="px-3 py-2.5 align-middle">
-                    <p className="text-[12px] font-medium text-[#374151] truncate">{PIPELINE_OWNER.name}</p>
-                    <p className="text-[10px] text-[#9CA3AF] truncate">{PIPELINE_OWNER.role} | {PIPELINE_OWNER.branch}</p>
-                  </td>
-                  <td className="px-3 py-2.5 align-middle">
                     <p className="text-[12px] text-[#374151] leading-tight">
                       {stage.id === "P0" ? `P0 ${stage.label}` : `${stage.id} - ${stage.label}`}{" "}
                       <span style={{ color: temp.color }} className="font-semibold">({lead.temperature || "—"})</span>
@@ -1667,9 +1658,6 @@ function MyLeadsCard({
                   </td>
                   <td className="px-3 py-2.5 whitespace-nowrap">
                     <span className="text-[12px] font-semibold text-[#374151]">{lead.completion ?? 0}%</span>
-                  </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
-                    <span className="text-[12px] text-[#374151]">{lead.days ?? 0} Days</span>
                   </td>
                   <td className="px-3 py-2.5 align-middle">
                     <span className="text-[12px] text-[#374151] leading-tight">{lead.source || "—"}</span>
