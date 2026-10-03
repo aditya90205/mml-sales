@@ -12,27 +12,25 @@ import {
   Trophy,
   Target,
   Receipt,
-  Activity,
-  Send,
   Calendar,
   Gift,
   GraduationCap,
+  Laptop,
   Megaphone,
-  MessageCircle,
   Monitor,
+  Send,
   Sparkles,
   Users,
   Eye,
   Edit,
   Trash2,
   CheckCircle2,
-  FileCheck,
   BadgeCheck,
-  ShieldCheck,
   MessageSquare,
   X,
   Plus,
   AlertCircle,
+  LogOut,
   FileText,
   Download,
   TrendingUp,
@@ -518,8 +516,8 @@ function AttendanceDayCell({ d, onRegularize }) {
 }
 
 const ANNOUNCEMENT_ROW_ICONS = {
-  "Policy Update": { Icon: FileText, bg: "bg-[#EEF2FF]", color: "text-[#4F46E5]" },
-  Holiday: { Icon: Calendar, bg: "bg-[#ECFDF5]", color: "text-[#059669]" },
+  "Policy Update": { Icon: FileText, bg: "bg-transparent", color: "text-[#2563EB]" },
+  Holiday: { Icon: Calendar, bg: "bg-transparent", color: "text-[#16A34A]" },
   Training: { Icon: GraduationCap, bg: "bg-[#EFF6FF]", color: "text-[#2563EB]" },
   HR: { Icon: Users, bg: "bg-[#FDF2F8]", color: "text-[#DB2777]" },
   IT: { Icon: Monitor, bg: "bg-[#F8FAFC]", color: "text-[#475569]" },
@@ -532,62 +530,94 @@ const ANNOUNCEMENT_ROW_ICONS = {
 function RecentAnnouncementsCard() {
   const [items, setItems] = useState(readAnnouncements);
   useEffect(() => subscribeAnnouncements(setItems), []);
-  const preview = items.slice(0, 3);
+  const preview = items.slice(0, 2);
 
   return (
-    <div className="bg-white border border-black/10 rounded-2xl p-4 flex flex-col justify-between shadow-sm hover:border-black/20 transition-all">
-      <div>
-        <div className="flex items-center justify-between mb-2.5 gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="size-8 rounded-full bg-[#E8F2FE] text-[#3B82F6] grid place-items-center shrink-0">
-              <Megaphone size={15} />
-            </span>
-            <p className="text-xs font-bold text-[#111827] truncate">Recent Announcements</p>
-          </div>
-          <Link
-            to="/announcements"
-            className="border border-black/15 hover:border-[#3B82F6] text-[#4B5563] hover:text-[#3B82F6] px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0"
-          >
-            View All
-          </Link>
+    <div className="bg-white border border-[#ececf0] rounded-xl p-3.5">
+      <div className="flex items-center justify-between mb-2.5 gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="size-7 rounded-full bg-[#eef2ff] text-[#2563eb] grid place-items-center shrink-0">
+            <Megaphone size={14} />
+          </span>
+          <p className="text-[13px] font-extrabold text-[#111827] truncate">Recent Announcements</p>
         </div>
-        <div className="space-y-1.5">
-          {preview.map((a) => {
-            const typeStyle = ANNOUNCEMENT_ROW_ICONS[a.type] || {
-              Icon: Megaphone,
-              bg: "bg-[#E8F2FE]",
-              color: "text-[#3B82F6]",
-            };
-            const TypeIcon = typeStyle.Icon;
-            return (
+        <Link
+          to="/announcements"
+          className="border border-black/10 hover:border-[#7A0A17]/30 text-[#6B7280] hover:text-[#7A0A17] px-2 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0"
+        >
+          View All
+        </Link>
+      </div>
+      <div className="space-y-1.5">
+        {preview.map((a) => {
+          const typeStyle = ANNOUNCEMENT_ROW_ICONS[a.type] || {
+            Icon: Megaphone,
+            bg: "bg-transparent",
+            color: "text-[#2563EB]",
+          };
+          const TypeIcon = typeStyle.Icon;
+          return (
             <Link
               key={a.id}
               to="/announcements"
-              className="flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg bg-[#FAFAFB] hover:bg-[#F3F4F6] transition-colors"
+              className="flex items-center gap-2.5 bg-[#f8f8fa] rounded-md px-2.5 py-1.5 hover:bg-[#f1f1f4] transition-colors"
             >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className={`size-6 rounded-md ${typeStyle.bg} grid place-items-center shrink-0`}>
-                  <TypeIcon size={12} className={typeStyle.color} strokeWidth={2.2} />
-                </span>
-                <span className="text-[11px] font-bold text-[#111827] truncate">{a.title}</span>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-[9px] font-semibold text-[#E8395B] bg-[#FDECEE] rounded px-1.5 py-0.5">{a.priority}</span>
-                <span
-                  className="size-6 rounded-md bg-[#FFF3E4] text-[#F59E0B] grid place-items-center"
-                  aria-label="Comment"
-                >
-                  <MessageCircle size={11} />
-                </span>
-              </div>
+              <TypeIcon size={12} className={`${typeStyle.color} shrink-0`} strokeWidth={2.2} />
+              <span className="text-[11px] font-semibold text-[#111827] truncate flex-1 min-w-0">{a.title}</span>
+              <span className="bg-[#fde7ea] text-[#d0213a] text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0">
+                {a.priority}
+              </span>
             </Link>
-            );
-          })}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
 }
+
+function SummaryIcon({ icon: Icon, className = "bg-[#7A0A17] text-white" }) {
+  return (
+    <span className={`size-7 rounded-full grid place-items-center shrink-0 ${className}`}>
+      <Icon size={14} />
+    </span>
+  );
+}
+
+function SummaryJumpCard({ icon: Icon, title, meta, metaClass = "", tone = "white" }) {
+  const toneClass = tone === "pink"
+    ? "bg-[#fbf5f6] border-[#f2d6da]"
+    : "bg-white border-[#ececf0]";
+  return (
+    <div
+      className={`w-full border rounded-[10px] px-3 py-2.5 flex items-center gap-2.5 text-left ${toneClass}`}
+    >
+      <Icon size={15} className="text-[#8b0f1e] shrink-0" />
+      <span className="text-[12px] font-bold text-[#111827] flex-1 min-w-0 truncate">{title}</span>
+      {meta ? (
+        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap shrink-0 ${metaClass}`}>{meta}</span>
+      ) : null}
+      <ChevronRight size={14} className="text-[#999] shrink-0" />
+    </div>
+  );
+}
+
+const SALARY_SLIPS = [
+  { id: "mar-2025", label: "March 2025" },
+  { id: "feb-2025", label: "February 2025" },
+];
+
+const KPI_SCORECARD = [
+  [
+    { label: "Registration Value", value: "19.5 lakh" },
+    { label: "Qualifying meetings", value: "46/30" },
+    { label: "Google reviews", value: "7" },
+  ],
+  [
+    { label: "Testimonial videos", value: "3/5" },
+    { label: "Wedding photo uploads", value: "5" },
+    { label: "Negative reviews", value: "1" },
+  ],
+];
 
 function getAttendanceDays(monthName, year) {
   const monthIndex = MONTH_OPTIONS.indexOf(monthName);
@@ -1552,7 +1582,7 @@ export default function HrmsPage() {
         </div>
 
         {/* ── Tabs Navigation Bar ────────────────────────────────────────── */}
-        <div className="border-b border-black/10 overflow-x-auto scrollbar-none">
+        {/* <div className="border-b border-black/10 overflow-x-auto scrollbar-none">
           <nav className="flex items-center gap-6 sm:gap-8 min-w-max">
             {HRMS_TABS.map((tab) => {
               const isActive = activeTab === tab;
@@ -1575,423 +1605,305 @@ export default function HrmsPage() {
               );
             })}
           </nav>
-        </div>
+        </div> */}
 
         {/* ── Tab View Content ──────────────────────────────────────────── */}
         
         {/* 1. SUMMARY TAB */}
         {activeTab === "Summary" && (
-          <>
-            {/* Top Row Quick Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-2xl p-4 flex flex-col justify-between shadow-sm relative group hover:border-[#7A0A17]/30 transition-all">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="size-10 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0 shadow-sm">
-                      <Wallet size={19} />
-                    </span>
-                    <div>
-                      <p className="text-xs font-bold text-[#374151]">This Month's Incentive</p>
-                      <p className="text-2xl font-black text-[#111827] leading-tight mt-0.5">₹38,000</p>
-                    </div>
-                  </div>
-                  <p className="text-xs text-[#6B7280] mt-2 font-medium">
-                    earned at <span className="text-[#16A34A] font-bold">118%</span> of target
+          <div className="flex flex-wrap items-start gap-3.5">
+            <div className="flex-1 min-w-0 basis-[680px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[minmax(150px,0.75fr)_repeat(3,minmax(0,1fr))] gap-3.5 content-start">
+              <div className="lg:row-span-2 bg-[#f3faf5] border border-[#bfe3cb] rounded-xl p-3.5 flex flex-col gap-3">
+                <div className="flex flex-col gap-0.5 pb-3 border-b border-[#d5ecdc]">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-[#15803d] flex items-center gap-1">
+                    <Clock size={12} />
+                    Your Shift
                   </p>
-                </div>
-                <div className="flex items-center justify-between mt-4 pt-2">
-                  <div className="inline-flex items-center gap-1.5 bg-white border border-black/8 rounded-lg px-2.5 py-1 text-xs font-bold text-[#111827] shadow-2xs">
-                    <span>Rank</span>
-                    <span className="text-[#7A0A17] text-sm">2</span>
-                    <span>🏆</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("Incentives")}
-                    className="size-8 rounded-xl bg-white border border-black/10 hover:bg-[#7A0A17] hover:text-white text-[#4B5563] grid place-items-center transition-all shadow-2xs"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-2xl p-4 flex flex-col justify-between shadow-sm relative group hover:border-[#7A0A17]/30 transition-all">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="size-10 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0 shadow-sm">
-                      <AlertTriangle size={19} />
-                    </span>
-                    <div>
-                      <p className="text-xs font-bold text-[#374151]">Warning Issued</p>
-                      <p className="text-xs text-[#6B7280] leading-snug mt-1 font-medium max-w-[180px]">
-                        Late arrivals flagged twice this month.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between mt-4">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("Complaint & Warning")}
-                    className="border border-[#7A0A17] text-[#7A0A17] hover:bg-[#7A0A17] hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs"
-                  >
-                    View Notice
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("Complaint & Warning")}
-                    className="size-8 rounded-xl bg-white border border-black/10 hover:bg-[#7A0A17] hover:text-white text-[#4B5563] grid place-items-center transition-all shadow-2xs"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-[#F4FBF7] border border-[#16A34A]/20 rounded-2xl p-4 flex flex-col justify-between shadow-sm relative group hover:border-[#16A34A]/40 transition-all">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="size-10 rounded-full bg-[#15803D] text-white grid place-items-center shrink-0 shadow-sm">
-                      <Clock size={19} />
-                    </span>
-                    <div>
-                      <p className="text-xs font-bold text-[#374151]">My Shift</p>
-                      <p className="text-xs text-[#6B7280] font-medium">General Shift</p>
-                      <p className="text-sm font-black text-[#111827] mt-0.5">9:00 AM - 6:00 PM</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between mt-4">
+                  <p className="text-[12px] text-[#555] mt-1">General Shift</p>
+                  <p className="text-[13px] font-bold text-[#111827] whitespace-nowrap">9:00 AM - 6:00 PM</p>
                   <button
                     type="button"
                     onClick={() => setShiftModalOpen(true)}
-                    className="border border-[#15803D] text-[#15803D] hover:bg-[#15803D] hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs bg-white"
+                    className="mt-1.5 self-start h-6 border-[1.5px] border-[#15803d] text-[#15803d] hover:bg-[#e8f6ed] bg-white px-2.5 rounded-full text-[11px] font-bold transition-all"
                   >
                     Change Shift
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setShiftModalOpen(true)}
-                    className="size-8 rounded-xl bg-white border border-black/10 hover:bg-[#15803D] hover:text-white text-[#4B5563] grid place-items-center transition-all shadow-2xs"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-[#888]">Your Manager</p>
+                  <p className="text-[13px] font-semibold text-[#111827]">Rohit Mehra</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-[#888]">Your Role</p>
+                  <p className="text-[13px] font-semibold text-[#111827]">Sales Executive</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-[#888]">Branch</p>
+                  <p className="text-[13px] font-semibold text-[#111827]">Rajouri Garden, Delhi</p>
                 </div>
               </div>
 
-              <RecentAnnouncementsCard />
-            </div>
-
-            {/* Row 2: Today's Timesheet */}
-            <div className="bg-white border border-black/10 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
-              <div className="flex items-center gap-3.5">
-                <span className="size-11 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0 shadow-sm">
-                  <Clock size={20} />
-                </span>
-                <div>
-                  <h2 className="text-base font-extrabold text-[#111827]">Today's Timesheet</h2>
-                  <p className="text-xs font-semibold text-[#6B7280]">Aug 7, 2026</p>
+              <div className="bg-white border border-[#ececf0] rounded-xl p-3.5 flex flex-col gap-2.5 text-left">
+                <div className="flex items-center gap-2">
+                  <SummaryIcon icon={CalendarCheck} />
+                  <p className="text-[13px] font-bold text-[#111827] flex-1">Attendance</p>
+                  <ChevronRight size={14} className="text-[#999]" />
                 </div>
-              </div>
-              <div className="flex items-center gap-6 sm:gap-10 overflow-x-auto py-1">
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">LOGIN</p>
-                  <p className="text-sm font-extrabold text-[#16A34A] mt-0.5">09:02 AM</p>
-                </div>
-                <div className="h-7 w-px bg-black/10 shrink-0" />
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">LOGOUT</p>
-                  <p className="text-sm font-extrabold text-[#DC2626] mt-0.5">06:10 PM</p>
-                </div>
-                <div className="h-7 w-px bg-black/10 shrink-0" />
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">SYSTEM</p>
-                  <p className="text-sm font-extrabold text-[#111827] mt-0.5">8.50h</p>
-                </div>
-                <div className="h-7 w-px bg-black/10 shrink-0" />
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">MANUAL</p>
-                  <p className="text-sm font-extrabold text-[#111827] mt-0.5">1.00h</p>
-                </div>
-                <div className="h-7 w-px bg-black/10 shrink-0" />
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">TOTAL</p>
-                  <p className="text-sm font-extrabold text-[#3B82F6] mt-0.5">9.50h</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setTimesheetModal("edit")}
-                  className="border border-[#7A0A17] text-[#7A0A17] hover:bg-[#FCF5F6] px-4 py-2 rounded-xl text-xs font-extrabold transition-all shadow-2xs"
-                >
-                  Regularize
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTimesheetModal("view")}
-                  className="bg-[#7A0A17] hover:bg-[#600712] text-white px-4 py-2 rounded-xl text-xs font-extrabold transition-all shadow-2xs"
-                >
-                  View Details
-                </button>
-              </div>
-            </div>
-
-            {/* Row 3: Main Dashboard Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch lg:h-[640px]">
-              <div className="flex flex-col gap-5 h-full min-h-0">
-                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                      <Target size={17} />
-                    </span>
-                    <h3 className="text-base font-extrabold text-[#111827]">KPI Scorecard</h3>
-                  </div>
-                  <div className="divide-y divide-black/6 text-xs">
-                    <div className="py-2.5 flex items-center justify-between">
-                      <span className="text-[#4B5563] font-semibold">Registration Value</span>
-                      <span className="font-extrabold text-[#111827] text-sm">19.5 lakh</span>
-                    </div>
-                    <div className="py-2.5 flex items-center justify-between">
-                      <span className="text-[#4B5563] font-semibold">Qualifying meetings</span>
-                      <span className="font-extrabold text-[#111827] text-sm">46/30</span>
-                    </div>
-                    <div className="py-2.5 flex items-center justify-between">
-                      <span className="text-[#4B5563] font-semibold">Google reviews</span>
-                      <span className="font-extrabold text-[#111827] text-sm">7</span>
-                    </div>
-                    <div className="py-2.5 flex items-center justify-between">
-                      <span className="text-[#4B5563] font-semibold">Testimonial videos</span>
-                      <span className="font-extrabold text-[#111827] text-sm">3/5</span>
-                    </div>
-                    <div className="py-2.5 flex items-center justify-between">
-                      <span className="text-[#4B5563] font-semibold">Wedding photo uploads</span>
-                      <span className="font-extrabold text-[#111827] text-sm">5</span>
-                    </div>
-                    <div className="py-2.5 flex items-center justify-between">
-                      <span className="text-[#4B5563] font-semibold">Negative reviews</span>
-                      <span className="font-extrabold text-[#111827] text-sm">1</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex-1 min-h-0 flex flex-col">
-                  <div className="flex items-center gap-3 mb-4 shrink-0">
-                    <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                      <Activity size={17} />
-                    </span>
-                    <h3 className="text-base font-extrabold text-[#111827]">Recent Activity</h3>
-                  </div>
-                  <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 relative before:absolute before:left-4 before:top-3 before:bottom-3 before:w-px before:bg-black/8">
-                    <div className="flex items-start justify-between gap-3 relative pl-8">
-                      <span className="absolute left-1 top-0.5 size-6 rounded-full bg-[#DCFCE7] text-[#16A34A] grid place-items-center ring-4 ring-white">
-                        <CheckCircle2 size={14} />
-                      </span>
-                      <div>
-                        <p className="text-xs font-extrabold text-[#111827]">Check-in</p>
-                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">Today at 9:00 AM</p>
-                      </div>
-                      <span className="bg-[#DCFCE7] text-[#15803D] text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-[#16A34A]/20">
-                        On Time
-                      </span>
-                    </div>
-
-                    <div className="flex items-start justify-between gap-3 relative pl-8">
-                      <span className="absolute left-1 top-0.5 size-6 rounded-full bg-[#DCFCE7] text-[#16A34A] grid place-items-center ring-4 ring-white">
-                        <FileCheck size={14} />
-                      </span>
-                      <div>
-                        <p className="text-xs font-extrabold text-[#111827]">Leave Approved</p>
-                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">August 3</p>
-                      </div>
-                      <span className="bg-[#DCFCE7] text-[#15803D] text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-[#16A34A]/20">
-                        Approved
-                      </span>
-                    </div>
-
-                    <div className="flex items-start justify-between gap-3 relative pl-8">
-                      <span className="absolute left-1 top-0.5 size-6 rounded-full bg-[#E0F2FE] text-[#0284C7] grid place-items-center ring-4 ring-white">
-                        <ShieldCheck size={14} />
-                      </span>
-                      <div>
-                        <p className="text-xs font-extrabold text-[#111827]">Attendance Regularized</p>
-                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">July 30</p>
-                      </div>
-                      <span className="bg-[#E0F2FE] text-[#0284C7] text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-[#0284C7]/20">
-                        Date
-                      </span>
-                    </div>
-
-                    <div className="flex items-start justify-between gap-3 relative pl-8">
-                      <span className="absolute left-1 top-0.5 size-6 rounded-full bg-[#FFEDD5] text-[#EA580C] grid place-items-center ring-4 ring-white">
-                        <Clock size={14} />
-                      </span>
-                      <div>
-                        <p className="text-xs font-extrabold text-[#111827]">Check-in</p>
-                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">July 29 at 9:10 AM</p>
-                      </div>
-                      <span className="bg-[#FFEDD5] text-[#C2410C] text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-[#EA580C]/20">
-                        Late
-                      </span>
-                    </div>
-                  </div>
+                <p className="leading-none">
+                  <span className="text-[24px] font-bold text-[#111827] tracking-tight">8/8</span>
+                  <span className="text-[11px] text-[#555] ml-1.5">days present</span>
+                </p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-semibold text-[#15803d] bg-[#effaf3] border border-[#bfe3cb] px-2 py-0.5 rounded-md">Today on time</span>
+                  <span className="text-[10px] font-semibold text-[#c2410c] bg-[#fff4ea] border border-[#fbd5b5] px-2 py-0.5 rounded-md">1 late</span>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-5 h-full min-h-0">
-                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm shrink-0">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                        <Receipt size={17} />
-                      </span>
-                      <h3 className="text-base font-extrabold text-[#111827]">My Expenses</h3>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setAddExpenseOpen(true)}
-                      className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-all shadow-2xs flex items-center gap-1"
-                    >
-                      <Plus size={13} /> Add Expense
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    {expenses.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6 hover:border-black/15 transition-all"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-xs font-extrabold text-[#111827] truncate">{item.purpose}</p>
-                          <p className="text-[11px] text-[#6B7280] font-medium mt-0.5 truncate">{item.destination} &middot; {item.startDate}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setViewExpense(item)}
-                            className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center transition-colors"
-                          >
-                            <Eye size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => { setViewExpense(item); toast.info("Edit mode enabled"); }}
-                            className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center transition-colors"
-                          >
-                            <Edit size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteExpense(item.id)}
-                            className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center transition-colors"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex-1 min-h-0 flex flex-col">
-                  <div className="flex items-center gap-3 mb-4 shrink-0">
-                    <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                      <Send size={17} />
-                    </span>
-                    <h3 className="text-base font-extrabold text-[#111827]">Your Request</h3>
-                  </div>
-                  <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1">
-                    {MY_REQUESTS.map((req) => (
-                      <div key={req.id} className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6">
-                        <div>
-                          <p className="text-xs font-extrabold text-[#111827]">{req.title}</p>
-                          <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">{req.submitted}</p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => setSendMessageOpen(true)}
-                            className="text-[#F59E0B] hover:text-[#D97706] p-1 rounded transition-colors"
-                            aria-label="Send message"
-                          >
-                            <MessageSquare size={16} />
-                          </button>
-                          <span
-                            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border whitespace-nowrap ${
-                              req.status === "Approved"
-                                ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
-                                : "bg-[#FFEDD5] text-[#C2410C] border-[#EA580C]/20"
-                            }`}
-                          >
-                            {req.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm h-full min-h-0 flex flex-col">
-                <div className="flex items-center justify-between mb-4 shrink-0">
-                  <div className="flex items-center gap-3">
-                    <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                      <Calendar size={17} />
-                    </span>
-                    <h3 className="text-base font-extrabold text-[#111827]">My Leave Application</h3>
-                  </div>
+              <div className="bg-white border border-[#ececf0] rounded-xl p-3.5 flex flex-col gap-2.5">
+                <div className="flex items-center gap-2">
+                  <SummaryIcon icon={Calendar} />
+                  <p className="text-[13px] font-bold text-[#111827] flex-1">Leaves</p>
                   <button
                     type="button"
                     onClick={() => setApplyLeaveFormOpen(true)}
-                    className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-all shadow-2xs"
+                    className="h-6 rounded-full bg-[#8b0f1e] hover:bg-[#6e0b17] text-white px-2.5 text-[11px] font-bold shrink-0"
                   >
-                    Apply Leave
+                    Apply
                   </button>
                 </div>
-                <div className="flex items-center justify-between py-2 border-b border-black/8 mb-3 text-xs font-bold shrink-0">
+                <p className="leading-none">
+                  <span className="text-[24px] font-bold text-[#111827] tracking-tight">2/7</span>
+                  <span className="text-[11px] text-[#555] ml-1.5">used this year</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setApplyLeaveOpen(true)}
+                  className="text-left text-[11px] font-semibold text-[#2563eb] underline"
+                >
+                  Leave Balance · 1 day available
+                </button>
+              </div>
+
+              <div className="bg-[#fbf5f6] border border-[#f2d6da] rounded-xl p-3.5 flex flex-col gap-2.5 text-left">
+                <div className="flex items-center gap-2">
+                  <SummaryIcon icon={Wallet} />
+                  <p className="text-[13px] font-bold text-[#111827] flex-1">Incentives</p>
+                  <ChevronRight size={14} className="text-[#999]" />
+                </div>
+                <p className="text-[24px] font-bold text-[#111827] leading-none tracking-tight">₹38,000</p>
+                <div className="flex items-center justify-between gap-1.5">
+                  <p className="text-[11px] text-[#555]">
+                    earned at <b className="text-[#16a34a]">118%</b> of target
+                  </p>
+                  <span className="inline-flex items-center gap-1 bg-white border border-[#ececf0] rounded-md px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap">
+                    Rank <span className="text-[#8b0f1e]">2</span>
+                    <Trophy size={10} className="text-[#d4a017]" />
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#ececf0] rounded-xl p-3.5 flex flex-col gap-2.5">
+                <div className="flex items-center gap-2">
+                  <SummaryIcon icon={Clock} />
+                  <div className="flex-1">
+                    <p className="text-[13px] font-bold text-[#111827] leading-tight">Timesheet</p>
+                    <p className="text-[10px] text-[#666]">Aug 7, 2026</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-1">
+                  <div>
+                    <p className="text-[9px] font-semibold text-[#888]">LOGIN</p>
+                    <p className="text-[12px] font-bold text-[#16a34a] whitespace-nowrap">09:02 AM</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-semibold text-[#888]">LOGOUT</p>
+                    <p className="text-[12px] font-bold text-[#dc2626] whitespace-nowrap">06:10 PM</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-semibold text-[#888]">TOTAL</p>
+                    <p className="text-[12px] font-bold text-[#2563eb]">9.50h</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    onClick={() => setApplyLeaveOpen(true)}
-                    className="text-[#2563EB] underline underline-offset-2 hover:text-[#1D4ED8]"
+                    onClick={() => setTimesheetModal("edit")}
+                    className="h-[26px] border-[1.5px] border-[#8b0f1e] text-[#8b0f1e] hover:bg-[#fbecee] bg-white px-2.5 rounded-[7px] text-[11px] font-bold"
                   >
-                    Leave Balance
+                    Regularize
                   </button>
-                  <span className="text-[#3B82F6]">1 day available</span>
+                  <button
+                    type="button"
+                    onClick={() => setTimesheetModal("view")}
+                    className="h-[26px] bg-[#8b0f1e] hover:bg-[#6e0b17] text-white px-2.5 rounded-[7px] text-[11px] font-bold"
+                  >
+                    Details
+                  </button>
                 </div>
-                <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-1">
-                  {leaves.map((leave) => (
-                    <div
-                      key={leave.id}
-                      className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6 hover:border-black/15 transition-all"
+              </div>
+
+              <div className="bg-white border border-[#ececf0] rounded-xl p-3.5 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <SummaryIcon icon={Receipt} />
+                  <p className="text-[13px] font-bold text-[#111827] flex-1">My Expenses</p>
+                  <button
+                    type="button"
+                    onClick={() => setAddExpenseOpen(true)}
+                    className="size-6 rounded-full bg-[#8b0f1e] hover:bg-[#6e0b17] text-white grid place-items-center shrink-0"
+                    aria-label="Add expense"
+                  >
+                    <Plus size={13} />
+                  </button>
+                </div>
+                {expenses.slice(0, 2).map((item) => (
+                  <div key={item.id} className="flex items-center gap-1.5 bg-[#f8f8fa] border border-[#ececf0] rounded-lg px-2 py-1.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-semibold text-[#111827] truncate">{item.purpose}</p>
+                      <p className="text-[10px] text-[#555] truncate">{item.destination.split(",")[0]} · {item.startDate}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setViewExpense(item)}
+                      className="size-[22px] rounded-[5px] bg-[#fdf3d7] text-[#d4a017] grid place-items-center shrink-0"
+                      aria-label="View expense"
                     >
-                      <div>
-                        <p className="text-xs font-extrabold text-[#111827]">{leave.type}</p>
-                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">{leave.date}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setSendMessageOpen(true)}
-                          className="text-[#F59E0B] hover:text-[#D97706] p-1 rounded transition-colors"
-                          aria-label="Send message"
-                        >
-                          <MessageSquare size={16} />
-                        </button>
-                        <span
-                          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
-                            leave.status === "Approved"
-                              ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
-                              : "bg-[#FFEDD5] text-[#C2410C] border-[#EA580C]/20"
-                          }`}
-                        >
-                          {leave.status}
-                        </span>
-                      </div>
+                      <Eye size={11} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setViewExpense(item); toast.info("Edit mode enabled"); }}
+                      className="size-[22px] rounded-[5px] bg-[#e6efff] text-[#2563eb] grid place-items-center shrink-0"
+                      aria-label="Edit expense"
+                    >
+                      <Edit size={11} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-white border border-[#ececf0] rounded-xl p-3.5 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <SummaryIcon icon={FileText} />
+                  <p className="text-[13px] font-bold text-[#111827] flex-1">Salary Slips</p>
+                  <span className="text-[#999]" aria-hidden="true">
+                    <ChevronRight size={14} />
+                  </span>
+                </div>
+                {SALARY_SLIPS.map((slip) => (
+                  <div key={slip.id} className="flex items-center justify-between gap-2 bg-[#f8f8fa] border border-[#ececf0] rounded-lg px-2.5 py-2">
+                    <p className="text-[11px] font-semibold text-[#111827]">{slip.label}</p>
+                    <button
+                      type="button"
+                      onClick={() => toast.info(`Downloading ${slip.label} payslip...`)}
+                      className="text-[#8b0f1e] grid place-items-center"
+                      aria-label={`Download ${slip.label}`}
+                    >
+                      <Download size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="md:col-span-2 lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <SummaryJumpCard
+                  icon={Trophy}
+                  title="Awards & Contest"
+                  meta="Rank 2"
+                  metaClass="text-[#555] bg-transparent px-0"
+                />
+                <SummaryJumpCard
+                  icon={TrendingUp}
+                  title="Promotions & Transfers"
+                />
+                <SummaryJumpCard
+                  icon={AlertTriangle}
+                  title="Complaints & Warning"
+                  meta="1 warning"
+                  metaClass="bg-[#fde7ea] text-[#d0213a]"
+                  tone="pink"
+                />
+                <SummaryJumpCard
+                  icon={LogOut}
+                  title="Exit & Separation"
+                  meta="Initiate resignation"
+                  metaClass="bg-white text-[#8b0f1e] border border-[#e3e3e8]"
+                />
+              </div>
+
+              <div className="md:col-span-2 lg:col-span-4 bg-white border border-[#ececf0] rounded-xl px-4 py-4 text-left">
+                <div className="flex items-center gap-2.5 mb-1.5">
+                  <span className="size-8 rounded-full bg-[#8b0f1e] text-white grid place-items-center shrink-0">
+                    <Target size={14} />
+                  </span>
+                  <p className="text-[15px] font-bold text-[#111827] flex-1">Goals & Review</p>
+                  <p className="text-[11px] text-[#666]">KPI Scorecard · {selectedMonth}</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10">
+                  {KPI_SCORECARD.flat().map((item) => (
+                    <div key={item.label} className="flex items-center justify-between gap-3 py-2.5 border-b border-[#ececf0] text-[12px]">
+                      <span className="text-[#444]">{item.label}</span>
+                      <b className={`text-[13px] ${item.label === "Negative reviews" ? "text-[#dc2626]" : "text-[#111827]"}`}>{item.value}</b>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-          </>
+
+            <div className="w-full xl:w-[340px] xl:shrink-0 flex flex-col gap-3.5 min-w-0">
+              <RecentAnnouncementsCard />
+
+              <div className="bg-white border border-[#ececf0] rounded-xl p-3.5">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <span className="size-7 rounded-full bg-[#8b0f1e] text-white grid place-items-center shrink-0">
+                    <Send size={13} />
+                  </span>
+                  <p className="text-[13px] font-bold text-[#111827]">Pending Requests & Applications</p>
+                </div>
+                <div className="space-y-2">
+                  {MY_REQUESTS.filter((req) => req.status === "Pending").slice(0, 1).map((req) => (
+                    <div key={req.id} className="flex items-center gap-2.5 bg-[#f8f8fa] border border-[#ececf0] rounded-lg px-2.5 py-2">
+                      <Clock size={13} className="text-[#8b0f1e] shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-semibold text-[#111827] truncate">{req.title}</p>
+                        <p className="text-[10px] text-[#555]">Submitted July 30 · 6:30 PM</p>
+                      </div>
+                      <span className="text-[10px] font-semibold text-[#c2410c] bg-[#fff4ea] border border-[#fbd5b5] px-2 py-0.5 rounded-md shrink-0">Pending</span>
+                    </div>
+                  ))}
+                  {leaves.filter((leave) => leave.status === "Pending").slice(0, 2).map((leave) => (
+                    <div key={leave.id} className="flex items-center gap-2.5 bg-[#f8f8fa] border border-[#ececf0] rounded-lg px-2.5 py-2">
+                      <Calendar size={13} className="text-[#8b0f1e] shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-semibold text-[#111827] truncate">{leave.type}</p>
+                        <p className="text-[10px] text-[#555]">{leave.date}</p>
+                      </div>
+                      <span className="text-[10px] font-semibold text-[#c2410c] bg-[#fff4ea] border border-[#fbd5b5] px-2 py-0.5 rounded-md shrink-0">Pending</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#ececf0] rounded-xl p-3.5 text-left">
+                <div className="flex items-center gap-2.5">
+                  <span className="size-7 rounded-full bg-[#8b0f1e] text-white grid place-items-center shrink-0">
+                    <GraduationCap size={14} />
+                  </span>
+                  <p className="text-[13px] font-bold text-[#111827] flex-1">Trainings</p>
+                  <ChevronRight size={14} className="text-[#999]" />
+                </div>
+                <div className="mt-2 flex items-center gap-2.5 bg-[#f8f8fa] border border-[#ececf0] rounded-lg px-2.5 py-2">
+                  <span className="text-[11px] font-semibold text-[#111827] flex-1">Mandatory POSH training</span>
+                  <span className="bg-[#fde7ea] text-[#d0213a] text-[9px] font-medium px-1.5 py-0.5 rounded">High</span>
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#ececf0] rounded-[10px] px-3 py-2.5 flex items-center gap-2.5 text-left">
+                <Laptop size={15} className="text-[#8b0f1e] shrink-0" />
+                <span className="text-[12px] font-bold text-[#111827] flex-1">Assets</span>
+                <ChevronRight size={14} className="text-[#999]" />
+              </div>
+            </div>
+          </div>
         )}
 
         {/* 2. ATTENDANCE & TIMESHEET TAB */}
