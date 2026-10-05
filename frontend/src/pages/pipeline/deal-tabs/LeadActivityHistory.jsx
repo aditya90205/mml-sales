@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRightLeft,
+  ChevronRight,
   CreditCard,
   FileText,
   Filter,
   Handshake,
   Image,
+  Paperclip,
   Pencil,
   Phone,
   Star,
@@ -15,7 +17,9 @@ import {
   Video,
 } from "lucide-react";
 import {
+  clientSummaryFromLead,
   ensureLeadHistory,
+  isVideoActivity,
   subscribeLeadActivity,
 } from "../../../utils/leadActivityStore.js";
 
@@ -85,6 +89,55 @@ function groupByDate(events) {
   return groups;
 }
 
+function InsightBlock({ label, children, className = "" }) {
+  return (
+    <div className={`rounded-xl border px-3 py-2 ${className}`}>
+      <p className="text-[10px] font-semibold uppercase tracking-wide">{label}</p>
+      <div className="mt-1 text-[12.5px] text-[#1F2937] leading-relaxed">{children}</div>
+    </div>
+  );
+}
+
+function VideoCallRecord({ event, lead }) {
+  const clientSummary = event.clientSummary || clientSummaryFromLead(lead);
+  const transcript = event.transcript || "";
+  const notes = event.notes || "";
+  const summary = event.meetingSummary || "";
+
+  return (
+    <div className="mt-2 flex flex-col gap-2">
+      {clientSummary ? (
+        <InsightBlock label="Client summary" className="border-[#DBEAFE] bg-[#F8FBFF] text-[#2563EB]">
+          {clientSummary}
+        </InsightBlock>
+      ) : null}
+      {transcript || notes ? (
+        <InsightBlock label="Transcript / notes" className="border-[#EDE9FE] bg-[#FBF9FF] text-[#7C3AED]">
+          {transcript ? <p className="whitespace-pre-line">{transcript}</p> : null}
+          {notes ? <p className={`${transcript ? "mt-1.5" : ""} whitespace-pre-line`}>{notes}</p> : null}
+        </InsightBlock>
+      ) : null}
+      {summary || event.attachment ? (
+        <div className="rounded-xl border border-black/8 bg-[#FAFAFB] p-3 flex gap-3">
+          <div className="w-[118px] shrink-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9CA3AF]">Attachment</p>
+            <p className="mt-1.5 inline-flex items-start gap-1.5 text-[12px] font-semibold text-[#374151] break-all">
+              <Paperclip size={13} className="shrink-0 mt-0.5 text-[#6B7280]" />
+              <span>{event.attachment || "Video recording"}</span>
+            </p>
+          </div>
+          <div className="min-w-0 flex-1 border-l border-black/8 pl-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9CA3AF]">Meeting summary</p>
+            <p className="mt-1.5 text-[12.5px] text-[#111] leading-relaxed">
+              {summary || "Summary of this video will show here once the recording is reviewed."}
+            </p>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function ActivityIcon({ type }) {
   const meta = TYPE_META[type] || TYPE_META.note;
   const Icon = meta.icon;
@@ -102,6 +155,7 @@ export default function LeadActivityHistory({ lead, currentStage = "P0" }) {
   const [tick, setTick] = useState(0);
   const [filter, setFilter] = useState("all");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [openVideoId, setOpenVideoId] = useState(null);
   const filterRef = useRef(null);
 
   useEffect(() => subscribeLeadActivity(() => setTick((n) => n + 1)), []);
@@ -203,14 +257,35 @@ export default function LeadActivityHistory({ lead, currentStage = "P0" }) {
                           <span className="absolute top-8 bottom-[-8px] w-px bg-[#E5E7EB]" />
                         )}
                       </div>
-                      <div className="min-w-0 pt-1">
-                        <p className="text-[13.5px] font-semibold text-[#111] leading-snug">
-                          {event.title}
-                        </p>
-                        {event.detail ? (
-                          <p className="text-[12.5px] text-[#4B5563] mt-0.5 leading-relaxed">
-                            {event.detail}
-                          </p>
+                      <div className="min-w-0 flex-1 pt-1">
+                        <div className="flex items-start gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[13.5px] font-semibold text-[#111] leading-snug">
+                              {event.title}
+                            </p>
+                            {event.detail ? (
+                              <p className="text-[12.5px] text-[#4B5563] mt-0.5 leading-relaxed">
+                                {event.detail}
+                              </p>
+                            ) : null}
+                          </div>
+                          {isVideoActivity(event) ? (
+                            <button
+                              type="button"
+                              aria-expanded={openVideoId === event.id}
+                              aria-label={openVideoId === event.id ? "Hide video call details" : "Open video call details"}
+                              onClick={() => setOpenVideoId((current) => (current === event.id ? null : event.id))}
+                              className="shrink-0 size-7 rounded-lg border border-black/10 text-[#6B7280] grid place-items-center hover:bg-[#FAFAFB] hover:text-[#111] transition-colors"
+                            >
+                              <ChevronRight
+                                size={15}
+                                className={`transition-transform ${openVideoId === event.id ? "rotate-90" : ""}`}
+                              />
+                            </button>
+                          ) : null}
+                        </div>
+                        {isVideoActivity(event) && openVideoId === event.id ? (
+                          <VideoCallRecord event={event} lead={lead} />
                         ) : null}
                         <p className="text-[12px] text-[#6B7280] mt-1">
                           by {event.actor} {formatDateLabel(event.at)}

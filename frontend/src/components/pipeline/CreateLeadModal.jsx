@@ -30,19 +30,14 @@ import {
   CREATE_LEAD_COMPARE_FIELDS,
   EMAIL_RE,
   FIELD_STATUS,
-  FIELD_STATUS_META,
   LEAD_INCOME_BANDS,
   LEAD_OCCUPATIONS,
   LEAD_RELATIONS,
   classifyField,
-  coerceCreateLeadValue,
   contactToLeadFields,
-  displayFieldValue,
   firstValidationMessage,
-  formToLeadFields,
   isValidEmail,
   isValidMobile,
-  normalizeField,
   validateCreateLeadFields,
 } from "../../utils/leadFields.js";
 
@@ -139,9 +134,9 @@ function emptyForm() {
   };
 }
 
-function LookingForToggle({ value, onChange }) {
+function LookingForToggle({ value, onChange, conflict = false }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className={`flex items-center gap-2 ${conflict ? "w-fit rounded-full p-1 bg-[#FEF2F2] ring-2 ring-[#E8395B]" : ""}`}>
       {[
         { id: "yes", label: "Groom" },
         { id: "no", label: "Bride" },
@@ -211,94 +206,9 @@ function Field({ label, required, extra, note, children }) {
   );
 }
 
-function statusLabel(status) {
-  if (status === FIELD_STATUS.mismatch) return "Will change";
-  if (status === FIELD_STATUS.match) return "Same";
-  if (status === FIELD_STATUS.neu) return "New";
-  if (status === FIELD_STATUS.keep) return "Existing";
-  return FIELD_STATUS_META[status]?.label || "";
-}
-
-function FieldCompareNote({ info, onKeep, onUseImported }) {
-  if (!info) return null;
-  const showActions = info.canKeep || info.canUseImported;
-  if (info.status === FIELD_STATUS.match && !showActions) return null;
-  if (info.status === FIELD_STATUS.empty && !showActions) return null;
-  if (info.status === FIELD_STATUS.missing && !showActions) return null;
+function ComparedField({ label, required, children }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      {info.status === FIELD_STATUS.mismatch ? (
-        <p className="text-[11.5px] text-[#92400E] leading-snug">
-          Existing <span className="font-semibold">{info.from}</span>
-          <span className="text-[#D97706]"> → </span>
-          biodata <span className="font-semibold">{info.to}</span>
-        </p>
-      ) : null}
-      {info.status === FIELD_STATUS.neu ? (
-        <p className="text-[11.5px] text-[#1D4ED8] leading-snug">
-          Not on the existing record. Will be added from biodata.
-        </p>
-      ) : null}
-      {info.status === FIELD_STATUS.keep ? (
-        <p className="text-[11.5px] text-[#15803D] leading-snug">
-          Not in biodata · keeping existing <span className="font-semibold">{info.from}</span>
-        </p>
-      ) : null}
-      {info.status === FIELD_STATUS.match && showActions ? (
-        <p className="text-[11.5px] text-[#15803D] leading-snug">
-          Keeping existing. Biodata had {displayFieldValue(info.key, info.imported)}.
-        </p>
-      ) : null}
-      {showActions ? (
-        <div className="flex flex-wrap gap-1.5">
-          {info.canKeep ? (
-            <button
-              type="button"
-              onClick={onKeep}
-              className="h-7 px-2.5 rounded-lg bg-white border border-black/12 text-[11.5px] font-semibold text-[#374151] hover:bg-[#FAFAFB]"
-            >
-              Keep existing
-            </button>
-          ) : null}
-          {info.canUseImported ? (
-            <button
-              type="button"
-              onClick={onUseImported}
-              className="h-7 px-2.5 rounded-lg bg-[#FFFBEB] border border-[#FCD34D] text-[11.5px] font-semibold text-[#92400E] hover:bg-[#FEF3C7]"
-            >
-              Use biodata
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function ComparedField({ fieldKey, label, required, compare, onKeep, onUseImported, children }) {
-  const info = compare[fieldKey];
-  const showBadge =
-    info &&
-    (info.status === FIELD_STATUS.mismatch ||
-      info.status === FIELD_STATUS.neu ||
-      info.status === FIELD_STATUS.keep ||
-      info.status === FIELD_STATUS.match);
-  const meta = showBadge ? FIELD_STATUS_META[info.status] : null;
-  return (
-    <Field
-      label={label}
-      required={required}
-      extra={
-        meta ? (
-          <span
-            className={`inline-flex items-center h-5 px-1.5 rounded-md border text-[10px] font-semibold shrink-0 ${meta.className}`}
-          >
-            {statusLabel(info.status)}
-          </span>
-        ) : null
-      }
-      note={<FieldCompareNote info={info} onKeep={() => onKeep(fieldKey)} onUseImported={() => onUseImported(fieldKey)} />}
-    >
+    <Field label={label} required={required}>
       {children}
     </Field>
   );
@@ -541,7 +451,6 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
   const [existingSnap, setExistingSnap] = useState(() =>
     initial?.existingValues && Object.keys(initial.existingValues).length ? initial.existingValues : null
   );
-  const [importedSnap, setImportedSnap] = useState(() => initial?.importedFields || {});
   const fromBiodata = Boolean(bio.fileName || bio.intake || initial?.fileName || initial?.intake);
   const isUpdate = Boolean(
     initial?.existingLeadId ||
@@ -617,7 +526,6 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
             source: "Biodata Upload",
           })
         );
-        setImportedSnap(filled);
         setBio({
           fileName: data.fileName || file.name || "",
           alsoRead: data.alsoRead || [],
@@ -704,10 +612,6 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
     const fields = contactToLeadFields(row);
     setLinkedLead(row);
     setExistingSnap(fields);
-    setImportedSnap((prev) => {
-      const hasImported = CREATE_LEAD_COMPARE_FIELDS.some((f) => String(prev?.[f.key] || "").trim());
-      return hasImported ? prev : formToLeadFields(form);
-    });
     setForm((prev) => ({
       ...prev,
       firstName: prev.firstName || fields.firstName,
@@ -734,42 +638,18 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
     if (!hasExistingRecord || !existingSnap) return {};
     const out = {};
     for (const field of CREATE_LEAD_COMPARE_FIELDS) {
-      const current = form[field.key];
-      const existing = existingSnap[field.key];
-      const imported = importedSnap[field.key];
-      const currentNorm = normalizeField(field.key, current);
-      const existingNorm = normalizeField(field.key, existing);
-      const importedNorm = normalizeField(field.key, imported);
-      const status =
-        !existingNorm && !importedNorm
-          ? FIELD_STATUS.empty
-          : classifyField(field.key, current, existing);
       out[field.key] = {
-        key: field.key,
-        status,
-        from: displayFieldValue(field.key, existing),
-        to: displayFieldValue(field.key, current),
-        imported,
-        canKeep: Boolean(existingNorm) && currentNorm !== existingNorm,
-        canUseImported: Boolean(importedNorm) && currentNorm !== importedNorm,
+        status: classifyField(field.key, form[field.key], existingSnap[field.key]),
       };
     }
     return out;
-  }, [form, existingSnap, importedSnap, hasExistingRecord]);
+  }, [form, existingSnap, hasExistingRecord]);
 
-  const applyFieldSource = (key, source) => {
-    const raw = source === "existing" ? existingSnap?.[key] : importedSnap?.[key];
-    set(key)(coerceCreateLeadValue(key, raw));
-  };
-
-  const keepField = (key) => applyFieldSource(key, "existing");
-  const useBiodataField = (key) => applyFieldSource(key, "imported");
-  const mismatchClass = (key) => {
-    const status = fieldCompare[key]?.status;
-    if (status === FIELD_STATUS.mismatch) return "ring-2 ring-[#FCD34D] bg-[#FFFBEB]";
-    if (status === FIELD_STATUS.neu) return "ring-2 ring-[#93C5FD] bg-[#EFF6FF]";
-    return "";
-  };
+  const conflictClass = (key) =>
+    fieldCompare[key]?.status === FIELD_STATUS.mismatch
+      ? "!border-2 !border-[#E8395B] !bg-[#FEF2F2]"
+      : "";
+  const isConflict = (key) => fieldCompare[key]?.status === FIELD_STATUS.mismatch;
 
   const validate = () => firstValidationMessage(validateCreateLeadFields(form));
 
@@ -924,11 +804,12 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
                 fieldKey="lookingFor"
                 label="Looking for a bride or groom"
                 required
-                compare={fieldCompare}
-                onKeep={keepField}
-                onUseImported={useBiodataField}
               >
-                <LookingForToggle value={form.lookingFor} onChange={set("lookingFor")} />
+                <LookingForToggle
+                  value={form.lookingFor}
+                  onChange={set("lookingFor")}
+                  conflict={isConflict("lookingFor")}
+                />
               </ComparedField>
               <Field label="NRI" required>
                 <YesNoToggle
@@ -949,11 +830,13 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
               fieldKey="relation"
               label="Enquiry Made by"
               required
-              compare={fieldCompare}
-              onKeep={keepField}
-              onUseImported={useBiodataField}
             >
-              <NativeSelect value={form.relation} onChange={set("relation")} options={RELATIONS} />
+              <NativeSelect
+                value={form.relation}
+                onChange={set("relation")}
+                options={RELATIONS}
+                className={conflictClass("relation")}
+              />
             </ComparedField>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
@@ -961,45 +844,36 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
                 fieldKey="firstName"
                 label="First Name"
                 required
-                compare={fieldCompare}
-                onKeep={keepField}
-                onUseImported={useBiodataField}
               >
                 <input
                   value={form.firstName}
                   onChange={(e) => set("firstName")(e.target.value)}
                   placeholder="Kabir"
-                  className={`${INPUT} ${mismatchClass("firstName")}`}
+                  className={`${INPUT} ${conflictClass("firstName")}`}
                 />
               </ComparedField>
               <ComparedField
                 fieldKey="lastName"
                 label="Last Name"
                 required
-                compare={fieldCompare}
-                onKeep={keepField}
-                onUseImported={useBiodataField}
               >
                 <input
                   value={form.lastName}
                   onChange={(e) => set("lastName")(e.target.value)}
                   placeholder="Vaidya"
-                  className={`${INPUT} ${mismatchClass("lastName")}`}
+                  className={`${INPUT} ${conflictClass("lastName")}`}
                 />
               </ComparedField>
               <ComparedField
                 fieldKey="dob"
                 label="Date of Birth"
-                compare={fieldCompare}
-                onKeep={keepField}
-                onUseImported={useBiodataField}
               >
                 <div className="relative">
                   <input
                     type="date"
                     value={form.dob}
                     onChange={(e) => set("dob")(e.target.value)}
-                    className={`${INPUT} pr-10 relative ${mismatchClass("dob")} [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                    className={`${INPUT} pr-10 relative ${conflictClass("dob")} [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
                   />
                   <Calendar size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none" />
                 </div>
@@ -1019,17 +893,10 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
                 fieldKey="mobile"
                 label="Mobile Number"
                 required={!isValidEmail(form.email)}
-                compare={fieldCompare}
-                onKeep={keepField}
-                onUseImported={useBiodataField}
               >
                 <div
                   className={`flex h-10 rounded-xl border overflow-hidden focus-within:border-[#7A0A17]/45 ${
-                    fieldCompare.mobile?.status === FIELD_STATUS.mismatch
-                      ? "border-[#FCD34D] bg-[#FFFBEB]"
-                      : fieldCompare.mobile?.status === FIELD_STATUS.neu
-                        ? "border-[#93C5FD] bg-[#EFF6FF]"
-                        : "border-black/12"
+                    isConflict("mobile") ? "!border-2 !border-[#E8395B] !bg-[#FEF2F2]" : "border-black/12"
                   }`}
                 >
                   <span className="min-w-[3.25rem] px-2.5 grid place-items-center text-[13px] font-medium text-[#6B7280] bg-[#F7F7F8] border-r border-black/10 shrink-0">
@@ -1048,9 +915,6 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
                 fieldKey="email"
                 label="Email"
                 required={!isValidMobile(form.mobile)}
-                compare={fieldCompare}
-                onKeep={keepField}
-                onUseImported={useBiodataField}
               >
                 <div className="relative">
                   <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
@@ -1059,7 +923,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
                     value={form.email}
                     onChange={(e) => set("email")(e.target.value)}
                     placeholder="kabir.vaidya@enterprise-group.in"
-                    className={`${INPUT} pl-10 ${mismatchClass("email")}`}
+                    className={`${INPUT} pl-10 ${conflictClass("email")}`}
                   />
                 </div>
               </ComparedField>
@@ -1078,9 +942,6 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
                 fieldKey="city"
                 label="City"
                 required
-                compare={fieldCompare}
-                onKeep={keepField}
-                onUseImported={useBiodataField}
               >
                 <div className="relative" ref={cityRef}>
                   <Building2 size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
@@ -1092,7 +953,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
                     }}
                     onFocus={() => setCityOpen(true)}
                     placeholder="Mumbai, Maharashtra"
-                    className={`${INPUT} pl-10 pr-10 ${mismatchClass("city")}`}
+                    className={`${INPUT} pl-10 pr-10 ${conflictClass("city")}`}
                     autoComplete="off"
                   />
                   <Search size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
@@ -1118,9 +979,6 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
               <ComparedField
                 fieldKey="area"
                 label="Area / Locality"
-                compare={fieldCompare}
-                onKeep={keepField}
-                onUseImported={useBiodataField}
               >
                 <div className="relative">
                   <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
@@ -1128,7 +986,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
                     value={form.area}
                     onChange={(e) => set("area")(e.target.value)}
                     placeholder="Bandra West"
-                    className={`${INPUT} pl-10 ${mismatchClass("area")}`}
+                    className={`${INPUT} pl-10 ${conflictClass("area")}`}
                   />
                 </div>
               </ComparedField>
@@ -1190,14 +1048,6 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
                 </button>
               </div>
             </Field>
-
-            {fromBiodata ? (
-              <div className="rounded-xl bg-[#F5F2FB] border border-black/8 px-3.5 py-3">
-                <p className="text-[13px] font-medium text-[#374151]">
-                  Remaining details updated in P2 profile.
-                </p>
-              </div>
-            ) : null}
 
             {error ? <p className="text-[12.5px] font-semibold text-[#E8395B] -mt-2">{error}</p> : null}
           </div>

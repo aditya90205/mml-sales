@@ -69,24 +69,24 @@ const PIPELINE_STAGES = [
 
 /** Kanban splits P0 into New + Contacted; both stay on the same Overview page. */
 const BOARD_COLUMNS = [
-  { key: "P0-new",       id: "P0", label: "New",                    color: "#E8395B", p0Status: "new" },
-  { key: "P0-contacted", id: "P0", label: "Contacted",              color: "#6394D7", p0Status: "contacted" },
-  { key: "P1",           id: "P1", label: "Qualified",               color: "#F59E0B" },
-  { key: "P2",           id: "P2", label: "Profile Creation",        color: "#8B5CF6" },
-  { key: "P3",           id: "P3", label: "Video Call/Visit",        color: "#7C3AED" },
-  { key: "P4",           id: "P4", label: "Negotiation",             color: "#6366F1" },
-  { key: "P5",           id: "P5", label: "Closed",                  color: "#16A34A" },
-  { key: "P6",           id: "P6", label: "Handover to services", color: "#EAB308" },
+  { key: "P0-new",       id: "P0", label: "New",                    color: "#E8395B", p0Status: "new", kpiDays: 3 },
+  { key: "P0-contacted", id: "P0", label: "Contacted",              color: "#6394D7", p0Status: "contacted", kpiDays: 3 },
+  { key: "P1",           id: "P1", label: "Qualified",               color: "#F59E0B", kpiDays: 5 },
+  { key: "P2",           id: "P2", label: "Profile Creation",        color: "#8B5CF6", kpiDays: 7 },
+  { key: "P3",           id: "P3", label: "Video Call/Visit",        color: "#7C3AED", kpiDays: 10 },
+  { key: "P4",           id: "P4", label: "Negotiation",             color: "#6366F1", kpiDays: 7 },
+  { key: "P5",           id: "P5", label: "Closed",                  color: "#16A34A", kpiDays: 5 },
+  { key: "P6",           id: "P6", label: "Handover to services", color: "#EAB308", kpiDays: 3 },
 ];
 
 const DEAL_TAB_FOR_STAGE = {
   P0: "overview",
   P1: "overview",
-  P2: "intake",
-  P3: "visits",
-  P4: "package",
-  P5: "payments",
-  P6: "p6",
+  P2: "overview",
+  P3: "overview",
+  P4: "overview",
+  P5: "overview",
+  P6: "overview",
 };
 
 const STAGE_ADVANCE = {
@@ -241,9 +241,11 @@ function ActionAlertBanner() {
 /* ───────────────────────── Pipeline stage strip ───────────────────────── */
 
 function StageCardHeader({ stage, count, as: Comp = "div", className = "", style, ...props }) {
+  const days = Number(stage.kpiDays);
+  const dayLabel = Number.isFinite(days) ? `${days} ${days === 1 ? "day" : "days"}` : "";
   return (
     <Comp
-      className={`flex items-center justify-between gap-2 bg-white border rounded-xl border-l-4 px-3.5 py-2.5 min-w-0 text-left ${className}`}
+      className={`flex items-start justify-between gap-2 bg-white border rounded-xl border-l-4 px-3.5 py-2.5 min-w-0 text-left ${className}`}
       style={{
         borderLeftColor: stage.color,
         borderTopColor: "rgba(0,0,0,0.08)",
@@ -262,6 +264,12 @@ function StageCardHeader({ stage, count, as: Comp = "div", className = "", style
               : stage.id}
         </p>
         <p className="text-[13px] font-bold text-[#111] leading-tight truncate">{stage.label}</p>
+        {dayLabel ? (
+          <p className="mt-1 flex items-center gap-1 text-[10.5px] font-medium leading-none text-[#6B7280]">
+            <Clock size={11} strokeWidth={2.2} className="shrink-0" />
+            {dayLabel}
+          </p>
+        ) : null}
       </div>
       <span
         className="shrink-0 text-[12px] font-bold rounded-lg px-2 py-1"
@@ -848,9 +856,7 @@ export default function PipelineBoard() {
   const [subView, setSubView]           = useState(initialHit ? "deal-detail" : null); // null | "deal-detail"
   const [activeLead, setActiveLead]     = useState(initialHit?.lead ?? null);
   const [dealTargetStage, setDealTargetStage] = useState(initialHit?.stageId ?? "P5");
-  const [dealInitialTab, setDealInitialTab] = useState(
-    openTab || (initialHit?.stageId === "P2" ? "intake" : "overview")
-  );
+  const [dealInitialTab, setDealInitialTab] = useState(openTab || "overview");
 
   const setLeadsData = (updater) => {
     const prev = readLeads();
@@ -896,7 +902,7 @@ export default function PipelineBoard() {
     if (!hit) return;
     setActiveLead(hit.lead);
     setDealTargetStage(hit.stageId);
-    setDealInitialTab(openTab || (hit.stageId === "P2" ? "intake" : "overview"));
+    setDealInitialTab(openTab || "overview");
     setSubView("deal-detail");
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -1153,18 +1159,9 @@ export default function PipelineBoard() {
   const handleMoveToP6 = (lead) => applyStageMove(lead, "P5", { stay: true });
 
   const handleOpenDeal = (lead, stageKey) => {
-    const STAGE_TO_TAB = {
-      P0: "overview",
-      P1: "overview",
-      P2: "intake",
-      P3: "visits",
-      P4: "package",
-      P5: "payments",
-      P6: "p6",
-    };
     setActiveLead(lead);
     setDealTargetStage(stageKey);
-    setDealInitialTab(STAGE_TO_TAB[stageKey] || "overview");
+    setDealInitialTab("overview");
     setSubView("deal-detail");
   };
 

@@ -471,21 +471,10 @@ function pipelineRowValue(row, key) {
 
 const PIPELINE_BOARD_HREF = "/pipeline?view=table";
 
-/** Same stage → tab mapping PipelineBoard uses when a row is clicked. */
-const DEAL_TAB_BY_STAGE = {
-  P0: "overview",
-  P1: "overview",
-  P2: "intake",
-  P3: "visits",
-  P4: "package",
-  P5: "payments",
-  P6: "p6",
-};
-
-function leadDetailPath(lead, stageId) {
+function leadDetailPath(lead) {
   const params = new URLSearchParams();
   params.set("openLead", lead.id);
-  params.set("tab", DEAL_TAB_BY_STAGE[stageId] || "overview");
+  params.set("tab", "overview");
   return `/pipeline?${params.toString()}`;
 }
 
@@ -1608,7 +1597,7 @@ function MyLeadsCard({
               return (
                 <tr
                   key={lead.id}
-                  onClick={() => navigate(leadDetailPath(lead, stage.id))}
+                  onClick={() => navigate(leadDetailPath(lead))}
                   className="border-b border-black/6 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
                 >
                   <td className="px-3 py-2.5 align-middle">

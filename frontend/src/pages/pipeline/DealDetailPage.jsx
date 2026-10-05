@@ -41,8 +41,9 @@ import P6ChecklistTab from "./deal-tabs/P6ChecklistTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
 import { EMPTY, atLeast, historyUntil, maybeDash, stageGateFor } from "./deal-tabs/stageContent.jsx";
 import { isSampleLead, p0StatusOf, updateLead, SAMPLE_CLIENT_PROFILE } from "../../utils/pipelineStore.js";
-import { ensureLeadHistory, recordLeadActivity } from "../../utils/leadActivityStore.js";
+import { buildDemoHistory, ensureLeadHistory, recordLeadActivity } from "../../utils/leadActivityStore.js";
 import { formatLookingForLabel, splitName } from "../../utils/leadFields.js";
+import { addExtraEvent, taskFormToCalendarItem } from "../../utils/calendarStore.js";
 
 const BASE_TABS = [
   { key: "overview",  label: "Overview (P0-P1)" },
@@ -109,26 +110,72 @@ const NEXT_STAGE = {
   P5: "P6",
 };
 
-/** Which deal-detail tab belongs to each pipeline stage. */
+/** Opening or moving a lead from any stage stays on the overview dashboard. */
 const STAGE_TO_TAB = {
   P0: "overview",
   P1: "overview",
-  P2: "intake",
-  P3: "visits",
-  P4: "package",
-  P5: "payments",
-  P6: "p6",
+  P2: "overview",
+  P3: "overview",
+  P4: "overview",
+  P5: "overview",
+  P6: "overview",
 };
 
-const LOCK_NOTES = {
-  P0: "Fill the P0 details to mark this lead as Contacted. New and Contacted share this Overview page.",
-  Contacted: "Qualify the lead and capture intent before this deal can move to P1.",
-  P1: "Complete data collection requirements before this deal can move to P2.",
-  P2: "Log a visit or video call before this deal can move to P3.",
-  P3: "Finish negotiation checks before this deal can move to P4.",
-  P4: "The approved discount has not been applied to a quote yet, and one KYC document is outstanding.",
-  P5: "Complete payment and the handover checklist before this deal can move to P6.",
-};
+function formatStageDays(duration) {
+  const text = String(duration || "").trim();
+  if (!text || text === "-" || text === "—" || text === "–") return "";
+  const hours = text.match(/(\d+)\s*h/i);
+  if (hours) {
+    const count = Number(hours[1]);
+    if (!count) return "same day";
+    return count === 1 ? "1 hr" : `${count} hrs`;
+  }
+  const match = text.match(/(\d+)\s*d/i);
+  if (!match) return text;
+  const days = Number(match[1]);
+  if (!days) return "same day";
+  return `${days} day${days === 1 ? "" : "s"}`;
+}
+
+function formatElapsed(ms) {
+  if (!Number.isFinite(ms) || ms <= 0) return "same day";
+  const hours = Math.max(1, Math.round(ms / 36e5));
+  if (hours < 24) return hours === 1 ? "1 hr" : `${hours} hrs`;
+  const days = Math.max(1, Math.round(hours / 24));
+  return `${days} day${days === 1 ? "" : "s"}`;
+}
+
+const STAGE_STARTS = [
+  { id: "P0-new", history: "P0 New", test: (title) => /created/i.test(title) },
+  { id: "P0-contacted", history: "P0 Contacted", test: (title) => /moved to P0 Contacted/i.test(title) },
+  { id: "P1", history: "P1 Qualified", test: (title) => /→ P1/i.test(title) },
+  { id: "P2", history: "P2 Data Collection", test: (title) => /→ P2/i.test(title) },
+  { id: "P3", history: "P3 Visit / Video", test: (title) => /→ P3/i.test(title) },
+  { id: "P4", history: "P4 Negotiation", test: (title) => /→ P4/i.test(title) },
+  { id: "P5", history: "P5 Payment", test: (title) => /→ P5/i.test(title) },
+  { id: "P6", history: "P6 Handover", test: (title) => /→ P6/i.test(title) },
+];
+
+function durationsFromHistory(rows = [], events = []) {
+  const ordered = [...events].sort((a, b) => new Date(a.at) - new Date(b.at));
+  const starts = STAGE_STARTS.map((stage) => {
+    const hit = ordered.find((event) => stage.test(event.title || ""));
+    const at = hit ? new Date(hit.at).getTime() : NaN;
+    return Number.isNaN(at) ? null : at;
+  });
+  const labels = {};
+  STAGE_STARTS.forEach((stage, index) => {
+    const row = rows.find((item) => item.stage === stage.history);
+    const started = starts[index];
+    const ended = starts[index + 1];
+    if (started && ended && ended > started) {
+      labels[stage.id] = formatElapsed(ended - started);
+      return;
+    }
+    labels[stage.id] = formatStageDays(row?.duration);
+  });
+  return labels;
+}
 
 function initials(name = "") {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
@@ -253,7 +300,6 @@ export default function DealDetailPage({
     (p0Contacted || p0StatusOf(lead) === "contacted" || Boolean(savedDetails));
   const p0StageLabel = isContactedP0 || atLeast(currentStage, "P1") ? "P0 Contacted" : "P0 New";
   const nextStage = currentStage === "P0" && !isContactedP0 ? "Contacted" : NEXT_STAGE[currentStage];
-  const lockNoteKey = currentStage === "P0" && isContactedP0 ? "Contacted" : currentStage;
   const tabs = BASE_TABS.map((tab) =>
     tab.key === "payments" || tab.key === "p6" ? { ...tab, locked: !lateTabsUnlocked } : tab
   );
@@ -283,7 +329,7 @@ export default function DealDetailPage({
 
   const skipStageTabSync = useRef(Boolean(initialTab && initialTab !== STAGE_TO_TAB[currentStage]));
 
-  // Keep the open tab aligned with the current pipeline stage (Move to P2 → Profile Create, etc.).
+  // Any stage opens the overview dashboard.
   useEffect(() => {
     if (skipStageTabSync.current) {
       skipStageTabSync.current = false;
@@ -440,9 +486,27 @@ export default function DealDetailPage({
         : currentStage === "P0"
           ? `${Math.max(filled, 1)} of ${totalMandatory} mandatory fields filled. Move to P1 when ready.`
           : `${Math.max(filled, 1)} of ${totalMandatory} mandatory fields filled.`;
+    merged.profileCompletion =
+      lead?.completion != null && lead.completion !== ""
+        ? Number(lead.completion)
+        : Math.round((filled / totalMandatory) * 100);
+    merged.priority = lead?.priority || "";
+    merged.scoreValue = lead?.score ?? "";
+    merged.maritalStatus = lead?.intakeValues?.maritalStatus || lead?.maritalStatus || "";
 
     return merged;
   }, [lead, currentStage, winLossOverride, isPremium, savedDetails, p0StageLabel, isContactedP0]);
+
+  const stageDurations = useMemo(() => {
+    const events = buildDemoHistory(
+      {
+        ...lead,
+        p0Status: isContactedP0 || atLeast(currentStage, "P1") ? "contacted" : p0StatusOf(lead),
+      },
+      currentStage
+    );
+    return durationsFromHistory(deal.stageHistory, events);
+  }, [deal.stageHistory, lead, currentStage, isContactedP0]);
 
   const openHandoverSuccess = () => {
     setServiceAssigned({
@@ -595,6 +659,10 @@ export default function DealDetailPage({
             currentStage={currentStage}
             onPremiumChange={handlePremiumChange}
             onDetailsSaved={handleDetailsSaved}
+            onCreateTask={() => setFollowUpOpen(true)}
+            onOpenTab={setActiveTab}
+            selectedPackageKey={selectedPackage?.key ?? null}
+            onPackageSelect={handlePackageSelect}
           />
         );
       case "intake":
@@ -649,36 +717,8 @@ export default function DealDetailPage({
       {/* TopBar is provided by Layout */}
 
       <div className="p-5 flex flex-col gap-4 overflow-y-auto scrollbar-thin">
-        {/* Lock note + actions (same button chrome as pipeline board) */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex-1 min-w-0 bg-[#FFFBEB] border border-[#FDE68A] rounded-2xl px-4 py-3">
-            <p className="text-[13px] text-[#111] min-w-0">
-              {nextStage ? (
-                <>
-                  <span className="font-bold">{nextStage} is locked.</span>{" "}
-                  <span className="text-[#6B7280]">
-                    {LOCK_NOTES[lockNoteKey] || "Complete the required steps for this stage before advancing."}
-                  </span>
-                </>
-              ) : serviceAssigned ? (
-                <>
-                  <span className="font-bold">Service manager is assigned.</span>{" "}
-                  <span className="text-[#6B7280]">
-                    {serviceAssigned.manager} · {serviceAssigned.branch}. Deal handed over to services.
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="font-bold">Handover to services.</span>{" "}
-                  <span className="text-[#6B7280]">
-                    P6 checklist is complete. Assign a service manager to finish handover.
-                  </span>
-                </>
-              )}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex flex-col gap-2.5 min-w-0">
+          <div className="flex items-center justify-between gap-2.5">
             <button
               type="button"
               onClick={onBack}
@@ -688,26 +728,45 @@ export default function DealDetailPage({
               <ArrowLeft size={15} />
               Back
             </button>
-            <button
-              type="button"
-              onClick={() => openWinLossModal("lost")}
-              className="inline-flex items-center gap-1.5 h-[38px] px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-            >
-              <Flag size={14} /> Mark lost
-            </button>
-            <button
-              type="button"
-              onClick={() => openWinLossModal("cold")}
-              className="inline-flex items-center gap-1.5 h-[38px] px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-            >
-              Move to Cold &amp; Hold
-              <ChevronDown size={14} className="text-[#9CA3AF]" />
-            </button>
+
+            <div className="flex items-center gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => openWinLossModal("lost")}
+                className="inline-flex items-center gap-1.5 h-[38px] px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+              >
+                <Flag size={14} /> Mark lost
+              </button>
+              <button
+                type="button"
+                onClick={() => openWinLossModal("cold")}
+                className="inline-flex items-center gap-1.5 h-[38px] px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+              >
+                Move to Cold &amp; Hold
+                <ChevronDown size={14} className="text-[#9CA3AF]" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex-1 min-w-0">
+              <StageStepper
+                variant="overview"
+                durations={stageDurations}
+                activeStageId={
+                  currentStage !== "P0"
+                    ? currentStage
+                    : isContactedP0
+                      ? "P0-contacted"
+                      : "P0-new"
+                }
+              />
+            </div>
             {nextStage ? (
               <button
                 type="button"
                 onClick={handleConfirmMove}
-                className="inline-flex items-center gap-1.5 h-[38px] px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors"
+                className="inline-flex items-center gap-1.5 h-[38px] px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors shrink-0"
               >
                 Move to {nextStage} <ArrowRight size={14} />
               </button>
@@ -715,7 +774,7 @@ export default function DealDetailPage({
               <button
                 type="button"
                 onClick={openHandoverSuccess}
-                className="inline-flex items-center gap-1.5 h-[38px] px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors"
+                className="inline-flex items-center gap-1.5 h-[38px] px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors shrink-0"
               >
                 Handover to services
                 <ArrowRight size={14} />
@@ -724,18 +783,8 @@ export default function DealDetailPage({
           </div>
         </div>
 
-        {/* Stage progress */}
-        <StageStepper
-          activeStageId={
-            currentStage !== "P0"
-              ? currentStage
-              : isContactedP0
-                ? "P0-contacted"
-                : "P0-new"
-          }
-        />
-
-        {/* Deal header + tabs */}
+        {/* Deal header + tabs — hidden on the overview dashboard */}
+        {activeTab !== "overview" && (
         <div className="bg-white border border-black/8 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3.5 min-w-0">
@@ -852,6 +901,7 @@ export default function DealDetailPage({
             <DealTabs tabs={tabs} activeKey={activeTab} onChange={setActiveTab} />
           </div>
         </div>
+        )}
 
         {/* Tab content */}
         <div key={`${currentStage}-${activeTab}`}>{renderTab()}</div>
@@ -948,7 +998,14 @@ export default function DealDetailPage({
           title: `Follow up — ${deal.name || lead?.name || "client"}`,
           description: `Follow-up task from pipeline for ${deal.name || lead?.name || "client"}.`,
         }}
-        onSave={() => {}}
+        onSave={(form) => {
+          const item = addExtraEvent(taskFormToCalendarItem(form));
+          recordLeadActivity(lead, currentStage, {
+            type: "task",
+            title: item.title || "Task assigned",
+            stage: currentStage,
+          });
+        }}
       />
     </div>
   );

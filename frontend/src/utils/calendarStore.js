@@ -104,6 +104,51 @@ function displayName(label) {
   return parts.length > 1 ? parts.slice(1).join(" · ").trim() : String(label);
 }
 
+export function taskFormToCalendarItem(form, existingId = null) {
+  const date = parseIsoDate(form.startDate);
+  const startH = parseTimeHour(form.dueTime, 11);
+  const effortHours = { "15 mins": 1, "30 mins": 1, "45 mins": 1, "1 hour": 1, "2 hours": 2 }[form.estimatedEffort] ?? 1;
+  return {
+    id: existingId || `task-${Date.now()}`,
+    date,
+    startH,
+    endH: Math.min(startH + effortHours, 18),
+    title: form.title?.trim() || "New Task",
+    category: "task",
+    meta: {
+      priority: form.priority || "Medium",
+      taskType: form.taskType || "Client visit",
+      branch: form.branch || "",
+      clientRelated: Boolean(form.isClientRelated),
+      client: form.isClientRelated ? form.client || "" : "",
+      assignees: form.assignees?.length ? form.assignees : [],
+      stage: form.stage || "New",
+      dueDate: parseIsoDate(form.dueDate || form.startDate, addDays(date, 1)),
+      dueTime: form.dueTime || "",
+      startTime: form.dueTime || "",
+      estimatedEffort: form.estimatedEffort || "30 mins",
+      repeats: form.repeats || "Does not repeat",
+      stars: form.stars ?? 3,
+      description: form.description || "",
+      specialInstructions: form.specialInstructions || "",
+      reminderChannels: form.reminderChannels || [],
+      messageTemplate: form.messageTemplate || "",
+      messageBody: form.messageBody || "",
+      reminderFrequency: Array.isArray(form.reminderFrequency)
+        ? form.reminderFrequency
+        : form.reminderFrequency
+          ? [form.reminderFrequency]
+          : [],
+      customReminders: Array.isArray(form.customReminders) ? form.customReminders : [],
+      referenceLink: form.referenceLink || "",
+      attachment: form.attachment || "",
+      project: "Sales Pipeline",
+      milestone: "Planning",
+      progress: 20,
+    },
+  };
+}
+
 export function meetingFormToCalendarItem(form, category = "meeting", existingId = null) {
   const date = parseIsoDate(form.startDate);
   const startH = parseTimeHour(form.startTime, 10);

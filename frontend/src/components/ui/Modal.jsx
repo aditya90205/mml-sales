@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 export default function Modal({
@@ -26,7 +27,7 @@ export default function Modal({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div
       className={`fixed inset-0 ${zClass} flex items-center justify-center p-4`}
       aria-modal="true"
@@ -79,6 +80,7 @@ export default function Modal({
         {/* footer */}
         {footer && <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-black/10 shrink-0">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

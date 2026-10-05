@@ -19,7 +19,6 @@ import {
   LEAD_OCCUPATIONS,
   LEAD_RELATIONS,
   classifyField,
-  displayFieldValue,
   firstValidationMessage,
   validateCreateLeadFields,
 } from "../../utils/leadFields.js";
@@ -122,13 +121,6 @@ function weightOptions() {
 
 const HEIGHTS = heightOptions();
 const WEIGHTS = weightOptions();
-
-const CHIP_META = {
-  [FIELD_STATUS.neu]: { label: "New", className: "bg-[#EFF6FF] text-[#1D4ED8] border-[#93C5FD]" },
-  [FIELD_STATUS.match]: { label: "Same", className: "bg-[#F0FDF4] text-[#15803D] border-[#86EFAC]" },
-  [FIELD_STATUS.keep]: { label: "Existing", className: "bg-[#FFF7ED] text-[#C2410C] border-[#FDBA74]" },
-  [FIELD_STATUS.mismatch]: { label: "Existing", className: "bg-[#FFF7ED] text-[#C2410C] border-[#FDBA74]" },
-};
 
 const SECTIONS = [
   {
@@ -256,78 +248,6 @@ const CONTROL_BASE = "w-full h-10 rounded-lg text-[13px] text-[#111] outline-non
 const CONTROL_OK = "bg-white border border-black/12 focus:border-[#7A0A17]/45";
 const CONTROL_CONFLICT = "bg-[#FEF2F2] border-2 border-[#E8395B] focus:border-[#E8395B]";
 
-function fieldChip(key, values, imported, existing, hasExisting) {
-  const current = values[key];
-  if (!isFilled(current)) return null;
-  if (!hasExisting) return FIELD_STATUS.neu;
-  const sameExisting = sameValue(key, current, existing[key]);
-  const sameImported = sameValue(key, current, imported[key]);
-  if (sameExisting && sameImported) return FIELD_STATUS.match;
-  if (sameExisting) return FIELD_STATUS.keep;
-  if (sameImported) return FIELD_STATUS.neu;
-  if (isFilled(existing[key])) return FIELD_STATUS.mismatch;
-  return FIELD_STATUS.neu;
-}
-
-function formatHintValue(key, value) {
-  if (!isFilled(value)) return "";
-  if (key === "lookingFor" || key === "mobile") return displayFieldValue(key, value);
-  if (key === "dob") {
-    const iso = toDateInput(value);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
-      const [year, month, day] = iso.split("-");
-      return `${day}-${month}-${year}`;
-    }
-  }
-  return String(value).trim();
-}
-
-function FieldHint({ fieldKey, current, imported, existing, hasExisting, onKeep, onUseImported }) {
-  if (!hasExisting) return null;
-  const existingLabel = formatHintValue(fieldKey, existing);
-  const importedLabel = formatHintValue(fieldKey, imported);
-  const sameExisting = sameValue(fieldKey, current, existing);
-  const sameImported = sameValue(fieldKey, current, imported);
-  const showExisting = isFilled(existing) && !sameExisting;
-  const showImported = isFilled(imported) && !sameImported && sameExisting;
-  if (!showExisting && !showImported) return null;
-
-  return (
-    <div className="mt-1 flex flex-col gap-0.5 min-w-0">
-      {showExisting ? (
-        <p className="text-[10.5px] text-[#C2410C] leading-snug truncate" title={existingLabel}>
-          Existing: <span className="font-semibold">{existingLabel}</span>
-        </p>
-      ) : null}
-      {showImported ? (
-        <p className="text-[10.5px] text-[#1D4ED8] leading-snug truncate" title={importedLabel}>
-          Biodata: <span className="font-semibold">{importedLabel}</span>
-        </p>
-      ) : null}
-      <div className="flex items-center gap-1.5">
-        {showExisting ? (
-          <button
-            type="button"
-            onClick={onKeep}
-            className="text-[10px] font-semibold text-[#C2410C] hover:underline underline-offset-2"
-          >
-            Keep existing
-          </button>
-        ) : null}
-        {showImported ? (
-          <button
-            type="button"
-            onClick={onUseImported}
-            className="text-[10px] font-semibold text-[#1D4ED8] hover:underline underline-offset-2"
-          >
-            Use biodata
-          </button>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
 function CompactSelect({ value, onChange, options, disabled = false, conflict = false }) {
   const list = withCurrentOption(options, value);
   return (
@@ -352,23 +272,14 @@ function CompactSelect({ value, onChange, options, disabled = false, conflict = 
   );
 }
 
-function FieldShell({ label, required, chip, hint, children }) {
-  const meta = chip ? CHIP_META[chip] : null;
+function FieldShell({ label, required, children }) {
   return (
     <div className="flex flex-col gap-1 min-w-0">
-      <div className="flex items-center justify-between gap-2 min-h-[18px]">
-        <label className="text-[12px] font-medium text-[#374151] truncate">
-          {label}
-          {required ? <span className="text-[#E8395B]"> *</span> : null}
-        </label>
-        {meta ? (
-          <span className={`inline-flex items-center h-[18px] px-1.5 rounded-md border text-[10px] font-semibold shrink-0 ${meta.className}`}>
-            {meta.label}
-          </span>
-        ) : null}
-      </div>
+      <label className="text-[12px] font-medium text-[#374151] truncate min-h-[18px]">
+        {label}
+        {required ? <span className="text-[#E8395B]"> *</span> : null}
+      </label>
       {children}
-      {hint}
     </div>
   );
 }
@@ -458,16 +369,6 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
       return next;
     });
     setError("");
-  };
-
-  const keepExisting = (key) => {
-    if (!isFilled(existing[key])) return;
-    setField(key, existing[key]);
-  };
-
-  const applyImported = (key) => {
-    if (!isFilled(imported[key])) return;
-    setField(key, imported[key]);
   };
 
   const toggleSection = (key) => {
@@ -657,7 +558,6 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
                 {expanded ? (
                   <div className={`p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3.5 ${cols === 3 ? "lg:grid-cols-3" : "lg:grid-cols-5"}`}>
                     {section.fields.map((field) => {
-                      const chip = fieldChip(field.key, values, imported, existing, hasExisting);
                       const conflict = hasFieldConflict(
                         field.key,
                         imported[field.key],
@@ -674,22 +574,7 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
                         : false;
                       return (
                         <div key={field.key} className="min-w-0">
-                          <FieldShell
-                            label={field.label}
-                            required={field.required}
-                            chip={chip}
-                            hint={
-                              <FieldHint
-                                fieldKey={field.key}
-                                current={values[field.key]}
-                                imported={imported[field.key]}
-                                existing={existing[field.key]}
-                                hasExisting={hasExisting}
-                                onKeep={() => keepExisting(field.key)}
-                                onUseImported={() => applyImported(field.key)}
-                              />
-                            }
-                          >
+                          <FieldShell label={field.label} required={field.required}>
                             {renderControl(field, conflict)}
                           </FieldShell>
                           {field.noteKey ? (
@@ -709,15 +594,6 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
                                 className={`w-full px-3 py-2 rounded-lg text-[12.5px] text-[#111] placeholder:text-[#9CA3AF] outline-none resize-none ${
                                   noteConflict ? CONTROL_CONFLICT : `bg-white ${CONTROL_OK}`
                                 }`}
-                              />
-                              <FieldHint
-                                fieldKey={field.noteKey}
-                                current={values[field.noteKey]}
-                                imported={imported[field.noteKey]}
-                                existing={existing[field.noteKey]}
-                                hasExisting={hasExisting}
-                                onKeep={() => keepExisting(field.noteKey)}
-                                onUseImported={() => applyImported(field.noteKey)}
                               />
                             </div>
                           ) : null}

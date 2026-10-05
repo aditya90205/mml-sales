@@ -151,6 +151,15 @@ export function calendarEventToMeetingView(ev) {
     referenceLink: m.referenceLink || "",
     referenceLinkDescription: m.referenceLinkDescription || "",
     attachment: m.attachment || "",
+    video:
+      Boolean(m.video) ||
+      m.meetingType === "video" ||
+      (Array.isArray(m.meetingTypes) && m.meetingTypes.includes("video")) ||
+      /\bvideo\b/i.test(ev.title || ""),
+    clientSummary: m.clientSummary || "",
+    transcript: m.transcript || "",
+    notes: m.notes || "",
+    meetingSummary: m.meetingSummary || m.description || m.formDescription || "",
     emailIds: m.emailIds || "—",
     link: m.meetingLink || m.link || "",
     meetingLink: m.meetingLink || m.link || "",
@@ -283,7 +292,22 @@ function MeetingDetailsBody({ meeting }) {
         <ChipList items={meeting.reminderFrequency} />
       </DetailItem>
 
-      {meeting.attachment ? <DetailItem label="Attachment">{meeting.attachment}</DetailItem> : null}
+      {meeting.video ? (
+        <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)] gap-4 rounded-xl border border-black/8 bg-[#FAFAFB] px-3.5 py-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Attachment</p>
+            <p className="text-[13px] font-medium text-[#111] mt-1.5 break-words">{meeting.attachment || "—"}</p>
+          </div>
+          <div className="min-w-0 sm:border-l sm:border-black/8 sm:pl-4">
+            <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Meeting summary</p>
+            <p className="text-[13px] font-medium text-[#111] mt-1.5 leading-relaxed">
+              {meeting.meetingSummary || meeting.description || "—"}
+            </p>
+          </div>
+        </div>
+      ) : meeting.attachment ? (
+        <DetailItem label="Attachment">{meeting.attachment}</DetailItem>
+      ) : null}
       {meeting.referenceLink ? (
         <DetailItem label="Reference Link" className={meeting.attachment ? "" : "sm:col-span-2"}>
           <LinkValue href={meeting.referenceLink} />

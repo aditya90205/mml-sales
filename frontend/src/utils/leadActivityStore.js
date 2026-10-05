@@ -34,6 +34,25 @@ export function activityRank(stageId = "P0", p0Status) {
   return STAGE_RANK[stageId] ?? 0;
 }
 
+export function isVideoActivity(event = {}) {
+  if (event.type && event.type !== "meeting" && event.type !== "call") return false;
+  if (event.video === true) return true;
+  const modes = Array.isArray(event.meetingTypes) ? event.meetingTypes.join(" ") : "";
+  return /\bvideo\b/i.test(`${event.title || ""} ${event.meetingType || ""} ${modes}`);
+}
+
+export function clientSummaryFromLead(lead = {}) {
+  const name = lead?.name || "Client";
+  const parts = [name];
+  const place = [lead.area || lead.areaOfHouse, lead.city].filter((value) => value && value !== "-");
+  if (place.length) parts.push(`based in ${place.join(", ")}`);
+  if (lead.lookingFor && lead.lookingFor !== "-") parts.push(`looking for ${lead.lookingFor}`);
+  if (lead.packageInterest && lead.packageInterest !== "-") parts.push(`package interest ${lead.packageInterest}`);
+  if (lead.profession && lead.profession !== "-") parts.push(String(lead.profession));
+  if (lead.notes) parts.push(String(lead.notes));
+  return parts.join(" · ");
+}
+
 export function normalizeActivity(event = {}) {
   const at = toDate(event.at || Date.now());
   return {
@@ -44,6 +63,12 @@ export function normalizeActivity(event = {}) {
     actor: event.actor || CURRENT_USER,
     at: at.toISOString(),
     stage: event.stage || "",
+    video: isVideoActivity(event),
+    clientSummary: event.clientSummary || "",
+    transcript: event.transcript || "",
+    notes: event.notes || "",
+    meetingSummary: event.meetingSummary || "",
+    attachment: event.attachment || "",
   };
 }
 
@@ -130,6 +155,14 @@ function catalogForLead(lead = {}) {
       type: "meeting",
       title: "Video call / visit logged",
       detail: "Family meeting completed. Preferences captured.",
+      video: true,
+      attachment: "video-call-recording.mp4",
+      clientSummary: `${name} is warm on the shortlist. The family wants South Delhi matches, evening follow-up slots, and a written Classic vs Premium comparison before they decide.`,
+      transcript:
+        "Family joined the video call and confirmed city, community, and budget filters. They walked through the shortlisted profiles, kept two matches, and asked for the package options in writing. Mother preferred evening slots for the next call.",
+      notes: "Preferences captured. Share the package quote and hold the two preferred matches for the follow-up video.",
+      meetingSummary:
+        "Full video reviewed end to end. The family completed the profile discussion, rejected matches that missed their city filter, and agreed to move from this visit into package negotiation.",
       actor,
       at: "2026-07-01T18:30:00",
       stage: "P3",
