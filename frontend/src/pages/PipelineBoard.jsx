@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   AlarmClock,
@@ -857,6 +857,8 @@ export default function PipelineBoard() {
   const [activeLead, setActiveLead]     = useState(initialHit?.lead ?? null);
   const [dealTargetStage, setDealTargetStage] = useState(initialHit?.stageId ?? "P5");
   const [dealInitialTab, setDealInitialTab] = useState(openTab || "overview");
+  const activeLeadIdRef = useRef(activeLead?.id || null);
+  activeLeadIdRef.current = activeLead?.id || null;
 
   const setLeadsData = (updater) => {
     const prev = readLeads();
@@ -867,10 +869,14 @@ export default function PipelineBoard() {
 
   useEffect(() => subscribePipeline(() => {
     setLeadsDataState(readLeads());
-    setActiveLead((prev) => {
-      if (!prev?.id) return prev;
-      return findStoredLeadById(prev.id)?.lead || prev;
-    });
+    const id = activeLeadIdRef.current;
+    if (!id) return;
+    const hit = findStoredLeadById(id);
+    if (!hit) return;
+    setActiveLead(hit.lead);
+    if (hit.stageId) {
+      setDealTargetStage((stage) => (stage === hit.stageId ? stage : hit.stageId));
+    }
   }), []);
 
   const stageParam = searchParams.get("stage");

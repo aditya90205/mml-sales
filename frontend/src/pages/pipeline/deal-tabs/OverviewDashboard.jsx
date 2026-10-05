@@ -39,6 +39,7 @@ import { toast } from "react-toastify";
 import EmailActivityButton from "../../../components/common/EmailActivityButton.jsx";
 import SendMessageModal from "../../../components/common/SendMessageModal.jsx";
 import BiodataUploadModal from "../../../components/pipeline/BiodataUploadModal";
+import BiodataProfileModal from "../../../components/pipeline/BiodataProfileModal";
 import Modal from "../../../components/ui/Modal";
 import CreateMeetingEventModal from "../../../components/calendar/CreateMeetingEventModal";
 import TaskDetailsModal, { calendarEventToTaskView } from "../../../components/calendar/TaskDetailsModal";
@@ -63,6 +64,20 @@ import {
   subscribeLeadActivity,
 } from "../../../utils/leadActivityStore.js";
 import { formatLookingForLabel } from "../../../utils/leadFields.js";
+import { upsertClientFromBiodata } from "../../../utils/clientsData.js";
+import { findLeadById, moveLeadToStage, updateLead } from "../../../utils/pipelineStore.js";
+import {
+  buildLeadIntakePayload,
+  leadPatchFromIntake,
+  pipelinePatchFromBiodata,
+  setPendingBiodata,
+  takePendingBiodata,
+} from "../../../utils/biodataDraftStore.js";
+import {
+  assignPendingBiodataFile,
+  rememberBiodataFile,
+  rememberPendingBiodataFile,
+} from "../../../utils/biodataFileStore.js";
 
 const TEMPERATURE_TONES = {
   Hot: { color: "#E8395B", bg: "#FDECEE" },
@@ -691,6 +706,12 @@ function CardHead({ icon: Icon, title, action, onAction, accent = false, brandAc
   );
 }
 
+function filled(value) {
+  const text = String(value ?? "").trim();
+  if (!text || text === "-" || text === "—" || text === "–") return "";
+  return text;
+}
+
 export default function OverviewDashboard({
   deal,
   currentStage,
@@ -705,6 +726,8 @@ export default function OverviewDashboard({
   const [openPanels, setOpenPanels] = useState([]);
   const [messageOpen, setMessageOpen] = useState(false);
   const [biodataOpen, setBiodataOpen] = useState(false);
+  const [showBiodataProfile, setShowBiodataProfile] = useState(false);
+  const [profileInitial, setProfileInitial] = useState(null);
   const [createMeetingOpen, setCreateMeetingOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
@@ -728,6 +751,89 @@ export default function OverviewDashboard({
   const [selectedTaskEvent, setSelectedTaskEvent] = useState(null);
   const [selectedOtherEvent, setSelectedOtherEvent] = useState(null);
   const navigate = useNavigate();
+
+  const closeBiodataProfile = () => {
+    setShowBiodataProfile(false);
+    setProfileInitial(null);
+  };
+
+  const saveBiodataProfile = (lead) => {
+    const existingId = deal?.id || lead?.existingLeadId;
+    if (!existingId) {
+      toast.error("Could not save this profile.");
+      return;
+    }
+
+    const nextAction =
+      lead.meeting === "Meeting Agreed"
+        ? "Schedule meeting"
+        : lead.meeting === "Call Agreed"
+          ? "Follow-up call"
+          : lead.meeting === "Callback Later"
+            ? "Callback"
+            : "Initial Contact";
+
+    const pendingBiodata = takePendingBiodata() || {
+      fields: profileInitial,
+      alsoRead: lead.alsoRead || profileInitial?.alsoRead,
+      intake: lead.intake || profileInitial?.intake,
+      fileName: lead.fileName || profileInitial?.fileName,
+    };
+    const bio = buildLeadIntakePayload(lead, pendingBiodata);
+    const intakePatch = leadPatchFromIntake(bio.intakeValues || lead.intakeValues || {});
+    const biodataPatch = pipelinePatchFromBiodata(lead, bio, {
+      lastDiscussion: "Just now",
+      nextAction,
+      temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
+    });
+    const current = findLeadById(existingId);
+    const fromStage = current?.stageId || currentStage || "P0";
+    const advanceToP2 = fromStage === "P0" || fromStage === "P1";
+    const savePatch = {
+      lastDiscussion: "Just now",
+      nextAction,
+      temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
+      ...biodataPatch,
+      overviewDetails: {
+        ...(current?.lead?.overviewDetails || {}),
+        ...intakePatch,
+        firstName: lead.firstName || current?.lead?.firstName || "",
+        lastName: lead.lastName || current?.lead?.lastName || "",
+      },
+    };
+
+    if (advanceToP2) moveLeadToStage(existingId, "P2", savePatch);
+    else updateLead(existingId, savePatch);
+
+    upsertClientFromBiodata({
+      clientId: lead.clientId || profileInitial?.clientId,
+      name: lead.name,
+      mobile: lead.mobile,
+      email: lead.email,
+      fields: {
+        firstName: lead.firstName,
+        lastName: lead.lastName,
+        city: lead.city,
+        area: lead.area,
+        dob: lead.dob,
+        lookingFor: lead.lookingFor,
+        relation: lead.relation,
+        fileName: lead.fileName || bio.fileName,
+      },
+      alsoRead: bio?.alsoRead || [],
+      owner: "Rohit Kumar",
+      linkedLeadId: existingId,
+    });
+    if (pendingBiodata?.file) void rememberBiodataFile(existingId, pendingBiodata.file);
+    else assignPendingBiodataFile(existingId);
+
+    closeBiodataProfile();
+    toast.success(
+      advanceToP2
+        ? `Profile saved. "${lead.name}" is in Profile Create (P2).`
+        : `Profile "${lead.name}" updated.`
+    );
+  };
 
   useEffect(() => subscribeLeadActivity(() => setTick((n) => n + 1)), []);
   useEffect(
@@ -1476,12 +1582,56 @@ export default function OverviewDashboard({
         open={biodataOpen}
         onClose={() => setBiodataOpen(false)}
         compareWith={deal}
-        onFillForm={() => {
+        onFillForm={(payload) => {
+          const f = payload?.fields || {};
           setBiodataOpen(false);
-          toast.success("Biodata received. Continue in Profile Create.");
-          onOpenTab?.("intake");
+          setPendingBiodata(payload);
+          if (payload?.file) void rememberPendingBiodataFile(payload.file);
+
+          const stored = deal?.id ? findLeadById(deal.id)?.lead : null;
+          setProfileInitial({
+            firstName: f.firstName || filled(deal.firstName),
+            lastName: f.lastName || filled(deal.lastName),
+            dob: f.dob || filled(deal.dob),
+            mobile: f.mobile || payload?.senderMobile || filled(deal.mobile) || filled(deal.phone),
+            email: f.email || payload?.senderEmail || filled(deal.email),
+            city: f.city || filled(deal.city),
+            area: f.area || filled(deal.area) || filled(deal.areaOfHouse),
+            lookingFor: f.lookingFor || filled(deal.lookingFor) || "Groom",
+            relation: payload?.importedFields?.relation || f.relation || filled(deal.enquiryBy) || "Self",
+            contactWith: "Existing Client",
+            source:
+              filled(deal.leadSource) && filled(deal.leadSource) !== "Website Inquiry"
+                ? filled(deal.leadSource)
+                : "Biodata Upload",
+            fileName: payload?.fileName || "",
+            existingLeadId: deal?.id,
+            mode: deal?.id ? "update" : "create",
+            alsoRead: payload?.alsoRead || [],
+            intake: payload?.intake || {},
+            biodataName: payload?.biodataName || "",
+            existingValues: {
+              ...(payload?.existingValues || {}),
+              ...(stored?.intakeValues || {}),
+            },
+            importedFields: payload?.importedFields || f,
+            matchName: filled(deal.name),
+            fieldMeta: payload?.fieldMeta || {},
+            prefillAt: Date.now(),
+          });
+          setShowBiodataProfile(true);
+          toast.info("Check the fields, then save to update this profile.");
         }}
       />
+      {showBiodataProfile ? (
+        <BiodataProfileModal
+          key={profileInitial?.prefillAt || profileInitial?.fileName || "biodata-profile"}
+          open
+          initial={profileInitial}
+          onClose={closeBiodataProfile}
+          onSave={saveBiodataProfile}
+        />
+      ) : null}
     </div>
   );
 }
