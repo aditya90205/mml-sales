@@ -285,6 +285,120 @@ function hoursLeftLabel(ev) {
 
 const NEXT_ACTION_PREVIEW = 5;
 
+function splitCalendarItems(events, category) {
+  const now = Date.now();
+  const due = [];
+  const completed = [];
+  for (const ev of events || []) {
+    if (ev?.category !== category || String(ev.id || "").startsWith("nm-")) continue;
+    const start = eventStart(ev);
+    const status = String(ev.meta?.status || ev.meta?.stage || ev.meta?.activationStatus || "").toLowerCase();
+    const done = status === "completed" || status === "done" || (start ? start.getTime() < now : false);
+    (done ? completed : due).push(ev);
+  }
+  const time = (ev) => eventStart(ev)?.getTime() || 0;
+  due.sort((a, b) => time(a) - time(b));
+  completed.sort((a, b) => time(b) - time(a));
+  return { due, completed };
+}
+
+function formatItemStamp(ev) {
+  const start = eventStart(ev);
+  if (!start) return "No time set";
+  const date = start.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  return `${date} · ${formatClockTime(start)}`;
+}
+
+function StatusItemList({ items, empty, onOpen, icon: Icon, iconBg, iconColor, fallback }) {
+  if (!items.length) {
+    return <p className="text-[13px] text-[#9CA3AF] py-6 text-center">{empty}</p>;
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      {items.map((ev) => (
+        <button
+          key={ev.id}
+          type="button"
+          onClick={() => onOpen(ev)}
+          className="flex items-center gap-3 w-full rounded-xl border border-[#EEF1F4] px-3 py-2.5 text-left hover:border-[#E2E6EB] hover:bg-[#FAFAFB] transition-colors"
+        >
+          <span className="size-9 rounded-xl grid place-items-center shrink-0" style={{ backgroundColor: iconBg, color: iconColor }}>
+            <Icon size={16} strokeWidth={2.1} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[13px] font-semibold text-[#1F2937] truncate">{ev.title || fallback}</span>
+            <span className="block text-[12px] text-[#9CA3AF] mt-0.5 truncate">
+              {formatItemStamp(ev)}
+              {ev.meta?.client ? ` · ${ev.meta.client}` : ev.meta?.assignees?.[0] ? ` · ${ev.meta.assignees[0]}` : ""}
+            </span>
+          </span>
+          <ChevronRight size={16} className="text-[#D1D5DB] shrink-0" />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function DueCompletedModal({
+  open,
+  onClose,
+  title,
+  icon,
+  iconBg,
+  iconColor,
+  due,
+  completed,
+  tab,
+  onTab,
+  onOpen,
+  itemIcon,
+  itemIconBg,
+  itemIconColor,
+  fallback,
+}) {
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={title}
+      subtitle={`${due.length} due, ${completed.length} completed`}
+      icon={icon}
+      iconBg={iconBg}
+      iconColor={iconColor}
+      width="max-w-lg"
+      zClass="z-[70]"
+      contain
+    >
+      <div className="flex items-center gap-2 mb-4">
+        {[
+          { id: "due", label: `Due (${due.length})` },
+          { id: "completed", label: `Completed (${completed.length})` },
+        ].map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onTab(item.id)}
+            className={`h-8 px-3 rounded-full text-[12.5px] font-semibold transition-colors ${
+              tab === item.id ? "bg-[#7A0A17] text-white" : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <StatusItemList
+        items={tab === "completed" ? completed : due}
+        empty={tab === "completed" ? `No completed ${fallback.toLowerCase()}s.` : `No due ${fallback.toLowerCase()}s.`}
+        onOpen={onOpen}
+        icon={itemIcon}
+        iconBg={itemIconBg}
+        iconColor={itemIconColor}
+        fallback={fallback}
+      />
+    </Modal>
+  );
+}
+
 function calendarActionItems(events) {
   return (events || [])
     .filter((ev) => (ev?.category === "task" || ev?.category === "meeting") && !String(ev.id || "").startsWith("nm-"))
@@ -318,30 +432,42 @@ function calendarActionItems(events) {
     });
 }
 
-function ActionTile({ icon: Icon, iconBg, iconColor, title, titleColor = "#1F2937", subtitle, meta, onClick }) {
+function ActionTile({ icon: Icon, iconBg, iconColor, title, titleColor = "#1F2937", subtitle, meta, detail, onClick }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center gap-3 w-full bg-white border border-[#EEF1F4] rounded-2xl px-3.5 py-3.5 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:border-[#E2E6EB] transition-colors min-w-0"
-    >
-      <span
+    <div className="flex items-center gap-3 w-full bg-white border border-[#EEF1F4] rounded-2xl px-3.5 py-3.5 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:border-[#E2E6EB] transition-colors min-w-0">
+      <button
+        type="button"
+        onClick={onClick}
         className="size-10 rounded-[12px] grid place-items-center shrink-0"
         style={{ backgroundColor: iconBg, color: iconColor }}
+        aria-label={title}
       >
         <Icon size={18} strokeWidth={2.2} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[14px] font-bold leading-tight truncate" style={{ color: titleColor }}>
+      </button>
+      <div className="min-w-0 flex-1">
+        <button
+          type="button"
+          onClick={onClick}
+          className="block w-full text-left text-[14px] font-bold leading-tight truncate"
+          style={{ color: titleColor }}
+        >
           {title}
-        </span>
-        <span className="mt-1 flex items-center gap-2 min-w-0 text-[12px] text-[#9CA3AF] leading-none">
-          {subtitle ? <span className="truncate">{subtitle}</span> : null}
-          {meta ? <span className="truncate shrink-0">{meta}</span> : null}
-        </span>
-      </span>
-      <ChevronRight size={16} className="text-[#C5CAD3] shrink-0" />
-    </button>
+        </button>
+        {detail || (
+          <button
+            type="button"
+            onClick={onClick}
+            className="mt-1 flex items-center gap-2 min-w-0 w-full text-left text-[12px] text-[#9CA3AF] leading-none"
+          >
+            {subtitle ? <span className="truncate">{subtitle}</span> : null}
+            {meta ? <span className="truncate shrink-0">{meta}</span> : null}
+          </button>
+        )}
+      </div>
+      <button type="button" onClick={onClick} className="shrink-0 p-0.5" aria-label={title}>
+        <ChevronRight size={16} className="text-[#C5CAD3]" />
+      </button>
+    </div>
   );
 }
 
@@ -729,6 +855,10 @@ export default function OverviewDashboard({
   const [showBiodataProfile, setShowBiodataProfile] = useState(false);
   const [profileInitial, setProfileInitial] = useState(null);
   const [createMeetingOpen, setCreateMeetingOpen] = useState(false);
+  const [meetingsOpen, setMeetingsOpen] = useState(false);
+  const [meetingsTab, setMeetingsTab] = useState("due");
+  const [tasksOpen, setTasksOpen] = useState(false);
+  const [tasksTab, setTasksTab] = useState("due");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
   const [packageOpen, setPackageOpen] = useState(false);
@@ -872,6 +1002,22 @@ export default function OverviewDashboard({
   const packageAmount = rupeeNumber(deal.dealValue);
   const packagePrice = packageAmount ? formatInr(packageAmount) : "₹ 1,50,000";
   const calendarActions = useMemo(() => calendarActionItems(calendarEvents), [calendarEvents]);
+  const { due: meetingDue, completed: meetingDone } = useMemo(
+    () => splitCalendarItems(calendarEvents, "meeting"),
+    [calendarEvents]
+  );
+  const { due: taskDue, completed: taskDone } = useMemo(
+    () => splitCalendarItems(calendarEvents, "task"),
+    [calendarEvents]
+  );
+  const openMeetings = (tab) => {
+    setMeetingsTab(tab === "completed" ? "completed" : "due");
+    setMeetingsOpen(true);
+  };
+  const openTasks = (tab) => {
+    setTasksTab(tab === "completed" ? "completed" : "due");
+    setTasksOpen(true);
+  };
   const nextItems = calendarActions.slice(0, NEXT_ACTION_PREVIEW);
 
   const openNextAction = (item) => {
@@ -908,6 +1054,7 @@ export default function OverviewDashboard({
     setSelectedAddons((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
 
   const rmFlags = [...(deal.rmFlags || []), ...addedFlags];
+  const rmFlagCount = rmFlags.filter((flag) => !isEmptyFlag(flag)).length;
   const resetFlagForm = () => {
     setFlagLabel("");
     setFlagToneValue("amber");
@@ -964,6 +1111,11 @@ export default function OverviewDashboard({
           >
             <Icon size={16} className="text-[#7A0A17] shrink-0" strokeWidth={2.2} />
             <span className="text-[13px] font-bold text-[#7A0A17] truncate">{item.label}</span>
+            {item.id === "flags" ? (
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#F6E4E8] text-[11px] font-bold text-[#7A0A17] tabular-nums leading-none shrink-0">
+                {rmFlagCount}
+              </span>
+            ) : null}
           </button>
           {item.onAdd ? (
             <button
@@ -1168,8 +1320,34 @@ export default function OverviewDashboard({
               iconColor="#FFFFFF"
               title="Create Meeting"
               titleColor="#7A0A17"
-              subtitle="See Meetings"
-              meta="3 due, 5 completed"
+              detail={
+                <span className="mt-1 flex items-center gap-2 min-w-0 text-[12px] text-[#9CA3AF] leading-none">
+                  <button
+                    type="button"
+                    onClick={() => openMeetings("due")}
+                    className="truncate hover:text-[#7A0A17] hover:underline"
+                  >
+                    See Meetings
+                  </button>
+                  <span className="truncate shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => openMeetings("due")}
+                      className="hover:text-[#7A0A17] hover:underline"
+                    >
+                      {meetingDue.length} due
+                    </button>
+                    {", "}
+                    <button
+                      type="button"
+                      onClick={() => openMeetings("completed")}
+                      className="hover:text-[#7A0A17] hover:underline"
+                    >
+                      {meetingDone.length} completed
+                    </button>
+                  </span>
+                </span>
+              }
               onClick={() => setCreateMeetingOpen(true)}
             />
             <ActionTile
@@ -1187,7 +1365,25 @@ export default function OverviewDashboard({
               iconColor="#A78BFA"
               title="Create Task"
               titleColor="#1F2937"
-              subtitle="3 due, 5 completed"
+              detail={
+                <span className="mt-1 flex items-center gap-0 min-w-0 text-[12px] text-[#9CA3AF] leading-none">
+                  <button
+                    type="button"
+                    onClick={() => openTasks("due")}
+                    className="hover:text-[#7A0A17] hover:underline"
+                  >
+                    {taskDue.length} due
+                  </button>
+                  {", "}
+                  <button
+                    type="button"
+                    onClick={() => openTasks("completed")}
+                    className="hover:text-[#7A0A17] hover:underline"
+                  >
+                    {taskDone.length} completed
+                  </button>
+                </span>
+              }
               onClick={onCreateTask}
             />
           </div>
@@ -1343,6 +1539,41 @@ export default function OverviewDashboard({
         </div>
         {renderPanel(panels[2])}
       </div>
+
+      <DueCompletedModal
+        open={meetingsOpen}
+        onClose={() => setMeetingsOpen(false)}
+        title="Meetings"
+        icon={<Calendar size={18} />}
+        iconBg="#7A0A17"
+        iconColor="#FFFFFF"
+        due={meetingDue}
+        completed={meetingDone}
+        tab={meetingsTab}
+        onTab={setMeetingsTab}
+        onOpen={openCalendarItem}
+        itemIcon={Calendar}
+        itemIconBg="#F6E4E8"
+        itemIconColor="#7A0A17"
+        fallback="Meeting"
+      />
+      <DueCompletedModal
+        open={tasksOpen}
+        onClose={() => setTasksOpen(false)}
+        title="Tasks"
+        icon={<UserRound size={18} />}
+        iconBg="#F3E8FF"
+        iconColor="#A78BFA"
+        due={taskDue}
+        completed={taskDone}
+        tab={tasksTab}
+        onTab={setTasksTab}
+        onOpen={openCalendarItem}
+        itemIcon={UserRound}
+        itemIconBg="#F3E8FF"
+        itemIconColor="#7C3AED"
+        fallback="Task"
+      />
 
       <CreateMeetingEventModal
         open={createMeetingOpen}

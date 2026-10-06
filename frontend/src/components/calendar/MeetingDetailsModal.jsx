@@ -330,6 +330,7 @@ export default function MeetingDetailsModal({
   onClose,
   onEdit,
   entityLabel = "Meeting",
+  zClass = "z-[80]",
 }) {
   if (!open || !meeting) return null;
 
@@ -346,6 +347,7 @@ export default function MeetingDetailsModal({
       iconBg={isEvent ? "#FDECF3" : "#F6FFF5"}
       iconColor={isEvent ? "#A02868" : "#41703D"}
       width="max-w-2xl"
+      zClass={zClass}
       footer={
         <>
           <button

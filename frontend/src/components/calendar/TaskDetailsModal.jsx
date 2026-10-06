@@ -124,6 +124,7 @@ export default function TaskDetailsModal({
   onClose,
   onEdit,
   onUpdateTask,
+  zClass = "z-[80]",
 }) {
   const [tab, setTab] = useState("details");
   const [commentText, setCommentText] = useState("");
@@ -170,7 +171,7 @@ export default function TaskDetailsModal({
   ];
 
   return (
-    <Modal open={open} onClose={onClose} hideHeader width="max-w-[640px]">
+    <Modal open={open} onClose={onClose} hideHeader width="max-w-[640px]" zClass={zClass}>
       <div className="flex items-center justify-between pb-4 mb-2 border-b border-black/10 -mt-1">
         <div className="flex items-center gap-3 min-w-0">
           <div className="size-9 rounded-lg bg-[#eafdec] grid place-items-center shrink-0">

@@ -83,6 +83,7 @@ const EVENT_TYPES = ["Community Event", "Training", "Celebration", "Holiday", "W
 const MEETING_DESCRIPTIONS = [
   "General / internal discussions",
   "Family meeting",
+  "Couples meeting",
   "Home visit",
   "Office visit",
   "Video call / profile review",

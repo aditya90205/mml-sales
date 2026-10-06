@@ -17,6 +17,7 @@ export default function Modal({
   hideClose = false,
   headerActions,
   zClass = "z-50",
+  contain = false,
 }) {
   useEffect(() => {
     if (!open) return;
@@ -29,7 +30,7 @@ export default function Modal({
 
   return createPortal(
     <div
-      className={`fixed inset-0 ${zClass} flex items-center justify-center p-4`}
+      className={`fixed inset-0 ${zClass} flex items-center justify-center p-4 ${contain ? "pt-16" : ""}`}
       aria-modal="true"
       role="dialog"
     >
@@ -41,7 +42,7 @@ export default function Modal({
       />
       {/* panel */}
       <div
-        className={`relative z-10 w-full ${width} bg-white rounded-2xl shadow-xl flex flex-col max-h-[90vh]`}
+        className={`relative z-10 w-full ${width} bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden ${contain ? "max-h-[calc(100vh-6.5rem)]" : "max-h-[90vh]"}`}
       >
         {/* header */}
         {!hideHeader && (
@@ -76,7 +77,7 @@ export default function Modal({
           </div>
         )}
         {/* body */}
-        <div className="overflow-y-auto flex-1 px-6 py-5 scrollbar-thin scrollbar-modal">{children}</div>
+        <div className="overflow-y-auto flex-1 min-h-0 px-6 py-5 scrollbar-thin scrollbar-modal">{children}</div>
         {/* footer */}
         {footer && <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-black/10 shrink-0">{footer}</div>}
       </div>
