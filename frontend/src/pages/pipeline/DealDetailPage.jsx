@@ -660,7 +660,6 @@ export default function DealDetailPage({
             onPremiumChange={handlePremiumChange}
             onDetailsSaved={handleDetailsSaved}
             onCreateTask={() => setFollowUpOpen(true)}
-            onOpenTab={setActiveTab}
             selectedPackageKey={selectedPackage?.key ?? null}
             onPackageSelect={handlePackageSelect}
           />

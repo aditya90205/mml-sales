@@ -929,7 +929,6 @@ export default function OverviewTab({
   onPremiumChange,
   onDetailsSaved,
   onCreateTask,
-  onOpenTab,
   selectedPackageKey = null,
   onPackageSelect,
 }) {
@@ -955,7 +954,6 @@ export default function OverviewTab({
         onView={() => actionsRef.current.openView?.()}
         onEdit={() => actionsRef.current.openEdit?.()}
         onCreateTask={onCreateTask}
-        onOpenTab={onOpenTab}
         selectedPackageKey={selectedPackageKey}
         onPackageSelect={onPackageSelect}
       />

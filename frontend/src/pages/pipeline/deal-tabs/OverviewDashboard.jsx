@@ -40,6 +40,7 @@ import EmailActivityButton from "../../../components/common/EmailActivityButton.
 import SendMessageModal from "../../../components/common/SendMessageModal.jsx";
 import BiodataUploadModal from "../../../components/pipeline/BiodataUploadModal";
 import BiodataProfileModal from "../../../components/pipeline/BiodataProfileModal";
+import LeadScoreModal from "../../../components/pipeline/LeadScoreModal";
 import Modal from "../../../components/ui/Modal";
 import CreateMeetingEventModal from "../../../components/calendar/CreateMeetingEventModal";
 import TaskDetailsModal, { calendarEventToTaskView } from "../../../components/calendar/TaskDetailsModal";
@@ -544,7 +545,7 @@ function HistoryPreview({ events }) {
   );
 }
 
-function AddonsPreview({ selected, onToggle, packageAmount, onPay }) {
+function AddonsPreview({ selected, onToggle, packageAmount }) {
   const extra = ADDON_CATALOG.filter((item) => selected.includes(item.id)).reduce((sum, item) => sum + item.price, 0);
   return (
     <div className="pb-1">
@@ -586,7 +587,6 @@ function AddonsPreview({ selected, onToggle, packageAmount, onPay }) {
         </p>
         <button
           type="button"
-          onClick={onPay}
           className="h-8 px-4 rounded-lg bg-[#8E1B32] text-white text-[12.5px] font-semibold hover:bg-[#7A1230] transition-colors"
         >
           Pay
@@ -845,7 +845,6 @@ export default function OverviewDashboard({
   onView,
   onEdit,
   onCreateTask,
-  onOpenTab,
   selectedPackageKey = null,
   onPackageSelect,
 }) {
@@ -869,6 +868,7 @@ export default function OverviewDashboard({
   const [flagsOpen, setFlagsOpen] = useState(false);
   const [flagAddOpen, setFlagAddOpen] = useState(false);
   const [viewingFlag, setViewingFlag] = useState(null);
+  const [scoreOpen, setScoreOpen] = useState(false);
   const [addedFlags, setAddedFlags] = useState([]);
   const [flagLabel, setFlagLabel] = useState("");
   const [flagToneValue, setFlagToneValue] = useState("amber");
@@ -1176,10 +1176,16 @@ export default function OverviewDashboard({
             <span className="inline-flex items-center h-7 px-3.5 rounded-full bg-[#7A2433] text-white text-[12px] font-semibold whitespace-nowrap">
               Profile {completion}% Complete
             </span>
-            <span className="inline-flex items-center gap-1.5 text-[16px] font-bold text-[#1F2937] shrink-0 leading-none">
+            <button
+              type="button"
+              onClick={() => setScoreOpen(true)}
+              className="inline-flex items-center gap-1.5 text-[16px] font-bold text-[#1F2937] shrink-0 leading-none hover:bg-[#F3F4F6] px-1.5 py-0.5 rounded transition-colors"
+              title="Click to view Lead Score Details"
+              aria-label="View lead score details"
+            >
               {scoreText || "-"}
               <Flag size={14} className="text-[#22C55E]" fill="#22C55E" strokeWidth={1.6} aria-hidden />
-            </span>
+            </button>
           </div>
           <div className="mt-2.5 h-[5px] rounded-full bg-[#F6E4E8] overflow-hidden">
             <div className="h-full rounded-full bg-[#7A2433]" style={{ width: `${completion}%` }} />
@@ -1474,7 +1480,6 @@ export default function OverviewDashboard({
                         selected={selectedAddons}
                         onToggle={toggleAddon}
                         packageAmount={rupeeNumber(packagePrice)}
-                        onPay={() => onOpenTab?.("payments")}
                       />
                     </div>
                   </div>
@@ -1625,10 +1630,6 @@ export default function OverviewDashboard({
           selected={selectedAddons}
           onToggle={toggleAddon}
           packageAmount={rupeeNumber(packagePrice)}
-          onPay={() => {
-            setAddonsOpen(false);
-            onOpenTab?.("payments");
-          }}
         />
       </Modal>
 
@@ -1854,6 +1855,13 @@ export default function OverviewDashboard({
           toast.info("Check the fields, then save to update this profile.");
         }}
       />
+      {scoreOpen ? (
+        <LeadScoreModal
+          lead={{ score: deal.scoreValue, name: deal.name }}
+          onClose={() => setScoreOpen(false)}
+        />
+      ) : null}
+
       {showBiodataProfile ? (
         <BiodataProfileModal
           key={profileInitial?.prefillAt || profileInitial?.fileName || "biodata-profile"}
