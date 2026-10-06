@@ -27,6 +27,8 @@ import { toast } from "react-toastify";
 import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
+import Modal from "../components/ui/Modal.jsx";
+import LeadActivityHistory from "./pipeline/deal-tabs/LeadActivityHistory";
 // TopBar is now provided by Layout
 import CreateLeadModal from "../components/pipeline/CreateLeadModal";
 import DealDetailPage from "./pipeline/DealDetailPage";
@@ -242,7 +244,7 @@ function ActionAlertBanner() {
 
 function StageCardHeader({ stage, count, as: Comp = "div", className = "", style, ...props }) {
   const days = Number(stage.kpiDays);
-  const dayLabel = Number.isFinite(days) ? `${days} ${days === 1 ? "day" : "days"}` : "";
+  const dayLabel = Number.isFinite(days) ? `avg - ${days} ${days === 1 ? "day" : "days"}` : "";
   return (
     <Comp
       className={`flex items-start justify-between gap-2 bg-white border rounded-xl border-l-4 px-3.5 py-2.5 min-w-0 text-left ${className}`}
@@ -429,7 +431,11 @@ function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal
         <div className="min-w-0">
           <span className="inline-flex items-center gap-1.5">
             <p className="text-[13px] font-bold text-[#111] truncate">{lead.name}</p>
-            {lead.starred && <Star size={12} className="text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={0} />}
+            {lead.starred && (
+              <span className="inline-flex shrink-0" title="Premium client" aria-label="Premium client">
+                <Star size={12} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />
+              </span>
+            )}
           </span>
           <p className="text-[10px] text-[#9CA3AF]">{lead.mmlId}</p>
         </div>
@@ -599,6 +605,7 @@ const TABLE_COLS = [
 function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDeal }) {
   const navigate = useNavigate();
   const [messageOpen, setMessageOpen] = useState(false);
+  const [historyLead, setHistoryLead] = useState(null);
   const getValue = useCallback((row, key) => {
     if (key === "stage") return `${row.stage.id} ${row.stage.label}`;
     if (key === "owner") return OWNER.name;
@@ -612,6 +619,17 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
   return (
     <div>
       <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
+      <Modal
+        open={!!historyLead}
+        onClose={() => setHistoryLead(null)}
+        title="Lead History"
+        width="max-w-3xl"
+        zClass="z-[90]"
+      >
+        {historyLead ? (
+          <LeadActivityHistory lead={historyLead.lead} currentStage={historyLead.stageId} />
+        ) : null}
+      </Modal>
       {/* Priority legend */}
       <div className="flex items-center gap-4 mb-3">
         {Object.entries(PRIORITY_FLAG).map(([label, color]) => (
@@ -664,7 +682,11 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                             >
                               {lead.name}
                             </button>
-                            {lead.starred && <Star size={11} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />}
+                            {lead.starred && (
+                              <span className="inline-flex shrink-0" title="Premium client" aria-label="Premium client">
+                                <Star size={11} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />
+                              </span>
+                            )}
                           </div>
                           <p className="text-[10px] text-[#9CA3AF]">{lead.mmlId}</p>
                         </div>
@@ -754,7 +776,7 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                         nextActionAt={lead.nextAction}
                         nextActionNote="Follow-up call scheduled"
                         urgency={`${lead.hrs} Hrs Left`}
-                        onFollowUp={() => toast.info("Follow-up history coming soon.")}
+                        onFollowUp={() => setHistoryLead({ lead, stageId: stage.id })}
                       >
                         <div className="flex items-center gap-1.5 cursor-default">
                           {(urgent || idx % 3 === 0) && (

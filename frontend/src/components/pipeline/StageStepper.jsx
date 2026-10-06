@@ -79,7 +79,7 @@ function OverviewStageRow({ activeStageId = "P0-new", durations = {} }) {
                 style={{ color: tone.color }}
               >
                 <Clock size={11} strokeWidth={2.2} className="shrink-0" />
-                {duration}
+                avg - {duration}
               </p>
             ) : (
               <p className="mt-1.5 h-[11px]" aria-hidden />

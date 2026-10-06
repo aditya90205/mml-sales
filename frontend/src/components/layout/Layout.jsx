@@ -1,5 +1,5 @@
 import useAppFitScale, { DESIGN_WIDTH, supportsCssZoom } from "../../hooks/useAppFitScale";
-import MessagingDock from "../messaging/MessagingDock";
+// import MessagingDock from "../messaging/MessagingDock";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 
@@ -27,7 +27,7 @@ export default function Layout({ children }) {
         <TopBar />
         {children}
       </main>
-      <MessagingDock />
+      {/* <MessagingDock /> */}
     </div>
   );
 }

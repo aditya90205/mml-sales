@@ -22,9 +22,11 @@ export default function FollowUpHoverCard({
 }) {
   const ref = useRef(null);
   const hideTimer = useRef(null);
+  const suppressOpen = useRef(false);
   const [pos, setPos] = useState(null);
 
   const open = () => {
+    if (suppressOpen.current) return;
     if (hideTimer.current) clearTimeout(hideTimer.current);
     const r = ref.current?.getBoundingClientRect();
     if (!r) return;
@@ -39,8 +41,28 @@ export default function FollowUpHoverCard({
     hideTimer.current = setTimeout(() => setPos(null), 120);
   };
 
+  const leaveAnchor = () => {
+    suppressOpen.current = false;
+    scheduleClose();
+  };
+
+  const openHistory = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    suppressOpen.current = true;
+    setPos(null);
+    onFollowUp?.();
+    const release = (event) => {
+      if (ref.current?.contains(event.target)) return;
+      suppressOpen.current = false;
+      window.removeEventListener("pointermove", release);
+    };
+    window.addEventListener("pointermove", release);
+  };
+
   return (
-    <span ref={ref} onMouseEnter={open} onMouseLeave={scheduleClose} className={`inline-block ${className}`}>
+    <span ref={ref} onMouseEnter={open} onMouseLeave={leaveAnchor} className={`inline-block ${className}`}>
       {children}
 
       {pos &&
@@ -63,7 +85,7 @@ export default function FollowUpHoverCard({
                 {onFollowUp && (
                   <button
                     type="button"
-                    onClick={onFollowUp}
+                    onClick={openHistory}
                     className="text-[11.5px] font-semibold text-[#2563EB] hover:underline mt-1"
                   >
                     Follow up History

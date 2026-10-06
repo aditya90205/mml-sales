@@ -43,6 +43,7 @@ import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
+import LeadActivityHistory from "./pipeline/deal-tabs/LeadActivityHistory";
 import CreateLeadModal from "../components/pipeline/CreateLeadModal";
 import BiodataUploadModal from "../components/pipeline/BiodataUploadModal";
 import BiodataProfileModal from "../components/pipeline/BiodataProfileModal";
@@ -1351,6 +1352,7 @@ function MyLeadsCard({
   const [leadsView, setLeadsView] = useState("team");
   const [leadsViewOpen, setLeadsViewOpen] = useState(false);
   const [scoreLead, setScoreLead] = useState(null);
+  const [historyLead, setHistoryLead] = useState(null);
   const [messageOpen, setMessageOpen] = useState(false);
   const leadsViewRef = useRef(null);
   const navigate = useNavigate();
@@ -1372,6 +1374,17 @@ function MyLeadsCard({
     <div className="bg-white border border-black/8 rounded-2xl p-4 sm:p-5 flex flex-col min-w-0 h-full">
       <LeadScoreModal lead={scoreLead} onClose={() => setScoreLead(null)} />
       <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
+      <Modal
+        open={!!historyLead}
+        onClose={() => setHistoryLead(null)}
+        title="Lead History"
+        width="max-w-3xl"
+        zClass="z-[90]"
+      >
+        {historyLead ? (
+          <LeadActivityHistory lead={historyLead.lead} currentStage={historyLead.stageId} />
+        ) : null}
+      </Modal>
 
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2.5 min-w-0 shrink-0">
@@ -1611,7 +1624,11 @@ function MyLeadsCard({
                           >
                             {lead.name}
                           </button>
-                          {lead.starred && <Star size={11} className="text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={0} />}
+                          {lead.starred && (
+                            <span className="inline-flex shrink-0" title="Premium client" aria-label="Premium client">
+                              <Star size={11} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />
+                            </span>
+                          )}
                         </div>
                         <p className="text-[10px] text-[#9CA3AF] truncate">{lead.mmlId}</p>
                       </div>
@@ -1657,7 +1674,7 @@ function MyLeadsCard({
                       nextActionAt={lead.nextAction}
                       nextActionNote="Follow-up call scheduled"
                       urgency={`${lead.hrs} Hrs Left`}
-                      onFollowUp={() => toast.info("Follow-up history coming soon.")}
+                      onFollowUp={() => setHistoryLead({ lead, stageId: stage.id })}
                     >
                       <div className="flex items-center gap-1.5 cursor-default">
                         <span className="size-[15px] shrink-0 grid place-items-center">

@@ -794,7 +794,9 @@ export default function DealDetailPage({
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-[16px] font-bold text-[#111] truncate">{deal.name}</h1>
                   {isPremium && (
-                    <Star size={14} className="text-[#F59E0B] shrink-0" fill="#F59E0B" strokeWidth={0} />
+                    <span className="inline-flex shrink-0" title="Premium client" aria-label="Premium client">
+                      <Star size={14} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />
+                    </span>
                   )}
                   <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold px-2 py-0.5 rounded-md text-[#F59E0B] bg-[#FFF3E4]">
                     <Minus size={10} /> interest

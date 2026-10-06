@@ -50,6 +50,8 @@ import OthersDetailsModal, { calendarEventToOtherView } from "../../../component
 import LeadActivityHistory from "./LeadActivityHistory";
 import PackageQuoteTab from "./PackageQuoteTab";
 import P6ChecklistTab from "./P6ChecklistTab";
+import P6DocumentViewModal from "./p6/P6DocumentViewModal.jsx";
+import { compareIdWithProfile, extractIdPlaceholder } from "./p6/p6ChecklistData.js";
 import { atLeast } from "./stageContent.jsx";
 import { INITIAL_EVENTS } from "../../CalendarPage";
 import {
@@ -274,12 +276,17 @@ function eventStart(ev) {
   return start;
 }
 
-function hoursLeftLabel(ev) {
+function hoursUntilStart(ev) {
   const start = eventStart(ev);
-  if (!start) return "";
+  if (!start) return null;
   const diff = start.getTime() - Date.now();
-  if (diff <= 0) return "";
-  const hrs = Math.max(1, Math.round(diff / 36e5));
+  if (diff <= 0) return null;
+  return Math.max(1, Math.round(diff / 36e5));
+}
+
+function hoursLeftLabel(ev) {
+  const hrs = hoursUntilStart(ev);
+  if (hrs == null) return "";
   if (hrs >= 48) return `${Math.round(hrs / 24)} Days Left`;
   return `${hrs} Hrs Left`;
 }
@@ -406,6 +413,7 @@ function calendarActionItems(events) {
     .map((ev) => {
       const start = eventStart(ev);
       const assignee = ev.meta?.assignees?.[0] || ev.meta?.client || "";
+      const hrsLeft = hoursUntilStart(ev);
       const upcoming = hoursLeftLabel(ev);
       return {
         kind: upcoming ? "soon" : "log",
@@ -414,6 +422,7 @@ function calendarActionItems(events) {
         text: ev.title || (ev.category === "meeting" ? "Meeting" : "Task"),
         by: assignee,
         headline: upcoming || (ev.category === "meeting" ? "Meeting" : "Task"),
+        urgent: hrsLeft != null && hrsLeft < 6,
         startTime: formatClockTime(start),
         stage: ev.category === "meeting" ? "Meet" : "Task",
         event: ev,
@@ -545,10 +554,29 @@ function HistoryPreview({ events }) {
   );
 }
 
-function AddonsPreview({ selected, onToggle, packageAmount }) {
-  const extra = ADDON_CATALOG.filter((item) => selected.includes(item.id)).reduce((sum, item) => sum + item.price, 0);
+function addonExtra(selected) {
+  return ADDON_CATALOG.filter((item) => selected.includes(item.id)).reduce((sum, item) => sum + item.price, 0);
+}
+
+function AddonPayBar({ selected, packageAmount }) {
   return (
-    <div className="pb-1">
+    <div className="flex items-center justify-between gap-2">
+      <p className="text-[13px] text-[#374151]">
+        Total : <span className="font-bold text-[#111]">{formatInr(packageAmount + addonExtra(selected))}</span>
+      </p>
+      <button
+        type="button"
+        className="h-8 px-4 rounded-lg bg-[#8E1B32] text-white text-[12.5px] font-semibold hover:bg-[#7A1230] transition-colors"
+      >
+        Pay
+      </button>
+    </div>
+  );
+}
+
+function AddonsPreview({ selected, onToggle, packageAmount, showPay = true }) {
+  return (
+    <div className={showPay ? "pb-1" : ""}>
       <div className="flex flex-col gap-2.5">
         {ADDON_CATALOG.map((item) => {
           const on = selected.includes(item.id);
@@ -581,17 +609,11 @@ function AddonsPreview({ selected, onToggle, packageAmount }) {
           );
         })}
       </div>
-      <div className="flex items-center justify-between gap-2 mt-3.5">
-        <p className="text-[13px] text-[#374151]">
-          Total : <span className="font-bold text-[#111]">{formatInr(packageAmount + extra)}</span>
-        </p>
-        <button
-          type="button"
-          className="h-8 px-4 rounded-lg bg-[#8E1B32] text-white text-[12.5px] font-semibold hover:bg-[#7A1230] transition-colors"
-        >
-          Pay
-        </button>
-      </div>
+      {showPay ? (
+        <div className="mt-3.5">
+          <AddonPayBar selected={selected} packageAmount={packageAmount} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -680,7 +702,72 @@ function RmFlagsList({ flags, onView }) {
   );
 }
 
-function HandoverPreview({ onOpen }) {
+function idViewItem(preview) {
+  const extracted = extractIdPlaceholder(preview, preview.clientName);
+  return {
+    ...preview,
+    extracted,
+    number: extracted?.number,
+    comparison: compareIdWithProfile(preview, extracted, preview.clientName),
+    done: true,
+  };
+}
+
+function handoverDocument(item, clientName) {
+  if (item.id === "aadhar") {
+    return idViewItem({
+      id: "father-aadhaar",
+      title: "Parent's Aadhar",
+      upload: "id-card",
+      idType: "aadhaar",
+      clientName,
+      files: [
+        { name: "parent-aadhaar-front.jpg", side: "front" },
+        { name: "parent-aadhaar-back.jpg", side: "back" },
+      ],
+    });
+  }
+  if (item.id === "id") {
+    return idViewItem({
+      id: "pan",
+      title: "ID & Document",
+      upload: "id-card",
+      idType: "pan",
+      clientName,
+      files: [
+        { name: "pan-front.jpg", side: "front" },
+        { name: "pan-back.jpg", side: "back" },
+      ],
+    });
+  }
+  if (item.id === "photos") {
+    return {
+      id: "photos-video",
+      title: "Profile Photos",
+      upload: "files",
+      done: true,
+      files: [{ name: "profile-photo-1.jpg", side: "front" }, { name: "profile-photo-2.jpg", side: "back" }],
+    };
+  }
+  if (item.id === "ocr") {
+    return {
+      id: "intake-ocr",
+      title: "Client Intake OCR",
+      upload: "files",
+      done: true,
+      files: [{ name: "client-intake-ocr.pdf" }],
+    };
+  }
+  return {
+    id: "contract-otp",
+    title: "Contract E-Signed",
+    upload: "files",
+    done: true,
+    files: [{ name: "contract-esigned.pdf" }],
+  };
+}
+
+function HandoverPreview({ onViewItem }) {
   return (
     <div className="flex flex-col gap-2.5 pb-1">
       {HANDOVER_PREVIEW.map((item) => (
@@ -702,10 +789,20 @@ function HandoverPreview({ onOpen }) {
               Verified
             </span>
           )}
-          <button type="button" onClick={onOpen} className="text-[#E8B923] shrink-0" aria-label={`View ${item.label}`}>
+          <button
+            type="button"
+            onClick={() => onViewItem(item)}
+            className="text-[#E8B923] shrink-0"
+            aria-label={`View ${item.label}`}
+          >
             <Eye size={14} />
           </button>
-          <button type="button" onClick={onOpen} className="text-[#22C55E] shrink-0" aria-label={`Download ${item.label}`}>
+          <button
+            type="button"
+            onClick={() => toast.success(`${item.label} download started.`)}
+            className="text-[#22C55E] shrink-0"
+            aria-label={`Download ${item.label}`}
+          >
             <Download size={14} />
           </button>
         </div>
@@ -759,7 +856,7 @@ function NextActionList({ items, onOpen }) {
               <div className="flex items-center gap-2 py-2 pr-3">
                 <Clock size={16} className="text-[#C5CAD3] shrink-0" strokeWidth={1.8} />
                 <div>
-                  <p className="text-[13px] font-bold text-[#1F2937] leading-none whitespace-nowrap">{item.headline}</p>
+                  <p className={`text-[13px] font-bold leading-none whitespace-nowrap ${item.urgent ? "text-[#E8395B]" : "text-[#1F2937]"}`}>{item.headline}</p>
                   {item.startTime ? (
                     <p className="text-[11px] text-[#9CA3AF] mt-1 leading-none whitespace-nowrap">Start Time: {item.startTime}</p>
                   ) : null}
@@ -865,6 +962,7 @@ export default function OverviewDashboard({
   const [nextActionOpen, setNextActionOpen] = useState(false);
   const [addonsOpen, setAddonsOpen] = useState(false);
   const [handoverOpen, setHandoverOpen] = useState(false);
+  const [handoverDoc, setHandoverDoc] = useState(null);
   const [flagsOpen, setFlagsOpen] = useState(false);
   const [flagAddOpen, setFlagAddOpen] = useState(false);
   const [viewingFlag, setViewingFlag] = useState(null);
@@ -1001,7 +1099,20 @@ export default function OverviewDashboard({
   );
   const packageAmount = rupeeNumber(deal.dealValue);
   const packagePrice = packageAmount ? formatInr(packageAmount) : "₹ 1,50,000";
-  const calendarActions = useMemo(() => calendarActionItems(calendarEvents), [calendarEvents]);
+  const calendarActions = useMemo(() => {
+    const start = new Date(Date.now() + 5 * 60 * 60 * 1000);
+    const underSixHours = {
+      id: "demo-under-6h",
+      date: start,
+      startH: start.getHours(),
+      startM: start.getMinutes(),
+      endH: (start.getHours() + 1) % 24,
+      title: "Client Follow-up Call",
+      category: "task",
+      meta: { assignees: ["Aditya Sharma"], clientRelated: true },
+    };
+    return calendarActionItems([...calendarEvents, underSixHours]);
+  }, [calendarEvents]);
   const { due: meetingDue, completed: meetingDone } = useMemo(
     () => splitCalendarItems(calendarEvents, "meeting"),
     [calendarEvents]
@@ -1160,7 +1271,9 @@ export default function OverviewDashboard({
               {item.id === "flags" ? (
                 <FlagsPreview flags={rmFlags} onView={(flag) => setViewingFlag(flag)} />
               ) : null}
-              {item.id === "handover" ? <HandoverPreview onOpen={() => setHandoverOpen(true)} /> : null}
+              {item.id === "handover" ? (
+                <HandoverPreview onViewItem={(row) => setHandoverDoc(handoverDocument(row, deal?.name))} />
+              ) : null}
             </div>
           </div>
         </div>
@@ -1198,7 +1311,9 @@ export default function OverviewDashboard({
             <div className="min-w-0 flex-1 pt-0.5">
               <div className="flex items-center gap-1.5 min-w-0">
                 <h2 className="text-[17px] font-bold text-[#1F2937] leading-none truncate">{deal.name || "Lead"}</h2>
-                <Star size={15} className="text-[#F5B400] shrink-0" fill="#F5B400" strokeWidth={0} />
+                <span className="inline-flex shrink-0" title="Premium client" aria-label="Premium client">
+                  <Star size={15} className="text-[#F5B400]" fill="#F5B400" strokeWidth={0} />
+                </span>
                 <div className="ml-auto flex items-center gap-1.5 shrink-0 pl-2">
                   <button
                     type="button"
@@ -1475,14 +1590,18 @@ export default function OverviewDashboard({
                   }`}
                 >
                   <div className="overflow-hidden">
-                    <div className={`px-3.5 pb-3 transition-opacity duration-300 ${addonsExpanded ? "opacity-100" : "opacity-0"}`}>
+                    <div className={`px-3.5 transition-opacity duration-300 ${addonsExpanded ? "opacity-100" : "opacity-0"}`}>
                       <AddonsPreview
                         selected={selectedAddons}
                         onToggle={toggleAddon}
                         packageAmount={rupeeNumber(packagePrice)}
+                        showPay={false}
                       />
                     </div>
                   </div>
+                </div>
+                <div className={`px-3.5 pb-3 ${addonsExpanded ? "pt-3.5" : "pt-1"}`}>
+                  <AddonPayBar selected={selectedAddons} packageAmount={rupeeNumber(packagePrice)} />
                 </div>
               </div>
             </section>
@@ -1744,6 +1863,12 @@ export default function OverviewDashboard({
           </div>
         ) : null}
       </Modal>
+
+      <P6DocumentViewModal
+        open={Boolean(handoverDoc)}
+        item={handoverDoc}
+        onClose={() => setHandoverDoc(null)}
+      />
 
       <Modal
         open={handoverOpen}

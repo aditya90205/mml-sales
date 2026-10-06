@@ -29,6 +29,7 @@ import { toast } from "react-toastify";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
 import OverviewDashboard from "./OverviewDashboard";
+import LeadActivityHistory from "./LeadActivityHistory";
 import { recordLeadActivity } from "../../../utils/leadActivityStore.js";
 import {
   coerceCreateLeadValue,
@@ -444,7 +445,7 @@ function SendFormModal({ open, onClose, deal, currentStage }) {
   );
 }
 
-function ProfileDetailsView({ details }) {
+function ProfileDetailsView({ details, onFollowUp }) {
   const lookingLabel = formatLookingForLabel(details.lookingCustom || details.lookingFor) || details.lookingFor;
 
   return (
@@ -548,7 +549,7 @@ function ProfileDetailsView({ details }) {
             ) : null}
             <button
               type="button"
-              onClick={() => toast.info("Follow-up history coming soon.")}
+              onClick={onFollowUp}
               className="text-[11.5px] font-semibold text-[#2563EB] hover:underline mt-1"
             >
               Follow up History
@@ -576,6 +577,7 @@ function ProfileDetailsView({ details }) {
 function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved, onReady, body = true }) {
   const [mode, setMode] = useState(null);
   const [sendOpen, setSendOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [details, setDetails] = useState(() => detailsFromDeal(deal));
   const [draft, setDraft] = useState(() => detailsFromDeal(deal));
 
@@ -685,7 +687,16 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved, 
           </>
         }
       >
-        <ProfileDetailsView details={details} />
+        <ProfileDetailsView details={details} onFollowUp={() => setHistoryOpen(true)} />
+      </Modal>
+      <Modal
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        title="Lead History"
+        width="max-w-3xl"
+        zClass="z-[90]"
+      >
+        <LeadActivityHistory lead={deal} currentStage={currentStage} />
       </Modal>
       <Modal
         open={mode === "edit"}
@@ -914,7 +925,7 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved, 
           </section>
         </form>
       </Modal>
-      {body !== false ? <ProfileDetailsView details={details} /> : null}
+      {body !== false ? <ProfileDetailsView details={details} onFollowUp={() => setHistoryOpen(true)} /> : null}
     </div>
   );
 }
