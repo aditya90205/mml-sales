@@ -611,7 +611,7 @@ function EmptyState({ title, description, icon: Icon, action }) {
   );
 }
 
-export function PromotionSection({ employee, showAll = false }) {
+export function PromotionSection({ employee, showAll = false, embedded = false }) {
   const [selected, setSelected] = useState(null);
   const records = useMemo(() => {
     if (showAll) return getAllPromotions();
@@ -623,7 +623,7 @@ export function PromotionSection({ employee, showAll = false }) {
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 min-w-0">
       <KpiCards records={records} kind="promotions" />
 
       {records.length === 0 ? (
@@ -633,7 +633,7 @@ export function PromotionSection({ employee, showAll = false }) {
           description="When HR records a promotion for you, designation changes, dates, and reason will appear here."
         />
       ) : (
-        <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+        <div className={embedded ? "min-w-0" : "bg-white border border-black/10 rounded-2xl p-5 shadow-sm"}>
           <div className="flex items-center gap-2.5 mb-4">
             <span className="size-9 rounded-full bg-[#E7F8EF] text-[#16A34A] grid place-items-center">
               <TrendingUp size={16} />
@@ -644,8 +644,8 @@ export function PromotionSection({ employee, showAll = false }) {
             </div>
           </div>
 
-          <div className="overflow-x-auto border border-black/8 rounded-xl">
-            <table className="w-full text-left border-collapse text-xs">
+          <div className="overflow-x-auto min-w-0 border border-black/8 rounded-xl">
+            <table className="w-full min-w-[860px] text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#FAFAFB] border-b border-black/8">
                   {[
@@ -725,7 +725,7 @@ export function PromotionSection({ employee, showAll = false }) {
   );
 }
 
-export function TransferSection({ employee, showAll = false }) {
+export function TransferSection({ employee, showAll = false, embedded = false }) {
   const [selected, setSelected] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -756,7 +756,7 @@ export function TransferSection({ employee, showAll = false }) {
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 min-w-0">
       <KpiCards records={records} kind="transfers" />
 
       {records.length === 0 ? (
@@ -776,7 +776,7 @@ export function TransferSection({ employee, showAll = false }) {
           }
         />
       ) : (
-        <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+        <div className={embedded ? "min-w-0" : "bg-white border border-black/10 rounded-2xl p-5 shadow-sm"}>
           <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
             <div className="flex items-center gap-2.5">
               <span className="size-9 rounded-full bg-[#E8F2FE] text-[#2563EB] grid place-items-center">
@@ -797,8 +797,8 @@ export function TransferSection({ employee, showAll = false }) {
             </button>
           </div>
 
-          <div className="overflow-x-auto border border-black/8 rounded-xl">
-            <table className="w-full text-left border-collapse text-xs">
+          <div className="overflow-x-auto min-w-0 border border-black/8 rounded-xl">
+            <table className="w-full min-w-[860px] text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#FAFAFB] border-b border-black/8">
                   {[
@@ -917,7 +917,7 @@ const PT_VIEWS = [
 ];
 
 /** Combined Promotion + Transfer view with sub-tabs (default: Promotion). */
-export function PromotionsTransfersSection({ employee, showAll = false, initialView = "promotion" }) {
+export function PromotionsTransfersSection({ employee, showAll = false, initialView = "promotion", embedded = false }) {
   const [view, setView] = useState(
     initialView === "transfer" ? "transfer" : "promotion"
   );
@@ -927,8 +927,8 @@ export function PromotionsTransfersSection({ employee, showAll = false, initialV
   }, [initialView]);
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex items-center gap-1 p-1 rounded-xl bg-[#F8F8FA] border border-black/8 w-fit self-end">
+    <div className="flex flex-col gap-5 min-w-0">
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-[#F8F8FA] border border-black/8 w-fit self-end shrink-0">
         {PT_VIEWS.map((item) => {
           const active = view === item.id;
           return (
@@ -949,9 +949,9 @@ export function PromotionsTransfersSection({ employee, showAll = false, initialV
       </div>
 
       {view === "transfer" ? (
-        <TransferSection employee={employee} showAll={showAll} />
+        <TransferSection employee={employee} showAll={showAll} embedded={embedded} />
       ) : (
-        <PromotionSection employee={employee} showAll={showAll} />
+        <PromotionSection employee={employee} showAll={showAll} embedded={embedded} />
       )}
     </div>
   );

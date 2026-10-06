@@ -77,7 +77,7 @@ export default function Modal({
           </div>
         )}
         {/* body */}
-        <div className="overflow-y-auto flex-1 min-h-0 px-6 py-5 scrollbar-thin scrollbar-modal">{children}</div>
+        <div className="overflow-y-auto overflow-x-hidden flex-1 min-h-0 min-w-0 px-6 py-5 scrollbar-thin scrollbar-modal">{children}</div>
         {/* footer */}
         {footer && <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-black/10 shrink-0">{footer}</div>}
       </div>

@@ -3,7 +3,7 @@ import { Image as ImageIcon } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
 
-export default function SendMessageModal({ open, onClose, title = "Send Message" }) {
+export default function SendMessageModal({ open, onClose, title = "Send Message", zClass = "z-[80]" }) {
   const fileInputRef = useRef(null);
   const [message, setMessage] = useState("");
   const [file, setFile] = useState(null);
@@ -31,6 +31,7 @@ export default function SendMessageModal({ open, onClose, title = "Send Message"
       onClose={onClose}
       title={title}
       width="max-w-lg"
+      zClass={zClass}
       footer={
         <>
           <button

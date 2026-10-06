@@ -1,35 +1,21 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { toast } from "react-toastify";
 import {
   ExternalLink,
-  ChevronRight,
   ChevronDown,
-  Wallet,
   AlertTriangle,
   Clock,
   Trophy,
   Target,
   Receipt,
-  Activity,
-  Send,
   Calendar,
-  Gift,
-  GraduationCap,
-  Megaphone,
-  MessageCircle,
-  Monitor,
-  Sparkles,
-  Users,
   Eye,
   Edit,
   Trash2,
   CheckCircle2,
-  FileCheck,
   BadgeCheck,
-  ShieldCheck,
-  MessageSquare,
   X,
   Plus,
   AlertCircle,
@@ -46,13 +32,13 @@ import {
   ArrowLeftRight,
   CalendarCheck,
   CalendarPlus,
+  GraduationCap,
+  Laptop,
+  LogOut,
 } from "lucide-react";
 import { USER } from "../components/layout/TopBar";
-import {
-  readAnnouncements,
-  subscribeAnnouncements,
-} from "../utils/announcements.js";
 import Modal from "../components/ui/Modal";
+import HrmsDashboard from "../components/hrms/HrmsDashboard.jsx";
 import TimesheetDetailsModal from "../components/hrms/TimesheetDetailsModal";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import {
@@ -78,6 +64,15 @@ const MONTH_OPTIONS = [
 ];
 
 const YEAR_OPTIONS = ["2024", "2025", "2026"];
+
+const ACHIEVEMENT_KPIS = [
+  { label: "Registration Value", value: "19.5 lakh" },
+  { label: "Qualifying meetings", value: "46/30" },
+  { label: "Google reviews", value: "7" },
+  { label: "Testimonial videos", value: "3/5" },
+  { label: "Wedding photo uploads", value: "5" },
+  { label: "Negative reviews", value: "1" },
+];
 
 const EMPLOYEE_OPTIONS = ["Ankur Sharma", "Aditya Sharma", "Kuhu Sharma", "Rohit Sharma", "Priya Raheja"];
 
@@ -517,78 +512,6 @@ function AttendanceDayCell({ d, onRegularize }) {
   );
 }
 
-const ANNOUNCEMENT_ROW_ICONS = {
-  "Policy Update": { Icon: FileText, bg: "bg-[#EEF2FF]", color: "text-[#4F46E5]" },
-  Holiday: { Icon: Calendar, bg: "bg-[#ECFDF5]", color: "text-[#059669]" },
-  Training: { Icon: GraduationCap, bg: "bg-[#EFF6FF]", color: "text-[#2563EB]" },
-  HR: { Icon: Users, bg: "bg-[#FDF2F8]", color: "text-[#DB2777]" },
-  IT: { Icon: Monitor, bg: "bg-[#F8FAFC]", color: "text-[#475569]" },
-  Benefits: { Icon: Gift, bg: "bg-[#FFFBEB]", color: "text-[#D97706]" },
-  Shift: { Icon: Clock, bg: "bg-[#F0FDFA]", color: "text-[#0D9488]" },
-  Event: { Icon: Sparkles, bg: "bg-[#F5F3FF]", color: "text-[#7C3AED]" },
-  Contest: { Icon: Trophy, bg: "bg-[#FFF7ED]", color: "text-[#EA580C]" },
-};
-
-function RecentAnnouncementsCard() {
-  const [items, setItems] = useState(readAnnouncements);
-  useEffect(() => subscribeAnnouncements(setItems), []);
-  const preview = items.slice(0, 3);
-
-  return (
-    <div className="bg-white border border-black/10 rounded-2xl p-4 flex flex-col justify-between shadow-sm hover:border-black/20 transition-all">
-      <div>
-        <div className="flex items-center justify-between mb-2.5 gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="size-8 rounded-full bg-[#E8F2FE] text-[#3B82F6] grid place-items-center shrink-0">
-              <Megaphone size={15} />
-            </span>
-            <p className="text-xs font-bold text-[#111827] truncate">Recent Announcements</p>
-          </div>
-          <Link
-            to="/announcements"
-            className="border border-black/15 hover:border-[#3B82F6] text-[#4B5563] hover:text-[#3B82F6] px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0"
-          >
-            View All
-          </Link>
-        </div>
-        <div className="space-y-1.5">
-          {preview.map((a) => {
-            const typeStyle = ANNOUNCEMENT_ROW_ICONS[a.type] || {
-              Icon: Megaphone,
-              bg: "bg-[#E8F2FE]",
-              color: "text-[#3B82F6]",
-            };
-            const TypeIcon = typeStyle.Icon;
-            return (
-            <Link
-              key={a.id}
-              to="/announcements"
-              className="flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg bg-[#FAFAFB] hover:bg-[#F3F4F6] transition-colors"
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className={`size-6 rounded-md ${typeStyle.bg} grid place-items-center shrink-0`}>
-                  <TypeIcon size={12} className={typeStyle.color} strokeWidth={2.2} />
-                </span>
-                <span className="text-[11px] font-bold text-[#111827] truncate">{a.title}</span>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-[9px] font-semibold text-[#E8395B] bg-[#FDECEE] rounded px-1.5 py-0.5">{a.priority}</span>
-                <span
-                  className="size-6 rounded-md bg-[#FFF3E4] text-[#F59E0B] grid place-items-center"
-                  aria-label="Comment"
-                >
-                  <MessageCircle size={11} />
-                </span>
-              </div>
-            </Link>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function getAttendanceDays(monthName, year) {
   const monthIndex = MONTH_OPTIONS.indexOf(monthName);
   const y = Number(year);
@@ -945,6 +868,489 @@ function HourlyWorkTable() {
   );
 }
 
+function AttendancePanel({ kpis, days, onRegularize }) {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        {kpis.map((card) => (
+          <AttendanceStatCard key={card.title} {...card} />
+        ))}
+      </div>
+
+      <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-extrabold text-[#111827]">Attendance Records</h2>
+          <button
+            type="button"
+            onClick={onRegularize}
+            className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-4 py-2 rounded-xl transition-all shadow-2xs"
+          >
+            Regularize
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3 mb-5">
+          <img
+            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face"
+            alt=""
+            className="size-10 rounded-full object-cover border border-black/10"
+          />
+          <div>
+            <h4 className="text-sm font-extrabold text-[#111827]">Ankur Sharma</h4>
+            <p className="text-xs text-[#6B7280] font-medium">Relationship Manager</p>
+          </div>
+        </div>
+
+        <div className="w-full overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex w-full min-w-[680px] items-start justify-between gap-1">
+            {days.map((d, index) => (
+              <AttendanceDayCell
+                key={index}
+                d={d}
+                onRegularize={onRegularize}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6 mt-6 pt-4 border-t border-black/8 text-xs font-bold flex-wrap">
+          <span className="flex items-center gap-1.5 text-[#15803D]">
+            <span className="size-4 rounded-full bg-[#DCFCE7] grid place-items-center text-[10px]">✓</span> Present
+          </span>
+          <span className="flex items-center gap-1.5 text-[#DC2626]">
+            <span className="size-4 rounded-full bg-[#FEE2E2] grid place-items-center text-[10px]">✕</span> Absent
+          </span>
+          <span className="flex items-center gap-1.5 text-[#D97706]">
+            <span className="size-4 rounded-full bg-[#FEF3C7] grid place-items-center text-[9px]">½</span> Half Day
+          </span>
+          <span className="flex items-center gap-1.5 text-[#9333EA]">
+            <span className="size-4 rounded-full bg-[#F3E8FF] grid place-items-center text-[9px]">H</span> Holiday
+          </span>
+          <span className="flex items-center gap-1.5 text-[#475569]">
+            <span className="size-4 rounded-full bg-[#475569] text-white grid place-items-center text-[8px]">WO</span> Weekly Off
+          </span>
+        </div>
+      </div>
+
+      <RegularizationPendingTable days={days} onRegularize={onRegularize} />
+
+      <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+        <h3 className="text-lg font-extrabold text-[#111827] mb-4">Attendance Policies</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-[#FFF5F5] border border-[#FECACA] rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2 text-[#7A0A17] font-extrabold text-sm">
+              <Clock size={16} /> Working Hours
+            </div>
+            <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
+              <li>General Shift: 9:00 AM - 6:00 PM (9 hours)</li>
+              <li>Lunch Break: 1:00 PM - 2:00 PM (1 hour)</li>
+              <li>Working Days: Monday - Friday</li>
+            </ul>
+          </div>
+
+          <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2 text-[#1D4ED8] font-extrabold text-sm">
+              <BadgeCheck size={16} /> Standard Attendance Policy
+            </div>
+            <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
+              <li>Late Arrival Grace: 15 Minutes</li>
+              <li>Early Departure Grace: 15 Minutes</li>
+              <li>Overtime Rate: ₹150/hr</li>
+            </ul>
+          </div>
+
+          <div className="bg-[#F0FDF4] border border-[#BBF7D0] rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2 text-[#15803D] font-extrabold text-sm">
+              <Calendar size={16} /> Leave Policy
+            </div>
+            <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
+              <li>Casual Leave: 12 days per annum</li>
+              <li>Sick Leave: 8 days per annum</li>
+              <li>Earned Leave: 18 days per annum</li>
+              <li>Minimum 2 days notice for leave applications</li>
+            </ul>
+          </div>
+
+          <div className="bg-[#F5F3FF] border border-[#DDD6FE] rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2 text-[#6D28D9] font-extrabold text-sm">
+              <AlertTriangle size={16} /> Late Arrival Policy
+            </div>
+            <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
+              <li>Min. 80% attendance required per month</li>
+              <li>Late arrival after 9:15 AM requires regularization</li>
+              <li>3 consecutive absences without intimation may result in show-cause notice</li>
+              <li>Proxy attendance is prohibited</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IncentivesPanel() {
+  return (
+          <div className="flex flex-col gap-6">
+            {/* Header Statement Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h2 className="text-xl font-extrabold text-[#111827]">My Incentive Statement</h2>
+              <button
+                type="button"
+                onClick={() => toast.success("Incentive statement report generated!")}
+                className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-4 py-2 rounded-xl shadow-2xs self-start"
+              >
+                + Download statement
+              </button>
+            </div>
+
+            {/* 4 Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+                <p className="text-xs font-bold text-[#6B7280]">1. Registration incentive</p>
+                <p className="text-2xl font-black text-[#111827] mt-1">₹67,924</p>
+                <p className="text-[10px] text-[#9CA3AF] mt-1 font-semibold">5 deals • slab 3-6% • net of GST</p>
+              </div>
+
+              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+                <p className="text-xs font-bold text-[#6B7280]">2. Meetings incentive</p>
+                <p className="text-2xl font-black text-[#111827] mt-1">₹2,100</p>
+                <p className="text-[10px] text-[#9CA3AF] mt-1 font-semibold">42 meetings • ₹50 tier</p>
+              </div>
+
+              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+                <p className="text-xs font-bold text-[#6B7280]">3. Performance bonuses</p>
+                <p className="text-2xl font-black text-[#111827] mt-1">₹1,420</p>
+                <p className="text-[10px] text-[#9CA3AF] mt-1 font-semibold">reviews, videos, photos • net of 1 penalty</p>
+              </div>
+
+              <div className="bg-[#FCF5F6] border border-[#7A0A17]/20 rounded-2xl p-4 shadow-sm">
+                <p className="text-xs font-bold text-[#7A0A17]">Net payable</p>
+                <p className="text-2xl font-black text-[#7A0A17] mt-1">₹71,444</p>
+                <p className="text-[10px] text-[#7A0A17]/80 mt-1 font-bold">paid with July salary</p>
+              </div>
+            </div>
+
+            {/* Sections 1–3 in one row — equal height cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+              {/* Section 1: Registration Incentive Amount */}
+              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col h-full">
+                <h3 className="text-base font-extrabold text-[#111827] mb-3">1. Incentive on registration amount</h3>
+                <div className="overflow-x-auto border border-black/8 rounded-xl flex-1">
+                  <table className="w-full text-left border-collapse text-xs h-full">
+                    <RegistrationIncentiveTable />
+                  </table>
+                </div>
+              </div>
+
+              {/* Section 2: Meetings Incentive */}
+              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col h-full">
+                <h3 className="text-base font-extrabold text-[#111827]">2. Meetings incentive (monthly)</h3>
+                <p className="text-2xl font-black text-[#111827] mt-1">42 <span className="text-xs text-[#6B7280] font-normal">qualifying meetings</span></p>
+
+                {/* Progress Bar & Note */}
+                <div className="mt-3">
+                  <div className="h-3 w-full bg-black/8 rounded-full overflow-hidden">
+                    <div className="h-full bg-[#7A0A17] w-[80%]" />
+                  </div>
+                  <div className="flex justify-between text-[10px] font-bold text-[#6B7280] mt-1">
+                    <span>30 - ₹50 tier</span>
+                    <span>50 - ₹100 tier</span>
+                  </div>
+                  <div className="bg-[#FFF3E4] border border-[#F59E0B]/30 rounded-xl p-2.5 mt-3 text-xs text-[#B45309] font-bold">
+                    8 more meetings unlocks the ₹100 tier - ₹4,200 for the month.
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="mt-4 overflow-x-auto border border-black/8 rounded-xl flex-1">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <MeetingsIncentiveTable />
+                  </table>
+                </div>
+              </div>
+
+              {/* Section 3: Performance Incentives */}
+              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col h-full">
+                <h3 className="text-base font-extrabold text-[#111827] mb-3">3. Additional performance incentives</h3>
+                <div className="overflow-x-auto border border-black/8 rounded-xl flex-1">
+                  <table className="w-full text-left border-collapse text-xs h-full">
+                    <PerformanceIncentiveTable />
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Summary Banner */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-bold">
+              <p className="text-[#6B7280] max-w-2xl">
+                Registration slabs are applied to values net of applicable meeting and bonus rewards are flat. All figures are indicative and settle with the July payroll cycle.
+              </p>
+              <div className="flex items-center gap-4 shrink-0 text-sm">
+                <span>Gross incentive: <strong className="text-[#111827]">₹71,444</strong></span>
+                <span className="text-[#7A0A17] font-black">Net payable (post-GST): ₹71,444</span>
+              </div>
+            </div>
+          </div>
+  );
+}
+
+function AwardsContestPanel({
+  searchAward, setSearchAward, setAwardPage,
+  awardSort, toggleAwardSort,
+  pagedAwards, awardPage, awardPageSize, awardTotalPages, filteredAwards,
+  searchContest, setSearchContest, setContestPage,
+  contestSort, toggleContestSort,
+  pagedContests, contestPage, contestPageSize, contestTotalPages, filteredContests,
+}) {
+  return (
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { label: "Total awards", value: String(INITIAL_AWARDS.length), sub: "On your record" },
+                { label: "Active contests", value: String(INITIAL_CONTESTS.filter((c) => c.activeStatus === "Active").length), sub: "Open challenges" },
+                { label: "Latest award", value: "Leadership Award", sub: "15 Jan 2026" },
+              ].map((card) => (
+                <div key={card.label} className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+                  <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">{card.label}</p>
+                  <p className="text-xl font-extrabold text-[#111827] mt-1.5">{card.value}</p>
+                  <p className="text-[12.5px] text-[#6B7280] mt-1">{card.sub}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Awards table */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <span className="size-9 rounded-full bg-[#FFF7ED] text-[#F59E0B] grid place-items-center">
+                    <Trophy size={16} />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-[#111827]">My awards</h3>
+                    <p className="text-[12.5px] text-[#6B7280]">Award type, gifts, certificates and photos</p>
+                  </div>
+                </div>
+                <TabToolbar
+                  search={searchAward}
+                  onSearchChange={(v) => {
+                    setSearchAward(v);
+                    setAwardPage(1);
+                  }}
+                  placeholder="Search awards..."
+                />
+              </div>
+
+              <div className="overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <HrmsSortHead
+                      sort={awardSort}
+                      onSort={toggleAwardSort}
+                      cols={[
+                        { label: "#", key: "id", unsortable: true },
+                        { label: "Award Type", key: "awardType" },
+                        { label: "Award Date", key: "awardDate" },
+                        { label: "Gift", key: "gift" },
+                        { label: "Certificate", key: "certificateLabel", unsortable: true },
+                        { label: "Photo", key: "photoLabel", unsortable: true },
+                        { label: "Description", key: "description" },
+                      ]}
+                    />
+                  </thead>
+                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+                    {pagedAwards.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-10 text-center text-[13px] text-[#9CA3AF] font-medium">
+                          No awards found.
+                        </td>
+                      </tr>
+                    ) : (
+                      pagedAwards.map((row, idx) => (
+                        <tr key={row.id} className="hover:bg-[#FAFAFB] transition-colors">
+                          <td className="px-4 py-3 font-bold text-[#6B7280]">
+                            {(awardPage - 1) * awardPageSize + idx + 1}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1.5">
+                              <Trophy size={12} className="text-[#F59E0B] shrink-0" />
+                              {row.awardType}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{row.awardDate}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">{row.gift}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <a
+                              href={row.certificateUrl}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                toast.info(`Opening certificate: ${row.certificateLabel}`);
+                              }}
+                              className="inline-flex items-center gap-1 text-[#2563EB] hover:underline font-semibold"
+                            >
+                              <ExternalLink size={12} />
+                              {row.certificateLabel}
+                            </a>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <a
+                              href={row.photoUrl}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                toast.info(`Opening photo: ${row.photoLabel}`);
+                              }}
+                              className="inline-flex items-center gap-1 text-[#2563EB] hover:underline font-semibold"
+                            >
+                              <ExternalLink size={12} />
+                              {row.photoLabel}
+                            </a>
+                          </td>
+                          <td className="px-4 py-3 text-[#6B7280] font-medium min-w-[220px] max-w-[320px]">
+                            {row.description}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <Pagination
+                page={awardPage}
+                totalPages={awardTotalPages}
+                totalItems={filteredAwards.length}
+                pageSize={awardPageSize}
+                itemLabel="awards"
+                onChange={setAwardPage}
+              />
+            </div>
+
+            {/* Contests / Challenges table */}
+            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <span className="size-9 rounded-full bg-[#E7F8EF] text-[#16A34A] grid place-items-center">
+                    <Target size={16} />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-[#111827]">My contests</h3>
+                    <p className="text-[12.5px] text-[#6B7280]">Challenge details, XP, difficulty and status</p>
+                  </div>
+                </div>
+                <TabToolbar
+                  search={searchContest}
+                  onSearchChange={(v) => {
+                    setSearchContest(v);
+                    setContestPage(1);
+                  }}
+                  placeholder="Search contests..."
+                />
+              </div>
+
+              <div className="overflow-x-auto border border-black/8 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <HrmsSortHead
+                      sort={contestSort}
+                      onSort={toggleContestSort}
+                      cols={[
+                        { label: "#", key: "id", unsortable: true, align: "center" },
+                        { label: "Challenge Name", key: "challengeName" },
+                        { label: "Type & Reward", key: "typeReward" },
+                        { label: "XP", key: "earnedXp", align: "center" },
+                        { label: "Project", key: "project" },
+                        { label: "Criteria", key: "criteria" },
+                        { label: "Difficulty", key: "difficulty", align: "center" },
+                        { label: "Challenge Status", key: "challengeStatus", align: "center" },
+                        { label: "Status", key: "activeStatus", align: "center" },
+                        { label: "Members", key: "members", unsortable: true, align: "center" },
+                        { label: "Description", key: "description", unsortable: true, align: "center" },
+                      ]}
+                    />
+                  </thead>
+                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+                    {pagedContests.length === 0 ? (
+                      <tr>
+                        <td colSpan={11} className="px-4 py-10 text-center text-[13px] text-[#9CA3AF] font-medium">
+                          No contests found.
+                        </td>
+                      </tr>
+                    ) : (
+                      pagedContests.map((row, idx) => (
+                        <tr key={row.id} className="hover:bg-[#FAFAFB] transition-colors">
+                          <td className="px-3 py-3 font-bold text-[#6B7280] text-center align-middle">
+                            {(contestPage - 1) * contestPageSize + idx + 1}
+                          </td>
+                          <td className="px-3 py-3 align-middle">
+                            <p className="font-bold text-[#111827] whitespace-nowrap">{row.challengeName}</p>
+                            <p className="text-[11px] font-medium text-[#9CA3AF] mt-0.5 whitespace-nowrap">{row.period}</p>
+                          </td>
+                          <td className="px-3 py-3 text-[#374151] align-middle whitespace-nowrap">{row.typeReward}</td>
+                          <td className="px-3 py-3 text-center align-middle whitespace-nowrap">{row.earnedXp}</td>
+                          <td className="px-3 py-3 align-middle whitespace-nowrap">{row.project}</td>
+                          <td className="px-3 py-3 align-middle whitespace-nowrap">{row.criteria}</td>
+                          <td className="px-3 py-3 text-center align-middle">
+                            <span
+                              className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                row.difficulty === "Easy"
+                                  ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                                  : row.difficulty === "Medium"
+                                    ? "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
+                                    : "bg-[#FEE2E2] text-[#DC2626] border-[#DC2626]/20"
+                              }`}
+                            >
+                              {row.difficulty}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-center align-middle">
+                            <span
+                              className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                row.challengeStatus === "In Progress"
+                                  ? "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
+                                  : row.challengeStatus === "Completed"
+                                    ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                                    : "bg-[#F3F4F6] text-[#4B5563] border-black/10"
+                              }`}
+                            >
+                              {row.challengeStatus}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-center align-middle">
+                            <span
+                              className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                row.activeStatus === "Active"
+                                  ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                                  : "bg-[#F3F4F6] text-[#4B5563] border-black/10"
+                              }`}
+                            >
+                              {row.activeStatus}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-center align-middle">
+                            <MembersHoverView members={row.members} />
+                          </td>
+                          <td className="px-3 py-3 text-center align-middle">
+                            <DescriptionHoverView description={row.description} />
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <Pagination
+                page={contestPage}
+                totalPages={contestTotalPages}
+                totalItems={filteredContests.length}
+                pageSize={contestPageSize}
+                itemLabel="contests"
+                onChange={setContestPage}
+              />
+            </div>
+          </div>
+  );
+}
+
 function AttendanceStatCard({ title, value, sub, icon: Icon, iconBg, iconColor }) {
   return (
     <div className="bg-white border border-black/10 rounded-2xl px-3.5 py-3 shadow-sm flex items-center gap-3 min-w-0">
@@ -1212,910 +1618,9 @@ function PerformanceIncentiveTable() {
   );
 }
 
-export default function HrmsPage() {
-  const [searchParams] = useSearchParams();
-  const [selectedMonth, setSelectedMonth] = useState("April");
-  const [selectedYear, setSelectedYear] = useState("2025");
-  const [activeTab, setActiveTab] = useState(() =>
-    HRMS_TABS.includes(searchParams.get("tab")) ? searchParams.get("tab") : "Summary"
-  );
-
-  const attendanceDays = useMemo(
-    () => getAttendanceDays(selectedMonth, selectedYear),
-    [selectedMonth, selectedYear]
-  );
-  const attendancePresent = attendanceDays.reduce((sum, d) => {
-    if (d.status === "P") return sum + 1;
-    if (d.status === "1/2") return sum + 0.5;
-    return sum;
-  }, 0);
-  const attendanceKpis = useMemo(() => {
-    const totalDays = attendanceDays.length;
-    const presentDays = attendanceDays.filter((d) => d.status === "P").length;
-    const lateDays = attendanceDays.filter((d) => d.status === "P" && d.timesheet.login === "09:15 AM").length;
-    const leaveDays = attendanceDays.filter((d) => d.status === "X").length;
-    const halfDays = attendanceDays.filter((d) => d.status === "1/2").length;
-    const grand = Number.isInteger(attendancePresent) ? String(attendancePresent) : attendancePresent.toFixed(1);
-    return [
-      { title: "Total Present Days", value: `${presentDays} Days`, sub: `Out of ${totalDays} Days`, icon: CalendarCheck, iconBg: "#DCFCE7", iconColor: "#16A34A" },
-      { title: "Late Days", value: `${lateDays} Days`, sub: "Total late arrivals", icon: Clock, iconBg: "#FEE2E2", iconColor: "#DC2626" },
-      { title: "Total Leaves", value: `${leaveDays} Days`, sub: "Absent days this month", icon: CalendarPlus, iconBg: "#FEF3C7", iconColor: "#D97706" },
-      { title: "Half Days", value: `${halfDays} Days`, sub: "Total half days", icon: Coffee, iconBg: "#F3E8FF", iconColor: "#7C3AED" },
-      { title: "Grand Total", value: `${grand}/${totalDays}`, sub: "Present days this month", icon: BarChart3, iconBg: "#DBEAFE", iconColor: "#2563EB" },
-    ];
-  }, [attendanceDays, attendancePresent]);
-
-  // Expenses & Leaves State
-  const [expenses, setExpenses] = useState(INITIAL_EXPENSES);
-  const [leaves, setLeaves] = useState(INITIAL_LEAVES);
-
-  // Modals state
-  const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [noticeModalOpen, setNoticeModalOpen] = useState(false);
-  const [shiftModalOpen, setShiftModalOpen] = useState(false);
-  const [timesheetModal, setTimesheetModal] = useState(null);
-  const [addExpenseOpen, setAddExpenseOpen] = useState(false);
-  const [viewExpense, setViewExpense] = useState(null);
-  const [applyLeaveOpen, setApplyLeaveOpen] = useState(false);
-  const [applyLeaveFormOpen, setApplyLeaveFormOpen] = useState(false);
-  const [shiftChangeFormOpen, setShiftChangeFormOpen] = useState(false);
-  const [shiftChangeRequests, setShiftChangeRequests] = useState(INITIAL_SHIFT_CHANGE_REQUESTS);
-  const [sendMessageOpen, setSendMessageOpen] = useState(false);
-  const [addManualRowOpen, setAddManualRowOpen] = useState(false);
-
-  // Trainings / Goals & Reviews / Asset tab state
-  const [trainings, setTrainings] = useState(INITIAL_TRAININGS);
-  const [goals, setGoals] = useState(INITIAL_GOALS);
-  const [trainingModal, setTrainingModal] = useState(null); // { mode: 'view'|'edit'|'delete', item }
-  const [goalModal, setGoalModal] = useState(null); // { mode: 'view'|'edit'|'review'|'delete', item }
-  const [searchTraining, setSearchTraining] = useState("");
-  const [trainingPage, setTrainingPage] = useState(1);
-  const [searchGoal, setSearchGoal] = useState("");
-  const [goalPage, setGoalPage] = useState(1);
-  const [expandedRemarks, setExpandedRemarks] = useState({});
-  const [searchAsset, setSearchAsset] = useState("");
-  const [assetPage, setAssetPage] = useState(1);
-  const [searchAward, setSearchAward] = useState("");
-  const [awardPage, setAwardPage] = useState(1);
-  const [searchContest, setSearchContest] = useState("");
-  const [contestPage, setContestPage] = useState(1);
-
-  // Form Fields
-  const [issueText, setIssueText] = useState("");
-  const [newShift, setNewShift] = useState("Morning Shift (8:00 AM - 5:00 PM)");
-  const [expenseForm, setExpenseForm] = useState({
-    employee: "",
-    purpose: "",
-    destination: "",
-    startDate: "",
-    endDate: "",
-    description: "",
-    expectedOutcomes: "",
-    advanceAmount: "",
-  });
-  const [expenseDocument, setExpenseDocument] = useState(null);
-  const [leaveForm, setLeaveForm] = useState({ type: "Casual Leave", startDate: "", endDate: "", comment: "" });
-
-  // Handle Submissions
-  const handleReportIssue = (e) => {
-    e.preventDefault();
-    if (!issueText.trim()) return;
-    toast.success("Issue reported successfully. HR team will review shortly.");
-    setIssueText("");
-    setReportModalOpen(false);
-  };
-
-  const handleChangeShift = (e) => {
-    e.preventDefault();
-    const newRequest = {
-      id: Date.now(),
-      from: "General (9:00 AM - 6:00 PM)",
-      to: newShift.replace(" Shift", ""),
-      effective: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
-      status: "Pending",
-    };
-    setShiftChangeRequests([newRequest, ...shiftChangeRequests]);
-    toast.success(`Shift change request submitted for ${newShift}`);
-    setShiftChangeFormOpen(false);
-  };
-
-  const handleAddExpense = (e) => {
-    e.preventDefault();
-    if (!expenseForm.employee || !expenseForm.purpose || !expenseForm.destination || !expenseForm.startDate || !expenseForm.endDate) return;
-    const newEntry = {
-      id: Date.now(),
-      employee: expenseForm.employee,
-      purpose: expenseForm.purpose,
-      destination: expenseForm.destination,
-      startDate: expenseForm.startDate,
-      endDate: expenseForm.endDate,
-      status: "Pending",
-      advanceAmount: expenseForm.advanceAmount ? Number(expenseForm.advanceAmount).toFixed(2) : "0.00",
-      advanceStatus: "Active",
-      totalExpenses: "-",
-      documentName: expenseDocument?.name || null,
-      description: expenseForm.description,
-      expectedOutcomes: expenseForm.expectedOutcomes,
-    };
-    setExpenses([newEntry, ...expenses]);
-    toast.success("Expense added successfully!");
-    setExpenseForm({
-      employee: "", purpose: "", destination: "", startDate: "", endDate: "",
-      description: "", expectedOutcomes: "", advanceAmount: "",
-    });
-    setExpenseDocument(null);
-    setAddExpenseOpen(false);
-  };
-
-  const handleDeleteExpense = (id) => {
-    setExpenses(expenses.filter((exp) => exp.id !== id));
-    toast.info("Expense removed.");
-  };
-
-  const handleApplyLeave = (e) => {
-    e.preventDefault();
-    const selected = LEAVE_BALANCE_TYPES.find((lt) => lt.type === leaveForm.type);
-    if (!selected || selected.available <= 0) {
-      toast.error(`No ${leaveForm.type} balance remaining. You cannot apply for this category.`);
-      return;
-    }
-    if (!leaveForm.startDate) return;
-    const dateStr = leaveForm.endDate && leaveForm.endDate !== leaveForm.startDate
-      ? `${leaveForm.startDate} - ${leaveForm.endDate}`
-      : leaveForm.startDate;
-    const newLeave = {
-      id: Date.now(),
-      type: leaveForm.type,
-      date: dateStr,
-      status: "Pending",
-      comment: leaveForm.comment || "Requested leave.",
-    };
-    setLeaves([newLeave, ...leaves]);
-    toast.success("Leave application submitted successfully!");
-    setLeaveForm({ type: "Casual Leave", startDate: "", endDate: "", comment: "" });
-    setApplyLeaveFormOpen(false);
-    return true;
-  };
-
-  const filteredTrainings = trainings.filter((t) =>
-    t.program.toLowerCase().includes(searchTraining.toLowerCase())
-  );
-  const { sorted: sortedTrainings, sort: trainingSort, toggle: toggleTrainingSort } = useTableSort(filteredTrainings, {
-    defaultKey: "program",
-  });
-  const trainingPageSize = 4;
-  const trainingTotalPages = Math.max(1, Math.ceil(filteredTrainings.length / trainingPageSize));
-  const pagedTrainings = sortedTrainings.slice(
-    (trainingPage - 1) * trainingPageSize,
-    trainingPage * trainingPageSize
-  );
-
-  const filteredGoals = goals.filter((g) => g.title.toLowerCase().includes(searchGoal.toLowerCase()));
-  const { sorted: sortedGoals, sort: goalSort, toggle: toggleGoalSort } = useTableSort(filteredGoals, { defaultKey: "title" });
-  const goalPageSize = 6;
-  const goalTotalPages = Math.max(1, Math.ceil(filteredGoals.length / goalPageSize));
-  const pagedGoals = sortedGoals.slice((goalPage - 1) * goalPageSize, goalPage * goalPageSize);
-
-  const handleSaveTraining = (updated) => {
-    setTrainings((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-    setTrainingModal(null);
-    toast.success("Training updated successfully.");
-  };
-
-  const handleDeleteTraining = () => {
-    const item = trainingModal?.item;
-    if (!item) return;
-    setTrainings((prev) => prev.filter((t) => t.id !== item.id));
-    setTrainingModal(null);
-    toast.success(`“${item.program}” deleted.`);
-  };
-
-  const handleSaveGoal = (updated) => {
-    setGoals((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
-    setGoalModal(null);
-    toast.success("Goal updated successfully.");
-  };
-
-  const handleSaveGoalReview = (updated) => {
-    setGoals((prev) => prev.map((g) => (g.id === updated.id ? { ...g, ...updated } : g)));
-    setGoalModal(null);
-    toast.success("Goal review saved successfully.");
-  };
-
-  const handleDeleteGoal = () => {
-    const item = goalModal?.item;
-    if (!item) return;
-    setGoals((prev) => prev.filter((g) => g.id !== item.id));
-    setGoalModal(null);
-    toast.success(`“${item.title}” deleted.`);
-  };
-
-  const filteredAssets = INITIAL_ASSETS.filter((a) =>
-    a.name.toLowerCase().includes(searchAsset.toLowerCase())
-  );
-  const { sorted: sortedAssets, sort: assetSort, toggle: toggleAssetSort } = useTableSort(filteredAssets, {
-    defaultKey: "name",
-  });
-  const assetPageSize = 10;
-  const assetTotalPages = Math.max(1, Math.ceil(filteredAssets.length / assetPageSize));
-  const pagedAssets = sortedAssets.slice((assetPage - 1) * assetPageSize, assetPage * assetPageSize);
-
-  const filteredAwards = INITIAL_AWARDS.filter((a) => {
-    const q = searchAward.toLowerCase();
-    return (
-      a.awardType.toLowerCase().includes(q) ||
-      a.gift.toLowerCase().includes(q) ||
-      a.description.toLowerCase().includes(q)
-    );
-  });
-  const { sorted: sortedAwards, sort: awardSort, toggle: toggleAwardSort } = useTableSort(filteredAwards, {
-    defaultKey: "awardDate",
-  });
-  const awardPageSize = 10;
-  const awardTotalPages = Math.max(1, Math.ceil(filteredAwards.length / awardPageSize));
-  const pagedAwards = sortedAwards.slice((awardPage - 1) * awardPageSize, awardPage * awardPageSize);
-
-  const filteredContests = INITIAL_CONTESTS.filter((c) => {
-    const q = searchContest.toLowerCase();
-    return (
-      c.challengeName.toLowerCase().includes(q) ||
-      c.project.toLowerCase().includes(q) ||
-      c.criteria.toLowerCase().includes(q) ||
-      c.challengeStatus.toLowerCase().includes(q)
-    );
-  });
-  const { sorted: sortedContests, sort: contestSort, toggle: toggleContestSort } = useTableSort(filteredContests, {
-    defaultKey: "challengeName",
-  });
-  const contestPageSize = 10;
-  const contestTotalPages = Math.max(1, Math.ceil(filteredContests.length / contestPageSize));
-  const pagedContests = sortedContests.slice((contestPage - 1) * contestPageSize, contestPage * contestPageSize);
-
-  const { sorted: sortedLeaveTypes, sort: leaveSort, toggle: toggleLeaveSort } = useTableSort(LEAVE_BALANCE_TYPES, {
-    defaultKey: "type",
-  });
-
-  const selectedLeaveBalance = LEAVE_BALANCE_TYPES.find((lt) => lt.type === leaveForm.type);
-  const selectedAvailable = selectedLeaveBalance?.available ?? 0;
-  const selectedPending = leaves.filter((l) => l.type === leaveForm.type && l.status === "Pending").length;
-  const canApplySelectedLeave = selectedAvailable > 0;
-
+function SalaryPayslipPanel({ period = "December 2026" }) {
   return (
-    <div className="flex flex-col flex-1 min-h-screen bg-[#F7F8FA] text-[#111827] font-sans">
-      {/* TopBar is rendered by Layout; removed per global header update */}
-
-      {/* ── Page Content Container ───────────────────────────────────────── */}
-      <div className="p-4 sm:p-5 lg:p-6 flex flex-col gap-5 w-full max-w-none">
-        
-        {/* ── Section Header: Breadcrumb & Title & Selectors ───────────── */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            {/* Breadcrumb */}
-            {/* <div className="flex items-center gap-2 text-xs font-semibold text-[#6B7280]">
-              <span className="hover:text-[#7A0A17] cursor-pointer transition-colors">Dashboard</span>
-              <ChevronRight size={13} className="text-[#9CA3AF]" />
-              <span className="hover:text-[#7A0A17] cursor-pointer transition-colors">My Workspace</span>
-              <ChevronRight size={13} className="text-[#9CA3AF]" />
-              <span className="text-[#111827] font-bold">HRMS</span>
-            </div> */}
-
-            {/* Title */}
-            <div className="mt-1">
-              <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#E8395B]">
-                YOU ARE VIEWING
-              </p>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
-                {selectedMonth} {selectedYear}
-              </h1>
-            </div>
-          </div>
-
-          {/* Controls Right */}
-          <div className="flex items-center gap-2.5 flex-wrap">
-            {/* Month Dropdown */}
-            <div className="relative">
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="appearance-none bg-white border border-black/12 hover:border-[#7A0A17]/40 rounded-xl px-4 py-2 pr-9 text-sm font-semibold text-[#374151] shadow-sm cursor-pointer outline-none transition-all"
-              >
-                {MONTH_OPTIONS.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
-              <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" />
-            </div>
-
-            {/* Year Dropdown */}
-            <div className="relative">
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
-                className="appearance-none bg-white border border-black/12 hover:border-[#7A0A17]/40 rounded-xl px-4 py-2 pr-9 text-sm font-semibold text-[#374151] shadow-sm cursor-pointer outline-none transition-all"
-              >
-                {YEAR_OPTIONS.map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-              <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" />
-            </div>
-
-            {/* Report an Issue Button */}
-            <button
-              type="button"
-              onClick={() => setReportModalOpen(true)}
-              className="bg-[#7A0A17] hover:bg-[#600712] text-white text-sm font-bold px-4 py-2 rounded-xl shadow-sm hover:shadow transition-all duration-150 active:scale-[0.98]"
-            >
-              Report an issue
-            </button>
-          </div>
-        </div>
-
-        {/* ── Tabs Navigation Bar ────────────────────────────────────────── */}
-        <div className="border-b border-black/10 overflow-x-auto scrollbar-none">
-          <nav className="flex items-center gap-6 sm:gap-8 min-w-max">
-            {HRMS_TABS.map((tab) => {
-              const isActive = activeTab === tab;
-              return (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`pb-3 text-sm font-bold transition-all relative whitespace-nowrap ${
-                    isActive
-                      ? "text-[#7A0A17]"
-                      : "text-[#6B7280] hover:text-[#111827]"
-                  }`}
-                >
-                  {tab}
-                  {isActive && (
-                    <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#7A0A17] rounded-t-full" />
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* ── Tab View Content ──────────────────────────────────────────── */}
-        
-        {/* 1. SUMMARY TAB */}
-        {activeTab === "Summary" && (
-          <>
-            {/* Top Row Quick Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-2xl p-4 flex flex-col justify-between shadow-sm relative group hover:border-[#7A0A17]/30 transition-all">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="size-10 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0 shadow-sm">
-                      <Wallet size={19} />
-                    </span>
-                    <div>
-                      <p className="text-xs font-bold text-[#374151]">This Month's Incentive</p>
-                      <p className="text-2xl font-black text-[#111827] leading-tight mt-0.5">₹38,000</p>
-                    </div>
-                  </div>
-                  <p className="text-xs text-[#6B7280] mt-2 font-medium">
-                    earned at <span className="text-[#16A34A] font-bold">118%</span> of target
-                  </p>
-                </div>
-                <div className="flex items-center justify-between mt-4 pt-2">
-                  <div className="inline-flex items-center gap-1.5 bg-white border border-black/8 rounded-lg px-2.5 py-1 text-xs font-bold text-[#111827] shadow-2xs">
-                    <span>Rank</span>
-                    <span className="text-[#7A0A17] text-sm">2</span>
-                    <span>🏆</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("Incentives")}
-                    className="size-8 rounded-xl bg-white border border-black/10 hover:bg-[#7A0A17] hover:text-white text-[#4B5563] grid place-items-center transition-all shadow-2xs"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-[#FCF5F6] border border-[#7A0A17]/15 rounded-2xl p-4 flex flex-col justify-between shadow-sm relative group hover:border-[#7A0A17]/30 transition-all">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="size-10 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0 shadow-sm">
-                      <AlertTriangle size={19} />
-                    </span>
-                    <div>
-                      <p className="text-xs font-bold text-[#374151]">Warning Issued</p>
-                      <p className="text-xs text-[#6B7280] leading-snug mt-1 font-medium max-w-[180px]">
-                        Late arrivals flagged twice this month.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between mt-4">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("Complaint & Warning")}
-                    className="border border-[#7A0A17] text-[#7A0A17] hover:bg-[#7A0A17] hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs"
-                  >
-                    View Notice
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("Complaint & Warning")}
-                    className="size-8 rounded-xl bg-white border border-black/10 hover:bg-[#7A0A17] hover:text-white text-[#4B5563] grid place-items-center transition-all shadow-2xs"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-[#F4FBF7] border border-[#16A34A]/20 rounded-2xl p-4 flex flex-col justify-between shadow-sm relative group hover:border-[#16A34A]/40 transition-all">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="size-10 rounded-full bg-[#15803D] text-white grid place-items-center shrink-0 shadow-sm">
-                      <Clock size={19} />
-                    </span>
-                    <div>
-                      <p className="text-xs font-bold text-[#374151]">My Shift</p>
-                      <p className="text-xs text-[#6B7280] font-medium">General Shift</p>
-                      <p className="text-sm font-black text-[#111827] mt-0.5">9:00 AM - 6:00 PM</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between mt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShiftModalOpen(true)}
-                    className="border border-[#15803D] text-[#15803D] hover:bg-[#15803D] hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs bg-white"
-                  >
-                    Change Shift
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShiftModalOpen(true)}
-                    className="size-8 rounded-xl bg-white border border-black/10 hover:bg-[#15803D] hover:text-white text-[#4B5563] grid place-items-center transition-all shadow-2xs"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-
-              <RecentAnnouncementsCard />
-            </div>
-
-            {/* Row 2: Today's Timesheet */}
-            <div className="bg-white border border-black/10 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
-              <div className="flex items-center gap-3.5">
-                <span className="size-11 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0 shadow-sm">
-                  <Clock size={20} />
-                </span>
-                <div>
-                  <h2 className="text-base font-extrabold text-[#111827]">Today's Timesheet</h2>
-                  <p className="text-xs font-semibold text-[#6B7280]">Aug 7, 2026</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-6 sm:gap-10 overflow-x-auto py-1">
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">LOGIN</p>
-                  <p className="text-sm font-extrabold text-[#16A34A] mt-0.5">09:02 AM</p>
-                </div>
-                <div className="h-7 w-px bg-black/10 shrink-0" />
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">LOGOUT</p>
-                  <p className="text-sm font-extrabold text-[#DC2626] mt-0.5">06:10 PM</p>
-                </div>
-                <div className="h-7 w-px bg-black/10 shrink-0" />
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">SYSTEM</p>
-                  <p className="text-sm font-extrabold text-[#111827] mt-0.5">8.50h</p>
-                </div>
-                <div className="h-7 w-px bg-black/10 shrink-0" />
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">MANUAL</p>
-                  <p className="text-sm font-extrabold text-[#111827] mt-0.5">1.00h</p>
-                </div>
-                <div className="h-7 w-px bg-black/10 shrink-0" />
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase text-[#9CA3AF] tracking-wider">TOTAL</p>
-                  <p className="text-sm font-extrabold text-[#3B82F6] mt-0.5">9.50h</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setTimesheetModal("edit")}
-                  className="border border-[#7A0A17] text-[#7A0A17] hover:bg-[#FCF5F6] px-4 py-2 rounded-xl text-xs font-extrabold transition-all shadow-2xs"
-                >
-                  Regularize
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTimesheetModal("view")}
-                  className="bg-[#7A0A17] hover:bg-[#600712] text-white px-4 py-2 rounded-xl text-xs font-extrabold transition-all shadow-2xs"
-                >
-                  View Details
-                </button>
-              </div>
-            </div>
-
-            {/* Row 3: Main Dashboard Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch lg:h-[640px]">
-              <div className="flex flex-col gap-5 h-full min-h-0">
-                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                      <Target size={17} />
-                    </span>
-                    <h3 className="text-base font-extrabold text-[#111827]">KPI Scorecard</h3>
-                  </div>
-                  <div className="divide-y divide-black/6 text-xs">
-                    <div className="py-2.5 flex items-center justify-between">
-                      <span className="text-[#4B5563] font-semibold">Registration Value</span>
-                      <span className="font-extrabold text-[#111827] text-sm">19.5 lakh</span>
-                    </div>
-                    <div className="py-2.5 flex items-center justify-between">
-                      <span className="text-[#4B5563] font-semibold">Qualifying meetings</span>
-                      <span className="font-extrabold text-[#111827] text-sm">46/30</span>
-                    </div>
-                    <div className="py-2.5 flex items-center justify-between">
-                      <span className="text-[#4B5563] font-semibold">Google reviews</span>
-                      <span className="font-extrabold text-[#111827] text-sm">7</span>
-                    </div>
-                    <div className="py-2.5 flex items-center justify-between">
-                      <span className="text-[#4B5563] font-semibold">Testimonial videos</span>
-                      <span className="font-extrabold text-[#111827] text-sm">3/5</span>
-                    </div>
-                    <div className="py-2.5 flex items-center justify-between">
-                      <span className="text-[#4B5563] font-semibold">Wedding photo uploads</span>
-                      <span className="font-extrabold text-[#111827] text-sm">5</span>
-                    </div>
-                    <div className="py-2.5 flex items-center justify-between">
-                      <span className="text-[#4B5563] font-semibold">Negative reviews</span>
-                      <span className="font-extrabold text-[#111827] text-sm">1</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex-1 min-h-0 flex flex-col">
-                  <div className="flex items-center gap-3 mb-4 shrink-0">
-                    <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                      <Activity size={17} />
-                    </span>
-                    <h3 className="text-base font-extrabold text-[#111827]">Recent Activity</h3>
-                  </div>
-                  <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 relative before:absolute before:left-4 before:top-3 before:bottom-3 before:w-px before:bg-black/8">
-                    <div className="flex items-start justify-between gap-3 relative pl-8">
-                      <span className="absolute left-1 top-0.5 size-6 rounded-full bg-[#DCFCE7] text-[#16A34A] grid place-items-center ring-4 ring-white">
-                        <CheckCircle2 size={14} />
-                      </span>
-                      <div>
-                        <p className="text-xs font-extrabold text-[#111827]">Check-in</p>
-                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">Today at 9:00 AM</p>
-                      </div>
-                      <span className="bg-[#DCFCE7] text-[#15803D] text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-[#16A34A]/20">
-                        On Time
-                      </span>
-                    </div>
-
-                    <div className="flex items-start justify-between gap-3 relative pl-8">
-                      <span className="absolute left-1 top-0.5 size-6 rounded-full bg-[#DCFCE7] text-[#16A34A] grid place-items-center ring-4 ring-white">
-                        <FileCheck size={14} />
-                      </span>
-                      <div>
-                        <p className="text-xs font-extrabold text-[#111827]">Leave Approved</p>
-                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">August 3</p>
-                      </div>
-                      <span className="bg-[#DCFCE7] text-[#15803D] text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-[#16A34A]/20">
-                        Approved
-                      </span>
-                    </div>
-
-                    <div className="flex items-start justify-between gap-3 relative pl-8">
-                      <span className="absolute left-1 top-0.5 size-6 rounded-full bg-[#E0F2FE] text-[#0284C7] grid place-items-center ring-4 ring-white">
-                        <ShieldCheck size={14} />
-                      </span>
-                      <div>
-                        <p className="text-xs font-extrabold text-[#111827]">Attendance Regularized</p>
-                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">July 30</p>
-                      </div>
-                      <span className="bg-[#E0F2FE] text-[#0284C7] text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-[#0284C7]/20">
-                        Date
-                      </span>
-                    </div>
-
-                    <div className="flex items-start justify-between gap-3 relative pl-8">
-                      <span className="absolute left-1 top-0.5 size-6 rounded-full bg-[#FFEDD5] text-[#EA580C] grid place-items-center ring-4 ring-white">
-                        <Clock size={14} />
-                      </span>
-                      <div>
-                        <p className="text-xs font-extrabold text-[#111827]">Check-in</p>
-                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">July 29 at 9:10 AM</p>
-                      </div>
-                      <span className="bg-[#FFEDD5] text-[#C2410C] text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-[#EA580C]/20">
-                        Late
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-5 h-full min-h-0">
-                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm shrink-0">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                        <Receipt size={17} />
-                      </span>
-                      <h3 className="text-base font-extrabold text-[#111827]">My Expenses</h3>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setAddExpenseOpen(true)}
-                      className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-all shadow-2xs flex items-center gap-1"
-                    >
-                      <Plus size={13} /> Add Expense
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    {expenses.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6 hover:border-black/15 transition-all"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-xs font-extrabold text-[#111827] truncate">{item.purpose}</p>
-                          <p className="text-[11px] text-[#6B7280] font-medium mt-0.5 truncate">{item.destination} &middot; {item.startDate}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setViewExpense(item)}
-                            className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center transition-colors"
-                          >
-                            <Eye size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => { setViewExpense(item); toast.info("Edit mode enabled"); }}
-                            className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center transition-colors"
-                          >
-                            <Edit size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteExpense(item.id)}
-                            className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center transition-colors"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex-1 min-h-0 flex flex-col">
-                  <div className="flex items-center gap-3 mb-4 shrink-0">
-                    <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                      <Send size={17} />
-                    </span>
-                    <h3 className="text-base font-extrabold text-[#111827]">Your Request</h3>
-                  </div>
-                  <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1">
-                    {MY_REQUESTS.map((req) => (
-                      <div key={req.id} className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6">
-                        <div>
-                          <p className="text-xs font-extrabold text-[#111827]">{req.title}</p>
-                          <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">{req.submitted}</p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => setSendMessageOpen(true)}
-                            className="text-[#F59E0B] hover:text-[#D97706] p-1 rounded transition-colors"
-                            aria-label="Send message"
-                          >
-                            <MessageSquare size={16} />
-                          </button>
-                          <span
-                            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border whitespace-nowrap ${
-                              req.status === "Approved"
-                                ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
-                                : "bg-[#FFEDD5] text-[#C2410C] border-[#EA580C]/20"
-                            }`}
-                          >
-                            {req.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm h-full min-h-0 flex flex-col">
-                <div className="flex items-center justify-between mb-4 shrink-0">
-                  <div className="flex items-center gap-3">
-                    <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                      <Calendar size={17} />
-                    </span>
-                    <h3 className="text-base font-extrabold text-[#111827]">My Leave Application</h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setApplyLeaveFormOpen(true)}
-                    className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-all shadow-2xs"
-                  >
-                    Apply Leave
-                  </button>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b border-black/8 mb-3 text-xs font-bold shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setApplyLeaveOpen(true)}
-                    className="text-[#2563EB] underline underline-offset-2 hover:text-[#1D4ED8]"
-                  >
-                    Leave Balance
-                  </button>
-                  <span className="text-[#3B82F6]">1 day available</span>
-                </div>
-                <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-1">
-                  {leaves.map((leave) => (
-                    <div
-                      key={leave.id}
-                      className="flex items-center justify-between p-3 rounded-xl bg-[#FAFAFB] border border-black/6 hover:border-black/15 transition-all"
-                    >
-                      <div>
-                        <p className="text-xs font-extrabold text-[#111827]">{leave.type}</p>
-                        <p className="text-[11px] text-[#6B7280] font-medium mt-0.5">{leave.date}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setSendMessageOpen(true)}
-                          className="text-[#F59E0B] hover:text-[#D97706] p-1 rounded transition-colors"
-                          aria-label="Send message"
-                        >
-                          <MessageSquare size={16} />
-                        </button>
-                        <span
-                          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
-                            leave.status === "Approved"
-                              ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
-                              : "bg-[#FFEDD5] text-[#C2410C] border-[#EA580C]/20"
-                          }`}
-                        >
-                          {leave.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* 2. ATTENDANCE & TIMESHEET TAB */}
-        {activeTab === "Attendance & Timesheet" && (
-          <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-              {attendanceKpis.map((card) => (
-                <AttendanceStatCard key={card.title} {...card} />
-              ))}
-            </div>
-
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-extrabold text-[#111827]">Attendance Records</h2>
-                <button
-                  type="button"
-                  onClick={() => setTimesheetModal("edit")}
-                  className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-4 py-2 rounded-xl transition-all shadow-2xs"
-                >
-                  Regularize
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3 mb-5">
-                <img
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face"
-                  alt=""
-                  className="size-10 rounded-full object-cover border border-black/10"
-                />
-                <div>
-                  <h4 className="text-sm font-extrabold text-[#111827]">Ankur Sharma</h4>
-                  <p className="text-xs text-[#6B7280] font-medium">Relationship Manager</p>
-                </div>
-              </div>
-
-              <div className="w-full overflow-x-auto pb-1 scrollbar-none">
-                <div className="flex w-full min-w-[680px] items-start justify-between gap-1">
-                  {attendanceDays.map((d, index) => (
-                    <AttendanceDayCell
-                      key={index}
-                      d={d}
-                      onRegularize={() => setTimesheetModal("edit")}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-6 mt-6 pt-4 border-t border-black/8 text-xs font-bold flex-wrap">
-                <span className="flex items-center gap-1.5 text-[#15803D]">
-                  <span className="size-4 rounded-full bg-[#DCFCE7] grid place-items-center text-[10px]">✓</span> Present
-                </span>
-                <span className="flex items-center gap-1.5 text-[#DC2626]">
-                  <span className="size-4 rounded-full bg-[#FEE2E2] grid place-items-center text-[10px]">✕</span> Absent
-                </span>
-                <span className="flex items-center gap-1.5 text-[#D97706]">
-                  <span className="size-4 rounded-full bg-[#FEF3C7] grid place-items-center text-[9px]">½</span> Half Day
-                </span>
-                <span className="flex items-center gap-1.5 text-[#9333EA]">
-                  <span className="size-4 rounded-full bg-[#F3E8FF] grid place-items-center text-[9px]">H</span> Holiday
-                </span>
-                <span className="flex items-center gap-1.5 text-[#475569]">
-                  <span className="size-4 rounded-full bg-[#475569] text-white grid place-items-center text-[8px]">WO</span> Weekly Off
-                </span>
-              </div>
-            </div>
-
-            <RegularizationPendingTable days={attendanceDays} onRegularize={() => setTimesheetModal("edit")} />
-
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <h3 className="text-lg font-extrabold text-[#111827] mb-4">Attendance Policies</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-[#FFF5F5] border border-[#FECACA] rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2 text-[#7A0A17] font-extrabold text-sm">
-                    <Clock size={16} /> Working Hours
-                  </div>
-                  <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
-                    <li>General Shift: 9:00 AM - 6:00 PM (9 hours)</li>
-                    <li>Lunch Break: 1:00 PM - 2:00 PM (1 hour)</li>
-                    <li>Working Days: Monday - Friday</li>
-                  </ul>
-                </div>
-
-                <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2 text-[#1D4ED8] font-extrabold text-sm">
-                    <BadgeCheck size={16} /> Standard Attendance Policy
-                  </div>
-                  <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
-                    <li>Late Arrival Grace: 15 Minutes</li>
-                    <li>Early Departure Grace: 15 Minutes</li>
-                    <li>Overtime Rate: ₹150/hr</li>
-                  </ul>
-                </div>
-
-                <div className="bg-[#F0FDF4] border border-[#BBF7D0] rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2 text-[#15803D] font-extrabold text-sm">
-                    <Calendar size={16} /> Leave Policy
-                  </div>
-                  <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
-                    <li>Casual Leave: 12 days per annum</li>
-                    <li>Sick Leave: 8 days per annum</li>
-                    <li>Earned Leave: 18 days per annum</li>
-                    <li>Minimum 2 days notice for leave applications</li>
-                  </ul>
-                </div>
-
-                <div className="bg-[#F5F3FF] border border-[#DDD6FE] rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2 text-[#6D28D9] font-extrabold text-sm">
-                    <AlertTriangle size={16} /> Late Arrival Policy
-                  </div>
-                  <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
-                    <li>Min. 80% attendance required per month</li>
-                    <li>Late arrival after 9:15 AM requires regularization</li>
-                    <li>3 consecutive absences without intimation may result in show-cause notice</li>
-                    <li>Proxy attendance is prohibited</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 4. SALARY & PAYSLIP TAB */}
-        {activeTab === "Salary & Payslip" && (
-          <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
             {/* Header Payroll Selector Bar */}
             <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -2124,14 +1629,14 @@ export default function HrmsPage() {
                 </span>
                 <div>
                   <h3 className="text-base font-extrabold text-[#111827]">Ankur Sharma</h3>
-                  <p className="text-xs text-[#6B7280] font-medium">December 2026</p>
+                  <p className="text-xs text-[#6B7280] font-medium">{period}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <select className="appearance-none bg-white border border-black/12 rounded-xl px-4 py-2 pr-9 text-xs font-bold text-[#374151] cursor-pointer outline-none">
-                    <option>December 2026 Payroll (12/1/2026 - 12/31/2026)</option>
+                    <option>{period} Payroll</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280]" />
                 </div>
@@ -2338,807 +1843,1012 @@ export default function HrmsPage() {
               </div>
             </div>
           </div>
-        )}
+  );
+}
 
-        {/* 5. INCENTIVES TAB */}
-        {activeTab === "Incentives" && (
-          <div className="flex flex-col gap-6">
-            {/* Header Statement Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <h2 className="text-xl font-extrabold text-[#111827]">My Incentive Statement</h2>
-              <button
-                type="button"
-                onClick={() => toast.success("Incentive statement report generated!")}
-                className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-4 py-2 rounded-xl shadow-2xs self-start"
-              >
-                + Download statement
-              </button>
-            </div>
+function GoalsReviewsPanel({
+  searchGoal,
+  onSearchChange,
+  goalSort,
+  onSort,
+  pagedGoals,
+  goalPage,
+  goalPageSize,
+  goalTotalPages,
+  totalItems,
+  onPageChange,
+  expandedRemarks,
+  onToggleRemark,
+  onGoalAction,
+  embedded = false,
+}) {
+  return (
+    <div className={`flex flex-col min-w-0 ${embedded ? "" : "gap-6"}`}>
+      <TabToolbar search={searchGoal} onSearchChange={onSearchChange} />
 
-            {/* 4 Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
-                <p className="text-xs font-bold text-[#6B7280]">1. Registration incentive</p>
-                <p className="text-2xl font-black text-[#111827] mt-1">₹67,924</p>
-                <p className="text-[10px] text-[#9CA3AF] mt-1 font-semibold">5 deals • slab 3-6% • net of GST</p>
-              </div>
+      <div className={embedded ? "min-w-0 mt-4" : "min-w-0 bg-white border border-black/10 rounded-2xl p-5 shadow-sm"}>
+        <div className="overflow-x-auto min-w-0 border border-black/8 rounded-xl">
+          <table className="w-full min-w-[960px] text-left border-collapse text-xs">
+            <thead>
+              <HrmsSortHead
+                sort={goalSort}
+                onSort={onSort}
+                cols={[
+                  { label: "#", key: "id", unsortable: true },
+                  { label: "Title", key: "title" },
+                  { label: "Employee", key: "employee" },
+                  { label: "Goal Type", key: "goalType" },
+                  { label: "Start Date", key: "startDate" },
+                  { label: "End Date", key: "endDate" },
+                  { label: "Progress", key: "progress" },
+                  { label: "Status", key: "status" },
+                  { label: "Actions", key: "actions", unsortable: true },
+                ]}
+              />
+            </thead>
+            <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+              {pagedGoals.map((g, idx) => {
+                const isExpanded = expandedRemarks[g.id];
+                return (
+                  <tr key={g.id} className="hover:bg-[#FAFAFB] transition-colors align-top">
+                    <td className="px-4 py-3 font-bold text-[#6B7280]">{(goalPage - 1) * goalPageSize + idx + 1}</td>
+                    <td className="px-4 py-3 font-bold">{g.title}</td>
+                    <td className="px-4 py-3">{g.employee}</td>
+                    <td className="px-4 py-3 text-[#6B7280]">{g.goalType}</td>
+                    <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{g.startDate}</td>
+                    <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{g.endDate}</td>
+                    <td className="px-4 py-3 min-w-[220px]">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-24 rounded-full bg-[#EDEEF1] overflow-hidden shrink-0">
+                          <div className="h-full rounded-full bg-[#16A34A]" style={{ width: `${g.progress}%` }} />
+                        </div>
+                        <span className="font-bold text-[#111827] shrink-0">{g.progress}%</span>
+                      </div>
+                      <p className={`text-[11px] text-[#374151] mt-1.5 ${isExpanded ? "" : "line-clamp-1"}`}>
+                        <span className="text-[#DC2626] font-bold">Remarks: </span>
+                        {g.remarks}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => onToggleRemark(g.id)}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold text-[#3B82F6] mt-0.5"
+                      >
+                        {isExpanded ? "Show less" : "Show more"}
+                        <ChevronDown size={11} className={isExpanded ? "rotate-180 transition-transform" : "transition-transform"} />
+                      </button>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-block text-[11px] font-bold px-2.5 py-1 rounded-lg border bg-[#E0F2FE] text-[#0284C7] border-[#0284C7]/20 whitespace-nowrap">
+                        {g.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => onGoalAction("view", g)}
+                          className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center"
+                          title="View"
+                          aria-label={`View ${g.title}`}
+                        >
+                          <Eye size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onGoalAction("edit", g)}
+                          className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center"
+                          title="Edit"
+                          aria-label={`Edit ${g.title}`}
+                        >
+                          <Edit size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onGoalAction("review", g)}
+                          className="size-7 rounded-lg bg-[#EEF0FE] hover:bg-[#DCE0FC] grid place-items-center transition-colors"
+                          title="Conduct review"
+                          aria-label={`Conduct review for ${g.title}`}
+                        >
+                          <img src={conductReviewIcon} alt="" className="size-3.5 object-contain" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onGoalAction("delete", g)}
+                          className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center"
+                          title="Delete"
+                          aria-label={`Delete ${g.title}`}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
-              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
-                <p className="text-xs font-bold text-[#6B7280]">2. Meetings incentive</p>
-                <p className="text-2xl font-black text-[#111827] mt-1">₹2,100</p>
-                <p className="text-[10px] text-[#9CA3AF] mt-1 font-semibold">42 meetings • ₹50 tier</p>
-              </div>
-
-              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
-                <p className="text-xs font-bold text-[#6B7280]">3. Performance bonuses</p>
-                <p className="text-2xl font-black text-[#111827] mt-1">₹1,420</p>
-                <p className="text-[10px] text-[#9CA3AF] mt-1 font-semibold">reviews, videos, photos • net of 1 penalty</p>
-              </div>
-
-              <div className="bg-[#FCF5F6] border border-[#7A0A17]/20 rounded-2xl p-4 shadow-sm">
-                <p className="text-xs font-bold text-[#7A0A17]">Net payable</p>
-                <p className="text-2xl font-black text-[#7A0A17] mt-1">₹71,444</p>
-                <p className="text-[10px] text-[#7A0A17]/80 mt-1 font-bold">paid with July salary</p>
-              </div>
-            </div>
-
-            {/* Sections 1–3 in one row — equal height cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
-              {/* Section 1: Registration Incentive Amount */}
-              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col h-full">
-                <h3 className="text-base font-extrabold text-[#111827] mb-3">1. Incentive on registration amount</h3>
-                <div className="overflow-x-auto border border-black/8 rounded-xl flex-1">
-                  <table className="w-full text-left border-collapse text-xs h-full">
-                    <RegistrationIncentiveTable />
-                  </table>
-                </div>
-              </div>
-
-              {/* Section 2: Meetings Incentive */}
-              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col h-full">
-                <h3 className="text-base font-extrabold text-[#111827]">2. Meetings incentive (monthly)</h3>
-                <p className="text-2xl font-black text-[#111827] mt-1">42 <span className="text-xs text-[#6B7280] font-normal">qualifying meetings</span></p>
-
-                {/* Progress Bar & Note */}
-                <div className="mt-3">
-                  <div className="h-3 w-full bg-black/8 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#7A0A17] w-[80%]" />
-                  </div>
-                  <div className="flex justify-between text-[10px] font-bold text-[#6B7280] mt-1">
-                    <span>30 - ₹50 tier</span>
-                    <span>50 - ₹100 tier</span>
-                  </div>
-                  <div className="bg-[#FFF3E4] border border-[#F59E0B]/30 rounded-xl p-2.5 mt-3 text-xs text-[#B45309] font-bold">
-                    8 more meetings unlocks the ₹100 tier - ₹4,200 for the month.
-                  </div>
-                </div>
-
-                {/* Table */}
-                <div className="mt-4 overflow-x-auto border border-black/8 rounded-xl flex-1">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <MeetingsIncentiveTable />
-                  </table>
-                </div>
-              </div>
-
-              {/* Section 3: Performance Incentives */}
-              <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col h-full">
-                <h3 className="text-base font-extrabold text-[#111827] mb-3">3. Additional performance incentives</h3>
-                <div className="overflow-x-auto border border-black/8 rounded-xl flex-1">
-                  <table className="w-full text-left border-collapse text-xs h-full">
-                    <PerformanceIncentiveTable />
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer Summary Banner */}
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-bold">
-              <p className="text-[#6B7280] max-w-2xl">
-                Registration slabs are applied to values net of applicable meeting and bonus rewards are flat. All figures are indicative and settle with the July payroll cycle.
-              </p>
-              <div className="flex items-center gap-4 shrink-0 text-sm">
-                <span>Gross incentive: <strong className="text-[#111827]">₹71,444</strong></span>
-                <span className="text-[#7A0A17] font-black">Net payable (post-GST): ₹71,444</span>
-              </div>
-            </div>
+        {!embedded && (
+          <div className="mt-4">
+            <Pagination
+              page={goalPage}
+              totalPages={goalTotalPages}
+              totalItems={totalItems}
+              pageSize={goalPageSize}
+              itemLabel="employee goals"
+              onChange={onPageChange}
+            />
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function TrainingsPanel({
+  search,
+  onSearchChange,
+  sort,
+  onSort,
+  rows,
+  page,
+  pageSize,
+  totalPages,
+  totalItems,
+  onPageChange,
+  onAction,
+  embedded = false,
+}) {
+  return (
+    <div className={`flex flex-col min-w-0 ${embedded ? "" : "gap-6"}`}>
+      <TabToolbar search={search} onSearchChange={onSearchChange} />
+
+      <div className={embedded ? "min-w-0 mt-4" : "min-w-0 bg-white border border-black/10 rounded-2xl p-5 shadow-sm"}>
+        <div className="overflow-x-auto min-w-0 border border-black/8 rounded-xl">
+          <table className="w-full min-w-[860px] text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
+                <SortableTh label="#" sortKey="id" unsortable className={HRMS_TH} />
+                <SortableTh label="Program" sortKey="program" sort={sort} onSort={onSort} className={HRMS_TH} />
+                <SortableTh label="Date & Time" sortKey="dateTime" sort={sort} onSort={onSort} className={HRMS_TH} />
+                <SortableTh label="Location" sortKey="location" sort={sort} onSort={onSort} className={HRMS_TH} />
+                <SortableTh label="Status" sortKey="status" sort={sort} onSort={onSort} className={HRMS_TH} />
+                <SortableTh label="Score" sortKey="score" sort={sort} onSort={onSort} className={HRMS_TH} />
+                <SortableTh label="Attendance" sortKey="attendance" sort={sort} onSort={onSort} className={HRMS_TH} />
+                <SortableTh label="Actions" sortKey="actions" unsortable className={HRMS_TH} />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+              {rows.map((t, idx) => (
+                <tr key={t.id} className="hover:bg-[#FAFAFB] transition-colors align-top">
+                  <td className="px-4 py-3 font-bold text-[#6B7280]">{(page - 1) * pageSize + idx + 1}</td>
+                  <td className="px-4 py-3">
+                    <p className="font-bold">{t.program}</p>
+                    <p className="text-[#9CA3AF] font-medium">{t.track}</p>
+                  </td>
+                  <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{t.dateTime}</td>
+                  <td className="px-4 py-3">
+                    <p>{t.location}</p>
+                    <span
+                      className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md border mt-1 ${
+                        t.locationType === "Virtual"
+                          ? "bg-[#EEF0FE] text-[#6366F1] border-[#6366F1]/20"
+                          : "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
+                      }`}
+                    >
+                      {t.locationType}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                        t.status === "Completed"
+                          ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                          : "bg-[#E0F2FE] text-[#0284C7] border-[#0284C7]/20"
+                      }`}
+                    >
+                      {t.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {t.status === "Completed" ? (
+                      <>
+                        <p className="font-extrabold">{t.score.toFixed(1)}%</p>
+                        <span
+                          className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md mt-1 ${
+                            t.result === "Passed" ? "bg-[#DCFCE7] text-[#15803D]" : "bg-[#FEE2E2] text-[#DC2626]"
+                          }`}
+                        >
+                          {t.result}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[#9CA3AF]">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-[#6B7280]">{t.attendance || "—"}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onAction("view", t)}
+                        className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center"
+                        title="View"
+                        aria-label={`View ${t.program}`}
+                      >
+                        <Eye size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onAction("edit", t)}
+                        className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center"
+                        title="Edit"
+                        aria-label={`Edit ${t.program}`}
+                      >
+                        <Edit size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onAction("delete", t)}
+                        className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center"
+                        title="Delete"
+                        aria-label={`Delete ${t.program}`}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {!embedded && (
+          <div className="mt-4">
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              itemLabel="training sessions"
+              onChange={onPageChange}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AssetsPanel({
+  search,
+  onSearchChange,
+  sort,
+  onSort,
+  rows,
+  page,
+  pageSize,
+  totalPages,
+  totalItems,
+  onPageChange,
+  embedded = false,
+}) {
+  return (
+    <div className={`flex flex-col min-w-0 ${embedded ? "" : "gap-6"}`}>
+      <TabToolbar search={search} onSearchChange={onSearchChange} />
+
+      <div className={embedded ? "min-w-0 mt-4" : "min-w-0 bg-white border border-black/10 rounded-2xl p-5 shadow-sm"}>
+        <div className="overflow-x-auto min-w-0 border border-black/8 rounded-xl">
+          <table className="w-full min-w-[760px] text-left border-collapse text-xs">
+            <thead>
+              <HrmsSortHead
+                sort={sort}
+                onSort={onSort}
+                cols={[
+                  { label: "#", key: "id", unsortable: true },
+                  { label: "Name", key: "name" },
+                  { label: "Asset Code", key: "code" },
+                  { label: "Status", key: "status" },
+                  { label: "Assigned Date", key: "assignedDate" },
+                  { label: "Return Date", key: "returnDate" },
+                  { label: "Actions", key: "actions", unsortable: true },
+                ]}
+              />
+            </thead>
+            <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
+              {rows.map((a, idx) => (
+                <tr key={a.id} className="hover:bg-[#FAFAFB] transition-colors">
+                  <td className="px-4 py-3 font-bold text-[#6B7280]">{(page - 1) * pageSize + idx + 1}</td>
+                  <td className="px-4 py-3">
+                    <p className="font-bold">{a.name}</p>
+                    <p className="text-[#9CA3AF] font-medium">{a.category}</p>
+                  </td>
+                  <td className="px-4 py-3 text-[#6B7280]">
+                    <p className="font-bold text-[#111827]">{a.code}</p>
+                    <p>{a.subCode}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                        a.status === "Available"
+                          ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                          : "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
+                      }`}
+                    >
+                      {a.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{a.assignedDate}</td>
+                  <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{a.returnDate || "-"}</td>
+                  <td className="px-4 py-3">
+                    {a.status === "Available" ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => toast.info(`Reassigning ${a.name}`)}
+                          className="size-7 rounded-lg bg-[#FEF3C7] hover:bg-[#FDE68A] grid place-items-center"
+                          aria-label="Reassign"
+                        >
+                          <img src={yellowLoopIcon} alt="" className="size-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toast.success(`${a.name} marked as returned`)}
+                          className="size-7 rounded-lg bg-[#FEE2E2] hover:bg-[#FCA5A5] grid place-items-center"
+                          aria-label="Mark returned"
+                        >
+                          <img src={redBackIcon} alt="" className="size-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[#9CA3AF]">-</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {!embedded && (
+          <div className="mt-4">
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              itemLabel="assets"
+              onChange={onPageChange}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ComplaintsWarningsPanel({ onViewNotice, embedded = false }) {
+  return (
+    <div className="flex flex-col gap-6 min-w-0">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { label: "Open warnings", value: "1", sub: "Needs acknowledgement" },
+          { label: "Complaints filed", value: "1", sub: "Closed this year" },
+          { label: "Total on record", value: "3", sub: "Warnings + complaints" },
+        ].map((card) => (
+          <div key={card.label} className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+            <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">{card.label}</p>
+            <p className="text-xl font-extrabold text-[#111827] mt-1.5">{card.value}</p>
+            <p className="text-[12.5px] text-[#6B7280] mt-1">{card.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className={embedded ? "min-w-0" : "bg-white border border-black/10 rounded-2xl p-5 shadow-sm"}>
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <div className="flex items-center gap-2.5">
+            <span className="size-9 rounded-full bg-[#FCF5F6] text-[#7A0A17] grid place-items-center">
+              <AlertTriangle size={16} />
+            </span>
+            <div>
+              <h3 className="text-sm font-extrabold text-[#111827]">Complaints &amp; warnings</h3>
+              <p className="text-[12.5px] text-[#6B7280]">Official notices and HR-logged issues</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onViewNotice}
+              className="h-9 px-3.5 rounded-xl border border-[#7A0A17] text-[#7A0A17] text-xs font-bold hover:bg-[#7A0A17] hover:text-white transition-colors"
+            >
+              View notice
+            </button>
+            <button
+              type="button"
+              onClick={() => toast.info("Complaint form opens here.")}
+              className="h-9 px-3.5 rounded-xl bg-[#7A0A17] text-white text-xs font-bold hover:bg-[#600712] transition-colors"
+            >
+              Raise complaint
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto min-w-0 border border-black/8 rounded-xl">
+          <table className="w-full min-w-[860px] text-left border-collapse text-xs">
+            <thead>
+              <tr className="bg-[#FAFAFB] border-b border-black/8">
+                {["#", "Type", "Title", "Raised on", "Raised by", "Severity", "Status", "Detail"].map((h) => (
+                  <th key={h} className="px-4 py-3 text-[11px] font-bold text-[#6B7280] whitespace-nowrap">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {INITIAL_COMPLAINTS_WARNINGS.map((row) => (
+                <tr key={row.id} className="border-b border-black/5 last:border-b-0">
+                  <td className="px-4 py-3 text-[#6B7280]">{row.id}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                        row.kind === "Warning"
+                          ? "bg-[#FEE2E2] text-[#DC2626] border-[#DC2626]/20"
+                          : "bg-[#DBEAFE] text-[#2563EB] border-[#2563EB]/20"
+                      }`}
+                    >
+                      {row.kind}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 font-bold text-[#111827] whitespace-nowrap">{row.title}</td>
+                  <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{row.raisedOn}</td>
+                  <td className="px-4 py-3 text-[#374151] whitespace-nowrap">{row.raisedBy}</td>
+                  <td className="px-4 py-3 text-[#374151]">{row.severity}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                        row.status === "Open"
+                          ? "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
+                          : row.status === "Closed"
+                            ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+                            : "bg-[#F3F4F6] text-[#4B5563] border-black/10"
+                      }`}
+                    >
+                      {row.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-[#6B7280] min-w-[220px]">{row.detail}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const SUMMARY_EMPLOYEE = {
+  name: USER.name,
+  id: "MML-E-1001",
+  email: USER.email,
+  branch: "South Extension",
+  department: "Sales",
+  designation: USER.role,
+};
+
+export default function HrmsPage() {
+  const [searchParams] = useSearchParams();
+  const [selectedMonth, setSelectedMonth] = useState("April");
+  const [selectedYear, setSelectedYear] = useState("2025");
+  const [activeTab, setActiveTab] = useState(() =>
+    HRMS_TABS.includes(searchParams.get("tab")) ? searchParams.get("tab") : "Summary"
+  );
+
+  const attendanceDays = useMemo(
+    () => getAttendanceDays(selectedMonth, selectedYear),
+    [selectedMonth, selectedYear]
+  );
+  const attendancePresent = attendanceDays.reduce((sum, d) => {
+    if (d.status === "P") return sum + 1;
+    if (d.status === "1/2") return sum + 0.5;
+    return sum;
+  }, 0);
+  const attendanceKpis = useMemo(() => {
+    const totalDays = attendanceDays.length;
+    const presentDays = attendanceDays.filter((d) => d.status === "P").length;
+    const lateDays = attendanceDays.filter((d) => d.status === "P" && d.timesheet.login === "09:15 AM").length;
+    const leaveDays = attendanceDays.filter((d) => d.status === "X").length;
+    const halfDays = attendanceDays.filter((d) => d.status === "1/2").length;
+    const grand = Number.isInteger(attendancePresent) ? String(attendancePresent) : attendancePresent.toFixed(1);
+    return [
+      { title: "Total Present Days", value: `${presentDays} Days`, sub: `Out of ${totalDays} Days`, icon: CalendarCheck, iconBg: "#DCFCE7", iconColor: "#16A34A" },
+      { title: "Late Days", value: `${lateDays} Days`, sub: "Total late arrivals", icon: Clock, iconBg: "#FEE2E2", iconColor: "#DC2626" },
+      { title: "Total Leaves", value: `${leaveDays} Days`, sub: "Absent days this month", icon: CalendarPlus, iconBg: "#FEF3C7", iconColor: "#D97706" },
+      { title: "Half Days", value: `${halfDays} Days`, sub: "Total half days", icon: Coffee, iconBg: "#F3E8FF", iconColor: "#7C3AED" },
+      { title: "Grand Total", value: `${grand}/${totalDays}`, sub: "Present days this month", icon: BarChart3, iconBg: "#DBEAFE", iconColor: "#2563EB" },
+    ];
+  }, [attendanceDays, attendancePresent]);
+
+  // Expenses & Leaves State
+  const [expenses, setExpenses] = useState(INITIAL_EXPENSES);
+  const [leaves, setLeaves] = useState(INITIAL_LEAVES);
+
+  // Modals state
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [noticeModalOpen, setNoticeModalOpen] = useState(false);
+  const [shiftModalOpen, setShiftModalOpen] = useState(false);
+  const [timesheetModal, setTimesheetModal] = useState(null);
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
+  const [achievementModalOpen, setAchievementModalOpen] = useState(false);
+  const [incentivesModalOpen, setIncentivesModalOpen] = useState(false);
+  const [awardsModalOpen, setAwardsModalOpen] = useState(false);
+  const [promotionModalOpen, setPromotionModalOpen] = useState(false);
+  const [warningModalOpen, setWarningModalOpen] = useState(false);
+  const [goalsModalOpen, setGoalsModalOpen] = useState(false);
+  const [trainingsModalOpen, setTrainingsModalOpen] = useState(false);
+  const [assetsModalOpen, setAssetsModalOpen] = useState(false);
+  const [exitModalOpen, setExitModalOpen] = useState(false);
+  const [salarySlip, setSalarySlip] = useState(null);
+  const [addExpenseOpen, setAddExpenseOpen] = useState(false);
+  const [viewExpense, setViewExpense] = useState(null);
+  const [applyLeaveOpen, setApplyLeaveOpen] = useState(false);
+  const [applyLeaveFormOpen, setApplyLeaveFormOpen] = useState(false);
+  const [shiftChangeFormOpen, setShiftChangeFormOpen] = useState(false);
+  const [shiftChangeRequests, setShiftChangeRequests] = useState(INITIAL_SHIFT_CHANGE_REQUESTS);
+  const [sendMessageOpen, setSendMessageOpen] = useState(false);
+  const [addManualRowOpen, setAddManualRowOpen] = useState(false);
+
+  // Trainings / Goals & Reviews / Asset tab state
+  const [trainings, setTrainings] = useState(INITIAL_TRAININGS);
+  const [goals, setGoals] = useState(INITIAL_GOALS);
+  const [trainingModal, setTrainingModal] = useState(null); // { mode: 'view'|'edit'|'delete', item }
+  const [goalModal, setGoalModal] = useState(null); // { mode: 'view'|'edit'|'review'|'delete', item }
+  const [searchTraining, setSearchTraining] = useState("");
+  const [trainingPage, setTrainingPage] = useState(1);
+  const [searchGoal, setSearchGoal] = useState("");
+  const [goalPage, setGoalPage] = useState(1);
+  const [expandedRemarks, setExpandedRemarks] = useState({});
+  const [searchAsset, setSearchAsset] = useState("");
+  const [assetPage, setAssetPage] = useState(1);
+  const [searchAward, setSearchAward] = useState("");
+  const [awardPage, setAwardPage] = useState(1);
+  const [searchContest, setSearchContest] = useState("");
+  const [contestPage, setContestPage] = useState(1);
+
+  // Form Fields
+  const [issueText, setIssueText] = useState("");
+  const [newShift, setNewShift] = useState("Morning Shift (8:00 AM - 5:00 PM)");
+  const [expenseForm, setExpenseForm] = useState({
+    employee: "",
+    purpose: "",
+    destination: "",
+    startDate: "",
+    endDate: "",
+    description: "",
+    expectedOutcomes: "",
+    advanceAmount: "",
+  });
+  const [expenseDocument, setExpenseDocument] = useState(null);
+  const [leaveForm, setLeaveForm] = useState({ type: "Casual Leave", startDate: "", endDate: "", comment: "" });
+
+  // Handle Submissions
+  const handleReportIssue = (e) => {
+    e.preventDefault();
+    if (!issueText.trim()) return;
+    toast.success("Issue reported successfully. HR team will review shortly.");
+    setIssueText("");
+    setReportModalOpen(false);
+  };
+
+  const handleChangeShift = (e) => {
+    e.preventDefault();
+    const newRequest = {
+      id: Date.now(),
+      from: "General (9:00 AM - 6:00 PM)",
+      to: newShift.replace(" Shift", ""),
+      effective: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+      status: "Pending",
+    };
+    setShiftChangeRequests([newRequest, ...shiftChangeRequests]);
+    toast.success(`Shift change request submitted for ${newShift}`);
+    setShiftChangeFormOpen(false);
+  };
+
+  const handleAddExpense = (e) => {
+    e.preventDefault();
+    if (!expenseForm.employee || !expenseForm.purpose || !expenseForm.destination || !expenseForm.startDate || !expenseForm.endDate) return;
+    const newEntry = {
+      id: Date.now(),
+      employee: expenseForm.employee,
+      purpose: expenseForm.purpose,
+      destination: expenseForm.destination,
+      startDate: expenseForm.startDate,
+      endDate: expenseForm.endDate,
+      status: "Pending",
+      advanceAmount: expenseForm.advanceAmount ? Number(expenseForm.advanceAmount).toFixed(2) : "0.00",
+      advanceStatus: "Active",
+      totalExpenses: "-",
+      documentName: expenseDocument?.name || null,
+      description: expenseForm.description,
+      expectedOutcomes: expenseForm.expectedOutcomes,
+    };
+    setExpenses([newEntry, ...expenses]);
+    toast.success("Expense added successfully!");
+    setExpenseForm({
+      employee: "", purpose: "", destination: "", startDate: "", endDate: "",
+      description: "", expectedOutcomes: "", advanceAmount: "",
+    });
+    setExpenseDocument(null);
+    setAddExpenseOpen(false);
+  };
+
+  const handleApplyLeave = (e) => {
+    e.preventDefault();
+    const selected = LEAVE_BALANCE_TYPES.find((lt) => lt.type === leaveForm.type);
+    if (!selected || selected.available <= 0) {
+      toast.error(`No ${leaveForm.type} balance remaining. You cannot apply for this category.`);
+      return;
+    }
+    if (!leaveForm.startDate) return;
+    const dateStr = leaveForm.endDate && leaveForm.endDate !== leaveForm.startDate
+      ? `${leaveForm.startDate} - ${leaveForm.endDate}`
+      : leaveForm.startDate;
+    const newLeave = {
+      id: Date.now(),
+      type: leaveForm.type,
+      date: dateStr,
+      status: "Pending",
+      comment: leaveForm.comment || "Requested leave.",
+    };
+    setLeaves([newLeave, ...leaves]);
+    toast.success("Leave application submitted successfully!");
+    setLeaveForm({ type: "Casual Leave", startDate: "", endDate: "", comment: "" });
+    setApplyLeaveFormOpen(false);
+    return true;
+  };
+
+  const filteredTrainings = trainings.filter((t) =>
+    t.program.toLowerCase().includes(searchTraining.toLowerCase())
+  );
+  const { sorted: sortedTrainings, sort: trainingSort, toggle: toggleTrainingSort } = useTableSort(filteredTrainings, {
+    defaultKey: "program",
+  });
+  const trainingPageSize = 4;
+  const trainingTotalPages = Math.max(1, Math.ceil(filteredTrainings.length / trainingPageSize));
+  const pagedTrainings = sortedTrainings.slice(
+    (trainingPage - 1) * trainingPageSize,
+    trainingPage * trainingPageSize
+  );
+
+  const filteredGoals = goals.filter((g) => g.title.toLowerCase().includes(searchGoal.toLowerCase()));
+  const { sorted: sortedGoals, sort: goalSort, toggle: toggleGoalSort } = useTableSort(filteredGoals, { defaultKey: "title" });
+  const goalPageSize = 20;
+  const goalTotalPages = Math.max(1, Math.ceil(filteredGoals.length / goalPageSize));
+  const pagedGoals = sortedGoals.slice((goalPage - 1) * goalPageSize, goalPage * goalPageSize);
+
+  const handleSaveTraining = (updated) => {
+    setTrainings((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    setTrainingModal(null);
+    toast.success("Training updated successfully.");
+  };
+
+  const handleDeleteTraining = () => {
+    const item = trainingModal?.item;
+    if (!item) return;
+    setTrainings((prev) => prev.filter((t) => t.id !== item.id));
+    setTrainingModal(null);
+    toast.success(`“${item.program}” deleted.`);
+  };
+
+  const handleSaveGoal = (updated) => {
+    setGoals((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
+    setGoalModal(null);
+    toast.success("Goal updated successfully.");
+  };
+
+  const handleSaveGoalReview = (updated) => {
+    setGoals((prev) => prev.map((g) => (g.id === updated.id ? { ...g, ...updated } : g)));
+    setGoalModal(null);
+    toast.success("Goal review saved successfully.");
+  };
+
+  const handleDeleteGoal = () => {
+    const item = goalModal?.item;
+    if (!item) return;
+    setGoals((prev) => prev.filter((g) => g.id !== item.id));
+    setGoalModal(null);
+    toast.success(`“${item.title}” deleted.`);
+  };
+
+  const filteredAssets = INITIAL_ASSETS.filter((a) =>
+    a.name.toLowerCase().includes(searchAsset.toLowerCase())
+  );
+  const { sorted: sortedAssets, sort: assetSort, toggle: toggleAssetSort } = useTableSort(filteredAssets, {
+    defaultKey: "name",
+  });
+  const assetPageSize = 10;
+  const assetTotalPages = Math.max(1, Math.ceil(filteredAssets.length / assetPageSize));
+  const pagedAssets = sortedAssets.slice((assetPage - 1) * assetPageSize, assetPage * assetPageSize);
+
+  const filteredAwards = INITIAL_AWARDS.filter((a) => {
+    const q = searchAward.toLowerCase();
+    return (
+      a.awardType.toLowerCase().includes(q) ||
+      a.gift.toLowerCase().includes(q) ||
+      a.description.toLowerCase().includes(q)
+    );
+  });
+  const { sorted: sortedAwards, sort: awardSort, toggle: toggleAwardSort } = useTableSort(filteredAwards, {
+    defaultKey: "awardDate",
+  });
+  const awardPageSize = 10;
+  const awardTotalPages = Math.max(1, Math.ceil(filteredAwards.length / awardPageSize));
+  const pagedAwards = sortedAwards.slice((awardPage - 1) * awardPageSize, awardPage * awardPageSize);
+
+  const filteredContests = INITIAL_CONTESTS.filter((c) => {
+    const q = searchContest.toLowerCase();
+    return (
+      c.challengeName.toLowerCase().includes(q) ||
+      c.project.toLowerCase().includes(q) ||
+      c.criteria.toLowerCase().includes(q) ||
+      c.challengeStatus.toLowerCase().includes(q)
+    );
+  });
+  const { sorted: sortedContests, sort: contestSort, toggle: toggleContestSort } = useTableSort(filteredContests, {
+    defaultKey: "challengeName",
+  });
+  const contestPageSize = 10;
+  const contestTotalPages = Math.max(1, Math.ceil(filteredContests.length / contestPageSize));
+  const pagedContests = sortedContests.slice((contestPage - 1) * contestPageSize, contestPage * contestPageSize);
+  const awardsPanelProps = {
+    searchAward,
+    setSearchAward,
+    setAwardPage,
+    awardSort,
+    toggleAwardSort,
+    pagedAwards,
+    awardPage,
+    awardPageSize,
+    awardTotalPages,
+    filteredAwards,
+    searchContest,
+    setSearchContest,
+    setContestPage,
+    contestSort,
+    toggleContestSort,
+    pagedContests,
+    contestPage,
+    contestPageSize,
+    contestTotalPages,
+    filteredContests,
+  };
+
+  const { sorted: sortedLeaveTypes, sort: leaveSort, toggle: toggleLeaveSort } = useTableSort(LEAVE_BALANCE_TYPES, {
+    defaultKey: "type",
+  });
+
+  const selectedLeaveBalance = LEAVE_BALANCE_TYPES.find((lt) => lt.type === leaveForm.type);
+  const selectedAvailable = selectedLeaveBalance?.available ?? 0;
+  const selectedPending = leaves.filter((l) => l.type === leaveForm.type && l.status === "Pending").length;
+  const canApplySelectedLeave = selectedAvailable > 0;
+
+  return (
+    <div className="flex flex-col flex-1 min-h-screen bg-[#F7F8FA] text-[#111827] font-sans">
+      {/* TopBar is rendered by Layout; removed per global header update */}
+
+      {/* ── Page Content Container ───────────────────────────────────────── */}
+      <div className="p-4 sm:p-5 lg:p-6 flex flex-col gap-5 w-full max-w-none">
+        
+        {activeTab !== "Summary" && (
+          <>
+          {/* ── Section Header: Breadcrumb & Title & Selectors ───────────── */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              {/* Breadcrumb */}
+              {/* <div className="flex items-center gap-2 text-xs font-semibold text-[#6B7280]">
+                <span className="hover:text-[#7A0A17] cursor-pointer transition-colors">Dashboard</span>
+                <ChevronRight size={13} className="text-[#9CA3AF]" />
+                <span className="hover:text-[#7A0A17] cursor-pointer transition-colors">My Workspace</span>
+                <ChevronRight size={13} className="text-[#9CA3AF]" />
+                <span className="text-[#111827] font-bold">HRMS</span>
+              </div> */}
+  
+              {/* Title */}
+              <div className="mt-1">
+                <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#E8395B]">
+                  YOU ARE VIEWING
+                </p>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
+                  {selectedMonth} {selectedYear}
+                </h1>
+              </div>
+            </div>
+  
+            {/* Controls Right */}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {/* Month Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="appearance-none bg-white border border-black/12 hover:border-[#7A0A17]/40 rounded-xl px-4 py-2 pr-9 text-sm font-semibold text-[#374151] shadow-sm cursor-pointer outline-none transition-all"
+                >
+                  {MONTH_OPTIONS.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+                <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" />
+              </div>
+  
+              {/* Year Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="appearance-none bg-white border border-black/12 hover:border-[#7A0A17]/40 rounded-xl px-4 py-2 pr-9 text-sm font-semibold text-[#374151] shadow-sm cursor-pointer outline-none transition-all"
+                >
+                  {YEAR_OPTIONS.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+                <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" />
+              </div>
+  
+              {/* Report an Issue Button */}
+              <button
+                type="button"
+                onClick={() => setReportModalOpen(true)}
+                className="bg-[#7A0A17] hover:bg-[#600712] text-white text-sm font-bold px-4 py-2 rounded-xl shadow-sm hover:shadow transition-all duration-150 active:scale-[0.98]"
+              >
+                Report an issue
+              </button>
+            </div>
+          </div>
+  
+          {/* ── Tabs Navigation Bar ────────────────────────────────────────── */}
+          <div className="border-b border-black/10 overflow-x-auto scrollbar-none">
+            <nav className="flex items-center gap-6 sm:gap-8 min-w-max">
+              {HRMS_TABS.map((tab) => {
+                const isActive = activeTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={`pb-3 text-sm font-bold transition-all relative whitespace-nowrap ${
+                      isActive
+                        ? "text-[#7A0A17]"
+                        : "text-[#6B7280] hover:text-[#111827]"
+                    }`}
+                  >
+                    {tab}
+                    {isActive && (
+                      <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#7A0A17] rounded-t-full" />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+          </>
+        )}
+
+        {activeTab === "Summary" && (
+          <HrmsDashboard
+            months={MONTH_OPTIONS}
+            years={YEAR_OPTIONS}
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            onMonthChange={setSelectedMonth}
+            onYearChange={setSelectedYear}
+            onReportIssue={() => setReportModalOpen(true)}
+            onOpenTrainings={() => setTrainingsModalOpen(true)}
+            onOpenAssets={() => setAssetsModalOpen(true)}
+            onOpenExit={() => setExitModalOpen(true)}
+            onViewPromotions={() => setPromotionModalOpen(true)}
+            onViewWarnings={() => setWarningModalOpen(true)}
+            onViewGoals={() => setGoalsModalOpen(true)}
+            onOpenAttendance={() => setAttendanceModalOpen(true)}
+            onOpenAchievement={() => setAchievementModalOpen(true)}
+            onOpenIncentives={() => setIncentivesModalOpen(true)}
+            onOpenAwards={() => setAwardsModalOpen(true)}
+            onRegularize={() => setTimesheetModal("edit")}
+            onTimesheetDetails={() => setTimesheetModal("view")}
+            onApplyLeave={() => setApplyLeaveFormOpen(true)}
+            onLeaveBalance={() => setApplyLeaveOpen(true)}
+            onApplyExpense={() => setAddExpenseOpen(true)}
+            onViewExpense={setViewExpense}
+            expenses={expenses}
+            leaves={leaves}
+            requests={MY_REQUESTS}
+            goals={goals}
+            expandedRemarks={expandedRemarks}
+            onToggleRemark={(id) => setExpandedRemarks((prev) => ({ ...prev, [id]: !prev[id] }))}
+            onGoalAction={(mode, item) => setGoalModal({ mode, item })}
+            onOpenSalary={(month) => setSalarySlip(month ? `${month} ${selectedYear}` : `${selectedMonth} ${selectedYear}`)}
+          />
+        )}
+
+        {/* 2. ATTENDANCE & TIMESHEET TAB */}
+        {activeTab === "Attendance & Timesheet" && (
+          <AttendancePanel
+            kpis={attendanceKpis}
+            days={attendanceDays}
+            onRegularize={() => setTimesheetModal("edit")}
+          />
+        )}
+
+        {/* 4. SALARY & PAYSLIP TAB */}
+        {activeTab === "Salary & Payslip" && <SalaryPayslipPanel />}
+
+        {/* 5. INCENTIVES TAB */}
+        {activeTab === "Incentives" && <IncentivesPanel />}
 
         {/* TRAININGS TAB */}
         {activeTab === "Trainings" && (
-          <div className="flex flex-col gap-6">
-            <TabToolbar search={searchTraining} onSearchChange={(v) => { setSearchTraining(v); setTrainingPage(1); }} />
-
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <div className="overflow-x-auto border border-black/8 rounded-xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
-                      <SortableTh label="#" sortKey="id" unsortable className={HRMS_TH} />
-                      <SortableTh label="Program" sortKey="program" sort={trainingSort} onSort={toggleTrainingSort} className={HRMS_TH} />
-                      <SortableTh label="Date & Time" sortKey="dateTime" sort={trainingSort} onSort={toggleTrainingSort} className={HRMS_TH} />
-                      <SortableTh label="Location" sortKey="location" sort={trainingSort} onSort={toggleTrainingSort} className={HRMS_TH} />
-                      <SortableTh label="Status" sortKey="status" sort={trainingSort} onSort={toggleTrainingSort} className={HRMS_TH} />
-                      <SortableTh label="Score" sortKey="score" sort={trainingSort} onSort={toggleTrainingSort} className={HRMS_TH} />
-                      <SortableTh label="Attendance" sortKey="attendance" sort={trainingSort} onSort={toggleTrainingSort} className={HRMS_TH} />
-                      <SortableTh label="Actions" sortKey="actions" unsortable className={HRMS_TH} />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
-                    {pagedTrainings.map((t, idx) => (
-                      <tr key={t.id} className="hover:bg-[#FAFAFB] transition-colors align-top">
-                        <td className="px-4 py-3 font-bold text-[#6B7280]">{(trainingPage - 1) * trainingPageSize + idx + 1}</td>
-                        <td className="px-4 py-3">
-                          <p className="font-bold">{t.program}</p>
-                          <p className="text-[#9CA3AF] font-medium">{t.track}</p>
-                        </td>
-                        <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{t.dateTime}</td>
-                        <td className="px-4 py-3">
-                          <p>{t.location}</p>
-                          <span
-                            className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md border mt-1 ${
-                              t.locationType === "Virtual"
-                                ? "bg-[#EEF0FE] text-[#6366F1] border-[#6366F1]/20"
-                                : "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
-                            }`}
-                          >
-                            {t.locationType}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
-                              t.status === "Completed"
-                                ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
-                                : "bg-[#E0F2FE] text-[#0284C7] border-[#0284C7]/20"
-                            }`}
-                          >
-                            {t.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {t.status === "Completed" ? (
-                            <>
-                              <p className="font-extrabold">{t.score.toFixed(1)}%</p>
-                              <span
-                                className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md mt-1 ${
-                                  t.result === "Passed" ? "bg-[#DCFCE7] text-[#15803D]" : "bg-[#FEE2E2] text-[#DC2626]"
-                                }`}
-                              >
-                                {t.result}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-[#9CA3AF]">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-[#6B7280]">{t.attendance || "—"}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setTrainingModal({ mode: "view", item: t })}
-                              className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center"
-                              title="View"
-                              aria-label={`View ${t.program}`}
-                            >
-                              <Eye size={13} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setTrainingModal({ mode: "edit", item: t })}
-                              className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center"
-                              title="Edit"
-                              aria-label={`Edit ${t.program}`}
-                            >
-                              <Edit size={13} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setTrainingModal({ mode: "delete", item: t })}
-                              className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center"
-                              title="Delete"
-                              aria-label={`Delete ${t.program}`}
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="mt-4">
-                <Pagination
-                  page={trainingPage}
-                  totalPages={trainingTotalPages}
-                  totalItems={filteredTrainings.length}
-                  pageSize={trainingPageSize}
-                  itemLabel="training sessions"
-                  onChange={setTrainingPage}
-                />
-              </div>
-            </div>
-          </div>
+          <TrainingsPanel
+            search={searchTraining}
+            onSearchChange={(v) => { setSearchTraining(v); setTrainingPage(1); }}
+            sort={trainingSort}
+            onSort={toggleTrainingSort}
+            rows={pagedTrainings}
+            page={trainingPage}
+            pageSize={trainingPageSize}
+            totalPages={trainingTotalPages}
+            totalItems={filteredTrainings.length}
+            onPageChange={setTrainingPage}
+            onAction={(mode, item) => setTrainingModal({ mode, item })}
+          />
         )}
 
         {/* GOALS & REVIEWS TAB */}
         {activeTab === "Goals & Reviews" && (
-          <div className="flex flex-col gap-6">
-            <TabToolbar search={searchGoal} onSearchChange={(v) => { setSearchGoal(v); setGoalPage(1); }} />
-
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <div className="overflow-x-auto border border-black/8 rounded-xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <HrmsSortHead
-                      sort={goalSort}
-                      onSort={toggleGoalSort}
-                      cols={[
-                        { label: "#", key: "id", unsortable: true },
-                        { label: "Title", key: "title" },
-                        { label: "Employee", key: "employee" },
-                        { label: "Goal Type", key: "goalType" },
-                        { label: "Start Date", key: "startDate" },
-                        { label: "End Date", key: "endDate" },
-                        { label: "Progress", key: "progress" },
-                        { label: "Status", key: "status" },
-                        { label: "Actions", key: "actions", unsortable: true },
-                      ]}
-                    />
-                  </thead>
-                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
-                    {pagedGoals.map((g, idx) => {
-                      const isExpanded = expandedRemarks[g.id];
-                      return (
-                        <tr key={g.id} className="hover:bg-[#FAFAFB] transition-colors align-top">
-                          <td className="px-4 py-3 font-bold text-[#6B7280]">{(goalPage - 1) * goalPageSize + idx + 1}</td>
-                          <td className="px-4 py-3 font-bold">{g.title}</td>
-                          <td className="px-4 py-3">{g.employee}</td>
-                          <td className="px-4 py-3 text-[#6B7280]">{g.goalType}</td>
-                          <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{g.startDate}</td>
-                          <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{g.endDate}</td>
-                          <td className="px-4 py-3 min-w-[220px]">
-                            <div className="flex items-center gap-2">
-                              <div className="h-1.5 w-24 rounded-full bg-[#EDEEF1] overflow-hidden shrink-0">
-                                <div className="h-full rounded-full bg-[#16A34A]" style={{ width: `${g.progress}%` }} />
-                              </div>
-                              <span className="font-bold text-[#111827] shrink-0">{g.progress}%</span>
-                            </div>
-                            <p className={`text-[11px] text-[#374151] mt-1.5 ${isExpanded ? "" : "line-clamp-1"}`}>
-                              <span className="text-[#DC2626] font-bold">Remarks: </span>
-                              {g.remarks}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => setExpandedRemarks((p) => ({ ...p, [g.id]: !p[g.id] }))}
-                              className="inline-flex items-center gap-1 text-[10px] font-bold text-[#3B82F6] mt-0.5"
-                            >
-                              {isExpanded ? "Show less" : "Show more"}
-                              <ChevronDown size={11} className={isExpanded ? "rotate-180 transition-transform" : "transition-transform"} />
-                            </button>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="inline-block text-[11px] font-bold px-2.5 py-1 rounded-lg border bg-[#E0F2FE] text-[#0284C7] border-[#0284C7]/20 whitespace-nowrap">
-                              {g.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setGoalModal({ mode: "view", item: g })}
-                                className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center"
-                                title="View"
-                                aria-label={`View ${g.title}`}
-                              >
-                                <Eye size={13} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setGoalModal({ mode: "edit", item: g })}
-                                className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center"
-                                title="Edit"
-                                aria-label={`Edit ${g.title}`}
-                              >
-                                <Edit size={13} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setGoalModal({ mode: "review", item: g })}
-                                className="size-7 rounded-lg bg-[#EEF0FE] hover:bg-[#DCE0FC] grid place-items-center transition-colors"
-                                title="Conduct review"
-                                aria-label={`Conduct review for ${g.title}`}
-                              >
-                                <img src={conductReviewIcon} alt="" className="size-3.5 object-contain" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setGoalModal({ mode: "delete", item: g })}
-                                className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center"
-                                title="Delete"
-                                aria-label={`Delete ${g.title}`}
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="mt-4">
-                <Pagination
-                  page={goalPage}
-                  totalPages={goalTotalPages}
-                  totalItems={filteredGoals.length}
-                  pageSize={goalPageSize}
-                  itemLabel="employee goals"
-                  onChange={setGoalPage}
-                />
-              </div>
-            </div>
-          </div>
+          <GoalsReviewsPanel
+            searchGoal={searchGoal}
+            onSearchChange={(v) => { setSearchGoal(v); setGoalPage(1); }}
+            goalSort={goalSort}
+            onSort={toggleGoalSort}
+            pagedGoals={pagedGoals}
+            goalPage={goalPage}
+            goalPageSize={goalPageSize}
+            goalTotalPages={goalTotalPages}
+            totalItems={filteredGoals.length}
+            onPageChange={setGoalPage}
+            expandedRemarks={expandedRemarks}
+            onToggleRemark={(id) => setExpandedRemarks((p) => ({ ...p, [id]: !p[id] }))}
+            onGoalAction={(mode, item) => setGoalModal({ mode, item })}
+          />
         )}
 
         {/* ASSET TAB */}
         {activeTab === "Asset" && (
-          <div className="flex flex-col gap-6">
-            <TabToolbar search={searchAsset} onSearchChange={(v) => { setSearchAsset(v); setAssetPage(1); }} />
-
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <div className="overflow-x-auto border border-black/8 rounded-xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <HrmsSortHead
-                      sort={assetSort}
-                      onSort={toggleAssetSort}
-                      cols={[
-                        { label: "#", key: "id", unsortable: true },
-                        { label: "Name", key: "name" },
-                        { label: "Asset Code", key: "code" },
-                        { label: "Status", key: "status" },
-                        { label: "Assigned Date", key: "assignedDate" },
-                        { label: "Return Date", key: "returnDate" },
-                        { label: "Actions", key: "actions", unsortable: true },
-                      ]}
-                    />
-                  </thead>
-                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
-                    {pagedAssets.map((a, idx) => (
-                      <tr key={a.id} className="hover:bg-[#FAFAFB] transition-colors">
-                        <td className="px-4 py-3 font-bold text-[#6B7280]">{(assetPage - 1) * assetPageSize + idx + 1}</td>
-                        <td className="px-4 py-3">
-                          <p className="font-bold">{a.name}</p>
-                          <p className="text-[#9CA3AF] font-medium">{a.category}</p>
-                        </td>
-                        <td className="px-4 py-3 text-[#6B7280]">
-                          <p className="font-bold text-[#111827]">{a.code}</p>
-                          <p>{a.subCode}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
-                              a.status === "Available"
-                                ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
-                                : "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
-                            }`}
-                          >
-                            {a.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{a.assignedDate}</td>
-                        <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{a.returnDate || "-"}</td>
-                        <td className="px-4 py-3">
-                          {a.status === "Available" ? (
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => toast.info(`Reassigning ${a.name}`)}
-                                className="size-7 rounded-lg bg-[#FEF3C7] hover:bg-[#FDE68A] grid place-items-center"
-                                aria-label="Reassign"
-                              >
-                                <img src={yellowLoopIcon} alt="" className="size-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => toast.success(`${a.name} marked as returned`)}
-                                className="size-7 rounded-lg bg-[#FEE2E2] hover:bg-[#FCA5A5] grid place-items-center"
-                                aria-label="Mark returned"
-                              >
-                                <img src={redBackIcon} alt="" className="size-3.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-[#9CA3AF]">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="mt-4">
-                <Pagination
-                  page={assetPage}
-                  totalPages={assetTotalPages}
-                  totalItems={filteredAssets.length}
-                  pageSize={assetPageSize}
-                  itemLabel="assets"
-                  onChange={setAssetPage}
-                />
-              </div>
-            </div>
-          </div>
+          <AssetsPanel
+            search={searchAsset}
+            onSearchChange={(v) => { setSearchAsset(v); setAssetPage(1); }}
+            sort={assetSort}
+            onSort={toggleAssetSort}
+            rows={pagedAssets}
+            page={assetPage}
+            pageSize={assetPageSize}
+            totalPages={assetTotalPages}
+            totalItems={filteredAssets.length}
+            onPageChange={setAssetPage}
+          />
         )}
 
         {/* AWARDS & CONTEST TAB */}
-        {activeTab === "Awards & Contest" && (
-          <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { label: "Total awards", value: String(INITIAL_AWARDS.length), sub: "On your record" },
-                { label: "Active contests", value: String(INITIAL_CONTESTS.filter((c) => c.activeStatus === "Active").length), sub: "Open challenges" },
-                { label: "Latest award", value: "Leadership Award", sub: "15 Jan 2026" },
-              ].map((card) => (
-                <div key={card.label} className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
-                  <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">{card.label}</p>
-                  <p className="text-xl font-extrabold text-[#111827] mt-1.5">{card.value}</p>
-                  <p className="text-[12.5px] text-[#6B7280] mt-1">{card.sub}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Awards table */}
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-2.5">
-                  <span className="size-9 rounded-full bg-[#FFF7ED] text-[#F59E0B] grid place-items-center">
-                    <Trophy size={16} />
-                  </span>
-                  <div>
-                    <h3 className="text-sm font-extrabold text-[#111827]">My awards</h3>
-                    <p className="text-[12.5px] text-[#6B7280]">Award type, gifts, certificates and photos</p>
-                  </div>
-                </div>
-                <TabToolbar
-                  search={searchAward}
-                  onSearchChange={(v) => {
-                    setSearchAward(v);
-                    setAwardPage(1);
-                  }}
-                  placeholder="Search awards..."
-                />
-              </div>
-
-              <div className="overflow-x-auto border border-black/8 rounded-xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <HrmsSortHead
-                      sort={awardSort}
-                      onSort={toggleAwardSort}
-                      cols={[
-                        { label: "#", key: "id", unsortable: true },
-                        { label: "Award Type", key: "awardType" },
-                        { label: "Award Date", key: "awardDate" },
-                        { label: "Gift", key: "gift" },
-                        { label: "Certificate", key: "certificateLabel", unsortable: true },
-                        { label: "Photo", key: "photoLabel", unsortable: true },
-                        { label: "Description", key: "description" },
-                      ]}
-                    />
-                  </thead>
-                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
-                    {pagedAwards.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="px-4 py-10 text-center text-[13px] text-[#9CA3AF] font-medium">
-                          No awards found.
-                        </td>
-                      </tr>
-                    ) : (
-                      pagedAwards.map((row, idx) => (
-                        <tr key={row.id} className="hover:bg-[#FAFAFB] transition-colors">
-                          <td className="px-4 py-3 font-bold text-[#6B7280]">
-                            {(awardPage - 1) * awardPageSize + idx + 1}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1.5">
-                              <Trophy size={12} className="text-[#F59E0B] shrink-0" />
-                              {row.awardType}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{row.awardDate}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">{row.gift}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <a
-                              href={row.certificateUrl}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                toast.info(`Opening certificate: ${row.certificateLabel}`);
-                              }}
-                              className="inline-flex items-center gap-1 text-[#2563EB] hover:underline font-semibold"
-                            >
-                              <ExternalLink size={12} />
-                              {row.certificateLabel}
-                            </a>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <a
-                              href={row.photoUrl}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                toast.info(`Opening photo: ${row.photoLabel}`);
-                              }}
-                              className="inline-flex items-center gap-1 text-[#2563EB] hover:underline font-semibold"
-                            >
-                              <ExternalLink size={12} />
-                              {row.photoLabel}
-                            </a>
-                          </td>
-                          <td className="px-4 py-3 text-[#6B7280] font-medium min-w-[220px] max-w-[320px]">
-                            {row.description}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <Pagination
-                page={awardPage}
-                totalPages={awardTotalPages}
-                totalItems={filteredAwards.length}
-                pageSize={awardPageSize}
-                itemLabel="awards"
-                onChange={setAwardPage}
-              />
-            </div>
-
-            {/* Contests / Challenges table */}
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-2.5">
-                  <span className="size-9 rounded-full bg-[#E7F8EF] text-[#16A34A] grid place-items-center">
-                    <Target size={16} />
-                  </span>
-                  <div>
-                    <h3 className="text-sm font-extrabold text-[#111827]">My contests</h3>
-                    <p className="text-[12.5px] text-[#6B7280]">Challenge details, XP, difficulty and status</p>
-                  </div>
-                </div>
-                <TabToolbar
-                  search={searchContest}
-                  onSearchChange={(v) => {
-                    setSearchContest(v);
-                    setContestPage(1);
-                  }}
-                  placeholder="Search contests..."
-                />
-              </div>
-
-              <div className="overflow-x-auto border border-black/8 rounded-xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <HrmsSortHead
-                      sort={contestSort}
-                      onSort={toggleContestSort}
-                      cols={[
-                        { label: "#", key: "id", unsortable: true, align: "center" },
-                        { label: "Challenge Name", key: "challengeName" },
-                        { label: "Type & Reward", key: "typeReward" },
-                        { label: "XP", key: "earnedXp", align: "center" },
-                        { label: "Project", key: "project" },
-                        { label: "Criteria", key: "criteria" },
-                        { label: "Difficulty", key: "difficulty", align: "center" },
-                        { label: "Challenge Status", key: "challengeStatus", align: "center" },
-                        { label: "Status", key: "activeStatus", align: "center" },
-                        { label: "Members", key: "members", unsortable: true, align: "center" },
-                        { label: "Description", key: "description", unsortable: true, align: "center" },
-                      ]}
-                    />
-                  </thead>
-                  <tbody className="divide-y divide-black/6 font-semibold text-[#111827]">
-                    {pagedContests.length === 0 ? (
-                      <tr>
-                        <td colSpan={11} className="px-4 py-10 text-center text-[13px] text-[#9CA3AF] font-medium">
-                          No contests found.
-                        </td>
-                      </tr>
-                    ) : (
-                      pagedContests.map((row, idx) => (
-                        <tr key={row.id} className="hover:bg-[#FAFAFB] transition-colors">
-                          <td className="px-3 py-3 font-bold text-[#6B7280] text-center align-middle">
-                            {(contestPage - 1) * contestPageSize + idx + 1}
-                          </td>
-                          <td className="px-3 py-3 align-middle">
-                            <p className="font-bold text-[#111827] whitespace-nowrap">{row.challengeName}</p>
-                            <p className="text-[11px] font-medium text-[#9CA3AF] mt-0.5 whitespace-nowrap">{row.period}</p>
-                          </td>
-                          <td className="px-3 py-3 text-[#374151] align-middle whitespace-nowrap">{row.typeReward}</td>
-                          <td className="px-3 py-3 text-center align-middle whitespace-nowrap">{row.earnedXp}</td>
-                          <td className="px-3 py-3 align-middle whitespace-nowrap">{row.project}</td>
-                          <td className="px-3 py-3 align-middle whitespace-nowrap">{row.criteria}</td>
-                          <td className="px-3 py-3 text-center align-middle">
-                            <span
-                              className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                                row.difficulty === "Easy"
-                                  ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
-                                  : row.difficulty === "Medium"
-                                    ? "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
-                                    : "bg-[#FEE2E2] text-[#DC2626] border-[#DC2626]/20"
-                              }`}
-                            >
-                              {row.difficulty}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 text-center align-middle">
-                            <span
-                              className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                                row.challengeStatus === "In Progress"
-                                  ? "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
-                                  : row.challengeStatus === "Completed"
-                                    ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
-                                    : "bg-[#F3F4F6] text-[#4B5563] border-black/10"
-                              }`}
-                            >
-                              {row.challengeStatus}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 text-center align-middle">
-                            <span
-                              className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                                row.activeStatus === "Active"
-                                  ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
-                                  : "bg-[#F3F4F6] text-[#4B5563] border-black/10"
-                              }`}
-                            >
-                              {row.activeStatus}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 text-center align-middle">
-                            <MembersHoverView members={row.members} />
-                          </td>
-                          <td className="px-3 py-3 text-center align-middle">
-                            <DescriptionHoverView description={row.description} />
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <Pagination
-                page={contestPage}
-                totalPages={contestTotalPages}
-                totalItems={filteredContests.length}
-                pageSize={contestPageSize}
-                itemLabel="contests"
-                onChange={setContestPage}
-              />
-            </div>
-          </div>
-        )}
+        {activeTab === "Awards & Contest" && <AwardsContestPanel {...awardsPanelProps} />}
 
         {/* PROMOTION AND TRANSFER TAB */}
         {activeTab === "Promotion and Transfer" && (
-          <PromotionsTransfersSection
-            employee={{
-              name: USER.name,
-              id: "MML-E-1001",
-              email: USER.email,
-              branch: "South Extension",
-              department: "Sales",
-              designation: USER.role,
-            }}
-          />
+          <PromotionsTransfersSection employee={SUMMARY_EMPLOYEE} />
         )}
 
         {/* COMPLAINT & WARNING TAB */}
         {activeTab === "Complaint & Warning" && (
-          <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { label: "Open warnings", value: "1", sub: "Needs acknowledgement" },
-                { label: "Complaints filed", value: "1", sub: "Closed this year" },
-                { label: "Total on record", value: "3", sub: "Warnings + complaints" },
-              ].map((card) => (
-                <div key={card.label} className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
-                  <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">{card.label}</p>
-                  <p className="text-xl font-extrabold text-[#111827] mt-1.5">{card.value}</p>
-                  <p className="text-[12.5px] text-[#6B7280] mt-1">{card.sub}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-                <div className="flex items-center gap-2.5">
-                  <span className="size-9 rounded-full bg-[#FCF5F6] text-[#7A0A17] grid place-items-center">
-                    <AlertTriangle size={16} />
-                  </span>
-                  <div>
-                    <h3 className="text-sm font-extrabold text-[#111827]">Complaints &amp; warnings</h3>
-                    <p className="text-[12.5px] text-[#6B7280]">Official notices and HR-logged issues</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNoticeModalOpen(true)}
-                    className="h-9 px-3.5 rounded-xl border border-[#7A0A17] text-[#7A0A17] text-xs font-bold hover:bg-[#7A0A17] hover:text-white transition-colors"
-                  >
-                    View notice
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toast.info("Complaint form opens here.")}
-                    className="h-9 px-3.5 rounded-xl bg-[#7A0A17] text-white text-xs font-bold hover:bg-[#600712] transition-colors"
-                  >
-                    Raise complaint
-                  </button>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto border border-black/8 rounded-xl">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-[#FAFAFB] border-b border-black/8">
-                      {["#", "Type", "Title", "Raised on", "Raised by", "Severity", "Status", "Detail"].map((h) => (
-                        <th key={h} className="px-4 py-3 text-[11px] font-bold text-[#6B7280] whitespace-nowrap">
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {INITIAL_COMPLAINTS_WARNINGS.map((row) => (
-                      <tr key={row.id} className="border-b border-black/5 last:border-b-0">
-                        <td className="px-4 py-3 text-[#6B7280]">{row.id}</td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                              row.kind === "Warning"
-                                ? "bg-[#FEE2E2] text-[#DC2626] border-[#DC2626]/20"
-                                : "bg-[#DBEAFE] text-[#2563EB] border-[#2563EB]/20"
-                            }`}
-                          >
-                            {row.kind}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 font-bold text-[#111827] whitespace-nowrap">{row.title}</td>
-                        <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{row.raisedOn}</td>
-                        <td className="px-4 py-3 text-[#374151] whitespace-nowrap">{row.raisedBy}</td>
-                        <td className="px-4 py-3 text-[#374151]">{row.severity}</td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                              row.status === "Open"
-                                ? "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
-                                : row.status === "Closed"
-                                  ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
-                                  : "bg-[#F3F4F6] text-[#4B5563] border-black/10"
-                            }`}
-                          >
-                            {row.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-[#6B7280] min-w-[220px]">{row.detail}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+          <ComplaintsWarningsPanel onViewNotice={() => setNoticeModalOpen(true)} />
         )}
 
         {/* EXIT TAB */}
@@ -3256,7 +2966,7 @@ export default function HrmsPage() {
 
       {/* 2. Notice Modal */}
       {noticeModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-[80] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
             <button onClick={() => setNoticeModalOpen(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#111]">
               <X size={18} />
@@ -3409,6 +3119,278 @@ export default function HrmsPage() {
             </select>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        open={attendanceModalOpen}
+        onClose={() => setAttendanceModalOpen(false)}
+        title="Attendance"
+        subtitle={`${selectedMonth} ${selectedYear} · 18 / 22 Days · 82%`}
+        icon={<Calendar size={17} />}
+        iconBg="#FDECEC"
+        iconColor="#9F1239"
+        width="max-w-6xl"
+        zClass="z-40"
+        contain
+      >
+        <AttendancePanel
+          kpis={attendanceKpis}
+          days={attendanceDays}
+          onRegularize={() => setTimesheetModal("edit")}
+        />
+      </Modal>
+
+      <Modal
+        open={achievementModalOpen}
+        onClose={() => setAchievementModalOpen(false)}
+        hideHeader
+        width="max-w-[440px]"
+        zClass="z-40"
+      >
+        <div className="-mx-6 -mt-5 -mb-5">
+          <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="size-11 rounded-full bg-[#7A0A17] grid place-items-center shrink-0">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <circle cx="12" cy="12" r="8.2" stroke="white" strokeWidth="1.7" />
+                  <circle cx="12" cy="12" r="4.6" stroke="white" strokeWidth="1.7" />
+                  <circle cx="12" cy="12" r="1.35" fill="white" />
+                </svg>
+              </span>
+              <h2 className="text-[18px] font-extrabold text-[#111827] tracking-tight">KPI Scorecard</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAchievementModalOpen(false)}
+              className="p-1 rounded-lg text-[#9CA3AF] hover:bg-black/5 hover:text-[#111827] transition-colors shrink-0"
+              aria-label="Close KPI scorecard"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <ul>
+            {ACHIEVEMENT_KPIS.map((row) => (
+              <li
+                key={row.label}
+                className="flex items-center justify-between gap-4 px-5 py-3.5 border-t border-[#EEF1F6]"
+              >
+                <span className="text-[14px] font-medium text-[#6B7280]">{row.label}</span>
+                <span className="text-[15px] font-extrabold text-[#111827] tabular-nums shrink-0">{row.value}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Modal>
+
+      <Modal
+        open={incentivesModalOpen}
+        onClose={() => setIncentivesModalOpen(false)}
+        title="Incentives"
+        subtitle={`${selectedMonth} ${selectedYear} · Target 82% · ₹ 38,000 earned`}
+        icon={<Target size={17} />}
+        iconBg="#FDECEC"
+        iconColor="#9F1239"
+        width="max-w-6xl"
+        zClass="z-40"
+        contain
+      >
+        <IncentivesPanel />
+      </Modal>
+
+      <Modal
+        open={awardsModalOpen}
+        onClose={() => setAwardsModalOpen(false)}
+        title="Awards & Contests"
+        subtitle="My rank #2 · Out of 18"
+        icon={<Trophy size={17} />}
+        iconBg="#FDECEC"
+        iconColor="#9F1239"
+        width="max-w-6xl"
+        zClass="z-40"
+        contain
+      >
+        <AwardsContestPanel {...awardsPanelProps} />
+      </Modal>
+
+      <Modal
+        open={promotionModalOpen}
+        onClose={() => setPromotionModalOpen(false)}
+        title="Promotions and Transfers"
+        subtitle="Promotions and transfers till today"
+        icon={<TrendingUp size={17} />}
+        iconBg="#FDECEC"
+        iconColor="#7A0A17"
+        width="max-w-6xl"
+        zClass="z-40"
+        contain
+      >
+        <PromotionsTransfersSection employee={SUMMARY_EMPLOYEE} embedded />
+      </Modal>
+
+      <Modal
+        open={warningModalOpen}
+        onClose={() => setWarningModalOpen(false)}
+        title="Warnings and Complaints"
+        subtitle="Official notices and HR-logged issues"
+        icon={<AlertTriangle size={17} />}
+        iconBg="#FDECEC"
+        iconColor="#E11D48"
+        width="max-w-6xl"
+        zClass="z-40"
+        contain
+      >
+        <ComplaintsWarningsPanel embedded onViewNotice={() => setNoticeModalOpen(true)} />
+      </Modal>
+
+      <Modal
+        open={goalsModalOpen}
+        onClose={() => setGoalsModalOpen(false)}
+        title="Goals & Review"
+        subtitle="Employee goals and reviews"
+        icon={<Target size={17} />}
+        iconBg="#FDECEC"
+        iconColor="#7A0A17"
+        width="max-w-6xl"
+        zClass="z-40"
+        contain
+        footer={
+          <div className="flex-1 min-w-0">
+            <Pagination
+              page={goalPage}
+              totalPages={goalTotalPages}
+              totalItems={filteredGoals.length}
+              pageSize={goalPageSize}
+              itemLabel="employee goals"
+              onChange={setGoalPage}
+            />
+          </div>
+        }
+      >
+        <GoalsReviewsPanel
+          embedded
+          searchGoal={searchGoal}
+          onSearchChange={(v) => { setSearchGoal(v); setGoalPage(1); }}
+          goalSort={goalSort}
+          onSort={toggleGoalSort}
+          pagedGoals={pagedGoals}
+          goalPage={goalPage}
+          goalPageSize={goalPageSize}
+          goalTotalPages={goalTotalPages}
+          totalItems={filteredGoals.length}
+          onPageChange={setGoalPage}
+          expandedRemarks={expandedRemarks}
+          onToggleRemark={(id) => setExpandedRemarks((p) => ({ ...p, [id]: !p[id] }))}
+          onGoalAction={(mode, item) => setGoalModal({ mode, item })}
+        />
+      </Modal>
+
+      <Modal
+        open={trainingsModalOpen}
+        onClose={() => setTrainingsModalOpen(false)}
+        title="Trainings"
+        subtitle="Assigned programs and sessions"
+        icon={<GraduationCap size={17} />}
+        iconBg="#FDECEC"
+        iconColor="#7A0A17"
+        width="max-w-6xl"
+        zClass="z-40"
+        contain
+        footer={
+          <div className="flex-1 min-w-0">
+            <Pagination
+              page={trainingPage}
+              totalPages={trainingTotalPages}
+              totalItems={filteredTrainings.length}
+              pageSize={trainingPageSize}
+              itemLabel="training sessions"
+              onChange={setTrainingPage}
+            />
+          </div>
+        }
+      >
+        <TrainingsPanel
+          embedded
+          search={searchTraining}
+          onSearchChange={(v) => { setSearchTraining(v); setTrainingPage(1); }}
+          sort={trainingSort}
+          onSort={toggleTrainingSort}
+          rows={pagedTrainings}
+          page={trainingPage}
+          pageSize={trainingPageSize}
+          totalPages={trainingTotalPages}
+          totalItems={filteredTrainings.length}
+          onPageChange={setTrainingPage}
+          onAction={(mode, item) => setTrainingModal({ mode, item })}
+        />
+      </Modal>
+
+      <Modal
+        open={assetsModalOpen}
+        onClose={() => setAssetsModalOpen(false)}
+        title="Assets"
+        subtitle="Assigned company assets"
+        icon={<Laptop size={17} />}
+        iconBg="#F4F6FA"
+        iconColor="#475569"
+        width="max-w-6xl"
+        zClass="z-40"
+        contain
+        footer={
+          <div className="flex-1 min-w-0">
+            <Pagination
+              page={assetPage}
+              totalPages={assetTotalPages}
+              totalItems={filteredAssets.length}
+              pageSize={assetPageSize}
+              itemLabel="assets"
+              onChange={setAssetPage}
+            />
+          </div>
+        }
+      >
+        <AssetsPanel
+          embedded
+          search={searchAsset}
+          onSearchChange={(v) => { setSearchAsset(v); setAssetPage(1); }}
+          sort={assetSort}
+          onSort={toggleAssetSort}
+          rows={pagedAssets}
+          page={assetPage}
+          pageSize={assetPageSize}
+          totalPages={assetTotalPages}
+          totalItems={filteredAssets.length}
+          onPageChange={setAssetPage}
+        />
+      </Modal>
+
+      <Modal
+        open={exitModalOpen}
+        onClose={() => setExitModalOpen(false)}
+        title="Exit & Separation"
+        subtitle="Termination record and resignation"
+        icon={<LogOut size={17} />}
+        iconBg="#FDECEC"
+        iconColor="#7A0A17"
+        width="max-w-4xl"
+        zClass="z-40"
+        contain
+      >
+        <ExitTab />
+      </Modal>
+
+      <Modal
+        open={!!salarySlip}
+        onClose={() => setSalarySlip(null)}
+        title="Salary & Payslip"
+        subtitle={salarySlip || undefined}
+        icon={<Receipt size={17} />}
+        iconBg="#FDECEC"
+        iconColor="#7A0A17"
+        width="max-w-6xl"
+        zClass="z-40"
+        contain
+      >
+        <SalaryPayslipPanel period={salarySlip || "December 2026"} />
       </Modal>
 
       <TimesheetDetailsModal

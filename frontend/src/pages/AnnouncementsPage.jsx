@@ -59,6 +59,57 @@ const PRIORITY_STYLES = {
   Low: "text-[#6B7280] bg-[#F3F4F6]",
 };
 
+export function AnnouncementDetailModal({ item, onClose, onComment }) {
+  return (
+    <Modal
+      open={!!item}
+      onClose={onClose}
+      title={item?.title || "Announcement"}
+      subtitle={item ? `${item.type} · ${item.date}` : ""}
+      icon={<Megaphone size={17} />}
+      iconBg="#E8F2FE"
+      iconColor="#3B82F6"
+      width="max-w-lg"
+      zClass="z-[80]"
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            onClick={() => onComment?.(item)}
+            className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            Comment
+          </button>
+        </>
+      }
+    >
+      {item && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center h-[22px] px-2.5 rounded-md bg-[#E8F2FE] text-[11px] font-semibold text-[#3B82F6]">
+              {item.type}
+            </span>
+            <span className={`inline-flex items-center h-[22px] px-2.5 rounded-md text-[11px] font-semibold ${PRIORITY_STYLES[item.priority]}`}>
+              {item.priority}
+            </span>
+          </div>
+          <p className="text-[13.5px] text-[#374151] leading-relaxed">{item.message}</p>
+          <p className="text-[12px] text-[#9CA3AF]">
+            Posted by {item.actor} · {item.time}
+          </p>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 function AnnouncementTypeIcon({ type, size = "md" }) {
   const style = TYPE_STYLES[type] || {
     Icon: Megaphone,
@@ -80,7 +131,7 @@ function AnnouncementTypeIcon({ type, size = "md" }) {
   );
 }
 
-export default function AnnouncementsPage() {
+export default function AnnouncementsPage({ embedded = false }) {
   const filterRef = useRef(null);
   const [items, setItems] = useState(readAnnouncements);
   const [search, setSearch] = useState("");
@@ -127,12 +178,14 @@ export default function AnnouncementsPage() {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="px-5 pt-5 pb-8 flex flex-col gap-4 min-w-0">
+    <div className={embedded ? "flex flex-col min-w-0" : "flex flex-col flex-1 min-h-0"}>
+      <div className={embedded ? "flex flex-col gap-4 min-w-0" : "px-5 pt-5 pb-8 flex flex-col gap-4 min-w-0"}>
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="text-[26px] font-bold text-[#111] tracking-tight">Announcements</h1>
-            <p className="text-[13px] text-[#9CA3AF] mt-0.5">
+            {!embedded && (
+              <h1 className="text-[26px] font-bold text-[#111] tracking-tight">Announcements</h1>
+            )}
+            <p className={`text-[13px] text-[#9CA3AF] ${embedded ? "" : "mt-0.5"}`}>
               {unreadCount} unread announcement{unreadCount === 1 ? "" : "s"}
             </p>
           </div>
@@ -318,54 +371,14 @@ export default function AnnouncementsPage() {
         </div>
       </div>
 
-      <Modal
-        open={!!active}
+      <AnnouncementDetailModal
+        item={active}
         onClose={() => setActive(null)}
-        title={active?.title || "Announcement"}
-        subtitle={active ? `${active.type} · ${active.date}` : ""}
-        icon={<Megaphone size={17} />}
-        iconBg="#E8F2FE"
-        iconColor="#3B82F6"
-        width="max-w-lg"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={() => setActive(null)}
-              className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
-            >
-              Close
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setCommentFor(active);
-                setActive(null);
-              }}
-              className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-            >
-              Comment
-            </button>
-          </>
-        }
-      >
-        {active && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center h-[22px] px-2.5 rounded-md bg-[#E8F2FE] text-[11px] font-semibold text-[#3B82F6]">
-                {active.type}
-              </span>
-              <span className={`inline-flex items-center h-[22px] px-2.5 rounded-md text-[11px] font-semibold ${PRIORITY_STYLES[active.priority]}`}>
-                {active.priority}
-              </span>
-            </div>
-            <p className="text-[13.5px] text-[#374151] leading-relaxed">{active.message}</p>
-            <p className="text-[12px] text-[#9CA3AF]">
-              Posted by {active.actor} · {active.time}
-            </p>
-          </div>
-        )}
-      </Modal>
+        onComment={(item) => {
+          setCommentFor(item);
+          setActive(null);
+        }}
+      />
 
       <SendMessageModal
         open={!!commentFor}
