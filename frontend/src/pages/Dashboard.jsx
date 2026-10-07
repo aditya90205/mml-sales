@@ -377,47 +377,140 @@ const PRIORITY_ITEMS = [
   {
     parts: [
       { text: "5 high-value leads waiting for " },
-      { text: "follow-up", to: "/pipeline" },
+      { text: "follow-up", detail: "followup" },
     ],
   },
   {
     parts: [
       { text: "₹18,400 in " },
-      { text: "discount", to: "/pipeline?openLead=p4-1&tab=discounts" },
+      { text: "discount", detail: "discount" },
       { text: " approvals pending across 3 requests" },
     ],
   },
   {
     parts: [
       { text: "2 " },
-      { text: "client", to: "/clients" },
+      { text: "client", detail: "client" },
       { text: " profiles awaiting completion before their " },
-      { text: "meetings", to: "/calendar" },
+      { text: "meetings", detail: "meetings" },
     ],
   },
   {
     parts: [
       { text: "You're at 74% of this month's ₹25L " },
-      { text: "target", to: "/hrms?tab=Incentives" },
+      { text: "target", detail: "target" },
     ],
   },
   {
     parts: [
       { text: "1 urgent " },
-      { text: "complaint", to: `/hrms?tab=${encodeURIComponent("Complaint & Warning")}` },
+      { text: "complaint", detail: "complaint" },
       { text: " flagged — needs a same-day response" },
     ],
   },
   {
     parts: [
       { text: "AI recommends contacting clients " },
-      { text: "Ananya Verma", to: "/pipeline?openLead=p4-1" },
+      { text: "Ananya Verma", detail: "ananya" },
       { text: " and " },
-      { text: "Vikram Chawla", to: "/pipeline?openLead=p4-2" },
+      { text: "Vikram Chawla", detail: "vikram" },
       { text: " today — both are close to closing" },
     ],
   },
 ];
+
+const PRIORITY_DETAILS = {
+  followup: {
+    title: "Follow-ups waiting",
+    subtitle: "5 high-value leads",
+    intro: "These leads are due today and still waiting for a follow-up.",
+    items: [
+      { title: "Kuhu Sharma", meta: "P0 · Hot · High", note: "6 hrs left · Outbound follow-up call" },
+      { title: "Ankit Sharma", meta: "P0 · Hot · High", note: "6 hrs left · Confirm first meeting" },
+      { title: "Aditya Sharma", meta: "P3 · Medium", note: "24 hrs left · Confirm video call slot" },
+      { title: "Ananya Verma", meta: "P4 · High", note: "Due today · Pricing confirmation" },
+      { title: "Vikram Chawla", meta: "P4 · High", note: "Due today · Close the deal" },
+    ],
+  },
+  discount: {
+    title: "Discount approvals",
+    subtitle: "₹18,400 pending · 3 requests",
+    intro: "These discount requests are still waiting for approval.",
+    items: [
+      { title: "Ananya Verma", meta: "₹7,200 · 12%", note: "Pending · Branch Head · Premium" },
+      { title: "Vikram Chawla", meta: "₹6,400 · 10%", note: "Pending · Team Lead · Classic" },
+      { title: "Neha Kapoor", meta: "₹4,800 · 8%", note: "Pending · Branch Head · Premium" },
+    ],
+  },
+  client: {
+    title: "Incomplete profiles",
+    subtitle: "2 clients before their meetings",
+    intro: "These profiles need to be finished before the meetings can go ahead.",
+    items: [
+      { title: "Ananya Verma", meta: "72% complete", note: "Missing family details and photos" },
+      { title: "Vikram Chawla", meta: "64% complete", note: "Missing preferences and documents" },
+    ],
+  },
+  meetings: {
+    title: "Meetings waiting",
+    subtitle: "2 meetings blocked on profile completion",
+    intro: "Both meetings are today. Profiles still need to be completed first.",
+    items: [
+      { title: "Ananya Verma", meta: "Today · 6:30 PM", note: "Video call · P4 negotiation" },
+      { title: "Vikram Chawla", meta: "Today · 8:00 PM", note: "Follow-up call · pricing" },
+    ],
+  },
+  target: {
+    title: "Monthly target",
+    subtitle: "74% of ₹25L",
+    intro: "This month's sales target and what is still left.",
+    stats: [
+      { label: "Target", value: "₹25L" },
+      { label: "Achieved", value: "₹18.5L" },
+      { label: "Remaining", value: "₹6.5L" },
+    ],
+    progress: 74,
+    note: "Ananya Verma and Vikram Chawla are both close to closing and can cover most of the remaining gap.",
+  },
+  complaint: {
+    title: "Urgent complaint",
+    subtitle: "Same-day response needed",
+    intro: "One complaint is still open and needs a reply today.",
+    fields: [
+      { label: "Client", value: "Meera Joshi" },
+      { label: "Raised", value: "Today, 9:40 AM" },
+      { label: "Severity", value: "High" },
+      { label: "Status", value: "Open" },
+    ],
+    note: "Client reported a missed callback after the last meeting. A same-day response is required.",
+  },
+  ananya: {
+    title: "Ananya Verma",
+    subtitle: "P4 Negotiation · close to closing",
+    fields: [
+      { label: "Stage", value: "P4 Negotiation" },
+      { label: "Priority", value: "High" },
+      { label: "Discount", value: "₹7,200 pending" },
+      { label: "Profile", value: "72% complete" },
+      { label: "Meeting", value: "Today, 6:30 PM" },
+      { label: "Next step", value: "Contact today" },
+    ],
+    note: "Moved from P3 Video Call to P4 Negotiation. Ready to close once the discount and profile are confirmed today.",
+  },
+  vikram: {
+    title: "Vikram Chawla",
+    subtitle: "P4 Negotiation · close to closing",
+    fields: [
+      { label: "Stage", value: "P4 Negotiation" },
+      { label: "Priority", value: "High" },
+      { label: "Discount", value: "₹6,400 pending" },
+      { label: "Profile", value: "64% complete" },
+      { label: "Meeting", value: "Today, 8:00 PM" },
+      { label: "Next step", value: "Contact today" },
+    ],
+    note: "Token discussion is pending. Close today if the discount is confirmed and the profile is completed.",
+  },
+};
 
 const PRIORITY_STYLES = {
   High:   { color: "#E8395B", bg: "#FDECEE" },
@@ -1017,10 +1110,66 @@ function RecentUpdatesCard() {
   );
 }
 
+function PriorityDetailBody({ detail }) {
+  return (
+    <div className="flex flex-col gap-4">
+      {detail.intro && (
+        <p className="text-[13.5px] text-[#374151] leading-relaxed">{detail.intro}</p>
+      )}
+      {detail.stats && (
+        <div className="grid grid-cols-3 gap-2">
+          {detail.stats.map((stat) => (
+            <div key={stat.label} className="rounded-xl bg-[#F7F8FC] px-3 py-2.5">
+              <p className="text-[11px] text-[#9CA3AF]">{stat.label}</p>
+              <p className="text-[15px] font-bold text-[#111] mt-0.5">{stat.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {typeof detail.progress === "number" && (
+        <div>
+          <div className="h-2 rounded-full bg-[#F1F2F4] overflow-hidden">
+            <div className="h-full rounded-full bg-[#7A0A17]" style={{ width: `${detail.progress}%` }} />
+          </div>
+          <p className="text-[12px] text-[#6B7280] mt-1.5">{detail.progress}% of this month's target</p>
+        </div>
+      )}
+      {detail.fields && (
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+          {detail.fields.map((field) => (
+            <div key={field.label}>
+              <dt className="text-[11px] text-[#9CA3AF]">{field.label}</dt>
+              <dd className="text-[13px] font-semibold text-[#111] mt-0.5">{field.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {detail.items && (
+        <ul className="flex flex-col divide-y divide-black/6 -my-1">
+          {detail.items.map((item) => (
+            <li key={item.title} className="py-3">
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-[13.5px] font-semibold text-[#111]">{item.title}</p>
+                <p className="text-[12px] text-[#6B7280] whitespace-nowrap">{item.meta}</p>
+              </div>
+              <p className="text-[12.5px] text-[#6B7280] mt-0.5">{item.note}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+      {detail.note && (
+        <p className="text-[13px] text-[#374151] leading-relaxed">{detail.note}</p>
+      )}
+    </div>
+  );
+}
+
 function AIAssistant() {
   const [message, setMessage] = useState("");
   const [tags, setTags] = useState(AI_TAGS);
   const [activeTag, setActiveTag] = useState(null);
+  const [detailId, setDetailId] = useState(null);
+  const detail = detailId ? PRIORITY_DETAILS[detailId] : null;
 
   const contentHeading = activeTag || "Today's Priority";
 
@@ -1100,14 +1249,15 @@ function AIAssistant() {
               <span className="size-[5px] rounded-full bg-[#C9CDD4] shrink-0 mt-[7px]" />
               <span className="leading-relaxed">
                 {item.parts.map((part, j) =>
-                  part.to ? (
-                    <Link
+                  part.detail ? (
+                    <button
                       key={j}
-                      to={part.to}
-                      className="text-[#2563EB] underline underline-offset-2 decoration-current hover:text-[#1D4ED8]"
+                      type="button"
+                      onClick={() => setDetailId(part.detail)}
+                      className="inline p-0 bg-transparent border-0 text-[#2563EB] underline underline-offset-2 decoration-current hover:text-[#1D4ED8] cursor-pointer"
                     >
                       {part.text}
-                    </Link>
+                    </button>
                   ) : (
                     <span key={j}>{part.text}</span>
                   )
@@ -1140,6 +1290,17 @@ function AIAssistant() {
           </div>
         </div>
       </div>
+
+      <Modal
+        open={Boolean(detail)}
+        onClose={() => setDetailId(null)}
+        title={detail?.title || "Details"}
+        subtitle={detail?.subtitle}
+        width="max-w-md"
+        zClass="z-50"
+      >
+        {detail && <PriorityDetailBody detail={detail} />}
+      </Modal>
     </div>
   );
 }
