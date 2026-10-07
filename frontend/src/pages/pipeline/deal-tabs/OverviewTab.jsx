@@ -369,6 +369,7 @@ function SendFormModal({ open, onClose, deal, currentStage }) {
   const email = String(deal.email || "").trim();
   const mobile = String(deal.mobile || deal.phone || "").trim();
   const linkLabel = linkType === "biodata" ? "Biodata upload" : "Payment link";
+  const link = shareUrl(deal, linkType);
 
   useEffect(() => {
     if (!open) return;
@@ -441,14 +442,6 @@ function SendFormModal({ open, onClose, deal, currentStage }) {
             Cancel
           </button>
           <button
-            type="button"
-            onClick={copyLink}
-            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-xl bg-white border border-[#7A0A17] text-[#7A0A17] text-[13px] font-semibold hover:bg-[#FDF2F3] transition-colors"
-          >
-            <Copy size={14} />
-            Copy link
-          </button>
-          <button
             type="submit"
             form="send-profile-form"
             className="inline-flex items-center gap-1.5 h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
@@ -510,6 +503,15 @@ function SendFormModal({ open, onClose, deal, currentStage }) {
                 </button>
               );
             })}
+          </div>
+        </div>
+        <div>
+          <label className="block text-[13px] font-bold text-[#111] mb-1.5">Link</label>
+          <div className="flex items-center gap-2 h-11 border border-black/12 rounded-xl px-3.5 bg-[#FAFAFB]">
+            <span className="flex-1 min-w-0 truncate text-[13px] text-[#374151]">{link}</span>
+            <button type="button" onClick={copyLink} aria-label="Copy link" title="Copy link" className="shrink-0 text-[#6B7280] hover:text-[#7A0A17]">
+              <Copy size={15} />
+            </button>
           </div>
         </div>
         <div>

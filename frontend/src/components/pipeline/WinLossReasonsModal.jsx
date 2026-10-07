@@ -88,6 +88,10 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
       setError("Select at least one reason.");
       return;
     }
+    if (mode === "lost" && !briefNote.trim()) {
+      setError("Brief Comment / Note is required.");
+      return;
+    }
 
     const reasonParts = picked.map((r) => {
       if (r.id === "price") {
@@ -196,7 +200,10 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
               />
             </div>
             <div>
-              <label className="text-[13px] font-semibold text-[#111]">Brief Comment / Note</label>
+              <label className="text-[13px] font-semibold text-[#111]">
+                Brief Comment / Note
+                {mode === "lost" && <span className="text-[#E8395B]"> *</span>}
+              </label>
               <textarea
                 value={briefNote}
                 onChange={(e) => setBriefNote(e.target.value)}

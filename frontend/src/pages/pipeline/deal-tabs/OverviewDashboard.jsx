@@ -1094,7 +1094,7 @@ export default function OverviewDashboard({
   const priorityTone = PRIORITY_TONES[priority] || PRIORITY_TONES.Medium;
   const mmlId = String(deal.mmlId || deal.dealCode || "-").replace(/\s+/g, "");
   const formDigits = String(deal.mmlId || deal.dealCode || "").replace(/\D/g, "");
-  const formNo = formDigits ? `F-${formDigits.slice(-5)}` : "-";
+  const formId = formDigits ? `MML-${formDigits.slice(-5)}` : "-";
   const activePackage =
     PACKAGES.find((pkg) => pkg.key === (selectedPackageKey || packageKeyFromInterest(shown(deal.packageInterest)))) ||
     PACKAGES[1];
@@ -1368,15 +1368,15 @@ export default function OverviewDashboard({
                 </div>
               </div>
               <div className="mt-2 space-y-0.5">
-                <p className="grid grid-cols-[4.35rem_0.6rem_minmax(0,1fr)] items-baseline text-[12px] leading-snug text-[#9CA3AF]">
-                  <span>MML ID</span>
+                <p className="grid grid-cols-[4.75rem_0.6rem_minmax(0,1fr)] items-baseline text-[12px] leading-snug text-[#9CA3AF]">
+                  <span>Client ID</span>
                   <span>:</span>
                   <span className="truncate">{mmlId}</span>
                 </p>
-                <p className="grid grid-cols-[4.35rem_0.6rem_minmax(0,1fr)] items-baseline text-[12px] leading-snug text-[#9CA3AF]">
-                  <span>Form No</span>
+                <p className="grid grid-cols-[4.75rem_0.6rem_minmax(0,1fr)] items-baseline text-[12px] leading-snug text-[#9CA3AF]">
+                  <span>Form ID</span>
                   <span>:</span>
-                  <span className="truncate">{formNo}</span>
+                  <span className="truncate">{formId}</span>
                 </p>
               </div>
               <div className="flex items-center gap-1.5 mt-2.5 flex-nowrap">
@@ -1687,7 +1687,7 @@ export default function OverviewDashboard({
           <button
             type="button"
             onClick={() => setPackageOpen(true)}
-            className="w-full flex items-center gap-2.5 rounded-2xl border border-[#8E1B32] bg-white px-3.5 py-2.5 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:bg-[#FDF2F4] transition-colors"
+            className="w-full flex items-center gap-2.5 rounded-2xl border border-[#EEF1F4] bg-white px-3.5 py-2.5 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:border-[#E2E6EB] transition-colors"
           >
             <span className="size-8 rounded-full bg-[#8E1B32] text-white grid place-items-center shrink-0">
               <Zap size={15} strokeWidth={2.4} fill="currentColor" />
