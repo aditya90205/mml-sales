@@ -37,7 +37,6 @@ export default function AddP0ProspectPage({ onBack, onAddProspect }) {
 
     const newLead = {
       name: `${formData.firstName} ${formData.lastName}`.trim(),
-      mmlId: `MML-${Math.floor(10000 + Math.random() * 90000)}`,
       temperature: "Warm",
       priority: "High",
       score: 8.0,

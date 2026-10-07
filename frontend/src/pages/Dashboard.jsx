@@ -1900,8 +1900,9 @@ export default function Dashboard() {
                   meeting: lead.meeting || "",
                 };
 
-            const upsertBiodataClient = (leadId) => {
+            const upsertBiodataClient = (leadId, clientCode) => {
               upsertClientFromBiodata({
+                clientCode,
                 clientId: lead.clientId || leadInitial?.clientId,
                 name: lead.name,
                 mobile: lead.mobile,
@@ -1952,13 +1953,11 @@ export default function Dashboard() {
                     }
                   : {}),
               };
-              if (advanceToP2) {
-                moveLeadToStage(existingId, "P2", savePatch);
-              } else {
-                updateLead(existingId, savePatch);
-              }
+              const saved = advanceToP2
+                ? moveLeadToStage(existingId, "P2", savePatch)
+                : updateLead(existingId, savePatch);
               if (fromBiodata) {
-                upsertBiodataClient(existingId);
+                upsertBiodataClient(existingId, saved?.lead?.mmlId || current?.lead?.mmlId);
                 attachUploadedBiodata(existingId);
               }
               setMyLeads((prev) =>
@@ -1997,7 +1996,6 @@ export default function Dashboard() {
             if (fromBiodata) {
               const created = addLeadToStage("P2", {
                 starred: false,
-                mmlId: `MML - D - ${Math.floor(10000 + Math.random() * 90000)}`,
                 score: 9.0,
                 priority: "High",
                 completion: 70,
@@ -2019,7 +2017,7 @@ export default function Dashboard() {
                 },
               });
               if (created?.id) {
-                upsertBiodataClient(created.id);
+                upsertBiodataClient(created.id, created.mmlId);
                 attachUploadedBiodata(created.id);
               }
               setMyLeads((prev) => [
@@ -2056,7 +2054,6 @@ export default function Dashboard() {
             const created = addP0Lead({
               name: lead.name,
               starred: false,
-              mmlId: `MML - D - ${Math.floor(10000 + Math.random() * 90000)}`,
               temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
               score: 8.0,
               priority: "High",

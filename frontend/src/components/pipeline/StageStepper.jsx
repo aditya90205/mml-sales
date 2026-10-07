@@ -43,15 +43,16 @@ function overviewIndex(activeStageId) {
   return index < 0 ? 0 : index;
 }
 
-function OverviewStageRow({ activeStageId = "P0-new", durations = {} }) {
+function OverviewStageRow({ activeStageId = "P0-new", durations = {}, muted = false }) {
   const activeIndex = overviewIndex(activeStageId);
 
   return (
     <div className="grid min-w-0 grid-cols-8 gap-2">
       {OVERVIEW_STAGES.map((stage, i) => {
-        const status = i < activeIndex ? "done" : i === activeIndex ? "current" : "upcoming";
-        const tone =
-          status === "done"
+        const status = muted ? "muted" : i < activeIndex ? "done" : i === activeIndex ? "current" : "upcoming";
+        const tone = muted
+          ? { color: "#9CA3AF", bg: "#F3F4F6", accent: "#D1D5DB" }
+          : status === "done"
             ? { color: "#16A34A", bg: "#E7F8EF", accent: "#16A34A" }
             : status === "current"
               ? { color: "#E8395B", bg: "#FDECEE", accent: "#E8395B" }
@@ -79,7 +80,7 @@ function OverviewStageRow({ activeStageId = "P0-new", durations = {} }) {
                 style={{ color: tone.color }}
               >
                 <Clock size={11} strokeWidth={2.2} className="shrink-0" />
-                avg - {duration}
+                {duration}
               </p>
             ) : (
               <p className="mt-1.5 h-[11px]" aria-hidden />
@@ -96,9 +97,9 @@ function OverviewStageRow({ activeStageId = "P0-new", durations = {} }) {
  * Same card chrome as the pipeline board stage cards; only the stage name
  * color changes: green (done), red (current), grey (next).
  */
-export default function StageStepper({ activeStageId = "P0-new", variant = "kpi", durations = {} }) {
+export default function StageStepper({ activeStageId = "P0-new", variant = "kpi", durations = {}, muted = false }) {
   if (variant === "overview") {
-    return <OverviewStageRow activeStageId={activeStageId} durations={durations} />;
+    return <OverviewStageRow activeStageId={activeStageId} durations={durations} muted={muted} />;
   }
 
   const activeIndex = KPI_STAGES.findIndex((s) => s.id === resolveKpiId(activeStageId));
@@ -106,14 +107,16 @@ export default function StageStepper({ activeStageId = "P0-new", variant = "kpi"
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3">
       {KPI_STAGES.map((stage, i) => {
-        const status = i < activeIndex ? "done" : i === activeIndex ? "current" : "locked";
+        const status = muted ? "locked" : i < activeIndex ? "done" : i === activeIndex ? "current" : "locked";
         const nameColor = STATUS_TEXT[status];
         return (
           <div
             key={stage.id}
-            className="flex items-center justify-between gap-2 bg-white border rounded-xl border-l-4 px-3.5 py-2.5 min-w-0"
+            className={`flex items-center justify-between gap-2 border rounded-xl border-l-4 px-3.5 py-2.5 min-w-0 ${
+              muted ? "bg-[#F3F4F6]" : "bg-white"
+            }`}
             style={{
-              borderLeftColor: stage.color,
+              borderLeftColor: muted ? "#D1D5DB" : stage.color,
               borderTopColor: "rgba(0,0,0,0.08)",
               borderRightColor: "rgba(0,0,0,0.08)",
               borderBottomColor: "rgba(0,0,0,0.08)",

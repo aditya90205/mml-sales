@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Briefcase,
@@ -8,7 +8,6 @@ import {
   ChevronRight,
   ClipboardList,
   Clock,
-  Copy,
   Crown,
   Download,
   Eye,
@@ -48,7 +47,7 @@ import EventDetailsModal, { calendarEventToEventView } from "../../../components
 import MeetingDetailsModal, { calendarEventToMeetingView } from "../../../components/calendar/MeetingDetailsModal";
 import OthersDetailsModal, { calendarEventToOtherView } from "../../../components/calendar/OthersDetailsModal";
 import LeadActivityHistory from "./LeadActivityHistory";
-import PackageQuoteTab from "./PackageQuoteTab";
+import PackageQuoteTab, { PACKAGES } from "./PackageQuoteTab";
 import P6ChecklistTab from "./P6ChecklistTab";
 import P6DocumentViewModal from "./p6/P6DocumentViewModal.jsx";
 import { compareIdWithProfile, extractIdPlaceholder } from "./p6/p6ChecklistData.js";
@@ -111,12 +110,19 @@ const FLAG_NOTES = {
 const FLAG_FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
-const PACKAGE_FEATURES = [
-  "Profile Verification",
-  "Multiple Matches",
-  "Personalized Matchmaking",
-  "Family Background Check",
-];
+const PACKAGE_FEATURES = {
+  basic: ["Profile creation", "Up to 10 profiles / month", "Photo + basic details", "Junior RM support"],
+  premium: ["Profile Verification", "Multiple Matches", "Personalized Matchmaking", "Family Background Check"],
+  exclusive: ["Profile Verification", "Priority Matchmaking", "Family Background Check", "Senior RM + Branch Head"],
+};
+
+function packageKeyFromInterest(value) {
+  const text = String(value || "").toLowerCase();
+  if (text.includes("exclusive")) return "exclusive";
+  if (text.includes("basic") || text.includes("classic")) return "basic";
+  if (text.includes("premium")) return "premium";
+  return "premium";
+}
 
 const ADDON_CATALOG = [
   { id: "kundli", name: "Kundli Matching", price: 2000, icon: Sun, bg: "#FFF4E5", color: "#F59E0B" },
@@ -291,7 +297,7 @@ function hoursLeftLabel(ev) {
   return `${hrs} Hrs Left`;
 }
 
-const NEXT_ACTION_PREVIEW = 5;
+const NEXT_ACTION_PREVIEW = 3;
 
 function splitCalendarItems(events, category) {
   const now = Date.now();
@@ -444,37 +450,35 @@ function calendarActionItems(events) {
 
 function ActionTile({ icon: Icon, iconBg, iconColor, title, titleColor = "#1F2937", subtitle, meta, detail, onClick }) {
   return (
-    <div className="flex items-center gap-3 w-full bg-white border border-[#EEF1F4] rounded-2xl px-3.5 py-3.5 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:border-[#E2E6EB] transition-colors min-w-0">
+    <div className="grid h-full w-full grid-cols-[40px_minmax(0,1fr)_16px] items-center gap-x-3 overflow-hidden rounded-2xl border border-[#EEF1F4] bg-white px-3 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-colors hover:border-[#E2E6EB]">
       <button
         type="button"
         onClick={onClick}
-        className="size-10 rounded-[12px] grid place-items-center shrink-0"
+        className="size-10 rounded-[12px] grid place-items-center"
         style={{ backgroundColor: iconBg, color: iconColor }}
         aria-label={title}
       >
         <Icon size={18} strokeWidth={2.2} />
       </button>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0">
         <button
           type="button"
           onClick={onClick}
-          className="block w-full text-left text-[14px] font-bold leading-tight truncate"
+          className="block h-5 w-full truncate text-left text-[14px] font-bold leading-5"
           style={{ color: titleColor }}
         >
           {title}
         </button>
-        {detail || (
-          <button
-            type="button"
-            onClick={onClick}
-            className="mt-1 flex items-center gap-2 min-w-0 w-full text-left text-[12px] text-[#9CA3AF] leading-none"
-          >
-            {subtitle ? <span className="truncate">{subtitle}</span> : null}
-            {meta ? <span className="truncate shrink-0">{meta}</span> : null}
-          </button>
-        )}
+        <div className="mt-0.5 flex h-4 min-w-0 items-center overflow-hidden whitespace-nowrap text-[12px] leading-4 text-[#9CA3AF]">
+          {detail || (
+            <button type="button" onClick={onClick} className="block min-w-0 truncate text-left">
+              {subtitle}
+              {meta ? <span className="ml-1.5">{meta}</span> : null}
+            </button>
+          )}
+        </div>
       </div>
-      <button type="button" onClick={onClick} className="shrink-0 p-0.5" aria-label={title}>
+      <button type="button" onClick={onClick} className="grid size-4 place-items-center justify-self-end" aria-label={title}>
         <ChevronRight size={16} className="text-[#C5CAD3]" />
       </button>
     </div>
@@ -958,7 +962,11 @@ export default function OverviewDashboard({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
   const [packageOpen, setPackageOpen] = useState(false);
-  const [quotePanel, setQuotePanel] = useState("addons");
+  const [quotePanel, setQuotePanel] = useState(null);
+  const profileCardRef = useRef(null);
+  const activityCardRef = useRef(null);
+  const nextCardRef = useRef(null);
+  const lockedCardHeights = useRef({ profile: 0, activity: 0, next: 0 });
   const [nextActionOpen, setNextActionOpen] = useState(false);
   const [addonsOpen, setAddonsOpen] = useState(false);
   const [handoverOpen, setHandoverOpen] = useState(false);
@@ -1087,18 +1095,17 @@ export default function OverviewDashboard({
   const mmlId = String(deal.mmlId || deal.dealCode || "-").replace(/\s+/g, "");
   const formDigits = String(deal.mmlId || deal.dealCode || "").replace(/\D/g, "");
   const formNo = formDigits ? `F-${formDigits.slice(-5)}` : "-";
-  const packageInterest = shown(deal.packageInterest);
-  const packageName = packageInterest
-    ? /package/i.test(packageInterest)
-      ? packageInterest
-      : `${packageInterest} Package`
-    : "Premium Package";
+  const activePackage =
+    PACKAGES.find((pkg) => pkg.key === (selectedPackageKey || packageKeyFromInterest(shown(deal.packageInterest)))) ||
+    PACKAGES[1];
+  const packageName = `${activePackage.name} Package`;
+  const packageFeatures = PACKAGE_FEATURES[activePackage.key] || PACKAGE_FEATURES.premium;
   const meetingInitial = useMemo(
     () => meetingPrefillFromDeal(deal),
     [deal?.name, deal?.dealCode, deal?.mmlId]
   );
-  const packageAmount = rupeeNumber(deal.dealValue);
-  const packagePrice = packageAmount ? formatInr(packageAmount) : "₹ 1,50,000";
+  const packageAmount = rupeeNumber(activePackage.price);
+  const packagePrice = formatInr(packageAmount);
   const calendarActions = useMemo(() => {
     const start = new Date(Date.now() + 5 * 60 * 60 * 1000);
     const underSixHours = {
@@ -1158,9 +1165,27 @@ export default function OverviewDashboard({
 
   const toggle = (id) =>
     setOpenPanels((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
-  const toggleQuotePanel = (id) => setQuotePanel((current) => (current === id ? null : id));
+  const toggleQuotePanel = (id) => {
+    setQuotePanel((current) => {
+      const next = current === id ? null : id;
+      if (!current && next) {
+        lockedCardHeights.current = {
+          profile: profileCardRef.current?.offsetHeight || 0,
+          activity: activityCardRef.current?.offsetHeight || 0,
+          next: nextCardRef.current?.offsetHeight || 0,
+        };
+      }
+      return next;
+    });
+  };
   const packageFeaturesOpen = quotePanel === "package";
   const addonsExpanded = quotePanel === "addons";
+  const quoteOpen = packageFeaturesOpen || addonsExpanded;
+  const frozenCardStyle = (key) => {
+    if (!quoteOpen) return undefined;
+    const height = lockedCardHeights.current[key];
+    return height ? { height, alignSelf: "start" } : { alignSelf: "start" };
+  };
   const toggleAddon = (id) =>
     setSelectedAddons((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
 
@@ -1283,25 +1308,22 @@ export default function OverviewDashboard({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-1 xl:grid-cols-[340px_minmax(0,1fr)_300px] gap-3 items-stretch">
-        <section className="bg-white border border-[#EEF1F4] rounded-2xl p-4 h-full shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+      <div className="grid grid-cols-1 xl:grid-cols-[340px_minmax(0,1fr)_300px] gap-3 items-start xl:items-stretch">
+        <section
+          ref={profileCardRef}
+          className={`bg-white border border-[#EEF1F4] rounded-2xl p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${quoteOpen ? "self-start" : "xl:h-full"}`}
+          style={frozenCardStyle("profile")}
+        >
           <div className="flex items-center justify-between gap-3">
-            <span className="inline-flex items-center h-7 px-3.5 rounded-full bg-[#7A2433] text-white text-[12px] font-semibold whitespace-nowrap">
-              Profile {completion}% Complete
+            <span className="inline-flex items-center h-7 px-3.5 rounded-full bg-[#22C55E] text-white text-[12px] font-semibold whitespace-nowrap">
+              Profile Complete
             </span>
-            <button
-              type="button"
-              onClick={() => setScoreOpen(true)}
-              className="inline-flex items-center gap-1.5 text-[16px] font-bold text-[#1F2937] shrink-0 leading-none hover:bg-[#F3F4F6] px-1.5 py-0.5 rounded transition-colors"
-              title="Click to view Lead Score Details"
-              aria-label="View lead score details"
-            >
-              {scoreText || "-"}
-              <Flag size={14} className="text-[#22C55E]" fill="#22C55E" strokeWidth={1.6} aria-hidden />
-            </button>
+            <span className="text-[16px] font-bold text-[#16A34A] shrink-0 leading-none tabular-nums">
+              {completion}%
+            </span>
           </div>
-          <div className="mt-2.5 h-[5px] rounded-full bg-[#F6E4E8] overflow-hidden">
-            <div className="h-full rounded-full bg-[#7A2433]" style={{ width: `${completion}%` }} />
+          <div className="mt-2.5 h-[5px] rounded-full bg-[#DCFCE7] overflow-hidden">
+            <div className="h-full rounded-full bg-[#22C55E]" style={{ width: `${completion}%` }} />
           </div>
 
           <div className="flex items-start gap-3.5 mt-4">
@@ -1310,11 +1332,11 @@ export default function OverviewDashboard({
             </span>
             <div className="min-w-0 flex-1 pt-0.5">
               <div className="flex items-center gap-1.5 min-w-0">
-                <h2 className="text-[17px] font-bold text-[#1F2937] leading-none truncate">{deal.name || "Lead"}</h2>
+                <h2 className="text-[17px] font-bold text-[#1F2937] leading-none truncate min-w-0">{deal.name || "Lead"}</h2>
                 <span className="inline-flex shrink-0" title="Premium client" aria-label="Premium client">
                   <Star size={15} className="text-[#F5B400]" fill="#F5B400" strokeWidth={0} />
                 </span>
-                <div className="ml-auto flex items-center gap-1.5 shrink-0 pl-2">
+                <div className="ml-auto flex items-center gap-1 shrink-0 pl-1">
                   <button
                     type="button"
                     onClick={onView}
@@ -1335,18 +1357,13 @@ export default function OverviewDashboard({
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      const text = [`${deal.name || "Lead"}`, `MML ID: ${mmlId}`, `Form No: ${formNo}`].join("\n");
-                      navigator.clipboard?.writeText(text).then(
-                        () => toast.success("Profile details copied."),
-                        () => toast.error("Could not copy profile details.")
-                      );
-                    }}
-                    className="p-0.5 rounded-md text-[#9CA3AF] hover:bg-[#F3F4F6] transition-colors"
-                    title="Copy"
-                    aria-label="Copy profile details"
+                    onClick={() => setScoreOpen(true)}
+                    className="inline-flex items-center gap-0.5 ml-0.5 text-[13px] font-bold text-[#1F2937] tabular-nums leading-none rounded-md hover:bg-[#F3F4F6] px-0.5 py-0.5 transition-colors"
+                    title="Click to view Lead Score Details"
+                    aria-label="View lead score details"
                   >
-                    <Copy size={16} strokeWidth={1.9} />
+                    {scoreText || "-"}
+                    <Flag size={12} className="text-[#22C55E]" fill="#22C55E" strokeWidth={0} aria-hidden />
                   </button>
                 </div>
               </div>
@@ -1362,7 +1379,7 @@ export default function OverviewDashboard({
                   <span className="truncate">{formNo}</span>
                 </p>
               </div>
-              <div className="flex items-center gap-2 mt-2.5 flex-nowrap">
+              <div className="flex items-center gap-1.5 mt-2.5 flex-nowrap">
                 <span
                   className="text-[11.5px] font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0"
                   style={{ color: tempTone.color, backgroundColor: tempTone.bg }}
@@ -1377,7 +1394,7 @@ export default function OverviewDashboard({
                     {priority}
                   </span>
                 ) : null}
-                <div className="ml-2 flex items-center gap-2.5 shrink-0">
+                <div className="ml-auto flex items-center gap-1 shrink-0">
                   <button
                     type="button"
                     onClick={() => toast.info("Calling via masked number...")}
@@ -1424,8 +1441,8 @@ export default function OverviewDashboard({
           </div>
         </section>
 
-        <div className="flex flex-col gap-3 min-w-0">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="flex min-w-0 flex-col gap-4 xl:h-full">
+          <div className="grid shrink-0 grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-3.5 auto-rows-[76px]">
             <ActionTile
               icon={Link2}
               iconBg="#E8F8EF"
@@ -1442,32 +1459,30 @@ export default function OverviewDashboard({
               title="Create Meeting"
               titleColor="#7A0A17"
               detail={
-                <span className="mt-1 flex items-center gap-2 min-w-0 text-[12px] text-[#9CA3AF] leading-none">
+                <>
                   <button
                     type="button"
                     onClick={() => openMeetings("due")}
-                    className="truncate hover:text-[#7A0A17] hover:underline"
+                    className="shrink-0 hover:text-[#7A0A17] hover:underline"
                   >
-                    See Meetings
+                    See Meetings:
                   </button>
-                  <span className="truncate shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => openMeetings("due")}
-                      className="hover:text-[#7A0A17] hover:underline"
-                    >
-                      {meetingDue.length} due
-                    </button>
-                    {", "}
-                    <button
-                      type="button"
-                      onClick={() => openMeetings("completed")}
-                      className="hover:text-[#7A0A17] hover:underline"
-                    >
-                      {meetingDone.length} completed
-                    </button>
-                  </span>
-                </span>
+                  <button
+                    type="button"
+                    onClick={() => openMeetings("due")}
+                    className="ml-1 shrink-0 hover:text-[#7A0A17] hover:underline"
+                  >
+                    {meetingDue.length} due
+                  </button>
+                  <span className="shrink-0">, </span>
+                  <button
+                    type="button"
+                    onClick={() => openMeetings("completed")}
+                    className="min-w-0 truncate hover:text-[#7A0A17] hover:underline"
+                  >
+                    {meetingDone.length} completed
+                  </button>
+                </>
               }
               onClick={() => setCreateMeetingOpen(true)}
             />
@@ -1487,49 +1502,67 @@ export default function OverviewDashboard({
               title="Create Task"
               titleColor="#1F2937"
               detail={
-                <span className="mt-1 flex items-center gap-0 min-w-0 text-[12px] text-[#9CA3AF] leading-none">
+                <>
                   <button
                     type="button"
                     onClick={() => openTasks("due")}
-                    className="hover:text-[#7A0A17] hover:underline"
+                    className="shrink-0 hover:text-[#7A0A17] hover:underline"
                   >
                     {taskDue.length} due
                   </button>
-                  {", "}
+                  <span className="shrink-0">, </span>
                   <button
                     type="button"
                     onClick={() => openTasks("completed")}
-                    className="hover:text-[#7A0A17] hover:underline"
+                    className="min-w-0 truncate hover:text-[#7A0A17] hover:underline"
                   >
                     {taskDone.length} completed
                   </button>
-                </span>
+                </>
               }
               onClick={onCreateTask}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <section className="bg-white border border-[#EEF1F4] rounded-2xl p-4 min-w-0 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-              <CardHead icon={Gift} title="Package" action="View All" accent onAction={() => setPackageOpen(true)} />
-              <button
-                type="button"
-                onClick={() => toggleQuotePanel("package")}
-                aria-expanded={packageFeaturesOpen}
-                className="w-full rounded-xl bg-[#FFF2E0] px-4 py-3 flex items-center gap-2.5 text-left"
-              >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-start xl:min-h-0 xl:flex-1 xl:items-stretch">
+            <section
+              className={`bg-white border border-[#EEF1F4] rounded-2xl p-4 min-w-0 shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${quoteOpen ? "self-start" : "xl:h-full"}`}
+              style={
+                quoteOpen
+                  ? { minHeight: lockedCardHeights.current.next || undefined, height: "auto", alignSelf: "start" }
+                  : undefined
+              }
+            >
+              <CardHead
+                icon={Gift}
+                title="Package"
+                action="Select Package"
+                accent
+                onAction={() => setPackageOpen(true)}
+              />
+              <div className="w-full rounded-xl bg-[#FFF2E0] px-4 py-3 flex items-center gap-2.5">
                 <Crown size={18} className="text-[#E8B400] shrink-0" fill="#E8B400" strokeWidth={1.5} />
-                <p className="text-[14px] font-semibold text-[#1A5AA8] truncate flex-1 min-w-0">{packageName}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-semibold text-[#1A5AA8] truncate">{packageName}</p>
+                </div>
                 <div className="text-right shrink-0">
                   <p className="text-[14px] font-semibold text-[#1A5AA8] leading-none">{packagePrice}</p>
                   <p className="text-[11px] font-normal text-[#9CA3AF] leading-none mt-1">(Approx.)</p>
                 </div>
-                <ChevronDown
-                  size={18}
-                  className={`text-[#1A5AA8] shrink-0 transition-transform duration-300 ${packageFeaturesOpen ? "rotate-180" : ""}`}
-                  strokeWidth={2.2}
-                />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => toggleQuotePanel("package")}
+                  aria-expanded={packageFeaturesOpen}
+                  aria-label={packageFeaturesOpen ? "Hide package features" : "Show package features"}
+                  className="text-[#1A5AA8] shrink-0"
+                >
+                  <ChevronDown
+                    size={18}
+                    className={`transition-transform duration-300 ${packageFeaturesOpen ? "rotate-180" : ""}`}
+                    strokeWidth={2.2}
+                  />
+                </button>
+              </div>
               <div
                 className={`grid transition-[grid-template-rows] duration-300 ease-out ${
                   packageFeaturesOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
@@ -1537,7 +1570,7 @@ export default function OverviewDashboard({
               >
                 <div className="overflow-hidden">
                   <ul className="mt-4 flex flex-col gap-2.5">
-                    {PACKAGE_FEATURES.map((feature) => (
+                    {packageFeatures.map((feature) => (
                       <li key={feature} className="flex items-center gap-2.5 text-[13px] font-normal text-[#5C5C5C]">
                         <span className="size-[18px] rounded-full bg-[#10B981] text-white grid place-items-center shrink-0">
                           <Check size={11} strokeWidth={3} />
@@ -1606,7 +1639,11 @@ export default function OverviewDashboard({
               </div>
             </section>
 
-            <section className="bg-white border border-[#EEF1F4] rounded-2xl p-4 min-w-0 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+            <section
+              ref={nextCardRef}
+              className={`bg-white border border-[#EEF1F4] rounded-2xl p-4 min-w-0 shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${quoteOpen ? "self-start" : "xl:h-full"}`}
+              style={frozenCardStyle("next")}
+            >
               <CardHead
                 icon={Clock}
                 title="Next Action"
@@ -1619,7 +1656,11 @@ export default function OverviewDashboard({
           </div>
         </div>
 
-        <section className="bg-white border border-[#EEF1F4] rounded-2xl p-4 min-w-0 h-full shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+        <section
+          ref={activityCardRef}
+          className={`bg-white border border-[#EEF1F4] rounded-2xl p-4 min-w-0 shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${quoteOpen ? "self-start" : "xl:h-full"}`}
+          style={frozenCardStyle("activity")}
+        >
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="size-8 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
@@ -1641,8 +1682,8 @@ export default function OverviewDashboard({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[340px_minmax(0,1fr)_300px] gap-3 items-start">
-        {renderPanel(panels[0])}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 min-w-0 items-start">
+        {renderPanel(panels[1])}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 min-w-0 items-start">
           <button
             type="button"
             onClick={() => setPackageOpen(true)}
@@ -1659,7 +1700,7 @@ export default function OverviewDashboard({
             </span>
             <ChevronRight size={18} className="text-[#9CA3AF] shrink-0" strokeWidth={2} />
           </button>
-          {renderPanel(panels[1])}
+          {renderPanel(panels[0])}
         </div>
         {renderPanel(panels[2])}
       </div>

@@ -1,6 +1,7 @@
 import { addLeadActivity } from "./leadActivityStore.js";
 import { syncIntakeValues } from "./biodataDraftStore.js";
 import { splitName, lookingForFromGender } from "./leadFields.js";
+import { clientIdWithSeries, isSeriesClientId, buildClientId, syncClientSeries } from "./clientsData.js";
 
 const EVENT = "mml-sales-pipeline";
 const STORAGE_KEY = "mml-sales-pipeline-leads";
@@ -23,7 +24,7 @@ export const SAMPLE_CLIENT_PROFILE = {
 
 /** Sample Overview fields carried from P0 New → P0 Contacted. */
 const SAMPLE_P0_CONTACTED_DETAILS = {
-  dealCode: "MML-D-10429",
+  dealCode: "10032632",
   stageLabel: "P0 Contacted",
   packageInterest: SAMPLE_CLIENT_PROFILE.packageInterest,
   premium: "Yes",
@@ -142,6 +143,7 @@ function withSampleClient(lead) {
       premium: lead.starred ? "Yes" : "No",
       leadSource: lead.source || SAMPLE_P0_CONTACTED_DETAILS.leadSource,
       ...(lead.overviewDetails || {}),
+      dealCode: lead.mmlId || lead.overviewDetails?.dealCode || SAMPLE_P0_CONTACTED_DETAILS.dealCode,
       lookingFor,
       enquiryBy,
       firstName: lead.firstName || names.firstName,
@@ -175,15 +177,15 @@ function leadHasContact(lead) {
 /** Two sample cards per stage, mirroring the pipeline board roster. */
 export const LEADS_BY_STAGE = {
   P0: [
-    sampleLead({ id: "p0-1", name: "Kuhu Sharma",  starred: true,  mmlId: "MML - D - 10428", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", p0Status: "new" }, { profile: false }),
-    sampleLead({ id: "p0-2", name: "Ankit Sharma", starred: true,  mmlId: "MML - D - 10429", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", p0Status: "contacted", overviewDetails: SAMPLE_P0_CONTACTED_DETAILS }),
+    sampleLead({ id: "p0-1", name: "Kuhu Sharma",  starred: true,  mmlId: "10032631", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", p0Status: "new" }, { profile: false }),
+    sampleLead({ id: "p0-2", name: "Ankit Sharma", starred: true,  mmlId: "10032632", temperature: "Hot",  score: 8.5, priority: "High",   completion: 50,  days: 2,  hrs: 6,  source: "Outbound Calls",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", p0Status: "contacted", overviewDetails: SAMPLE_P0_CONTACTED_DETAILS }),
     sampleLead({
       id: "p0-ritika",
       name: "Ritika Sharma",
       firstName: "Ritika",
       lastName: "Sharma",
       starred: false,
-      mmlId: "MML - D - 10502",
+      mmlId: "10032633",
       temperature: "Warm",
       score: 7.8,
       priority: "Medium",
@@ -202,28 +204,28 @@ export const LEADS_BY_STAGE = {
     }, { profile: false }),
   ],
   P1: [
-    sampleLead({ id: "p1-1", name: "Harshit Sharma", starred: false, mmlId: "MML - D - 10430", temperature: "Hot",  score: 8.5, priority: "High",   completion: 40,  days: 4,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
-    sampleLead({ id: "p1-2", name: "Arjun Rampal",   starred: false, mmlId: "MML - D - 10431", temperature: "Hot",  score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p1-1", name: "Harshit Sharma", starred: false, mmlId: "10032634", temperature: "Hot",  score: 8.5, priority: "High",   completion: 40,  days: 4,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p1-2", name: "Arjun Rampal",   starred: false, mmlId: "10032635", temperature: "Hot",  score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
   ],
   P2: [
-    sampleLead({ id: "p2-1", name: "Ankur Sharma",   firstName: "Ankur", lastName: "Sharma", starred: false, mmlId: "MML - D - 10432", temperature: "Cold", score: 7.5, priority: "Medium", completion: 75,  days: 6,  hrs: 24, source: "Community Events",  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
-    sampleLead({ id: "p2-2", name: "Priya Raheja",   firstName: "Priya", lastName: "Raheja", starred: true,  mmlId: "MML - D - 10433", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 6,  source: "Community Events",  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p2-1", name: "Ankur Sharma",   firstName: "Ankur", lastName: "Sharma", starred: false, mmlId: "10032636", temperature: "Cold", score: 7.5, priority: "Medium", completion: 75,  days: 6,  hrs: 24, source: "Community Events",  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p2-2", name: "Priya Raheja",   firstName: "Priya", lastName: "Raheja", starred: true,  mmlId: "10032637", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 6,  source: "Community Events",  lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
   ],
   P3: [
-    sampleLead({ id: "p3-1", name: "Aditya Sharma",  starred: true,  mmlId: "MML - D - 10434", temperature: "Cold", score: 8.5, priority: "Medium", completion: 85,  days: 8,  hrs: 24, source: "Channel Partner",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
-    sampleLead({ id: "p3-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10435", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Channel Partner",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p3-1", name: "Aditya Sharma",  starred: true,  mmlId: "10032638", temperature: "Cold", score: 8.5, priority: "Medium", completion: 85,  days: 8,  hrs: 24, source: "Channel Partner",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p3-2", name: "Priya Raheja",   starred: true,  mmlId: "10032639", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Channel Partner",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
   ],
   P4: [
-    sampleLead({ id: "p4-1", name: "Vivek Sharma",   starred: true,  mmlId: "MML - D - 10436", temperature: "Cold", score: 9.0, priority: "Low",    completion: 90,  days: 10, hrs: 6,  source: "Reference - Satish", lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
-    sampleLead({ id: "p4-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10437", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Reference - Satish", lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p4-1", name: "Vivek Sharma",   starred: true,  mmlId: "30032640", temperature: "Cold", score: 9.0, priority: "Low",    completion: 90,  days: 10, hrs: 6,  source: "Reference - Satish", lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p4-2", name: "Priya Raheja",   starred: true,  mmlId: "30032641", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Reference - Satish", lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
   ],
   P5: [
-    sampleLead({ id: "p5-1", name: "Rohit Sharma",   starred: true,  mmlId: "MML - D - 10438", temperature: "Warm", score: 7.5, priority: "Medium", completion: 60,  days: 12, hrs: 24, source: "Manual Sourcing",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
-    sampleLead({ id: "p5-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10439", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Manual Sourcing",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p5-1", name: "Rohit Sharma",   starred: true,  mmlId: "50032642", temperature: "Warm", score: 7.5, priority: "Medium", completion: 60,  days: 12, hrs: 24, source: "Manual Sourcing",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p5-2", name: "Priya Raheja",   starred: true,  mmlId: "50032643", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Manual Sourcing",   lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
   ],
   P6: [
-    sampleLead({ id: "p6-1", name: "Virat Sharma",   starred: true,  mmlId: "MML - D - 10440", temperature: "Warm", score: 8.5, priority: "Low",    completion: 55,  days: 14, hrs: 24, source: "Online - Insta",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
-    sampleLead({ id: "p6-2", name: "Priya Raheja",   starred: true,  mmlId: "MML - D - 10441", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Online - Insta",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p6-1", name: "Virat Sharma",   starred: true,  mmlId: "50032644", temperature: "Warm", score: 8.5, priority: "Low",    completion: 55,  days: 14, hrs: 24, source: "Online - Insta",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p6-2", name: "Priya Raheja",   starred: true,  mmlId: "50032645", temperature: "Cold", score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 8,  source: "Online - Insta",    lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
   ],
 };
 
@@ -294,6 +296,53 @@ function hydrateSampleProfiles(data) {
   return { next, changed };
 }
 
+function seriesForStage(stageId) {
+  if (stageId === "P5" || stageId === "P6") return "paid";
+  if (stageId === "P4") return "committed";
+  return "unpaid";
+}
+
+function seedById(leadId) {
+  for (const stageId of STAGE_IDS) {
+    const hit = (LEADS_BY_STAGE[stageId] || []).find((row) => row.id === leadId);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function resolveMmlId(lead, stageId) {
+  const series = seriesForStage(stageId);
+  const seed = seedById(lead?.id);
+  const base = isSeriesClientId(lead?.mmlId) ? lead.mmlId : seed?.mmlId;
+  if (isSeriesClientId(base)) return clientIdWithSeries(base, series);
+  return buildClientId(series);
+}
+
+function withResolvedMmlId(lead, stageId) {
+  const mmlId = resolveMmlId(lead, stageId);
+  const clientSeries = seriesForStage(stageId);
+  const overviewDetails = lead?.overviewDetails
+    ? { ...lead.overviewDetails, dealCode: mmlId }
+    : lead?.overviewDetails;
+  return { ...lead, mmlId, clientSeries, overviewDetails };
+}
+
+function hydrateMmlIds(data) {
+  const next = cloneLeads(data);
+  let changed = false;
+  for (const stageId of STAGE_IDS) {
+    next[stageId] = (next[stageId] || []).map((lead) => {
+      const resolved = withResolvedMmlId(lead, stageId);
+      const sameId = resolved.mmlId === lead.mmlId && resolved.clientSeries === lead.clientSeries;
+      const sameCode = (lead.overviewDetails?.dealCode || "") === (resolved.overviewDetails?.dealCode || "");
+      if (sameId && sameCode) return lead;
+      changed = true;
+      return resolved;
+    });
+  }
+  return { next, changed };
+}
+
 function loadLeads() {
   if (typeof window === "undefined") return cloneLeads(LEADS_BY_STAGE);
   try {
@@ -303,8 +352,9 @@ function loadLeads() {
     if (!parsed || typeof parsed !== "object") return cloneLeads(LEADS_BY_STAGE);
     const contacts = hydrateMissingContacts(parsed);
     const profiles = hydrateSampleProfiles(contacts.next);
-    const next = profiles.next;
-    if (contacts.changed || profiles.changed) {
+    const ids = hydrateMmlIds(profiles.next);
+    const next = ids.next;
+    if (contacts.changed || profiles.changed || ids.changed) {
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       } catch {
@@ -370,7 +420,7 @@ export function addLeadToStage(stageId, lead = {}) {
   const stage = STAGE_IDS.includes(stageId) ? stageId : "P0";
   const id = lead?.id || `${stage.toLowerCase()}-${Date.now()}`;
   leads = cloneLeads(leads);
-  const next = { ...lead, id };
+  const next = withResolvedMmlId({ ...lead, id }, stage);
   if (stage === "P0") next.p0Status = lead?.p0Status || "new";
   if (stage === "P2") {
     next.completion = Math.max(Number(next.completion) || 0, 70);
@@ -457,6 +507,13 @@ export function moveLeadToStage(leadId, toStage, patch = {}) {
     updated.temperature = updated.temperature || "Warm";
     updated.completion = Math.max(Number(updated.completion) || 0, 100);
   }
+  updated = withResolvedMmlId(updated, toStage);
+  syncClientSeries({
+    linkedLeadId: updated.id,
+    id: updated.clientId,
+    series: updated.clientSeries,
+    clientCode: updated.mmlId,
+  });
   updated.intakeValues = syncIntakeValues(updated);
   leads[toStage] = [updated, ...(leads[toStage] || [])];
   emit();

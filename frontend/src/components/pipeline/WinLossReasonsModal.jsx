@@ -85,11 +85,7 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
   const handleSave = () => {
     const picked = REASONS.filter((r) => selected[r.id]);
     if (picked.length === 0 && !others.trim()) {
-      setError("Select at least one reason or fill in Others.");
-      return;
-    }
-    if (!briefNote.trim()) {
-      setError("Brief Comment / Note is required.");
+      setError("Select at least one reason.");
       return;
     }
 
@@ -190,9 +186,7 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
 
           <div className="mt-5 flex flex-col gap-4">
             <div>
-              <label className="text-[13px] font-semibold text-[#111]">
-                Others <span className="text-[#E8395B]">*</span>
-              </label>
+              <label className="text-[13px] font-semibold text-[#111]">Others</label>
               <textarea
                 value={others}
                 onChange={(e) => setOthers(e.target.value)}
@@ -202,9 +196,7 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
               />
             </div>
             <div>
-              <label className="text-[13px] font-semibold text-[#111]">
-                Brief Comment / Note <span className="text-[#E8395B]">*</span>
-              </label>
+              <label className="text-[13px] font-semibold text-[#111]">Brief Comment / Note</label>
               <textarea
                 value={briefNote}
                 onChange={(e) => setBriefNote(e.target.value)}

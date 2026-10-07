@@ -9,7 +9,7 @@ import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
 import { dashRows, EMPTY } from "./stageContent.jsx";
 
-const PACKAGES = [
+export const PACKAGES = [
   {
     key: "basic",
     name: "Basic",

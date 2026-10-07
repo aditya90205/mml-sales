@@ -13,6 +13,7 @@ import {
   MoreVertical,
   Phone,
   PhoneOff,
+  Snowflake,
   Sparkles,
   Star,
 } from "lucide-react";
@@ -263,6 +264,15 @@ function countFilledKeys(obj, keys) {
   }).length;
 }
 
+function holdFromLead(lead) {
+  if (lead?.dealStatus !== "lost" && lead?.dealStatus !== "cold") return null;
+  return {
+    reasons: lead.winLossReasons || "",
+    tone: lead.dealStatus === "cold" ? "Cold" : "Lost",
+    briefNote: lead.winLossNote || "",
+  };
+}
+
 /**
  * Deal detail opened by clicking any pipeline card (P0–P6).
  * Tab data fills in by stage. Payments and P6 Checklist stay blurred until P5.
@@ -285,7 +295,7 @@ export default function DealDetailPage({
     () => initialTab || STAGE_TO_TAB[stageFromBoard] || "overview"
   );
   const [winLossModal, setWinLossModal] = useState({ open: false, mode: "lost" });
-  const [winLossOverride, setWinLossOverride] = useState(null);
+  const [winLossOverride, setWinLossOverride] = useState(() => holdFromLead(lead));
   const [isPremium, setIsPremium] = useState(() => Boolean(lead?.starred));
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
@@ -303,7 +313,12 @@ export default function DealDetailPage({
   const tabs = BASE_TABS.map((tab) =>
     tab.key === "payments" || tab.key === "p6" ? { ...tab, locked: !lateTabsUnlocked } : tab
   );
-  const isLost = (winLossOverride?.tone || lead?.temperature) === "Lost";
+  const holdStatus = winLossOverride
+    ? winLossOverride.tone === "Cold"
+      ? "cold"
+      : "lost"
+    : null;
+  const isLost = holdStatus === "lost";
 
   useEffect(() => {
     setCurrentStage(stageFromBoard);
@@ -345,7 +360,7 @@ export default function DealDetailPage({
   };
 
   const deal = useMemo(() => {
-    const dealCode = (lead?.mmlId || "MML - D - 10471").replace(/\s*-\s*/g, "-");
+    const dealCode = String(lead?.mmlId || "").replace(/\s+/g, "") || "-";
     const sample = isSampleLead(lead);
     const detailsFilled = atLeast(currentStage, "P1") || Boolean(savedDetails);
     const flagsFilled = atLeast(currentStage, "P2");
@@ -431,7 +446,7 @@ export default function DealDetailPage({
     const merged = savedDetails
       ? {
           ...base,
-          dealCode: savedDetails.dealCode || base.dealCode,
+          dealCode: base.dealCode,
           stageLabel:
             currentStage === "P0"
               ? p0StageLabel
@@ -462,8 +477,8 @@ export default function DealDetailPage({
           familyIncomeBand: savedDetails.familyIncomeBand || base.familyIncomeBand,
           meeting: savedDetails.meeting || base.meeting,
           nextMeeting: savedDetails.nextMeeting || base.nextMeeting,
-          winLossReasons: savedDetails.winLossReasons || base.winLossReasons,
-          winLossTone: savedDetails.winLossTone || base.winLossTone,
+          winLossReasons: winLossOverride?.reasons || savedDetails.winLossReasons || base.winLossReasons,
+          winLossTone: winLossOverride?.tone || savedDetails.winLossTone || base.winLossTone,
           lastDiscussionAt: savedDetails.lastDiscussionAt || base.lastDiscussionAt,
           lastDiscussionNote: savedDetails.lastDiscussionNote || base.lastDiscussionNote,
           nextActionAt: savedDetails.nextActionAt || base.nextActionAt,
@@ -525,13 +540,20 @@ export default function DealDetailPage({
   const openWinLossModal = (mode) => setWinLossModal({ open: true, mode });
 
   const handleWinLossSave = ({ reasons, briefNote, mode }) => {
-    setWinLossOverride({
-      reasons,
-      tone: mode === "cold" ? "Cold" : "Lost",
-      briefNote,
-    });
+    const tone = mode === "cold" ? "Cold" : "Lost";
+    const dealStatus = mode === "cold" ? "cold" : "lost";
+    setWinLossOverride({ reasons, tone, briefNote });
     setWinLossModal({ open: false, mode });
     setActiveTab("overview");
+    if (lead?.id) {
+      updateLead(lead.id, {
+        dealStatus,
+        temperature: tone,
+        winLossReasons: reasons,
+        winLossNote: briefNote,
+        lost: dealStatus === "lost",
+      });
+    }
     recordLeadActivity(lead, currentStage, {
       type: mode === "cold" ? "flag" : "stage",
       title:
@@ -548,7 +570,7 @@ export default function DealDetailPage({
   };
 
   const handleConfirmMove = () => {
-    if (!nextStage) return;
+    if (holdStatus || !nextStage) return;
     const fromStage = currentStage;
     if (nextStage === "Contacted") {
       setP0Contacted(true);
@@ -747,11 +769,42 @@ export default function DealDetailPage({
             </div>
           </div>
 
+          {holdStatus ? (
+            <div
+              role="status"
+              className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
+                holdStatus === "cold"
+                  ? "border-[#D6E4F5] bg-[#E8F2FE]"
+                  : "border-[#E8D4D8] bg-[#F8EEF0]"
+              }`}
+            >
+              <span
+                className={`size-8 rounded-lg bg-white grid place-items-center shrink-0 ${
+                  holdStatus === "cold" ? "text-[#3B82F6]" : "text-[#7A0A17]"
+                }`}
+              >
+                {holdStatus === "cold" ? <Snowflake size={16} /> : <Flag size={16} />}
+              </span>
+              <div className="min-w-0">
+                <p className={`text-[13px] font-bold ${holdStatus === "cold" ? "text-[#1D4ED8]" : "text-[#7A0A17]"}`}>
+                  {holdStatus === "cold" ? "Moved to Cold & Hold" : "Marked as Lost"}
+                </p>
+                <p className="text-[12px] text-[#6B7280] mt-0.5 leading-snug">
+                  {holdStatus === "cold"
+                    ? "This deal is on hold. P0 to P6 are inactive."
+                    : "This deal is closed as lost. P0 to P6 are inactive."}
+                  {winLossOverride?.reasons ? ` Reason: ${winLossOverride.reasons}.` : ""}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="flex-1 min-w-0">
               <StageStepper
                 variant="overview"
                 durations={stageDurations}
+                muted={Boolean(holdStatus)}
                 activeStageId={
                   currentStage !== "P0"
                     ? currentStage
@@ -761,7 +814,15 @@ export default function DealDetailPage({
                 }
               />
             </div>
-            {nextStage ? (
+            {holdStatus ? (
+              <button
+                type="button"
+                disabled
+                className="inline-flex items-center gap-1.5 h-[38px] px-5 rounded-xl bg-[#E5E7EB] text-[#9CA3AF] text-[13px] font-semibold cursor-not-allowed shrink-0"
+              >
+                {holdStatus === "cold" ? "On hold" : "Marked lost"}
+              </button>
+            ) : nextStage ? (
               <button
                 type="button"
                 onClick={handleConfirmMove}

@@ -88,7 +88,7 @@ export default function FollowUpHoverCard({
                     onClick={openHistory}
                     className="text-[11.5px] font-semibold text-[#2563EB] hover:underline mt-1"
                   >
-                    Follow up History
+                    Lead History
                   </button>
                 )}
               </div>

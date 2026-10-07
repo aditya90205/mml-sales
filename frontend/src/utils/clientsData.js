@@ -768,26 +768,66 @@ function digitsOnly(value = "") {
   return String(value).replace(/\D/g, "");
 }
 
-const CLIENT_SERIES_PREFIX = {
-  unpaid: "1000",
-  committed: "3000",
-  paid: "5000",
+export const CLIENT_SERIES_PREFIX = {
+  unpaid: "100",
+  committed: "300",
+  paid: "500",
 };
 
 const CLIENT_SERIAL_START = 6803;
+let serialCursor = CLIENT_SERIAL_START - 1;
 
-function nextClientSerial() {
-  let max = CLIENT_SERIAL_START - 1;
-  for (const client of CLIENTS) {
-    const serial = Number(String(client.clientId || "").slice(-4));
-    if (Number.isFinite(serial) && serial >= CLIENT_SERIAL_START && serial > max) max = serial;
-  }
-  return max + 1;
+function serialOf(clientId) {
+  const serial = Number(String(clientId || "").replace(/\D/g, "").slice(-5));
+  return Number.isFinite(serial) ? serial : 0;
 }
 
-function buildClientId(series = "unpaid") {
+function nextClientSerial() {
+  let max = Math.max(serialCursor, CLIENT_SERIAL_START - 1);
+  for (const client of CLIENTS) {
+    const serial = serialOf(client.clientId);
+    if (serial >= CLIENT_SERIAL_START && serial > max) max = serial;
+  }
+  serialCursor = max + 1;
+  return serialCursor;
+}
+
+/** 8-digit client / MML id: 100 unpaid, 300 committed, 500 paid, plus a 5-digit serial. */
+export function isSeriesClientId(value) {
+  return /^(100|300|500)\d{5}$/.test(String(value || "").replace(/\D/g, ""));
+}
+
+export function clientIdWithSeries(clientId, series = "unpaid") {
+  const serial = String(clientId || "").replace(/\D/g, "").slice(-5);
+  if (!/^\d{5}$/.test(serial)) return buildClientId(series);
   const prefix = CLIENT_SERIES_PREFIX[series] || CLIENT_SERIES_PREFIX.unpaid;
-  return `${prefix}${String(nextClientSerial()).padStart(4, "0")}`;
+  return `${prefix}${serial}`;
+}
+
+export function buildClientId(series = "unpaid") {
+  const prefix = CLIENT_SERIES_PREFIX[series] || CLIENT_SERIES_PREFIX.unpaid;
+  return `${prefix}${String(nextClientSerial()).padStart(5, "0")}`;
+}
+
+/** Keep the same serial and switch the series prefix on the matching client row. */
+export function syncClientSeries({ linkedLeadId, id, series = "unpaid", clientCode } = {}) {
+  let idx = -1;
+  if (linkedLeadId != null && linkedLeadId !== "") {
+    idx = CLIENTS.findIndex((c) => String(c.linkedLeadId) === String(linkedLeadId));
+  }
+  if (idx < 0 && id != null && id !== "") {
+    idx = CLIENTS.findIndex((c) => String(c.id) === String(id));
+  }
+  if (idx < 0) return null;
+  const nextCode = isSeriesClientId(clientCode)
+    ? clientIdWithSeries(clientCode, series)
+    : clientIdWithSeries(CLIENTS[idx].clientId, series);
+  if (CLIENTS[idx].clientId === nextCode && CLIENTS[idx].clientSeries === series) {
+    return { ...CLIENTS[idx] };
+  }
+  CLIENTS[idx] = { ...CLIENTS[idx], clientId: nextCode, clientSeries: series };
+  emit();
+  return { ...CLIENTS[idx] };
 }
 
 function todayLabel() {
@@ -836,6 +876,7 @@ export function updateClient(id, patch = {}) {
  */
 export function upsertClientFromBiodata({
   clientId,
+  clientCode,
   name,
   mobile,
   email,
@@ -897,7 +938,7 @@ export function upsertClientFromBiodata({
   const row = {
     id: nextId,
     name: fullName,
-    clientId: buildClientId("unpaid"),
+    clientId: isSeriesClientId(clientCode) ? clientIdWithSeries(clientCode, "unpaid") : buildClientId("unpaid"),
     clientSeries: "unpaid",
     formId: `MML-${3934 + nextId}`,
     phone: phoneMask || "******0000",

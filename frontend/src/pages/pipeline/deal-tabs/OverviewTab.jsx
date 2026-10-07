@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Ban,
+  Bell,
   Briefcase,
   Building2,
   Calendar,
   Clock,
+  Copy,
   Eye,
   FileText,
   Globe,
@@ -333,37 +335,89 @@ function dashToEmpty(value) {
   return String(value);
 }
 
+const SEND_LINK_OPTIONS = [
+  { id: "payment", label: "Payment link", icon: IndianRupee },
+  { id: "biodata", label: "Biodata upload", icon: FileText },
+];
+
+const SEND_CHANNEL_OPTIONS = [
+  { id: "email", label: "Email", icon: Mail },
+  { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
+  { id: "inapp", label: "In-app notification", icon: Bell },
+];
+
+function shareUrl(deal, linkType) {
+  const id = String(deal?.id || deal?.mmlId || deal?.dealCode || "client").replace(/\s+/g, "");
+  const slug = linkType === "biodata" ? "biodata" : "pay";
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}/share/${slug}/${encodeURIComponent(id)}`;
+}
+
+function defaultLinkMessage(deal, linkType) {
+  const name = String(deal?.name || "there").trim() || "there";
+  const link = shareUrl(deal, linkType);
+  if (linkType === "biodata") {
+    return `Hi ${name}, please upload your biodata using this link:\n${link}`;
+  }
+  return `Hi ${name}, please complete your payment using this link:\n${link}`;
+}
+
 function SendFormModal({ open, onClose, deal, currentStage }) {
-  const [channel, setChannel] = useState("email");
+  const [channels, setChannels] = useState(["email"]);
+  const [linkType, setLinkType] = useState("payment");
+  const [message, setMessage] = useState("");
   const email = String(deal.email || "").trim();
   const mobile = String(deal.mobile || deal.phone || "").trim();
-  const to = channel === "email" ? email : mobile;
-  const [message, setMessage] = useState("");
+  const linkLabel = linkType === "biodata" ? "Biodata upload" : "Payment link";
 
   useEffect(() => {
     if (!open) return;
-    setChannel(email && email !== "—" ? "email" : "whatsapp");
-    setMessage(
-      `Hi ${deal.name || "there"}, please fill your MML profile form so we can complete your record.`
-    );
+    setChannels(email && email !== "—" ? ["email"] : ["whatsapp"]);
+    setLinkType("payment");
+    setMessage(defaultLinkMessage(deal, "payment"));
   }, [open, deal.name, email]);
+
+  const toggleChannel = (id) => {
+    setChannels((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+    );
+  };
+
+  const copyLink = () => {
+    const text = shareUrl(deal, linkType);
+    navigator.clipboard?.writeText(text).then(
+      () => toast.success(`${linkLabel} copied.`),
+      () => toast.error("Could not copy the link.")
+    );
+  };
 
   const handleSend = (e) => {
     e.preventDefault();
-    if (!to || to === "—") {
-      toast.error(channel === "email" ? "This client has no email yet." : "This client has no mobile yet.");
+    if (channels.length === 0) {
+      toast.error("Select at least one channel.");
       return;
     }
+    if (channels.includes("email") && (!email || email === "—")) {
+      toast.error("This client has no email yet.");
+      return;
+    }
+    if (channels.includes("whatsapp") && (!mobile || mobile === "—")) {
+      toast.error("This client has no mobile yet.");
+      return;
+    }
+    const body = message.trim();
+    if (!body) {
+      toast.error("Please type a message.");
+      return;
+    }
+    const selected = SEND_CHANNEL_OPTIONS.filter((opt) => channels.includes(opt.id)).map((opt) => opt.label);
+    const via = selected.join(", ");
     recordLeadActivity(deal, currentStage, {
       type: "details",
-      title: "Profile form sent to client",
-      detail: channel === "email" ? `Email · ${to}` : `WhatsApp · ${to}`,
+      title: `${linkLabel} sent to client`,
+      detail: `Sent via ${via} — ${body}`,
     });
-    toast.success(
-      channel === "email"
-        ? `Profile form sent to ${deal.name || "client"} by email.`
-        : `Profile form sent to ${deal.name || "client"} on WhatsApp.`
-    );
+    toast.success(`${linkLabel} sent to ${deal.name || "client"} via ${via}.`);
     onClose?.();
   };
 
@@ -371,8 +425,8 @@ function SendFormModal({ open, onClose, deal, currentStage }) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Send form"
-      subtitle="Share the Profile Create form with this client"
+      title="Send link"
+      subtitle="Share a payment link or biodata upload link with this client"
       icon={<Send size={18} />}
       iconBg="#FDF2F3"
       iconColor="#7A0A17"
@@ -387,31 +441,39 @@ function SendFormModal({ open, onClose, deal, currentStage }) {
             Cancel
           </button>
           <button
+            type="button"
+            onClick={copyLink}
+            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-xl bg-white border border-[#7A0A17] text-[#7A0A17] text-[13px] font-semibold hover:bg-[#FDF2F3] transition-colors"
+          >
+            <Copy size={14} />
+            Copy link
+          </button>
+          <button
             type="submit"
             form="send-profile-form"
             className="inline-flex items-center gap-1.5 h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
           >
             <Send size={14} />
-            Send form
+            Send
           </button>
         </>
       }
     >
       <form id="send-profile-form" onSubmit={handleSend} className="flex flex-col gap-4">
         <div>
-          <p className="text-[13px] font-bold text-[#111] mb-1.5">Channel</p>
-          <div className="flex items-center gap-2">
-            {[
-              { id: "email", label: "Email", icon: Mail },
-              { id: "whatsapp", label: "WhatsApp", icon: Send },
-            ].map((opt) => {
-              const active = channel === opt.id;
+          <p className="text-[13px] font-bold text-[#111] mb-1.5">Send</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            {SEND_LINK_OPTIONS.map((opt) => {
+              const active = linkType === opt.id;
               const Icon = opt.icon;
               return (
                 <button
                   key={opt.id}
                   type="button"
-                  onClick={() => setChannel(opt.id)}
+                  onClick={() => {
+                    setLinkType(opt.id);
+                    setMessage(defaultLinkMessage(deal, opt.id));
+                  }}
                   className={`inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-[13px] font-semibold border transition-colors ${
                     active
                       ? "bg-[#7A0A17] text-white border-[#7A0A17]"
@@ -426,18 +488,41 @@ function SendFormModal({ open, onClose, deal, currentStage }) {
           </div>
         </div>
         <div>
-          <label className="block text-[13px] font-bold text-[#111] mb-1.5">
-            {channel === "email" ? "Email" : "Mobile"}
-          </label>
-          <input value={to && to !== "—" ? to : ""} readOnly className={`${FIELD} bg-[#FAFAFB]`} />
+          <p className="text-[13px] font-bold text-[#111] mb-1.5">Channel</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            {SEND_CHANNEL_OPTIONS.map((opt) => {
+              const active = channels.includes(opt.id);
+              const Icon = opt.icon;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => toggleChannel(opt.id)}
+                  className={`inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-[13px] font-semibold border transition-colors ${
+                    active
+                      ? "bg-[#7A0A17] text-white border-[#7A0A17]"
+                      : "bg-white text-[#374151] border-black/12 hover:bg-[#FAFAFB]"
+                  }`}
+                >
+                  <Icon size={14} />
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
         <div>
-          <label className="block text-[13px] font-bold text-[#111] mb-1.5">Message</label>
+          <label htmlFor="send-link-message" className="block text-[13px] font-bold text-[#111] mb-1.5">
+            Message <span className="text-[#E8395B]">*</span>
+          </label>
           <textarea
+            id="send-link-message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={4}
-            className={`${FIELD} resize-none`}
+            placeholder="Type a message to send with this link..."
+            className="w-full border border-black/12 rounded-xl px-3.5 py-3 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17] resize-none"
           />
         </div>
       </form>
@@ -647,7 +732,7 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved, 
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <TabHeaderButton onClick={() => setSendOpen(true)}>Send form</TabHeaderButton>
+          <TabHeaderButton onClick={() => setSendOpen(true)}>Send link</TabHeaderButton>
           <TabHeaderButton onClick={openEdit}>Edit details</TabHeaderButton>
         </div>
       </div>
@@ -932,7 +1017,7 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved, 
 
 /**
  * Overview dashboard: profile, quick actions, package, next action, and activity.
- * Edit details and send-form modals stay mounted behind the cards.
+ * Edit details and send-link modals stay mounted behind the cards.
  */
 export default function OverviewTab({
   deal,

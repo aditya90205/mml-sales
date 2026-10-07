@@ -166,7 +166,9 @@ const TEMPERATURE_STYLES = {
   Hot:  { color: "#E8395B", bg: "#FDECEE" },
   Warm: { color: "#F59E0B", bg: "#FFF3E4" },
   Cold: { color: "#3B82F6", bg: "#E8F2FE" },
+  Lost: { color: "#7A0A17", bg: "#FCF5F6" },
 };
+const TONE_FALLBACK = { color: "#6B7280", bg: "#F3F4F6" };
 
 const PRIORITY_STYLES = {
   High:   { color: "#E8395B", bg: "#FDECEE" },
@@ -406,8 +408,8 @@ function BoardToolbar({ search, onSearchChange, perPage, onPerPageChange, view, 
 /* ───────────────────────── Lead card ───────────────────────── */
 
 function LeadCard({ lead, stageColor, nextStageLabel, stageKey, onOpenScoreModal, onMoveStage, onOpenDeal }) {
-  const temperature = TEMPERATURE_STYLES[lead.temperature];
-  const priority = PRIORITY_STYLES[lead.priority];
+  const temperature = TEMPERATURE_STYLES[lead.temperature] || TONE_FALLBACK;
+  const priority = PRIORITY_STYLES[lead.priority] || TONE_FALLBACK;
 
   const urgentHrs = lead.hrs <= 8;
   const canOpenDeal = true;
@@ -661,8 +663,8 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
             </thead>
             <tbody>
               {sorted.map(({ lead, stage }, idx) => {
-                const temp   = TEMPERATURE_STYLES[lead.temperature];
-                const pri    = PRIORITY_STYLES[lead.priority];
+                const temp   = TEMPERATURE_STYLES[lead.temperature] || TONE_FALLBACK;
+                const pri    = PRIORITY_STYLES[lead.priority] || TONE_FALLBACK;
                 const urgent = lead.hrs <= 8;
                 return (
                   <tr
@@ -991,8 +993,9 @@ export default function PipelineBoard() {
         }
         assignPendingBiodataFile(leadId);
       };
-      const saveClient = (leadId) => {
+      const saveClient = (leadId, clientCode) => {
         upsertClientFromBiodata({
+          clientCode,
           clientId: lead.clientId,
           name: lead.name,
           mobile: lead.mobile,
@@ -1025,12 +1028,11 @@ export default function PipelineBoard() {
             lastName: lead.lastName || "",
           },
         };
-        if (fromStage === "P0" || fromStage === "P1") {
-          moveLeadToStage(lead.existingLeadId, "P2", patch);
-        } else {
-          updateLead(lead.existingLeadId, patch);
-        }
-        saveClient(lead.existingLeadId);
+        const saved =
+          fromStage === "P0" || fromStage === "P1"
+            ? moveLeadToStage(lead.existingLeadId, "P2", patch)
+            : updateLead(lead.existingLeadId, patch);
+        saveClient(lead.existingLeadId, saved?.lead?.mmlId || current?.lead?.mmlId);
         attachFile(lead.existingLeadId);
         toast.success(`Lead "${lead.name}" updated. Extra biodata saved on the profile.`);
         return;
@@ -1038,7 +1040,6 @@ export default function PipelineBoard() {
 
       const created = addLeadToStage("P2", {
         starred: false,
-        mmlId: `MML - D - ${Math.floor(10000 + Math.random() * 90000)}`,
         score: 9.0,
         priority: "High",
         completion: 70,
@@ -1060,7 +1061,7 @@ export default function PipelineBoard() {
         },
       });
       if (created?.id) {
-        saveClient(created.id);
+        saveClient(created.id, created.mmlId);
         attachFile(created.id);
       }
       toast.success(`Lead "${lead.name}" created. Extra biodata saved on the profile.`);
@@ -1070,7 +1071,6 @@ export default function PipelineBoard() {
     addP0Lead({
       name: lead.name,
       starred: false,
-      mmlId: `MML - D - ${Math.floor(10000 + Math.random() * 90000)}`,
       temperature: lead.meeting === "Meeting Agreed" ? "Hot" : "Warm",
       score: 8.0,
       priority: "High",
