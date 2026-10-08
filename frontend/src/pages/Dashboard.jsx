@@ -2047,12 +2047,11 @@ export default function Dashboard() {
         initial={meetingPrefill}
         scheduleOnly={Boolean(schedulingUnscheduledId)}
         onSave={(form) => {
-          const item = addExtraEvent(meetingFormToCalendarItem(form, "meeting"));
+          addExtraEvent(meetingFormToCalendarItem(form, "meeting"));
           if (schedulingUnscheduledId) {
             removeUnscheduled(schedulingUnscheduledId);
             setSchedulingUnscheduledId(null);
             setMeetingPrefill(null);
-            navigate(`/calendar?focus=${encodeURIComponent(item.id)}`);
           }
         }}
       />

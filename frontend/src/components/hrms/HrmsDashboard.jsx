@@ -36,11 +36,11 @@ import { markAnnouncementRead, readAnnouncements, subscribeAnnouncements } from 
 import conductReviewIcon from "../../assets/conduct-review.png";
 
 const TIMESHEET_SLICES = [
-  { label: "Active (Productive)", time: "6h 10m", color: "#4199F2" },
-  { label: "Idle (1/Tab)", time: "42m", color: "#FDA93C" },
-  { label: "Break (Lunch / Tea)", time: "30m", color: "#0B86C7" },
-  { label: "Meeting / Call", time: "1h 10m", color: "#A67EB1" },
-  { label: "Unexplained Idle", time: "12m", color: "#E6656B" },
+  { label: "Active (Productive)", time: "6h 10m", color: "#7FC9A9" },
+  { label: "Idle (1/Tab)", time: "42m", color: "#DA9644" },
+  { label: "Break (Lunch / Tea)", time: "30m", color: "#5596CD" },
+  { label: "Meeting / Call", time: "1h 10m", color: "#B86FBE" },
+  { label: "Unexplained Idle", time: "12m", color: "#E8395B" },
 ];
 
 // Visual ring only. Slice sizes follow the design (even gaps, no slice dominates),
@@ -48,14 +48,14 @@ const TIMESHEET_SLICES = [
 const DONUT_R = 15.2;
 const DONUT_CIRC = 2 * Math.PI * DONUT_R;
 const DONUT_SEGMENTS = [
-  { color: "#E6656B", start: 348, sweep: 28 },
-  { color: "#A9C6EA", start: 20, sweep: 22 },
-  { color: "#4199F2", start: 46, sweep: 78 },
-  { color: "#5ECAD2", start: 128, sweep: 50 },
-  { color: "#F6C98E", start: 182, sweep: 30 },
-  { color: "#8FCBB6", start: 216, sweep: 42 },
-  { color: "#A67EB1", start: 262, sweep: 48 },
-  { color: "#E8B4A8", start: 314, sweep: 30 },
+  { color: "#E8395B", start: 348, sweep: 28 },
+  { color: "#5596CD", start: 20, sweep: 22 },
+  { color: "#7FC9A9", start: 46, sweep: 78 },
+  { color: "#288270", start: 128, sweep: 50 },
+  { color: "#DA9644", start: 182, sweep: 30 },
+  { color: "#C27C27", start: 216, sweep: 42 },
+  { color: "#B86FBE", start: 262, sweep: 48 },
+  { color: "#BF4C70", start: 314, sweep: 30 },
 ].map((segment) => {
   const len = (segment.sweep / 360) * DONUT_CIRC;
   return {
@@ -82,16 +82,22 @@ function readIdleMinutes() {
 
 function Card({ children, className = "", id }) {
   return (
-    <section id={id} className={`bg-white border border-[#E6EBF2] rounded-2xl shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${className}`}>
+    <section id={id} className={`bg-white border border-black/8 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] ${className}`}>
       {children}
     </section>
   );
 }
 
-function MaroonIcon({ icon: Icon }) {
+function MaroonIcon({ icon: Icon, tone = "rose", filled = false }) {
+  const tones = {
+    rose: "bg-[#FDECEE] text-[#E8395B]",
+    purple: "bg-[#F0EBFE] text-[#8B5CF6]",
+    green: "bg-[#E7F8EF] text-[#16A34A]",
+    orange: "bg-[#FFF3E4] text-[#F59E0B]",
+  };
   return (
-    <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-      <Icon size={16} strokeWidth={2.2} />
+    <span className={`size-9 rounded-full grid place-items-center shrink-0 ${tones[tone] || tones.rose}`}>
+      <Icon size={16} strokeWidth={2.2} fill={filled ? "currentColor" : "none"} />
     </span>
   );
 }
@@ -99,8 +105,8 @@ function MaroonIcon({ icon: Icon }) {
 function OutlinePill({ children, onClick, tone = "maroon" }) {
   const tones = {
     maroon: "border-[#7A0A17] text-[#7A0A17] hover:bg-[#FCF5F6]",
-    ghost: "border-[#E5E7EB] text-[#374151] hover:bg-[#F8FAFC]",
-    notice: "border-[#F3CACA] bg-white text-[#374151] hover:bg-[#FFF8F8]",
+    ghost: "border-black/10 text-[#4B5563] hover:bg-[#FAFAFB]",
+    notice: "border-[#7A0A17]/20 bg-white text-[#7A0A17] hover:bg-[#FCF5F6]",
   };
   return (
     <button
@@ -132,7 +138,7 @@ function SelectPill({ value, onChange, options, label }) {
         aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="appearance-none bg-white border border-[#E6EBF2] hover:border-[#7A0A17]/30 rounded-xl h-10 pl-4 pr-9 text-sm font-semibold text-[#374151] shadow-sm cursor-pointer outline-none"
+        className="appearance-none bg-white border border-black/10 hover:border-[#7A0A17]/30 rounded-xl h-10 pl-4 pr-9 text-sm font-semibold text-[#4B5563] shadow-sm cursor-pointer outline-none"
       >
         {options.map((option) => (
           <option key={option} value={option}>{option}</option>
@@ -150,19 +156,19 @@ function ProgressRing({ value }) {
   return (
     <div className="relative size-[72px] shrink-0">
       <svg viewBox="0 0 42 42" className="size-full -rotate-90">
-        <circle cx="21" cy="21" r={r} fill="none" stroke="#E8EDF3" strokeWidth="4.2" />
+        <circle cx="21" cy="21" r={r} fill="none" stroke="#E9F6EC" strokeWidth="4.2" />
         <circle
           cx="21"
           cy="21"
           r={r}
           fill="none"
-          stroke="#22C55E"
+          stroke="#7FC9A9"
           strokeWidth="4.2"
           strokeLinecap="round"
           strokeDasharray={`${len} ${c - len}`}
         />
       </svg>
-      <span className="absolute inset-0 grid place-items-center text-[13px] font-extrabold text-[#16A34A]">{value}%</span>
+      <span className="absolute inset-0 grid place-items-center text-[13px] font-extrabold text-[#288270]">{value}%</span>
     </div>
   );
 }
@@ -181,30 +187,30 @@ function MiniBars({ bars }) {
 }
 
 const TARGET_BARS = [
-  { h: 16, fill: "#F3D0D4" },
-  { h: 26, fill: "#E4A8B0" },
-  { h: 18, fill: "#C46A76" },
-  { h: 32, fill: "#A33D4C" },
-  { h: 22, fill: "#7A0A17" },
-  { h: 40, fill: "#5C0812" },
+  { h: 16, fill: "#F6E6F8" },
+  { h: 26, fill: "#E8D0EC" },
+  { h: 18, fill: "#D4B0DC" },
+  { h: 32, fill: "#C490CC" },
+  { h: 22, fill: "#B86FBE" },
+  { h: 40, fill: "#89518E" },
 ];
 
 const INCENTIVE_BARS = [
-  { h: 12, fill: "#BBF7D0" },
-  { h: 18, fill: "#86EFAC" },
-  { h: 24, fill: "#4ADE80" },
-  { h: 30, fill: "#22C55E" },
-  { h: 36, fill: "#16A34A" },
-  { h: 44, fill: "#15803D" },
+  { h: 12, fill: "#E9F6EC" },
+  { h: 18, fill: "#C8E8D4" },
+  { h: 24, fill: "#A8D8C0" },
+  { h: 30, fill: "#7FC9A9" },
+  { h: 36, fill: "#4AA88A" },
+  { h: 44, fill: "#288270" },
 ];
 
 const AWARD_BARS = [
-  { h: 12, fill: "#F3D0D4" },
-  { h: 18, fill: "#E4A8B0" },
-  { h: 24, fill: "#C46A76" },
-  { h: 30, fill: "#A33D4C" },
-  { h: 36, fill: "#7A0A17" },
-  { h: 44, fill: "#5C0812" },
+  { h: 12, fill: "#FEE9D8" },
+  { h: 18, fill: "#F8D4B8" },
+  { h: 24, fill: "#F0B888" },
+  { h: 30, fill: "#E89060" },
+  { h: 36, fill: "#E76B3D" },
+  { h: 44, fill: "#C94818" },
 ];
 
 function TimesheetDonut() {
@@ -228,7 +234,7 @@ function TimesheetDonut() {
       <div className="absolute inset-0 grid place-items-center text-center">
         <div>
           <p className="text-[12px] font-extrabold text-[#7A0A17] leading-none">8h 0m</p>
-          <p className="text-[10px] font-semibold text-[#A67A82] mt-0.5">Total</p>
+          <p className="text-[10px] font-semibold text-[#9CA3AF] mt-0.5">Total</p>
         </div>
       </div>
     </div>
@@ -236,25 +242,25 @@ function TimesheetDonut() {
 }
 
 function priorityClass(priority) {
-  if (priority === "High") return "bg-[#FDECEC] text-[#E11D48]";
-  if (priority === "Medium") return "bg-[#DCFCE7] text-[#16A34A]";
+  if (priority === "High") return "bg-[#FDECEE] text-[#E8395B]";
+  if (priority === "Medium") return "bg-[#FFF3E4] text-[#F59E0B]";
   return "bg-[#F3F4F6] text-[#6B7280]";
 }
 
 function recentItemIcon(type) {
   if (type === "Holiday" || type === "Event") {
-    return { Icon: CalendarDays, className: "bg-[#DCFCE7] text-[#16A34A]" };
+    return { Icon: CalendarDays, className: "bg-[#E7F8EF] text-[#16A34A]" };
   }
   if (type === "Training") {
-    return { Icon: GraduationCap, className: "bg-[#EDE9FE] text-[#7C3AED]" };
+    return { Icon: GraduationCap, className: "bg-[#F0EBFE] text-[#8B5CF6]" };
   }
-  return { Icon: FileText, className: "bg-[#EEF2FF] text-[#4F46E5]" };
+  return { Icon: FileText, className: "bg-[#EEF0FE] text-[#6366F1]" };
 }
 
 function requestStatusClass(status) {
   if (status === "Approved") return "bg-[#E7F8EF] text-[#16A34A]";
-  if (status === "Rejected" || status === "Cancelled") return "bg-[#FDECEC] text-[#E11D48]";
-  return "bg-[#FFF1E6] text-[#F97316]";
+  if (status === "Rejected" || status === "Cancelled") return "bg-[#FDECEE] text-[#E8395B]";
+  return "bg-[#FFF3E4] text-[#F59E0B]";
 }
 
 function splitName(name) {
@@ -333,7 +339,7 @@ export default function HrmsDashboard({
           <div className="min-w-0">
             <p className="text-[13px] font-medium text-[#6B7280]">Welcome Back,</p>
             <div className="flex items-center gap-2">
-              <h1 className="text-[22px] font-extrabold text-[#111827] tracking-tight leading-tight">{USER.name}</h1>
+              <h1 className="text-[22px] font-extrabold text-[#111] tracking-tight leading-tight">{USER.name}</h1>
               <Link to="/profile" className="text-[#9CA3AF] hover:text-[#374151]" aria-label="View profile" title="View profile">
                 <Eye size={15} />
               </Link>
@@ -373,44 +379,48 @@ export default function HrmsDashboard({
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <KpiCard
               icon={CalendarDays}
+              tone="rose"
               title="Attendance"
               onOpen={onOpenAttendance}
               chart={<ProgressRing value={82} />}
             >
-              <p className="text-[20px] font-extrabold text-[#7A0A17] leading-none mt-3">18 / 22 Days</p>
-              <p className="text-[13px] font-semibold text-[#7A0A17] mt-1.5">This Month</p>
+              <p className="text-[20px] font-extrabold text-[#111] leading-none mt-3">18 / 22 Days</p>
+              <p className="text-[13px] font-semibold text-[#6B7280] mt-1.5">This Month</p>
             </KpiCard>
 
             <KpiCard
               id="target-achievement"
               icon={Target}
+              tone="purple"
               title="Target Achievement"
               onOpen={onOpenAchievement}
               chart={<MiniBars bars={TARGET_BARS} />}
             >
-              <p className="text-[22px] font-extrabold text-[#7A0A17] leading-none mt-3">82%</p>
-              <p className="text-[13px] font-semibold text-[#7A0A17] mt-1.5">This Month</p>
+              <p className="text-[22px] font-extrabold text-[#111] leading-none mt-3">82%</p>
+              <p className="text-[13px] font-semibold text-[#6B7280] mt-1.5">This Month</p>
             </KpiCard>
 
             <KpiCard
               icon={IndianRupee}
+              tone="green"
               title="Incentive Earned"
               onOpen={onOpenIncentives}
               chart={<MiniBars bars={INCENTIVE_BARS} />}
             >
-              <p className="text-[22px] font-extrabold text-[#7A0A17] leading-none mt-3">₹ 38,000</p>
+              <p className="text-[22px] font-extrabold text-[#111] leading-none mt-3">₹ 38,000</p>
               <p className="text-[13px] font-bold text-[#16A34A] mt-1.5">120% of target</p>
             </KpiCard>
 
             <KpiCard
               icon={Trophy}
+              tone="orange"
               title="Awards & Contests"
               onOpen={onOpenAwards}
-              trailing={<ChevronRight size={16} className="text-[#7A0A17]" />}
+              trailing={<ChevronRight size={16} className="text-[#9CA3AF]" />}
               chart={<MiniBars bars={AWARD_BARS} />}
             >
               <p className="text-[11px] font-semibold text-[#9CA3AF] mt-2">My Rank</p>
-              <p className="text-[22px] font-extrabold text-[#7A0A17] leading-none">#2</p>
+              <p className="text-[22px] font-extrabold text-[#111] leading-none">#2</p>
               <p className="text-[12px] font-medium text-[#9CA3AF] mt-0.5">Out of 18</p>
             </KpiCard>
           </div>
@@ -421,7 +431,7 @@ export default function HrmsDashboard({
                 <div className="flex items-center gap-2.5">
                   <MaroonIcon icon={Clock} />
                   <div>
-                    <p className="text-[14px] font-extrabold text-[#111827] leading-tight">Timesheet</p>
+                    <p className="text-[14px] font-extrabold text-[#111] leading-tight">Timesheet</p>
                     <p className="text-[11px] text-[#9CA3AF] font-medium">Today</p>
                   </div>
                 </div>
@@ -439,7 +449,7 @@ export default function HrmsDashboard({
                         <span className="size-2 rounded-full shrink-0" style={{ background: slice.color }} />
                         <span className="whitespace-nowrap">{slice.label}</span>
                       </span>
-                      <span className="font-bold text-[#111827] shrink-0 tabular-nums">{slice.time}</span>
+                      <span className="font-bold text-[#111] shrink-0 tabular-nums">{slice.time}</span>
                     </li>
                   ))}
                 </ul>
@@ -450,13 +460,13 @@ export default function HrmsDashboard({
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
                   <MaroonIcon icon={CalendarDays} />
-                  <p className="text-[14px] font-extrabold text-[#111827]">Leaves</p>
+                  <p className="text-[14px] font-extrabold text-[#111]">Leaves</p>
                 </div>
                 <SolidPill onClick={onApplyLeave}>Apply</SolidPill>
               </div>
               <div className="mt-4 flex items-baseline gap-1.5">
-                <p className="text-[35px] font-bold text-[#000000] leading-none">2/7</p>
-                <p className="text-[13px] text-[#7A0A17] font-medium">used this year</p>
+                <p className="text-[35px] font-bold text-[#111] leading-none">2/7</p>
+                <p className="text-[13px] text-[#6B7280] font-medium">used this year</p>
               </div>
               <button
                 type="button"
@@ -471,7 +481,7 @@ export default function HrmsDashboard({
               <div className="flex items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2.5">
                   <MaroonIcon icon={Receipt} />
-                  <p className="text-[14px] font-extrabold text-[#111827]">My Expenses</p>
+                  <p className="text-[14px] font-extrabold text-[#111]">My Expenses</p>
                 </div>
                 <SolidPill onClick={onApplyExpense}>Apply</SolidPill>
               </div>
@@ -479,7 +489,7 @@ export default function HrmsDashboard({
                 {expenses.slice(0, 2).map((item) => (
                   <div key={item.id} className="flex items-center justify-between gap-2 rounded-xl bg-[#FCF5F6] px-3 py-2.5">
                     <div className="min-w-0">
-                      <p className="text-[13px] font-bold text-[#111827] truncate">{item.purpose}</p>
+                      <p className="text-[13px] font-bold text-[#111] truncate">{item.purpose}</p>
                       <p className="text-[11px] text-[#9CA3AF] font-medium leading-snug">
                         {item.destination.split(",")[0]}: <span className="whitespace-nowrap">{item.startDate}</span>
                       </p>
@@ -511,7 +521,7 @@ export default function HrmsDashboard({
               <div className="flex items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2.5">
                   <MaroonIcon icon={FileText} />
-                  <p className="text-[14px] font-extrabold text-[#111827]">Salary Slips</p>
+                  <p className="text-[14px] font-extrabold text-[#111]">Salary Slips</p>
                 </div>
                 <button
                   type="button"
@@ -528,7 +538,7 @@ export default function HrmsDashboard({
                     <button
                       type="button"
                       onClick={() => onOpenSalary?.(month)}
-                      className="min-w-0 flex-1 text-left text-[13px] font-bold text-[#111827] hover:text-[#7A0A17]"
+                      className="min-w-0 flex-1 text-left text-[13px] font-bold text-[#111] hover:text-[#7A0A17]"
                     >
                       {month} {selectedYear}
                     </button>
@@ -552,7 +562,7 @@ export default function HrmsDashboard({
                 <div className="flex items-start gap-3 min-w-0">
                   <MaroonIcon icon={TrendingUp} />
                   <div className="min-w-0">
-                    <p className="text-[14px] font-extrabold text-[#111827]">Promotions and Transfers</p>
+                    <p className="text-[14px] font-extrabold text-[#111]">Promotions and Transfers</p>
                     <p className="text-[12px] text-[#6B7280] font-medium mt-1 leading-snug">
                       You can see your promotions and transfers till today
                     </p>
@@ -563,14 +573,14 @@ export default function HrmsDashboard({
               </div>
             </Card>
 
-            <Card id="warnings-complaints" className="p-4 bg-[#FFF6F6] border-[#F6D5D5]">
+            <Card id="warnings-complaints" className="p-4 bg-[#FCF5F6] border-[#7A0A17]/15">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 min-w-0">
-                  <span className="size-9 rounded-full bg-[#FDECEC] text-[#E11D48] grid place-items-center shrink-0">
+                  <span className="size-9 rounded-full bg-[#FDECEE] text-[#E8395B] grid place-items-center shrink-0">
                     <AlertTriangle size={18} strokeWidth={2.2} />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[14px] font-extrabold text-[#111827] leading-tight">Warnings and Complaints</p>
+                    <p className="text-[14px] font-extrabold text-[#111] leading-tight">Warnings and Complaints</p>
                     <p className="text-[12px] text-[#6B7280] font-medium mt-1 leading-snug">
                       Late arrivals flagged twice this month.
                     </p>
@@ -578,16 +588,16 @@ export default function HrmsDashboard({
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0">
                   <OutlinePill onClick={onViewWarnings} tone="notice">View Notice</OutlinePill>
-                  <ChevronRight size={16} className="text-[#C4C4C4]" />
+                  <ChevronRight size={16} className="text-[#9CA3AF]" />
                 </div>
               </div>
             </Card>
 
-            <div className="rounded-2xl bg-[#7A0A17] text-white p-4 shadow-sm">
+            <div className="rounded-2xl border border-[#7A0A17]/15 bg-gradient-to-br from-[#FFF5F6] to-[#FDECEE] p-4 shadow-[0_1px_2px_rgba(122,10,23,0.06)]">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Clock size={18} strokeWidth={2.2} className="shrink-0" />
-                  <p className="text-[14px] font-extrabold">Idle Alert Settings</p>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <MaroonIcon icon={Clock} />
+                  <p className="text-[14px] font-extrabold text-[#7A0A17]">Idle Alert Settings</p>
                 </div>
                 <button
                   type="button"
@@ -595,13 +605,13 @@ export default function HrmsDashboard({
                     setIdleDraft(idleMinutes);
                     setIdleModalOpen(true);
                   }}
-                  className="size-8 rounded-lg bg-white/15 hover:bg-white/25 grid place-items-center shrink-0"
+                  className="size-8 rounded-lg text-[#7A0A17] hover:bg-white grid place-items-center shrink-0"
                   aria-label="Idle alert settings"
                 >
                   <Settings size={15} />
                 </button>
               </div>
-              <p className="text-[12.5px] text-white/85 font-medium mt-3 pl-7 max-w-[240px] leading-snug">
+              <p className="text-[12.5px] text-[#6B7280] font-medium mt-3 pl-[46px] max-w-[260px] leading-snug">
                 You will be alerted after {idleMinutes} minutes of inactivity.
               </p>
             </div>
@@ -611,7 +621,7 @@ export default function HrmsDashboard({
             <div className="flex items-center justify-between gap-3 mb-3">
               <div className="flex items-center gap-2 text-left">
                 <MaroonIcon icon={Target} />
-                <span className="text-[15px] font-extrabold text-[#111827]">Goals & Review</span>
+                <span className="text-[15px] font-extrabold text-[#111]">Goals & Review</span>
               </div>
               <button
                 type="button"
@@ -643,7 +653,7 @@ export default function HrmsDashboard({
                     return (
                       <tr key={goal.id} className="border-t border-black/5 align-top">
                         <td className="py-3 pr-3 text-[12px] font-bold text-[#6B7280]">{index + 1}</td>
-                        <td className="py-3 pr-3 text-[12.5px] font-bold text-[#111827] max-w-[140px]">{goal.title}</td>
+                        <td className="py-3 pr-3 text-[12.5px] font-bold text-[#111] max-w-[140px]">{goal.title}</td>
                         <td className="py-3 pr-3 text-[12px] font-semibold text-[#374151] whitespace-nowrap">
                           {name.first}
                           {name.last ? <><br />{name.last}</> : null}
@@ -653,13 +663,13 @@ export default function HrmsDashboard({
                         <td className="py-3 pr-3 text-[12px] text-[#6B7280] font-medium whitespace-nowrap">{goal.endDate}</td>
                         <td className="py-3 pr-3 min-w-[210px]">
                           <div className="flex items-center gap-2">
-                            <div className="h-1.5 flex-1 max-w-[92px] rounded-full bg-[#E8EDF3] overflow-hidden">
-                              <div className="h-full rounded-full bg-[#22C55E]" style={{ width: `${goal.progress}%` }} />
+                            <div className="h-1.5 flex-1 max-w-[92px] rounded-full bg-[#E9F6EC] overflow-hidden">
+                              <div className="h-full rounded-full bg-[#7FC9A9]" style={{ width: `${goal.progress}%` }} />
                             </div>
-                            <span className="text-[12px] font-extrabold text-[#111827]">{goal.progress}%</span>
+                            <span className="text-[12px] font-extrabold text-[#111]">{goal.progress}%</span>
                           </div>
                           <p className={`text-[11px] text-[#6B7280] mt-1 ${open ? "" : "line-clamp-1"}`}>
-                            <span className="text-[#E11D48] font-bold">Remarks: </span>
+                            <span className="text-[#E8395B] font-bold">Remarks: </span>
                             {goal.remarks}
                           </p>
                           <button
@@ -672,22 +682,22 @@ export default function HrmsDashboard({
                           </button>
                         </td>
                         <td className="py-3 pr-3">
-                          <span className="inline-flex text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#E8F3FF] text-[#0284C7]">
+                          <span className="inline-flex text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#E8F2FE] text-[#3B82F6]">
                             {goal.status}
                           </span>
                         </td>
                         <td className="py-3">
                           <div className="flex items-center gap-1.5">
-                            <button type="button" onClick={() => onGoalAction("view", goal)} className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] grid place-items-center" aria-label={`View ${goal.title}`}>
+                            <button type="button" onClick={() => onGoalAction("view", goal)} className="size-7 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center" aria-label={`View ${goal.title}`}>
                               <Eye size={13} />
                             </button>
-                            <button type="button" onClick={() => onGoalAction("edit", goal)} className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] grid place-items-center" aria-label={`Edit ${goal.title}`}>
+                            <button type="button" onClick={() => onGoalAction("edit", goal)} className="size-7 rounded-lg bg-[#E8F2FE] text-[#3B82F6] grid place-items-center" aria-label={`Edit ${goal.title}`}>
                               <Edit size={13} />
                             </button>
                             <button type="button" onClick={() => onGoalAction("review", goal)} className="size-7 rounded-lg bg-[#EEF0FE] grid place-items-center" aria-label={`Review ${goal.title}`}>
                               <img src={conductReviewIcon} alt="" className="size-3.5 object-contain" />
                             </button>
-                            <button type="button" onClick={() => onGoalAction("delete", goal)} className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] grid place-items-center" aria-label={`Delete ${goal.title}`}>
+                            <button type="button" onClick={() => onGoalAction("delete", goal)} className="size-7 rounded-lg bg-[#FDECEE] text-[#E8395B] grid place-items-center" aria-label={`Delete ${goal.title}`}>
                               <Trash2 size={13} />
                             </button>
                           </div>
@@ -705,15 +715,13 @@ export default function HrmsDashboard({
           <Card className="p-4">
             <div className="flex items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2.5 min-w-0">
-                <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                  <Megaphone size={16} strokeWidth={2.2} />
-                </span>
-                <p className="text-[15px] font-extrabold text-[#111827] truncate">Recent Announcements</p>
+                <MaroonIcon icon={Megaphone} />
+                <p className="text-[15px] font-extrabold text-[#111] truncate">Recent Announcements</p>
               </div>
               <button
                 type="button"
                 onClick={() => setListOpen(true)}
-                className="h-8 px-3.5 rounded-full border border-[#E5E7EB] bg-white text-[12px] font-semibold text-[#6B7280] hover:bg-[#F8FAFC] shrink-0"
+                className="h-8 px-3.5 rounded-full border border-[#7A0A17]/25 bg-white text-[12px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] shrink-0"
               >
                 View All
               </button>
@@ -722,7 +730,7 @@ export default function HrmsDashboard({
               {recent.map((item) => {
                 const { Icon, className } = recentItemIcon(item.type);
                 return (
-                  <div key={item.id} className="flex items-center gap-2 rounded-xl bg-[#F7F8FA] border border-[#EEF1F4] px-3 py-2.5">
+                  <div key={item.id} className="flex items-center gap-2 rounded-xl bg-[#FAFAFB] border border-black/6 px-3 py-2.5">
                     <button
                       type="button"
                       onClick={() => openDetail(item)}
@@ -731,13 +739,13 @@ export default function HrmsDashboard({
                       <span className={`size-7 rounded-lg grid place-items-center shrink-0 ${className}`}>
                         <Icon size={14} />
                       </span>
-                      <span className="text-[13px] font-bold text-[#111827] truncate">{item.title}</span>
+                      <span className="text-[13px] font-bold text-[#111] truncate">{item.title}</span>
                     </button>
-                    <span className="text-[12px] font-semibold text-[#F43F5E] shrink-0">{item.priority}</span>
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md shrink-0 ${priorityClass(item.priority)}`}>{item.priority}</span>
                     <button
                       type="button"
                       onClick={() => openComment(item)}
-                      className="size-7 rounded-lg bg-[#FFF4E8] text-[#F59E0B] grid place-items-center shrink-0 hover:bg-[#FFE8CC] transition-colors"
+                      className="size-7 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center shrink-0 hover:bg-[#FEE9D8] transition-colors"
                       aria-label={`Comment on ${item.title}`}
                     >
                       <MessageSquare size={14} />
@@ -750,23 +758,21 @@ export default function HrmsDashboard({
 
           <Card className="p-4">
             <div className="flex items-center gap-2.5 mb-3">
-              <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                <Send size={15} strokeWidth={2.2} fill="currentColor" />
-              </span>
-              <p className="text-[15px] font-extrabold text-[#111827]">Your Request</p>
+              <MaroonIcon icon={Send} filled />
+              <p className="text-[15px] font-extrabold text-[#111]">Your Request</p>
             </div>
             <div className="space-y-2">
               {requests.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-2 rounded-xl bg-[#F7F8FA] border border-[#EEF1F4] px-3 py-2.5">
+                <div key={item.id} className="flex items-center justify-between gap-2 rounded-xl bg-[#FAFAFB] border border-black/6 px-3 py-2.5">
                   <div className="min-w-0">
-                    <p className="text-[13px] font-bold text-[#111827] truncate">{item.title}</p>
+                    <p className="text-[13px] font-bold text-[#111] truncate">{item.title}</p>
                     <p className="text-[11px] text-[#9CA3AF] font-medium truncate">{item.submitted}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => setCommentFor(item)}
-                      className="text-[#F97316] hover:text-[#EA580C]"
+                      className="text-[#F59E0B] hover:text-[#C27C27]"
                       aria-label={`Comment on ${item.title}`}
                     >
                       <MessageSquare size={16} />
@@ -784,7 +790,7 @@ export default function HrmsDashboard({
             <button type="button" onClick={onOpenTrainings} className="w-full flex items-center justify-between gap-2 text-left">
               <span className="flex items-center gap-2">
                 <MaroonIcon icon={GraduationCap} />
-                <span className="text-[13px] font-extrabold text-[#111827]">Trainings</span>
+                <span className="text-[13px] font-extrabold text-[#111]">Trainings</span>
               </span>
               <ChevronRight size={16} className="text-[#9CA3AF]" />
             </button>
@@ -804,7 +810,7 @@ export default function HrmsDashboard({
             <button type="button" onClick={onOpenAssets} className="w-full flex items-center justify-between gap-2 text-left">
               <span className="flex items-center gap-2">
                 <MaroonIcon icon={Laptop} />
-                <span className="text-[13px] font-extrabold text-[#111827]">Assets</span>
+                <span className="text-[13px] font-extrabold text-[#111]">Assets</span>
               </span>
               <ChevronRight size={16} className="text-[#9CA3AF]" />
             </button>
@@ -814,7 +820,7 @@ export default function HrmsDashboard({
             <div className="flex items-center justify-between gap-2">
               <button type="button" onClick={onOpenExit} className="flex items-center gap-2 text-left min-w-0">
                 <MaroonIcon icon={LogOut} />
-                <span className="text-[13px] font-extrabold text-[#111827]">Exit & Separation</span>
+                <span className="text-[13px] font-extrabold text-[#111]">Exit & Separation</span>
               </button>
               <button
                 type="button"
@@ -830,7 +836,7 @@ export default function HrmsDashboard({
             <button type="button" onClick={onOpenDocuments} className="w-full flex items-center justify-between gap-2 text-left">
               <span className="flex items-center gap-2">
                 <MaroonIcon icon={FileText} />
-                <span className="text-[13px] font-extrabold text-[#111827]">Documents & Media</span>
+                <span className="text-[13px] font-extrabold text-[#111]">Documents & Media</span>
               </span>
               <ChevronRight size={16} className="text-[#9CA3AF]" />
             </button>
@@ -844,8 +850,8 @@ export default function HrmsDashboard({
         title="Announcements"
         subtitle="All announcements"
         icon={<Megaphone size={17} />}
-        iconBg="#FDECEC"
-        iconColor="#E11D48"
+        iconBg="#FDECEE"
+        iconColor="#E8395B"
         width="max-w-3xl"
       >
         <AnnouncementsPage embedded />
@@ -872,7 +878,7 @@ export default function HrmsDashboard({
         title="Idle Alert Settings"
         subtitle="Choose how long inactivity should wait before you are alerted."
         icon={<Clock size={17} />}
-        iconBg="#FDECEC"
+        iconBg="#FDECEE"
         iconColor="#7A0A17"
         width="max-w-md"
         footer={
@@ -917,7 +923,7 @@ export default function HrmsDashboard({
                   className={`h-11 rounded-xl border text-[13px] font-bold transition-colors ${
                     selected
                       ? "border-[#7A0A17] bg-[#FCF5F6] text-[#7A0A17]"
-                      : "border-[#E6EBF2] bg-white text-[#374151] hover:border-[#7A0A17]/30"
+                      : "border-black/10 bg-white text-[#374151] hover:border-[#7A0A17]/30"
                   }`}
                 >
                   {minutes} min
@@ -931,7 +937,7 @@ export default function HrmsDashboard({
   );
 }
 
-function KpiCard({ icon, title, onOpen, chart, children, trailing, id }) {
+function KpiCard({ icon, title, tone = "rose", onOpen, chart, children, trailing, id }) {
   return (
     <Card id={id} className="p-4 cursor-pointer hover:border-[#7A0A17]/25">
       <div
@@ -947,8 +953,8 @@ function KpiCard({ icon, title, onOpen, chart, children, trailing, id }) {
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <MaroonIcon icon={icon} />
-            <p className="text-[13px] font-extrabold text-[#7A0A17] leading-tight">{title}</p>
+            <MaroonIcon icon={icon} tone={tone} />
+            <p className="text-[13px] font-extrabold text-[#111] leading-tight">{title}</p>
           </div>
           {trailing}
         </div>

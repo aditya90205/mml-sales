@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import Modal from "../ui/Modal";
+import { AchievementKpiModal, WarningsComplaintsModal } from "../hrms/HrmsSummaryModals.jsx";
 
 const AI_ACTIONS = [
   { label: "Create", icon: Plus, color: "#16A34A" },
@@ -49,13 +50,13 @@ const PRIORITY_ITEMS = [
   {
     parts: [
       { text: "You're at 74% of this month's ₹25L " },
-      { text: "target", to: "/hrms?tab=Summary&open=achievement" },
+      { text: "target", modal: "achievement" },
     ],
   },
   {
     parts: [
       { text: "1 urgent " },
-      { text: "complaint", to: "/hrms?tab=Summary&open=warnings" },
+      { text: "complaint", modal: "warnings" },
       { text: " flagged — needs a same-day response" },
     ],
   },
@@ -74,6 +75,7 @@ export default function AIAssistant({ onClose, variant = "card" }) {
   const [message, setMessage] = useState("");
   const [tags, setTags] = useState(AI_TAGS);
   const [activeTag, setActiveTag] = useState(null);
+  const [hrmsModal, setHrmsModal] = useState(null);
 
   const contentHeading = activeTag || "Today's Priority";
   const inModal = variant === "modal";
@@ -168,7 +170,16 @@ export default function AIAssistant({ onClose, variant = "card" }) {
               <span className="size-[5px] rounded-full bg-[#C9CDD4] shrink-0 mt-[7px]" />
               <span className="leading-relaxed">
                 {item.parts.map((part, j) =>
-                  part.to ? (
+                  part.modal ? (
+                    <button
+                      key={j}
+                      type="button"
+                      onClick={() => setHrmsModal(part.modal)}
+                      className="inline p-0 bg-transparent font-[inherit] cursor-pointer text-[#2563EB] underline underline-offset-2 decoration-current hover:text-[#1D4ED8]"
+                    >
+                      {part.text}
+                    </button>
+                  ) : part.to ? (
                     <Link
                       key={j}
                       to={part.to}
@@ -209,6 +220,9 @@ export default function AIAssistant({ onClose, variant = "card" }) {
           </div>
         </div>
       </div>
+
+      <AchievementKpiModal open={hrmsModal === "achievement"} onClose={() => setHrmsModal(null)} />
+      <WarningsComplaintsModal open={hrmsModal === "warnings"} onClose={() => setHrmsModal(null)} />
     </div>
   );
 }

@@ -40,6 +40,11 @@ import {
 import { USER } from "../components/layout/TopBar";
 import Modal from "../components/ui/Modal";
 import HrmsDashboard from "../components/hrms/HrmsDashboard.jsx";
+import {
+  AchievementKpiModal,
+  ComplaintsWarningsPanel,
+  WarningsComplaintsModal,
+} from "../components/hrms/HrmsSummaryModals.jsx";
 import TimesheetDetailsModal from "../components/hrms/TimesheetDetailsModal";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import {
@@ -66,15 +71,6 @@ const MONTH_OPTIONS = [
 ];
 
 const YEAR_OPTIONS = ["2024", "2025", "2026"];
-
-const ACHIEVEMENT_KPIS = [
-  { label: "Registration Value", value: "19.5 lakh" },
-  { label: "Qualifying meetings", value: "46/30" },
-  { label: "Google reviews", value: "7" },
-  { label: "Testimonial videos", value: "3/5" },
-  { label: "Wedding photo uploads", value: "5" },
-  { label: "Negative reviews", value: "1" },
-];
 
 const EMPLOYEE_OPTIONS = ["Ankur Sharma", "Aditya Sharma", "Kuhu Sharma", "Rohit Sharma", "Priya Raheja"];
 
@@ -244,39 +240,6 @@ const INITIAL_CONTESTS = [
     activeStatus: "Active",
     members: ["Ankur Sharma", "Arjun Mehta", "Sana Iqbal"],
     description: "Convert meetings into successful memberships",
-  },
-];
-
-const INITIAL_COMPLAINTS_WARNINGS = [
-  {
-    id: 1,
-    kind: "Warning",
-    title: "Late arrivals — April 2025",
-    raisedOn: "28 Apr 2025",
-    raisedBy: "Reporting manager",
-    status: "Open",
-    severity: "Medium",
-    detail: "Late arrivals flagged twice this month. Official warning notice issued.",
-  },
-  {
-    id: 2,
-    kind: "Complaint",
-    title: "Workplace conduct — desk dispute",
-    raisedOn: "04 Mar 2025",
-    raisedBy: "Self",
-    status: "Closed",
-    severity: "Low",
-    detail: "Logged and mediated by HR. No further action required.",
-  },
-  {
-    id: 3,
-    kind: "Warning",
-    title: "Missed client follow-up SLA",
-    raisedOn: "19 Jan 2025",
-    raisedBy: "Quality desk",
-    status: "Acknowledged",
-    severity: "High",
-    detail: "Written warning acknowledged on 21 Jan 2025.",
   },
 ];
 
@@ -2231,106 +2194,6 @@ function AssetsPanel({
   );
 }
 
-function ComplaintsWarningsPanel({ onViewNotice, embedded = false }) {
-  return (
-    <div className="flex flex-col gap-6 min-w-0">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { label: "Open warnings", value: "1", sub: "Needs acknowledgement" },
-          { label: "Complaints filed", value: "1", sub: "Closed this year" },
-          { label: "Total on record", value: "3", sub: "Warnings + complaints" },
-        ].map((card) => (
-          <div key={card.label} className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
-            <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">{card.label}</p>
-            <p className="text-xl font-extrabold text-[#111827] mt-1.5">{card.value}</p>
-            <p className="text-[12.5px] text-[#6B7280] mt-1">{card.sub}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className={embedded ? "min-w-0" : "bg-white border border-black/10 rounded-2xl p-5 shadow-sm"}>
-        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-          <div className="flex items-center gap-2.5">
-            <span className="size-9 rounded-full bg-[#FCF5F6] text-[#7A0A17] grid place-items-center">
-              <AlertTriangle size={16} />
-            </span>
-            <div>
-              <h3 className="text-sm font-extrabold text-[#111827]">Complaints &amp; warnings</h3>
-              <p className="text-[12.5px] text-[#6B7280]">Official notices and HR-logged issues</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onViewNotice}
-              className="h-9 px-3.5 rounded-xl border border-[#7A0A17] text-[#7A0A17] text-xs font-bold hover:bg-[#7A0A17] hover:text-white transition-colors"
-            >
-              View notice
-            </button>
-            <button
-              type="button"
-              onClick={() => toast.info("Complaint form opens here.")}
-              className="h-9 px-3.5 rounded-xl bg-[#7A0A17] text-white text-xs font-bold hover:bg-[#600712] transition-colors"
-            >
-              Raise complaint
-            </button>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto min-w-0 border border-black/8 rounded-xl">
-          <table className="w-full min-w-[860px] text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#FAFAFB] border-b border-black/8">
-                {["#", "Type", "Title", "Raised on", "Raised by", "Severity", "Status", "Detail"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-[11px] font-bold text-[#6B7280] whitespace-nowrap">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {INITIAL_COMPLAINTS_WARNINGS.map((row) => (
-                <tr key={row.id} className="border-b border-black/5 last:border-b-0">
-                  <td className="px-4 py-3 text-[#6B7280]">{row.id}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                        row.kind === "Warning"
-                          ? "bg-[#FEE2E2] text-[#DC2626] border-[#DC2626]/20"
-                          : "bg-[#DBEAFE] text-[#2563EB] border-[#2563EB]/20"
-                      }`}
-                    >
-                      {row.kind}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-bold text-[#111827] whitespace-nowrap">{row.title}</td>
-                  <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{row.raisedOn}</td>
-                  <td className="px-4 py-3 text-[#374151] whitespace-nowrap">{row.raisedBy}</td>
-                  <td className="px-4 py-3 text-[#374151]">{row.severity}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                        row.status === "Open"
-                          ? "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20"
-                          : row.status === "Closed"
-                            ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
-                            : "bg-[#F3F4F6] text-[#4B5563] border-black/10"
-                      }`}
-                    >
-                      {row.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-[#6B7280] min-w-[220px]">{row.detail}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 const SUMMARY_EMPLOYEE = {
   name: USER.name,
   id: "MML-E-1001",
@@ -2686,7 +2549,7 @@ export default function HrmsPage() {
   const canApplySelectedLeave = selectedAvailable > 0;
 
   return (
-    <div className="flex flex-col flex-1 min-h-screen bg-[#F7F8FA] text-[#111827] font-sans">
+    <div className="flex flex-col flex-1 min-h-screen bg-[#F7F8FA] text-[#111] font-sans">
       {/* TopBar is rendered by Layout; removed per global header update */}
 
       {/* ── Page Content Container ───────────────────────────────────────── */}
@@ -3192,47 +3055,7 @@ export default function HrmsPage() {
         />
       </Modal>
 
-      <Modal
-        open={achievementModalOpen}
-        onClose={closeAchievementModal}
-        hideHeader
-        width="max-w-[440px]"
-        zClass="z-[80]"
-      >
-        <div className="-mx-6 -mt-5 -mb-5">
-          <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="size-11 rounded-full bg-[#7A0A17] grid place-items-center shrink-0">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <circle cx="12" cy="12" r="8.2" stroke="white" strokeWidth="1.7" />
-                  <circle cx="12" cy="12" r="4.6" stroke="white" strokeWidth="1.7" />
-                  <circle cx="12" cy="12" r="1.35" fill="white" />
-                </svg>
-              </span>
-              <h2 className="text-[18px] font-extrabold text-[#111827] tracking-tight">KPI Scorecard</h2>
-            </div>
-            <button
-              type="button"
-              onClick={closeAchievementModal}
-              className="p-1 rounded-lg text-[#9CA3AF] hover:bg-black/5 hover:text-[#111827] transition-colors shrink-0"
-              aria-label="Close KPI scorecard"
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <ul>
-            {ACHIEVEMENT_KPIS.map((row) => (
-              <li
-                key={row.label}
-                className="flex items-center justify-between gap-4 px-5 py-3.5 border-t border-[#EEF1F6]"
-              >
-                <span className="text-[14px] font-medium text-[#6B7280]">{row.label}</span>
-                <span className="text-[15px] font-extrabold text-[#111827] tabular-nums shrink-0">{row.value}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </Modal>
+      <AchievementKpiModal open={achievementModalOpen} onClose={closeAchievementModal} />
 
       <Modal
         open={incentivesModalOpen}
@@ -3279,20 +3102,7 @@ export default function HrmsPage() {
         <PromotionsTransfersSection employee={SUMMARY_EMPLOYEE} embedded />
       </Modal>
 
-      <Modal
-        open={warningModalOpen}
-        onClose={closeWarningsModal}
-        title="Warnings and Complaints"
-        subtitle="Official notices and HR-logged issues"
-        icon={<AlertTriangle size={17} />}
-        iconBg="#FDECEC"
-        iconColor="#E11D48"
-        width="max-w-6xl"
-        zClass="z-[80]"
-        contain
-      >
-        <ComplaintsWarningsPanel embedded onViewNotice={() => setNoticeModalOpen(true)} />
-      </Modal>
+      <WarningsComplaintsModal open={warningModalOpen} onClose={closeWarningsModal} />
 
       <Modal
         open={goalsModalOpen}

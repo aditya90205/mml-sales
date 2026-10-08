@@ -222,7 +222,7 @@ function DiscountApprovalsCard({ empty = false }) {
         onClose={() => setOpen(false)}
         title="Request discount"
         subtitle="Routed by the authority matrix"
-        zClass="z-[70]"
+        zClass="z-[100]"
         footer={
           <>
             <button
@@ -350,7 +350,7 @@ function QuotationCard({ empty = false, clientName = "" }) {
         onClose={() => setOpen(false)}
         title="Add add-on"
         subtitle="Add a line to this quotation"
-        zClass="z-[70]"
+        zClass="z-[100]"
         footer={
           <>
             <button
