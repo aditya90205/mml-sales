@@ -27,6 +27,7 @@ import {
   Phone,
   Plus,
   RefreshCw,
+  SquareCheck,
   Star,
   Sun,
   UserRound,
@@ -355,7 +356,7 @@ function StatusItemList({ items, empty, onOpen, icon: Icon, iconBg, iconColor, f
                 {ev.meta?.client ? ` · ${ev.meta.client}` : ev.meta?.assignees?.[0] ? ` · ${ev.meta.assignees[0]}` : ""}
               </span>
             </span>
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${pill.className}`}>{pill.label}</span>
+            <span className={`shrink-0 inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap ${pill.className}`}>{pill.label}</span>
             <ChevronRight size={16} className="text-[#D1D5DB] shrink-0" />
           </button>
         );
@@ -807,12 +808,12 @@ function HandoverPreview({ onViewItem }) {
             <button
               type="button"
               onClick={() => toast.success("OTP sent for contract e-sign.")}
-              className="text-[10.5px] font-semibold text-[#16A34A] bg-[#F0FDF4] border border-[#86EFAC] rounded-full px-2 py-0.5 shrink-0"
+              className="text-[10.5px] font-semibold text-[#16A34A] bg-[#F0FDF4] rounded-md px-2 py-0.5 shrink-0 whitespace-nowrap"
             >
               Generate OTP
             </button>
           ) : (
-            <span className="text-[10.5px] font-semibold text-[#2563EB] bg-[#E8F1FE] rounded-full px-2 py-0.5 shrink-0">
+            <span className="inline-block text-[10.5px] font-semibold text-[#2563EB] bg-[#E8F1FE] rounded-md px-2 py-0.5 shrink-0 whitespace-nowrap">
               Verified
             </span>
           )}
@@ -1371,7 +1372,7 @@ export default function OverviewDashboard({
           style={frozenCardStyle("profile")}
         >
           <div className="flex items-center justify-between gap-3">
-            <span className="inline-flex items-center h-7 px-3.5 rounded-full bg-[#22C55E] text-white text-[12px] font-semibold whitespace-nowrap">
+            <span className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md bg-[#22C55E] text-white whitespace-nowrap">
               Profile Complete
             </span>
             <span className="text-[16px] font-bold text-[#16A34A] shrink-0 leading-none tabular-nums">
@@ -1452,14 +1453,14 @@ export default function OverviewDashboard({
               </div>
               <div className="flex items-center gap-1.5 mt-2.5 flex-nowrap">
                 <span
-                  className="text-[11.5px] font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0"
+                  className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap shrink-0"
                   style={{ color: tempTone.color, backgroundColor: tempTone.bg }}
                 >
                   {temperature}
                 </span>
                 {priority ? (
                   <span
-                    className="text-[11.5px] font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0"
+                    className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap shrink-0"
                     style={{ color: priorityTone.color, backgroundColor: priorityTone.bg }}
                   >
                     {priority}
@@ -1567,9 +1568,9 @@ export default function OverviewDashboard({
               onClick={() => setBiodataOpen(true)}
             />
             <ActionTile
-              icon={UserRound}
-              iconBg="#F3E8FF"
-              iconColor="#A78BFA"
+              icon={SquareCheck}
+              iconBg="#E8F2FE"
+              iconColor="#3B82F6"
               title="Create Task"
               titleColor="#1F2937"
               detail={
@@ -1608,7 +1609,7 @@ export default function OverviewDashboard({
                 icon={Gift}
                 title="Package"
                 action="Select Package"
-                accent
+                brandAction
                 onAction={() => setPackageOpen(true)}
               />
               <div className="w-full rounded-xl bg-[#FFF2E0] px-4 py-3 flex items-center gap-2.5">

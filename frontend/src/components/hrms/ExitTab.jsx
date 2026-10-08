@@ -68,14 +68,14 @@ function DetailItem({ icon: Icon, label, value }) {
 
 function StatusBadge({ label }) {
   const styles = {
-    Planned: "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20",
-    Submitted: "bg-[#EEF0FE] text-[#6366F1] border-[#6366F1]/20",
-    Approved: "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20",
+    Planned: "bg-[#FEF3C7] text-[#D97706]",
+    Submitted: "bg-[#EEF0FE] text-[#6366F1]",
+    Approved: "bg-[#DCFCE7] text-[#15803D]",
   };
   return (
     <span
-      className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold border ${
-        styles[label] || "bg-[#F3F4F6] text-[#4B5563] border-black/10"
+      className={`inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap ${
+        styles[label] || "bg-[#F3F4F6] text-[#4B5563]"
       }`}
     >
       {label}

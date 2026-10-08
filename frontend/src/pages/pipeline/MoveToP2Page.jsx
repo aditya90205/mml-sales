@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Paperclip, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import { toast } from "react-toastify";
 import StageStepper from "../../components/pipeline/StageStepper";
 // TopBar is provided by Layout
@@ -82,7 +82,7 @@ export default function MoveToP2Page({ lead, onBack, onMoveToP2 }) {
         <div className="bg-[#F5F3FF] border-2 border-dashed border-[#C7D2FE] rounded-2xl p-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="size-10 rounded-xl bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center shrink-0">
-              <Paperclip size={20} />
+              <Upload size={20} />
             </div>
             <div>
               <h4 className="text-[14px] font-bold text-[#312E81]">Smart Attach (Auto Fetch)</h4>

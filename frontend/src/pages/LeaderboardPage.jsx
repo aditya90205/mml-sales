@@ -264,7 +264,7 @@ function useLiveLeaderboard(initialRows, intervalMs = 4500) {
 
 function LiveBadge() {
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#DCFCE7] border border-[#16A34A]/25 text-[#15803D] text-[10px] font-bold uppercase tracking-wide">
+    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#DCFCE7] text-[#15803D] text-[10.5px] font-semibold uppercase tracking-wide">
       <span className="relative flex size-1.5">
         <span className="absolute inline-flex h-full w-full rounded-full bg-[#16A34A] opacity-75 animate-ping" />
         <span className="relative inline-flex size-1.5 rounded-full bg-[#16A34A]" />

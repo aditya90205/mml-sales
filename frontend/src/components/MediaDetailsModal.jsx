@@ -71,7 +71,7 @@ export default function MediaDetailsModal({ file, onClose, onDelete }) {
           </Field>
 
           <Field label="File Type">
-            <span className="inline-flex w-fit px-3 py-1 rounded-full border border-black/10 bg-[#f4f4f6] text-sm font-medium text-black">
+            <span className="inline-block w-fit text-[10.5px] font-semibold px-2 py-0.5 rounded-md bg-[#f4f4f6] text-[#111]">
               {mimeType(file.ext)}
             </span>
           </Field>

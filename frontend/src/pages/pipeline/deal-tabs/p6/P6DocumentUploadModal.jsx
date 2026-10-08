@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, Loader2, MapPin, ShieldCheck, Upload, X } from "lucide-react";
+import { Camera, Loader2, MapPin, Upload, X } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../../../../components/ui/Modal";
 
@@ -444,7 +444,7 @@ export default function P6DocumentUploadModal({ open, item, onClose, onUploaded 
       onClose={busy ? () => {} : onClose}
       title={`Upload ${item.title}`}
       subtitle={subtitle}
-      icon={isCameraGps ? <Camera size={18} /> : isAadhaar || isPan ? <ShieldCheck size={18} /> : <Upload size={18} />}
+      icon={isCameraGps ? <Camera size={18} /> : <Upload size={18} />}
       iconBg="#F3E8F0"
       iconColor="#7A0A17"
       width="max-w-lg"

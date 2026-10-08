@@ -98,7 +98,7 @@ export default function EmailActivityButton({
             <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-black/8">
               <p className="text-[12.5px] font-bold text-[#111]">Email activity</p>
               {unreadCount > 0 && (
-                <span className="text-[10.5px] font-semibold text-[#DC2626] bg-[#FEE2E2] rounded-full px-2 py-0.5">
+                <span className="inline-block text-[10.5px] font-semibold text-[#DC2626] bg-[#FEE2E2] rounded-md px-2 py-0.5 whitespace-nowrap">
                   {unreadCount} unread
                 </span>
               )}

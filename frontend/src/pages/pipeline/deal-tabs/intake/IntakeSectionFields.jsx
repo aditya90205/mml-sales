@@ -252,7 +252,7 @@ export function FormBlock({ block, values, chipValues, onFieldChange, onRemoveCh
         <div className="flex items-center gap-2.5 min-w-0">
           <h3 className="text-[11px] font-bold text-[#7A0A17] uppercase tracking-wide shrink-0">{block.title}</h3>
           {block.badge && (
-            <span className="text-[10px] font-semibold text-[#6B7280] bg-[#F3F4F6] rounded-full px-2.5 py-1 truncate">
+            <span className="inline-block text-[10.5px] font-semibold text-[#6B7280] bg-[#F3F4F6] rounded-md px-2 py-0.5 truncate">
               {block.badge}
             </span>
           )}

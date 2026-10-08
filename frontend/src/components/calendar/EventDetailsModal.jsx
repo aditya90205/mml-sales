@@ -11,6 +11,7 @@ import {
   Layers,
   MapPin,
   Paperclip,
+  Upload,
   Pencil,
   Plus,
   Send,
@@ -381,7 +382,7 @@ export default function EventDetailsModal({
         <div className="flex flex-col gap-4">
           {attachments.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-8 text-center">
-              <Paperclip size={26} className="text-[#D1D5DB]" />
+              <Upload size={26} className="text-[#D1D5DB]" />
               <p className="text-[13px] font-semibold text-[#111] mt-1">No attachments yet</p>
               <p className="text-[12px] text-[#9CA3AF]">Upload files to share with your team!</p>
             </div>

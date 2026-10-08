@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Mail, MessageSquare, Paperclip, Plus, X } from "lucide-react";
+import { Bell, Mail, MessageSquare, Plus, Upload, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ChannelTemplateModal from "./ChannelTemplateModal.jsx";
 
@@ -266,7 +266,7 @@ export default function CampaignEditModal({ open, campaign, onClose, onSave, onB
                     >
                       {uploadFileName || "Upload File"}
                     </span>
-                    <Paperclip size={15} className="text-[#6B7280] shrink-0" />
+                    <Upload size={15} className="text-[#6B7280] shrink-0" />
                   </button>
                 </div>
                 <button

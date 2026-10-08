@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from "react";
-import { Bell, Copy, FileText, IndianRupee, Mail, MessageSquare, Send } from "lucide-react";
+import { Bell, Copy, FileText, IndianRupee, Mail, MessageSquare, Send, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
 import { defaultLinkMessage, shareUrl } from "../../utils/shareLinks";
@@ -7,7 +7,7 @@ import { recordLeadActivity } from "../../utils/leadActivityStore.js";
 
 const LINK_TYPE_META = {
   payment: { id: "payment", label: "Payment link", icon: IndianRupee },
-  biodata: { id: "biodata", label: "Biodata upload", icon: FileText },
+  biodata: { id: "biodata", label: "Biodata upload", icon: Upload },
   quote: { id: "quote", label: "Quotation", icon: FileText },
 };
 

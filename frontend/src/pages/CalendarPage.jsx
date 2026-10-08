@@ -16,7 +16,7 @@ import {
   Eye,
   Edit2,
   Trash2,
-  ListTodo,
+  SquareCheck,
   CalendarCheck2,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -1553,7 +1553,7 @@ export default function CalendarPage() {
             <div className="absolute left-0 right-0 top-[calc(100%+6px)] bg-white border border-black/10 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.10)] z-40 py-1 overflow-hidden">
               {[
                 { label: "Event", icon: CalendarCheck2, color: "#A02868", onClick: () => { setEditingItem(null); setCreateEventOpen(true); } },
-                { label: "Task", icon: ListTodo, color: "#7C6CB0", onClick: () => { setEditingItem(null); setTaskPrefill(null); setCreateTaskOpen(true); } },
+                { label: "Task", icon: SquareCheck, color: "#3B82F6", onClick: () => { setEditingItem(null); setTaskPrefill(null); setCreateTaskOpen(true); } },
                 { label: "Meeting", icon: Users2, color: "#41703D", onClick: () => { setEditingItem(null); setMeetingPrefill(null); setSchedulingUnscheduledId(null); setCreateMeetingOpen(true); } },
                 { label: "Others", icon: CircleDot, color: "#6F7886", onClick: () => { setEditingItem(null); setCreateOtherOpen(true); } },
               ].map((item) => (

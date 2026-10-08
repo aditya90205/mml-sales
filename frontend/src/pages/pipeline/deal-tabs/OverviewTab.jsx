@@ -106,7 +106,7 @@ function ViewPill({ children, color = "#7A0A17", bg = "#FCF5F6" }) {
   if (!children) return <p className="text-[13px] font-semibold text-[#111] mt-1">-</p>;
   return (
     <span
-      className="inline-flex mt-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
+      className="inline-block mt-1 text-[10.5px] font-semibold px-2 py-0.5 rounded-md"
       style={{ color, backgroundColor: bg }}
     >
       {children}
@@ -399,7 +399,7 @@ function ProfileDetailsView({ details, onFollowUp }) {
           <ViewField icon={Star} label="Package interest" value={details.packageInterest} />
           <ViewField icon={Star} label="Premium client">
             {details.premium === "Yes" ? (
-              <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full text-[#16A34A] bg-[#E7F8EF]">
+              <span className="inline-flex items-center gap-1 mt-1 text-[10.5px] font-semibold px-2 py-0.5 rounded-md text-[#16A34A] bg-[#E7F8EF]">
                 <Star size={11} fill="#16A34A" strokeWidth={0} />
                 Yes
               </span>

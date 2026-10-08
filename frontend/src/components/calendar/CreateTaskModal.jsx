@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckSquare, Plus, Search, Sparkles, Upload, X } from "lucide-react";
+import { Plus, Search, Sparkles, SquareCheck, Upload, X } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
 
@@ -365,9 +365,9 @@ export default function CreateTaskModal({ open, onClose, onSave, defaultDate, in
       onClose={handleClose}
       title={isEdit ? "Edit Task" : "Create Task"}
       subtitle="Assign work with a due date and reminders"
-      icon={<CheckSquare size={16} />}
-      iconBg="#FDECEE"
-      iconColor="#E8395B"
+      icon={<SquareCheck size={16} />}
+      iconBg="#E8F2FE"
+      iconColor="#3B82F6"
       width="max-w-[640px]"
       footer={
         <div className="flex items-center justify-between gap-3 w-full">

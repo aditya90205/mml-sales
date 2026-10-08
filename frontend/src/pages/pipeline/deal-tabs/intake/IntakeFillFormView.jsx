@@ -215,7 +215,7 @@ export default function IntakeFillFormView({
                 Update fields freely here. When you save, OTP confirms before changes are written to the client-record summary.
               </p>
             </div>
-            <span className="inline-flex items-center h-9 px-3 rounded-full bg-white/80 text-[12px] font-semibold text-[#166534] shrink-0">
+            <span className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md bg-white/80 text-[#166534] shrink-0 whitespace-nowrap">
               Editing unlocked
             </span>
           </div>

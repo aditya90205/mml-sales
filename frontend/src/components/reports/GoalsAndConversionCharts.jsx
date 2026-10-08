@@ -27,6 +27,13 @@ import {
   PieChart as PieChartIcon,
   ArrowUpRight,
   Info,
+  IndianRupee,
+  TrendingUp,
+  Target,
+  Trophy,
+  PackageSearch,
+  Phone,
+  CheckCircle2,
 } from "lucide-react";
 import { SortableTh, useTableSort } from "../common/useTableSort.jsx";
 
@@ -38,11 +45,11 @@ const PERIOD_OPTIONS = [
 ];
 
 const GOALS_STATS = [
-  { label: "Actual Revenue",    value: "₹1.63 Cr", note: "65% of Target",  noteColor: "#3B82F6" },
-  { label: "Projected Revenue", value: "₹1.55 Cr", note: "102% of Target", noteColor: "#8B5CF6" },
-  { label: "Target (4 Weeks)",  value: "₹2.50 Cr", note: "Total Target",   noteColor: "#0D9488" },
-  { label:  "Incentive (till 4 week)", value: "₹12 Lakh", note: "Total Incentive", noteColor: "#F59E0B" },
-  { label: "Total pack sold",   value: "15",        note: "Subscription Sold", noteColor: "#F59E0B" },
+  { label: "Actual Revenue",    value: "₹1.63 Cr", note: "65% of Target",  noteColor: "#3B82F6", icon: IndianRupee },
+  { label: "Projected Revenue", value: "₹1.55 Cr", note: "102% of Target", noteColor: "#8B5CF6", icon: TrendingUp },
+  { label: "Target (4 Weeks)",  value: "₹2.50 Cr", note: "Total Target",   noteColor: "#0D9488", icon: Target },
+  { label:  "Incentive (till 4 week)", value: "₹12 Lakh", note: "Total Incentive", noteColor: "#F59E0B", icon: Trophy },
+  { label: "Total pack sold",   value: "15",        note: "Subscription Sold", noteColor: "#F59E0B", icon: PackageSearch },
 ];
 
 const TIER_COLORS = {
@@ -106,9 +113,9 @@ const REVENUE_Y_TICKS = [0, 1, 2, 3, 4, 5, 6];
 const revenueYTickFormatter = (v) => (v === 0 ? "₹0" : `₹${(v * 0.5).toFixed(1)} Cr`);
 
 const CONVERSION_STATS = [
-  { label: "Total Leads",     value: "2,842", note: "18.6% vs last 8 weeks" },
-  { label: "Total Calls",     value: "1,896", note: "18.6% vs last 8 weeks" },
-  { label: "Total Converted", value: "642",   note: "18.6% vs last 8 weeks" },
+  { label: "Total Leads",     value: "2,842", note: "18.6% vs last 8 weeks", icon: Users },
+  { label: "Total Calls",     value: "1,896", note: "18.6% vs last 8 weeks", icon: Phone },
+  { label: "Total Converted", value: "642",   note: "18.6% vs last 8 weeks", icon: CheckCircle2 },
 ];
 
 const FUNNEL_LEGEND = [
@@ -336,7 +343,7 @@ export function GoalsPerformanceCard() {
       <div className="flex items-center justify-between gap-3 mb-4 px-1 flex-wrap">
         <div className="flex items-center gap-2.5">
           <span className="size-9 rounded-xl bg-[#EEF0FE] grid place-items-center">
-            <Users size={17} className="text-[#6366F1]" strokeWidth={1.8} />
+            <Target size={17} className="text-[#6366F1]" strokeWidth={1.8} />
           </span>
           <div>
             <h2 className="text-[17px] font-bold text-[#111] leading-tight">My Goals &amp; Performance</h2>
@@ -347,18 +354,21 @@ export function GoalsPerformanceCard() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
-        {GOALS_STATS.map((s) => (
+        {GOALS_STATS.map((s) => {
+          const Icon = s.icon;
+          return (
           <div key={s.label} className="border border-black/8 rounded-xl px-3.5 py-3">
             <div className="flex items-center gap-2 mb-2">
               <span className="size-7 rounded-lg bg-[#EEF0FE] grid place-items-center shrink-0">
-                <Users size={13} className="text-[#6366F1]" strokeWidth={1.8} />
+                <Icon size={13} className="text-[#6366F1]" strokeWidth={1.8} />
               </span>
               <p className="text-[11px] text-[#9CA3AF] leading-snug">{s.label}</p>
             </div>
             <p className="text-[16px] font-bold text-[#111] leading-tight">{s.value}</p>
             <p className="text-[10px] font-semibold mt-1" style={{ color: s.noteColor }}>{s.note}</p>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <p className="text-[12px] font-semibold text-[#4B5563] mb-1 px-1">Revenue (INR)</p>
@@ -495,7 +505,7 @@ export function LeadsConversionCard() {
       <div className="flex items-center justify-between gap-3 mb-4 px-1 flex-wrap">
         <div className="flex items-center gap-2.5">
           <span className="size-9 rounded-xl bg-[#EEF0FE] grid place-items-center shrink-0">
-            <Users size={17} className="text-[#6366F1]" strokeWidth={1.8} />
+            <PieChartIcon size={17} className="text-[#6366F1]" strokeWidth={1.8} />
           </span>
           <div>
             <h2 className="text-[17px] font-bold text-[#111] leading-tight">Leads to Conversion Overview</h2>
@@ -506,18 +516,21 @@ export function LeadsConversionCard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-        {CONVERSION_STATS.map((s) => (
+        {CONVERSION_STATS.map((s) => {
+          const Icon = s.icon;
+          return (
           <div key={s.label} className="border border-black/8 rounded-xl px-3.5 py-3">
             <div className="flex items-center gap-2 mb-2">
               <span className="size-7 rounded-lg bg-[#EEF0FE] grid place-items-center shrink-0">
-                <Users size={13} className="text-[#6366F1]" strokeWidth={1.8} />
+                <Icon size={13} className="text-[#6366F1]" strokeWidth={1.8} />
               </span>
               <p className="text-[11px] text-[#9CA3AF] leading-snug">{s.label}</p>
             </div>
             <p className="text-[18px] font-bold text-[#111] leading-tight">{s.value}</p>
             <p className="text-[10px] font-semibold text-[#16A34A] mt-1">{s.note}</p>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="flex items-center justify-between gap-3 mb-1 px-1 flex-wrap">

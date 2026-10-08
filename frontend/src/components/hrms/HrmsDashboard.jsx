@@ -682,7 +682,7 @@ export default function HrmsDashboard({
                           </button>
                         </td>
                         <td className="py-3 pr-3">
-                          <span className="inline-flex text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#E8F2FE] text-[#3B82F6]">
+                          <span className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap bg-[#E8F2FE] text-[#3B82F6]">
                             {goal.status}
                           </span>
                         </td>

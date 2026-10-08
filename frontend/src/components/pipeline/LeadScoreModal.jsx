@@ -32,7 +32,7 @@ export default function LeadScoreModal({ lead, onClose }) {
           <div className="flex flex-col items-end gap-1.5">
             <div className="flex items-center gap-1.5">
               <Flag size={14} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} />
-              <span className="bg-[#E7F8EF] border border-[#BBF7D0] text-[#16A34A] text-[12px] font-semibold px-2.5 py-0.5 rounded-full">
+              <span className="inline-block bg-[#E7F8EF] text-[#16A34A] text-[10.5px] font-semibold px-2 py-0.5 rounded-md">
                 High
               </span>
             </div>

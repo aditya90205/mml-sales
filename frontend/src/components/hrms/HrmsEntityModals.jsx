@@ -24,14 +24,14 @@ function ReadValue({ children }) {
 function StatusBadge({ status }) {
   const tone =
     status === "Completed" || status === "Completed "
-      ? "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/20"
+      ? "bg-[#DCFCE7] text-[#15803D]"
       : status === "In Progress"
-      ? "bg-[#E0F2FE] text-[#0284C7] border-[#0284C7]/20"
+      ? "bg-[#E0F2FE] text-[#0284C7]"
       : status === "Scheduled"
-      ? "bg-[#E0F2FE] text-[#0284C7] border-[#0284C7]/20"
-      : "bg-[#F3F4F6] text-[#4B5563] border-black/10";
+      ? "bg-[#E0F2FE] text-[#0284C7]"
+      : "bg-[#F3F4F6] text-[#4B5563]";
   return (
-    <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-lg border ${tone}`}>{status || "—"}</span>
+    <span className={`inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap ${tone}`}>{status || "—"}</span>
   );
 }
 
@@ -505,10 +505,10 @@ export function GoalConductReviewModal({ open, onClose, goal, onSave }) {
     >
       <form id="goal-conduct-review-form" onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center gap-2 -mt-1">
-          <span className="inline-flex items-center h-7 px-2.5 rounded-full border border-black/10 bg-[#F9FAFB] text-[11px] font-semibold text-[#4B5563]">
+          <span className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md bg-[#F3F4F6] text-[#4B5563] whitespace-nowrap">
             Measurement: Percentage
           </span>
-          <span className="inline-flex items-center h-7 px-2.5 rounded-full border border-black/10 bg-[#F9FAFB] text-[11px] font-semibold text-[#4B5563]">
+          <span className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md bg-[#F3F4F6] text-[#4B5563] whitespace-nowrap">
             Target: 90%
           </span>
         </div>

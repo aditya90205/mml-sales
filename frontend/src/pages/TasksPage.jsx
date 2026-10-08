@@ -6,7 +6,7 @@ import {
   Eye,
   LayoutGrid,
   LayoutList,
-  Plus,
+  SquareCheck,
   SlidersHorizontal,
   Trash2,
   UserCheck,
@@ -707,7 +707,7 @@ export default function TasksPage() {
           }}
           className="inline-flex items-center gap-2 h-[38px] px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] active:bg-[#54060F] transition-colors"
         >
-          <Plus size={15} /> Create Tasks
+          <SquareCheck size={15} /> Create Tasks
         </button>
       </div>
 

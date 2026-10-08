@@ -10,8 +10,8 @@ import {
   Globe,
   Mail,
   MessageSquare,
-  Paperclip,
   Plus,
+  Upload,
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -348,7 +348,7 @@ export default function CreateCampaignPage() {
                       <X size={14} />
                     </span>
                   ) : (
-                    <Paperclip size={15} className="text-[#6B7280] shrink-0" />
+                    <Upload size={15} className="text-[#6B7280] shrink-0" />
                   )}
                 </button>
               </div>

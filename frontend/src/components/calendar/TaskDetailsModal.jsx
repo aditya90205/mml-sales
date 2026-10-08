@@ -10,6 +10,7 @@ import {
   Flag,
   Layers,
   Paperclip,
+  Upload,
   Pencil,
   Plus,
   Send,
@@ -371,7 +372,7 @@ export default function TaskDetailsModal({
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <p className="text-[13px] font-semibold text-black">Progress</p>
-            <span className="text-[11px] font-medium text-[#6f7886] bg-[#f1f1f4] rounded-full px-2.5 py-1">
+            <span className="inline-block text-[10.5px] font-semibold text-[#6f7886] bg-[#f1f1f4] rounded-md px-2 py-0.5 whitespace-nowrap">
               {doneCount}/{checklist.length} completed
             </span>
           </div>
@@ -526,7 +527,7 @@ export default function TaskDetailsModal({
         <div className="flex flex-col gap-4">
           {attachments.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-8 text-center">
-              <Paperclip size={26} className="text-[#D1D5DB]" />
+              <Upload size={26} className="text-[#D1D5DB]" />
               <p className="text-[13px] font-semibold text-[#111] mt-1">No attachments yet</p>
               <p className="text-[12px] text-[#9CA3AF]">Upload files to share with your team!</p>
             </div>

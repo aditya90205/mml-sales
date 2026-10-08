@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Paperclip, Upload, X } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import StageStepper from "./StageStepper";
 
 export default function MoveToP2Modal({ isOpen, lead, onClose, onMoveToP2 }) {
@@ -79,7 +79,7 @@ export default function MoveToP2Modal({ isOpen, lead, onClose, onMoveToP2 }) {
           <div className="bg-[#F5F3FF] border-2 border-dashed border-[#C7D2FE] rounded-2xl p-3.5 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="size-9 rounded-xl bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center shrink-0">
-                <Paperclip size={18} />
+                <Upload size={18} />
               </div>
               <div>
                 <h4 className="text-[13px] font-bold text-[#312E81]">Smart Attach (Auto Fetch)</h4>

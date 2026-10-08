@@ -207,7 +207,7 @@ function ServiceAvailedCard() {
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-5">
       <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">Service availed</p>
-      <span className="inline-flex mt-2.5 text-[12px] font-semibold text-[#92400E] bg-[#FFF3E4] rounded-full px-3 py-1">
+      <span className="inline-block mt-2.5 text-[10.5px] font-semibold text-[#92400E] bg-[#FFF3E4] rounded-md px-2 py-0.5">
         Exclusive Package
       </span>
       <div className="mt-3.5 flex flex-col gap-2">

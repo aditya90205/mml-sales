@@ -3,10 +3,9 @@ import { createPortal } from "react-dom";
 import { toast } from "react-toastify";
 import {
   Check,
-  CloudUpload,
   FileText,
-  Folder,
   Image as ImageIcon,
+  Upload,
   User,
   X,
 } from "lucide-react";
@@ -178,7 +177,7 @@ export default function ChangeProfilePhotoModal({ open, onClose, onSave }) {
             {preview ? (
               <img src={preview} alt="Selected profile" className="size-16 mx-auto rounded-full object-cover ring-4 ring-white shadow-sm" />
             ) : (
-              <CloudUpload size={34} className="mx-auto text-[#7A0A17]" strokeWidth={1.6} />
+              <Upload size={34} className="mx-auto text-[#7A0A17]" strokeWidth={1.6} />
             )}
             <p className="mt-2.5 text-[15px] font-semibold text-[#7A0A17] truncate">
               {preview ? file?.name : "Upload Your Photo"}
@@ -189,7 +188,7 @@ export default function ChangeProfilePhotoModal({ open, onClose, onSave }) {
               onClick={() => inputRef.current?.click()}
               className="mt-3 inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
             >
-              <Folder size={15} />
+              <Upload size={15} />
               Browse Files
             </button>
             <p className="mt-2.5 text-[12px] text-[#9CA3AF]">PNG, JPG or JPEG · Max 5 MB</p>
@@ -276,8 +275,9 @@ export default function ChangeProfilePhotoModal({ open, onClose, onSave }) {
               type="button"
               onClick={upload}
               disabled={saving}
-              className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] disabled:opacity-60 transition-colors"
+              className="inline-flex items-center gap-1.5 h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] disabled:opacity-60 transition-colors"
             >
+              <Upload size={15} />
               {saving ? "Uploading..." : "Upload Photo"}
             </button>
           </div>

@@ -22,11 +22,11 @@ const KPI_STATS = [
 ];
 
 const STATUS_STYLES = {
-  "Not Started": "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/25",
-  Active: "bg-[#DCFCE7] text-[#15803D] border-[#16A34A]/25",
-  Completed: "bg-[#DBEAFE] text-[#2563EB] border-[#2563EB]/20",
-  Scheduled: "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20",
-  "Stop Manually": "bg-[#FEE2E2] text-[#DC2626] border-[#DC2626]/20",
+  "Not Started": "bg-[#DCFCE7] text-[#15803D]",
+  Active: "bg-[#DCFCE7] text-[#15803D]",
+  Completed: "bg-[#DBEAFE] text-[#2563EB]",
+  Scheduled: "bg-[#FEF3C7] text-[#D97706]",
+  "Stop Manually": "bg-[#FEE2E2] text-[#DC2626]",
 };
 
 function OverviewField({ label, children }) {
@@ -88,7 +88,7 @@ export default function CampaignViewModal({ open, onClose, campaign, onEdit }) {
 
             <div>
               <p className="text-[11px] font-bold text-[#111] mb-1.5">Status</p>
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap border ${STATUS_STYLES[campaign.status] || "bg-[#F1F2F4] text-[#6B7280] border-black/10"}`}>
+              <span className={`inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap ${STATUS_STYLES[campaign.status] || "bg-[#F3F4F6] text-[#6B7280]"}`}>
                 {campaign.status}
               </span>
             </div>

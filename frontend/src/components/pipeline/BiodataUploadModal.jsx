@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, FileText, Loader2, Upload } from "lucide-react";
+import { CheckCircle2, Loader2, Upload } from "lucide-react";
 import Modal from "../ui/Modal.jsx";
 import SearchField from "../common/SearchField.jsx";
 import {
@@ -174,7 +174,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
       onClose={onClose}
       title="Upload Biodata"
       subtitle="Search an existing client to update, or upload a new biodata to create a profile."
-      icon={<FileText size={18} />}
+      icon={<Upload size={18} />}
       iconBg="#E7F8EF"
       iconColor="#16A34A"
       width="max-w-xl"
@@ -289,6 +289,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
                 }}
                 className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors mt-4"
               >
+                <Upload size={14} />
                 Select file
               </button>
             </>

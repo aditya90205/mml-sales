@@ -122,7 +122,7 @@ function UpsellPitchCard({ pkg, clientName = "" }) {
         {UPSELL_SOURCES.map((label) => (
           <span
             key={label}
-            className="inline-flex items-center h-7 px-2.5 rounded-full border border-black/10 bg-white text-[11.5px] text-[#4B5563]"
+            className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md bg-[#F3F4F6] text-[#4B5563] whitespace-nowrap"
           >
             {label}
           </span>
@@ -143,7 +143,7 @@ function PackageCard({ pkg, empty = false, selected = false, current = false, on
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-[15px] font-bold text-[#111]">{pkg.name}</h3>
         {pkg.upsellBadge && (
-          <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-white bg-[#7A0A17] rounded-full px-2.5 py-1 shrink-0">
+          <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-white bg-[#7A0A17] rounded-md px-2 py-0.5 shrink-0 whitespace-nowrap">
             <TrendingUp size={11} /> UPSELL · {pkg.upsellBadge}
           </span>
         )}
@@ -362,7 +362,7 @@ function QuotationCard({ empty = false, clientName = "", deal, currentStage, sho
           Quotation — {clientName ? `${clientName} · ` : ""}{quoteCode}
         </h3>
         <div className="flex items-center gap-2">
-          <span className="text-[10.5px] font-semibold text-[#6B7280] bg-[#F1F2F4] rounded-full px-2.5 py-1">
+          <span className="inline-block text-[10.5px] font-semibold text-[#6B7280] bg-[#F1F2F4] rounded-md px-2 py-0.5 whitespace-nowrap">
             {empty ? EMPTY : "Draft v2"}
           </span>
           {viewOnly ? null : <TabHeaderButton onClick={() => setOpen(true)}>Add add-on</TabHeaderButton>}
