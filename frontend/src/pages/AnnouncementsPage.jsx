@@ -9,7 +9,7 @@ import {
   Gift,
   GraduationCap,
   Megaphone,
-  MessageCircle,
+  MessageSquare,
   Monitor,
   Search,
   Sparkles,
@@ -360,7 +360,7 @@ export default function AnnouncementsPage({ embedded = false }) {
                       className="size-8 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center hover:bg-[#FFE8CC] transition-colors"
                       aria-label={`Comment on ${a.title}`}
                     >
-                      <MessageCircle size={14} />
+                      <MessageSquare size={14} />
                     </button>
                     {a.unread && <span className="size-2 rounded-full bg-[#E8395B] shrink-0" />}
                   </div>

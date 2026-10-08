@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, CloudUpload, FileText, Loader2 } from "lucide-react";
+import { CheckCircle2, FileText, Loader2, Upload } from "lucide-react";
 import Modal from "../ui/Modal.jsx";
 import SearchField from "../common/SearchField.jsx";
 import {
@@ -277,7 +277,7 @@ export default function BiodataUploadModal({ open, onClose, onFillForm, compareW
             </div>
           ) : (
             <>
-              <CloudUpload size={28} className="mx-auto text-[#7A0A17] mb-2" />
+              <Upload size={28} className="mx-auto text-[#7A0A17] mb-2" />
               <p className="text-[14px] font-semibold text-[#111]">
                 {file ? file.name : "2. Drop biodata PDF here"}
               </p>

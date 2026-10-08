@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, FileUp, Loader2, MapPin, ShieldCheck, X } from "lucide-react";
+import { Camera, Loader2, MapPin, ShieldCheck, Upload, X } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../../../../components/ui/Modal";
 
@@ -106,7 +106,7 @@ function SideSlot({ label, file, onPick, onClear }) {
           onClick={() => inputRef.current?.click()}
           className="mt-3 flex-1 rounded-lg border border-black/10 bg-white px-3 py-4 text-center hover:bg-[#F8F9FA] transition-colors"
         >
-          <FileUp size={16} className="mx-auto text-[#7A0A17]" />
+          <Upload size={16} className="mx-auto text-[#7A0A17]" />
           <p className="text-[12px] font-semibold text-[#111] mt-1.5">Upload {label.toLowerCase()}</p>
           <p className="text-[11px] text-[#9CA3AF] mt-0.5">PDF, JPG or PNG</p>
         </button>
@@ -154,8 +154,9 @@ function FileListSlot({ files, onAdd, onRemove }) {
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="h-10 px-4 rounded-xl border border-black/12 bg-white text-[13px] font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors self-start"
+        className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border border-black/12 bg-white text-[13px] font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors self-start"
       >
+        <Upload size={14} />
         Attach &amp; Upload
       </button>
       <input
@@ -443,7 +444,7 @@ export default function P6DocumentUploadModal({ open, item, onClose, onUploaded 
       onClose={busy ? () => {} : onClose}
       title={`Upload ${item.title}`}
       subtitle={subtitle}
-      icon={isCameraGps ? <Camera size={18} /> : isAadhaar || isPan ? <ShieldCheck size={18} /> : <FileUp size={18} />}
+      icon={isCameraGps ? <Camera size={18} /> : isAadhaar || isPan ? <ShieldCheck size={18} /> : <Upload size={18} />}
       iconBg="#F3E8F0"
       iconColor="#7A0A17"
       width="max-w-lg"

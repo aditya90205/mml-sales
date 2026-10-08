@@ -17,7 +17,7 @@ import {
   LogOut,
   MapPin,
   Megaphone,
-  MessageCircle,
+  MessageSquare,
   Pencil,
   Receipt,
   Send,
@@ -740,7 +740,7 @@ export default function HrmsDashboard({
                       className="size-7 rounded-lg bg-[#FFF4E8] text-[#F59E0B] grid place-items-center shrink-0 hover:bg-[#FFE8CC] transition-colors"
                       aria-label={`Comment on ${item.title}`}
                     >
-                      <MessageCircle size={14} />
+                      <MessageSquare size={14} />
                     </button>
                   </div>
                 );
@@ -769,7 +769,7 @@ export default function HrmsDashboard({
                       className="text-[#F97316] hover:text-[#EA580C]"
                       aria-label={`Comment on ${item.title}`}
                     >
-                      <MessageCircle size={16} />
+                      <MessageSquare size={16} />
                     </button>
                     <span className={`text-[11px] font-semibold rounded-lg px-2.5 py-1 ${requestStatusClass(item.status)}`}>
                       {item.status}
@@ -843,7 +843,7 @@ export default function HrmsDashboard({
         onClose={() => setListOpen(false)}
         title="Announcements"
         subtitle="All announcements"
-        icon={<MessageCircle size={17} />}
+        icon={<Megaphone size={17} />}
         iconBg="#FDECEC"
         iconColor="#E11D48"
         width="max-w-3xl"

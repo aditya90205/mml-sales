@@ -1,4 +1,4 @@
-import { Check, X } from "lucide-react";
+import { Check, Upload, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { INPUT, isFieldFilled, isFieldVisible } from "./intakeFormData";
 
@@ -199,8 +199,9 @@ function IntakeField({ def, value, chips, onChange, onRemoveChip, readOnly }) {
             <button
               type="button"
               onClick={() => toast.info("Upload coming soon.")}
-              className="h-11 px-4 rounded-xl border border-black/12 text-[12.5px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors shrink-0 whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl border border-black/12 text-[12.5px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors shrink-0 whitespace-nowrap"
             >
+              <Upload size={14} />
               Upload
             </button>
           )}

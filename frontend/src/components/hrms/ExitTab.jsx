@@ -5,6 +5,7 @@ import {
   FileText,
   Info,
   Mail,
+  Upload,
   MessageSquare,
   Reply,
   User,
@@ -408,8 +409,9 @@ export default function ExitTab() {
               <button
                 type="button"
                 onClick={handleBrowse}
-                className="h-11 px-4 rounded-xl border border-black/12 text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors shrink-0"
+                className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl border border-black/12 text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] transition-colors shrink-0"
               >
+                <Upload size={14} />
                 Browse
               </button>
             </div>

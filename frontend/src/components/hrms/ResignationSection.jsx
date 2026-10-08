@@ -6,7 +6,7 @@ import {
   Clock3,
   Eye,
   LogOut,
-  MessageSquareQuote,
+  MessageSquare,
   Shield,
   Undo2,
   UserX,
@@ -341,7 +341,7 @@ function TerminationReasonModal({ open, onClose, record, onSaved }) {
 
         <div>
           <label className="flex items-center gap-1.5 text-[13px] font-bold text-[#111] mb-1.5">
-            <MessageSquareQuote size={14} className="text-[#7A0A17]" />
+            <MessageSquare size={14} className="text-[#7A0A17]" />
             Salesperson comment
           </label>
           <p className="text-[12px] text-[#6B7280] mb-2 leading-snug">
@@ -779,7 +779,7 @@ export default function ResignationSection({ employee }) {
                   <div className="px-4 py-3.5">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <span className="size-8 rounded-lg bg-white border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center shrink-0">
-                        <MessageSquareQuote size={14} />
+                        <MessageSquare size={14} />
                       </span>
                       <h4 className="text-[12px] font-extrabold text-[#111827] uppercase tracking-wide">
                         Salesperson comment

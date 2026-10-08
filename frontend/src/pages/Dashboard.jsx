@@ -21,6 +21,7 @@ import {
   ClipboardList,
   SquareCheck,
   FileText,
+  Upload,
   Heart,
   Crown,
   Filter,
@@ -139,7 +140,7 @@ const QUICK_ACTIONS = [
   { label: "Create Lead",     icon: UserPlus,   bg: "#FDECEE", fg: "#E8395B", action: "lead" },
   { label: "Create Task",     icon: SquareCheck, bg: "#E8F2FE", fg: "#3B82F6", action: "task" },
   { label: "Create Meeting",  icon: Calendar,   bg: "#F0EBFE", fg: "#8B5CF6", action: "meeting" },
-  { label: "Upload Biodata",  icon: FileText,   bg: "#E7F8EF", fg: "#16A34A", action: "biodata" },
+  { label: "Upload Biodata",  icon: Upload,     bg: "#E7F8EF", fg: "#16A34A", action: "biodata" },
 ];
 
 const PERFORMANCE_SEGMENTS = [

@@ -7,7 +7,7 @@ import {
   Check,
   ChevronDown,
   Clock,
-  CloudUpload,
+  Upload,
   Loader2,
   Mail,
   MapPin,
@@ -769,7 +769,7 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
                     onClick={() => bioRef.current?.click()}
                     className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#166534] hover:bg-[#F0FDF4] shrink-0 disabled:opacity-60"
                   >
-                    {bioParsing ? <Loader2 size={14} className="animate-spin" /> : <CloudUpload size={14} />}
+                    {bioParsing ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
                     {bioParsing ? "Reading…" : "Upload"}
                   </button>
                 </div>

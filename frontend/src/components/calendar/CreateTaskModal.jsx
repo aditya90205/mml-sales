@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckSquare, Plus, Search, Sparkles, X } from "lucide-react";
+import { CheckSquare, Plus, Search, Sparkles, Upload, X } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
 
@@ -805,7 +805,8 @@ export default function CreateTaskModal({ open, onClose, onSave, defaultDate, in
               placeholder="Select file"
               className={`${INPUT} flex-1 rounded-r-none bg-[#FAFAFB]`}
             />
-            <label className="h-10 px-4 rounded-r-xl border border-l-0 border-black/10 inline-flex items-center text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] cursor-pointer whitespace-nowrap">
+            <label className="h-10 px-4 rounded-r-xl border border-l-0 border-black/10 inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#374151] hover:bg-[#FAFAFB] cursor-pointer whitespace-nowrap">
+              <Upload size={14} />
               Browse
               <input
                 type="file"

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Image as ImageIcon, CalendarDays, Search, Sparkles, ChevronDown } from "lucide-react";
+import { Plus, Upload, CalendarDays, Search, Sparkles, ChevronDown } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
 
@@ -1244,7 +1244,7 @@ export default function CreateMeetingEventModal({
                   className={`${INPUT} flex-1 bg-[#FAFAFB]`}
                 />
                 <label className="h-10 px-3.5 rounded-none border border-black/10 inline-flex items-center gap-2 text-[12.5px] font-medium text-[#374151] hover:bg-[#FAFAFB] cursor-pointer whitespace-nowrap">
-                  <ImageIcon size={14} /> Browse
+                  <Upload size={14} /> Browse
                   <input
                     type="file"
                     className="hidden"
@@ -1812,7 +1812,8 @@ export default function CreateMeetingEventModal({
                   placeholder="Select file"
                   className={`${INPUT} flex-1 bg-[#FAFAFB]`}
                 />
-                <label className="h-10 px-3.5 rounded-xl border border-black/10 inline-flex items-center gap-2 text-[12.5px] font-medium text-[#374151] hover:bg-[#FAFAFB] cursor-pointer whitespace-nowrap">
+                <label className="h-10 px-3.5 rounded-xl border border-black/10 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[#374151] hover:bg-[#FAFAFB] cursor-pointer whitespace-nowrap">
+                  <Upload size={14} />
                   Browse
                   <input
                     type="file"

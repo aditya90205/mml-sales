@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import StatusPill from "../../../components/common/StatusPill";
@@ -20,7 +20,7 @@ const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
 const ACTION_BTN =
-  "inline-flex items-center justify-center h-9 px-3.5 rounded-lg bg-white border border-black/15 text-[12.5px] font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors shrink-0";
+  "inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-lg bg-white border border-black/15 text-[12.5px] font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors shrink-0";
 
 const ICON_BTN =
   "inline-flex items-center justify-center size-9 rounded-lg border border-black/10 text-[#6B7280] hover:bg-[#FAFAFB] hover:text-[#111] transition-colors shrink-0";
@@ -205,6 +205,7 @@ const DocumentsKycTab = forwardRef(function DocumentsKycTab({ empty = false, emb
                 <Trash2 size={14} />
               </button>
               <button type="button" onClick={() => startUpload(doc.id)} className={ACTION_BTN}>
+                <Upload size={14} />
                 Attach &amp; Upload
               </button>
             </div>

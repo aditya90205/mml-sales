@@ -12,7 +12,7 @@ import {
   Crown,
   Download,
   Eye,
-  FileText,
+  Upload,
   Flag,
   Gift,
   Globe,
@@ -497,7 +497,7 @@ function ActionTile({ icon: Icon, iconBg, iconColor, title, titleColor = "#1F293
 function ProfileStat({ icon: Icon, label, value, className = "" }) {
   return (
     <div className={`flex items-start gap-2.5 min-w-0 ${className}`}>
-      <Icon size={16} className="text-[#8E2942] shrink-0 mt-0.5" strokeWidth={1.75} />
+      <Icon size={16} className="text-[#7A0A17] shrink-0 mt-0.5" strokeWidth={1.75} />
       <div className="min-w-0">
         <p className="text-[11.5px] text-[#9CA3AF] leading-none">{label}</p>
         <p className="text-[13px] font-semibold text-[#1F2937] mt-1 leading-snug break-words">{value || "-"}</p>
@@ -588,7 +588,7 @@ function AddonPayBar({ selected, packageAmount }) {
       </p>
       <button
         type="button"
-        className="h-8 px-4 rounded-lg bg-[#8E1B32] text-white text-[12.5px] font-semibold hover:bg-[#7A1230] transition-colors"
+        className="h-8 px-4 rounded-lg bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
       >
         Pay
       </button>
@@ -794,7 +794,7 @@ function HandoverPreview({ onViewItem }) {
     <div className="flex flex-col gap-2.5 pb-1">
       {HANDOVER_PREVIEW.map((item) => (
         <div key={item.id} className="flex items-center gap-1.5 min-w-0">
-          <span className="size-[18px] rounded-[4px] bg-[#8E1B32] text-white grid place-items-center shrink-0">
+          <span className="size-[18px] rounded-[4px] bg-[#7A0A17] text-white grid place-items-center shrink-0">
             <Check size={11} strokeWidth={3} />
           </span>
           <span className="text-[12px] font-medium text-[#1F2937] flex-1 min-w-0 truncate">{item.label}</span>
@@ -1528,7 +1528,7 @@ export default function OverviewDashboard({
               onClick={() => setCreateMeetingOpen(true)}
             />
             <ActionTile
-              icon={FileText}
+              icon={Upload}
               iconBg="#E7F8EF"
               iconColor="#16A34A"
               title="Upload Biodata"
@@ -1728,7 +1728,7 @@ export default function OverviewDashboard({
             onClick={() => setDiscountOpen(true)}
             className="w-full flex items-center gap-2.5 rounded-2xl border border-[#EEF1F4] bg-white px-3.5 py-2.5 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:border-[#E2E6EB] transition-colors"
           >
-            <span className="size-8 rounded-full bg-[#8E1B32] text-white grid place-items-center shrink-0">
+            <span className="size-8 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
               <Zap size={15} strokeWidth={2.4} fill="currentColor" />
             </span>
             <span className="min-w-0 flex-1">

@@ -27,6 +27,7 @@ import {
   LayoutGrid,
   Lock,
   Image as ImageIcon,
+  Upload,
   Info,
   Coffee,
   ArrowLeftRight,
@@ -3645,7 +3646,7 @@ export default function HrmsPage() {
                 className="flex-1 min-w-0 border border-black/15 rounded-xl p-2.5 outline-none bg-[#FAFAFB] text-[#374151]"
               />
               <label className="shrink-0 inline-flex items-center gap-1.5 border border-black/15 rounded-xl px-3.5 py-2.5 font-bold text-[#374151] cursor-pointer hover:bg-[#FAFAFB] transition-colors">
-                <ImageIcon size={14} />
+                <Upload size={14} />
                 Browse
                 <input
                   type="file"

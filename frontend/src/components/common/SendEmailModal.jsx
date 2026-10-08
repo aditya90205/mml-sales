@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Image as ImageIcon, Mail, Plus } from "lucide-react";
+import { Mail, Plus, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
 
@@ -163,7 +163,7 @@ export default function SendEmailModal({
               onClick={() => fileInputRef.current?.click()}
               className="shrink-0 inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-white border border-black/12 text-[13px] font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors"
             >
-              <ImageIcon size={15} className="text-[#6B7280]" />
+              <Upload size={15} className="text-[#6B7280]" />
               Browse
             </button>
             <input

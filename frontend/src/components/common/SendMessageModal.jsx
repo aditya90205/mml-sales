@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Image as ImageIcon } from "lucide-react";
+import { MessageSquare, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
 
@@ -30,6 +30,9 @@ export default function SendMessageModal({ open, onClose, title = "Send Message"
       open={open}
       onClose={onClose}
       title={title}
+      icon={<MessageSquare size={18} />}
+      iconBg="#FFF3E4"
+      iconColor="#F59E0B"
       width="max-w-lg"
       zClass={zClass}
       footer={
@@ -80,7 +83,7 @@ export default function SendMessageModal({ open, onClose, title = "Send Message"
               onClick={() => fileInputRef.current?.click()}
               className="shrink-0 inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-white border border-black/12 text-[13px] font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors"
             >
-              <ImageIcon size={15} className="text-[#6B7280]" />
+              <Upload size={15} className="text-[#6B7280]" />
               Browse
             </button>
             <input

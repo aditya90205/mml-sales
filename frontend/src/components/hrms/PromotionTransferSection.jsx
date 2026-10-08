@@ -5,7 +5,7 @@ import {
   CalendarDays,
   Eye,
   FileText,
-  ImageIcon,
+  Upload,
   Info,
   Pencil,
   Plus,
@@ -188,7 +188,7 @@ function DocumentBrowseField({ fileName, onPick, onClear }) {
           className="flex-1 min-w-0 border border-black/12 rounded-xl px-3.5 h-11 outline-none bg-[#FAFAFB] text-[13px] text-[#374151]"
         />
         <label className="shrink-0 inline-flex items-center gap-1.5 border border-black/12 rounded-xl px-3.5 h-11 font-bold text-[13px] text-[#374151] cursor-pointer hover:bg-[#FAFAFB] transition-colors">
-          <ImageIcon size={14} />
+          <Upload size={14} />
           Browse
           <input
             type="file"
