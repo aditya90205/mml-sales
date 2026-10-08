@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
 
 const INPUT =
-  "w-full h-11 border border-black/12 rounded-xl px-3.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#3B82F6] bg-white";
+  "w-full h-11 border border-black/12 rounded-xl px-3.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17] bg-white";
 
 function emailFromName(name) {
   const local = String(name || "client")
@@ -59,8 +59,8 @@ export default function SendEmailModal({
       onClose={onClose}
       title="Send Email"
       icon={<Mail size={18} />}
-      iconBg="#E7F8EF"
-      iconColor="#16A34A"
+      iconBg="#FDF2F3"
+      iconColor="#7A0A17"
       width="max-w-lg"
       footer={
         <>
@@ -74,7 +74,7 @@ export default function SendEmailModal({
           <button
             type="submit"
             form="send-email-form"
-            className="h-10 px-5 rounded-xl bg-[#3B82F6] text-white text-[13px] font-semibold hover:bg-[#2563EB] transition-colors"
+            className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
           >
             Send Email
           </button>
@@ -144,7 +144,7 @@ export default function SendEmailModal({
             onChange={(e) => setMessage(e.target.value)}
             rows={5}
             placeholder="Write your message here..."
-            className="w-full border border-black/12 rounded-xl px-3.5 py-3 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#3B82F6] resize-none"
+            className="w-full border border-black/12 rounded-xl px-3.5 py-3 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17] resize-none"
           />
         </div>
 

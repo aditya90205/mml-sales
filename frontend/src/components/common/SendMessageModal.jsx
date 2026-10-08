@@ -31,8 +31,8 @@ export default function SendMessageModal({ open, onClose, title = "Send Message"
       onClose={onClose}
       title={title}
       icon={<MessageSquare size={18} />}
-      iconBg="#FFF3E4"
-      iconColor="#F59E0B"
+      iconBg="#FDF2F3"
+      iconColor="#7A0A17"
       width="max-w-lg"
       zClass={zClass}
       footer={
@@ -47,7 +47,7 @@ export default function SendMessageModal({ open, onClose, title = "Send Message"
           <button
             type="submit"
             form="send-message-form"
-            className="h-10 px-5 rounded-xl bg-[#F97316] text-white text-[13px] font-semibold hover:bg-[#EA580C] transition-colors"
+            className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
           >
             Send Message
           </button>
@@ -64,7 +64,7 @@ export default function SendMessageModal({ open, onClose, title = "Send Message"
             onChange={(e) => setMessage(e.target.value)}
             rows={5}
             placeholder="Type your message..."
-            className="w-full border border-black/12 rounded-xl px-3.5 py-3 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#F97316] resize-none"
+            className="w-full border border-black/12 rounded-xl px-3.5 py-3 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17] resize-none"
           />
         </div>
 

@@ -87,7 +87,7 @@ export default function DiscountApprovalsTab() {
                   <button
                     type="button"
                     onClick={() => setCommentFor(row)}
-                    className="size-7 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center shrink-0 hover:bg-[#FEE9D8] transition-colors"
+                    className="size-7 rounded-lg bg-[#FDF2F3] text-[#7A0A17] grid place-items-center shrink-0 hover:bg-[#F6E4E8] transition-colors"
                     aria-label={`Comment on ${row.raised}`}
                   >
                     <MessageSquare size={14} />

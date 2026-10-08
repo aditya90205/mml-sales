@@ -365,7 +365,7 @@ export default function TimesheetDetailsModal({ open, onClose, employee, mode = 
                           <div className="flex items-center justify-end gap-1.5">
                             <IconBtn
                               title="Message"
-                              className="border-[#F59E0B]/30 text-[#F59E0B] hover:bg-[#FFF3E4] hover:text-[#D97706]"
+                              className="border-[#7A0A17]/30 text-[#7A0A17] hover:bg-[#FDF2F3] hover:text-[#640712]"
                               onClick={() => setMessageOpen(true)}
                             >
                               <MessageSquare size={14} />

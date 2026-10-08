@@ -1479,7 +1479,7 @@ export default function OverviewDashboard({
                   <button
                     type="button"
                     onClick={() => setMessageOpen(true)}
-                    className="p-0.5 rounded-lg text-[#F59E0B] hover:bg-[#FFF3E4] transition-colors"
+                    className="p-0.5 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] transition-colors"
                     title="Message"
                     aria-label="Message"
                   >

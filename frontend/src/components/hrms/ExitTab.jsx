@@ -286,7 +286,7 @@ export default function ExitTab() {
                 onClick={() => openMessage("Resignation Follow-up Message")}
                 className={ACTION_BTN}
               >
-                <MessageSquare size={14} className="text-[#F59E0B]" />
+                <MessageSquare size={14} className="text-[#7A0A17]" />
                 Message
               </button>
             </div>

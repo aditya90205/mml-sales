@@ -357,7 +357,7 @@ export default function AnnouncementsPage({ embedded = false }) {
                         markAnnouncementRead(a.id);
                         setCommentFor(a);
                       }}
-                      className="size-7 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center hover:bg-[#FEE9D8] transition-colors"
+                      className="size-7 rounded-lg bg-[#FDF2F3] text-[#7A0A17] grid place-items-center hover:bg-[#F6E4E8] transition-colors"
                       aria-label={`Comment on ${a.title}`}
                     >
                       <MessageSquare size={14} />

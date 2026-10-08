@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Check, MessageSquare, TrendingUp, X } from "lucide-react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Check, MessageSquare, Trash2, TrendingUp, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
@@ -73,18 +73,79 @@ const APPROVAL_COLUMNS = [
   { label: "Status", key: "status", width: "32%" },
 ];
 
-const QUOTE_ITEMS = [
-  { item: "Premium Package", note: "12 months membership", type: "Base", qty: 1, quoted: "₹51,000", rate: "₹51,000" },
-  { item: "Kundli / horoscope service", note: "Redeemable against wallet credits", type: "Base", qty: 1, quoted: "₹51,000", rate: "₹2,500" },
-  { item: "Verified Profile Report", note: "Included in Premium – no charge", type: "Base", qty: 1, quoted: "₹51,000", rate: "₹0" },
+const SALESPERSON_DISCOUNT_CAP = 5;
+const WALLET_CREDITS = 1000;
+const GST_RATE = 0.18;
+
+const DEFAULT_QUOTE_ITEMS = [
+  { id: "premium", item: "Premium Package", note: "12 months membership", type: "Base", qty: 1, quoted: 51000, rate: 51000 },
+  { id: "kundli", item: "Kundli / horoscope service", note: "Redeemable against wallet credits", type: "Add-on", qty: 1, quoted: 51000, rate: 2500 },
+  { id: "verified", item: "Verified Profile Report", note: "Included in Premium – no charge", type: "Add-on", qty: 1, quoted: 51000, rate: 0 },
 ];
 
-const QUOTE_SUMMARY = [
-  { label: "Subtotal", value: "₹53,500" },
-  { label: "Approved discount", value: "-₹7,500" },
-  { label: "Wallet credits applied (referral)", value: "-₹1000" },
-  { label: "GST @ 18%", value: "₹8,100" },
-];
+let quoteSnapshot = {
+  items: DEFAULT_QUOTE_ITEMS,
+  discountPercent: 0,
+};
+const quoteListeners = new Set();
+
+function emitQuote() {
+  quoteListeners.forEach((listener) => listener());
+}
+
+function subscribeQuote(listener) {
+  quoteListeners.add(listener);
+  return () => quoteListeners.delete(listener);
+}
+
+function getQuoteSnapshot() {
+  return quoteSnapshot;
+}
+
+function useQuote() {
+  return useSyncExternalStore(subscribeQuote, getQuoteSnapshot, getQuoteSnapshot);
+}
+
+function formatInr(amount) {
+  return `₹${Math.round(Number(amount) || 0).toLocaleString("en-IN")}`;
+}
+
+function formatDeduction(amount) {
+  return `-${formatInr(amount)}`;
+}
+
+function parseMoney(value) {
+  const n = Number(String(value ?? "").replace(/[₹,\s]/g, ""));
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function quoteTotals(items, discountPercent) {
+  const subtotal = items.reduce((sum, item) => sum + (Number(item.rate) || 0) * (Number(item.qty) || 1), 0);
+  const discount = Math.round((subtotal * (Number(discountPercent) || 0)) / 100);
+  const afterDiscount = Math.max(subtotal - discount, 0);
+  const wallet = Math.min(WALLET_CREDITS, afterDiscount);
+  const taxable = afterDiscount - wallet;
+  const gst = Math.round(taxable * GST_RATE);
+  return { subtotal, discount, wallet, gst, total: taxable + gst };
+}
+
+function addQuoteItem(item) {
+  quoteSnapshot = { ...quoteSnapshot, items: [...quoteSnapshot.items, item] };
+  emitQuote();
+}
+
+function removeQuoteAddon(id) {
+  quoteSnapshot = {
+    ...quoteSnapshot,
+    items: quoteSnapshot.items.filter((item) => !(item.id === id && item.type === "Add-on")),
+  };
+  emitQuote();
+}
+
+function setQuoteDiscount(percent) {
+  quoteSnapshot = { ...quoteSnapshot, discountPercent: percent };
+  emitQuote();
+}
 
 const DATA_REVEAL_LEVELS = [
   { label: "Level 1 — Photo", note: "All packages · on shortlist", done: true },
@@ -269,7 +330,7 @@ function DiscountApprovalsCard() {
                   <button
                     type="button"
                     onClick={() => setCommentFor(row)}
-                    className="size-7 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center shrink-0 hover:bg-[#FEE9D8] transition-colors"
+                    className="size-7 rounded-lg bg-[#FDF2F3] text-[#7A0A17] grid place-items-center shrink-0 hover:bg-[#F6E4E8] transition-colors"
                     aria-label={`Comment on ${row.raised}`}
                   >
                     <MessageSquare size={14} />
@@ -341,36 +402,69 @@ const FIELD =
 
 function QuotationCard({ clientName = "", deal, currentStage, showSend = true, viewOnly = false }) {
   const paymentReady = atLeast(currentStage, "P1");
-  const [items, setItems] = useState(QUOTE_ITEMS);
+  const quote = useQuote();
+  const items = quote.items;
+  const totals = quoteTotals(items, quote.discountPercent);
   const { sorted, sort, toggle } = useTableSort(items, { defaultKey: "item" });
   const [open, setOpen] = useState(false);
   const [sendType, setSendType] = useState(null);
   const [itemName, setItemName] = useState("");
   const [quoted, setQuoted] = useState("");
+  const [discountDraft, setDiscountDraft] = useState(quote.discountPercent ? String(quote.discountPercent) : "");
   const client = deal?.name ? deal : { ...deal, name: clientName || deal?.name || "Client" };
   const quoteCode = clientShareId(client);
 
+  useEffect(() => {
+    setDiscountDraft(quote.discountPercent ? String(quote.discountPercent) : "");
+  }, [quote.discountPercent]);
+
   const handleSave = (e) => {
     e.preventDefault();
-    if (!itemName.trim() || !quoted.trim()) {
+    const amount = parseMoney(quoted);
+    if (!itemName.trim() || !Number.isFinite(amount) || amount <= 0) {
       toast.error("Please add an item and amount.");
       return;
     }
-    setItems((prev) => [
-      ...prev,
-      {
-        item: itemName.trim(),
-        note: "Added to this quote",
-        type: "Add-on",
-        qty: 1,
-        quoted: quoted.trim().startsWith("₹") ? quoted.trim() : `₹${quoted.trim()}`,
-        rate: quoted.trim().startsWith("₹") ? quoted.trim() : `₹${quoted.trim()}`,
-      },
-    ]);
+    addQuoteItem({
+      id: `addon-${Date.now()}`,
+      item: itemName.trim(),
+      note: "Added to this quote",
+      type: "Add-on",
+      qty: 1,
+      quoted: amount,
+      rate: amount,
+    });
     toast.success("Line item added.");
     setItemName("");
     setQuoted("");
     setOpen(false);
+  };
+
+  const handleRemoveAddon = (row) => {
+    if (row.type !== "Add-on") return;
+    removeQuoteAddon(row.id);
+    toast.success(`${row.item} removed. Quotation total updated.`);
+  };
+
+  const handleApplyDiscount = (e) => {
+    e.preventDefault();
+    const raw = discountDraft.trim().replace("%", "");
+    if (!raw) {
+      setQuoteDiscount(0);
+      toast.success("Discount cleared.");
+      return;
+    }
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value < 0) {
+      toast.error("Enter a valid discount percent.");
+      return;
+    }
+    if (value > SALESPERSON_DISCOUNT_CAP) {
+      toast.error(`Salesperson can approve discount only up to ${SALESPERSON_DISCOUNT_CAP}%.`);
+      return;
+    }
+    setQuoteDiscount(value);
+    toast.success(value === 0 ? "Discount cleared." : `${value}% discount applied.`);
   };
 
   return (
@@ -426,14 +520,22 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
       </Modal>
       )}
 
-      <div className="overflow-x-auto -mx-1">
-        <table className="w-full border-collapse min-w-[480px]">
+      <div className="min-w-0">
+        <table className="w-full table-fixed border-collapse">
+          <colgroup>
+            <col />
+            <col className="w-[4.25rem]" />
+            <col className="w-11" />
+            <col className="w-[4.75rem]" />
+            <col className="w-[4.75rem]" />
+            <col className="w-8" />
+          </colgroup>
           <thead>
             <tr className="bg-[#FAF3F2]">
               {[
                 { label: "Item", key: "item" },
                 { label: "Type", key: "type" },
-                { label: "Quantity", key: "qty" },
+                { label: "Qty.", key: "qty" },
                 { label: "Quoted", key: "quoted" },
                 { label: "Rate", key: "rate" },
               ].map((col, i) => (
@@ -443,24 +545,38 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
                   sortKey={col.key}
                   sort={sort}
                   onSort={toggle}
-                  className={`px-3 py-2 text-left text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide whitespace-nowrap ${
+                  className={`px-2 py-2 text-left text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide ${
                     i === 0 ? "rounded-l-lg" : ""
-                  } ${i === 4 ? "rounded-r-lg" : ""}`}
+                  }`}
                 />
               ))}
+              <th className="px-1 py-2 rounded-r-lg" aria-label="Remove add-on" />
             </tr>
           </thead>
           <tbody>
             {sorted.map((row) => (
-              <tr key={row.item} className="border-b border-black/5">
-                <td className="px-3 py-2.5 whitespace-nowrap">
-                  <p className="text-[12.5px] font-semibold text-[#111]">{row.item}</p>
-                  <p className="text-[10.5px] text-[#9CA3AF]">{row.note}</p>
+              <tr key={row.id} className="border-b border-black/5">
+                <td className="px-2 py-2.5">
+                  <p className="text-[12.5px] font-semibold text-[#111] leading-snug">{row.item}</p>
+                  <p className="text-[10.5px] text-[#9CA3AF] leading-snug">{row.note}</p>
                 </td>
-                <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.type}</td>
-                <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.qty}</td>
-                <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.quoted}</td>
-                <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.rate}</td>
+                <td className="px-2 py-2.5 text-[12px] text-[#4B5563]">{row.type}</td>
+                <td className="px-2 py-2.5 text-[12px] text-[#4B5563]">{row.qty}</td>
+                <td className="px-2 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{formatInr(row.quoted)}</td>
+                <td className="px-2 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{formatInr(row.rate)}</td>
+                <td className="px-1 py-2.5 text-right">
+                  {row.type === "Add-on" ? (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAddon(row)}
+                      className="size-7 rounded-lg text-[#E8395B] hover:bg-[#FEF2F2] grid place-items-center ml-auto"
+                      aria-label={`Remove ${row.item}`}
+                      title="Remove add-on"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  ) : null}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -468,19 +584,51 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
       </div>
 
       <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-black/6">
-        {QUOTE_SUMMARY.map((row) => (
-          <div key={row.label} className="flex items-center justify-between text-[12.5px] text-[#4B5563]">
-            <span>{row.label}</span>
-            <span className="font-medium text-[#111]">{row.value}</span>
-          </div>
-        ))}
+        <form onSubmit={handleApplyDiscount} className="flex items-center justify-between gap-3 flex-wrap text-[12.5px] text-[#4B5563]">
+          <span className="shrink-0">Approved discount</span>
+          <span className="flex items-center gap-2 flex-wrap justify-end">
+            <input
+              value={discountDraft}
+              onChange={(e) => setDiscountDraft(e.target.value)}
+              inputMode="decimal"
+              placeholder="0–5"
+              aria-label="Discount percent"
+              className="w-[4.5rem] h-8 rounded-lg border border-black/12 px-2 text-[12.5px] text-[#111] text-right outline-none focus:border-[#7A0A17]"
+            />
+            <span className="text-[12px] text-[#6B7280]">%</span>
+            <button
+              type="submit"
+              className="h-8 px-2.5 rounded-lg bg-[#7A0A17] text-white text-[12px] font-semibold hover:bg-[#640712] transition-colors"
+            >
+              Apply
+            </button>
+            <span className="font-medium text-[#111] min-w-[4.5rem] text-right">{formatDeduction(totals.discount)}</span>
+          </span>
+        </form>
+        <p className="text-[11px] text-[#9CA3AF] -mt-0.5">Salesperson can approve discount only up to {SALESPERSON_DISCOUNT_CAP}%.</p>
+        <div className="flex items-center justify-between text-[12.5px] text-[#4B5563]">
+          <span>Subtotal</span>
+          <span className="font-medium text-[#111]">{formatInr(totals.subtotal)}</span>
+        </div>
+        <div className="flex items-center justify-between text-[12.5px] text-[#4B5563]">
+          <span>Wallet credits applied (referral)</span>
+          <span className="font-medium text-[#111]">{formatDeduction(totals.wallet)}</span>
+        </div>
+        <div className="flex items-center justify-between text-[12.5px] text-[#4B5563]">
+          <span>GST @ 18%</span>
+          <span className="font-medium text-[#111]">{formatInr(totals.gst)}</span>
+        </div>
         <div className="flex items-center justify-between text-[13.5px] font-bold text-[#111] pt-2 border-t border-black/6 mt-1">
           <span>Total payable</span>
-          <span>₹53,100</span>
+          <span>{formatInr(totals.total)}</span>
         </div>
       </div>
 
-      <p className="text-[11.5px] text-[#9CA3AF] mt-4">Quote can be sent once the discount is approved.</p>
+      <p className="text-[11.5px] text-[#9CA3AF] mt-4">
+        {quote.discountPercent > 0
+          ? `${quote.discountPercent}% salesperson discount is applied. Higher than ${SALESPERSON_DISCOUNT_CAP}% needs a discount request.`
+          : `Enter a discount up to ${SALESPERSON_DISCOUNT_CAP}%. A higher discount needs approval before the quote can be sent.`}
+      </p>
 
       {viewOnly && !showSend ? null : (
       <div className="flex items-center gap-2.5 mt-3 flex-wrap">

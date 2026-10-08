@@ -1160,7 +1160,7 @@ export default function PostSalesPage() {
                               <Phone size={14} className="text-[#16A34A]" />
                             </IconBtn>
                             <IconBtn label={`Message ${c.name}`} onClick={() => setMessageFor(c)}>
-                              <MessageSquare size={14} className="text-[#D97706]" />
+                              <MessageSquare size={14} className="text-[#7A0A17]" />
                             </IconBtn>
                             <IconBtn label={`Email ${c.name}`} onClick={() => setEmailFor(c)}>
                               <Mail size={14} className="text-[#2563EB]" />
@@ -1940,7 +1940,7 @@ export default function PostSalesPage() {
                             <Phone size={14} className="text-[#16A34A]" />
                           </IconBtn>
                           <IconBtn label={`Message ${r.name}`} onClick={() => setMessageFor(r)}>
-                            <MessageSquare size={14} className="text-[#D97706]" />
+                            <MessageSquare size={14} className="text-[#7A0A17]" />
                           </IconBtn>
                           <IconBtn label={`Email ${r.name}`} onClick={() => setEmailFor(r)}>
                             <Mail size={14} className="text-[#2563EB]" />

@@ -386,7 +386,7 @@ export default function CreateGroupPage() {
                               <Phone size={14} className="text-[#16A34A]" />
                             </button>
                             <button type="button" onClick={() => toast.info(`Messaging ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Message ${c.name}`}>
-                              <MessageSquare size={14} className="text-[#D97706]" />
+                              <MessageSquare size={14} className="text-[#7A0A17]" />
                             </button>
                             <button type="button" onClick={() => setEmailFor(c)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Email ${c.name}`}>
                               <Mail size={14} className="text-[#2563EB]" />
