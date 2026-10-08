@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, MessageSquare, Phone, Plus, Sparkles, X } from "lucide-react";
+import { Download, Mail, MessageSquare, Phone, Plus, Sparkles, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ClientStatusBadge from "../components/common/ClientStatusBadge.jsx";
 import SendEmailModal from "../components/common/SendEmailModal.jsx";
@@ -193,9 +193,9 @@ export default function CreateGroupPage() {
           <button
             type="button"
             onClick={() => toast.info("Exporting results...")}
-            className="inline-flex items-center h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors shrink-0"
+            className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors shrink-0"
           >
-            Export results
+            <Download size={14} /> Export results
           </button>
         </div>
         <div className="flex items-center gap-3">

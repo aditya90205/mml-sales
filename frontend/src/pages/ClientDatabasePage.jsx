@@ -3,12 +3,12 @@ import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
+  Download,
   Filter,
   Flag,
   Mail,
   MessageSquare,
   Phone,
-  Plus,
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -418,7 +418,7 @@ export default function ClientDatabasePage() {
             onClick={() => toast.info("Exporting clients...")}
             className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
           >
-            <Plus size={14} /> Export
+            <Download size={14} /> Export
           </button>
         </div>
 

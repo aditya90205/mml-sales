@@ -769,17 +769,17 @@ export default function HrmsDashboard({
                     <p className="text-[11px] text-[#9CA3AF] font-medium truncate">{item.submitted}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md shrink-0 ${requestStatusClass(item.status)}`}>
+                      {item.status}
+                    </span>
                     <button
                       type="button"
                       onClick={() => setCommentFor(item)}
-                      className="text-[#F59E0B] hover:text-[#C27C27]"
+                      className="size-7 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center shrink-0 hover:bg-[#FEE9D8] transition-colors"
                       aria-label={`Comment on ${item.title}`}
                     >
-                      <MessageSquare size={16} />
+                      <MessageSquare size={14} />
                     </button>
-                    <span className={`text-[11px] font-semibold rounded-lg px-2.5 py-1 ${requestStatusClass(item.status)}`}>
-                      {item.status}
-                    </span>
                   </div>
                 </div>
               ))}

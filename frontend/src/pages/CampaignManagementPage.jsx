@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   ChevronDown,
   Copy,
+  Download,
   Eye,
   Filter,
   MousePointerClick,
@@ -235,7 +236,7 @@ export default function CampaignManagementPage() {
               onClick={() => toast.info("Exporting campaigns...")}
               className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
             >
-              <Filter size={14} /> Export
+              <Download size={14} /> Export
             </button>
             <Link
               to="/campaign/create"

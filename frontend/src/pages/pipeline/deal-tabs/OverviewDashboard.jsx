@@ -582,23 +582,26 @@ function addonExtra(selected) {
   return ADDON_CATALOG.filter((item) => selected.includes(item.id)).reduce((sum, item) => sum + item.price, 0);
 }
 
-function AddonPayBar({ selected, packageAmount }) {
+function AddonPayBar({ selected, packageAmount, onPay, showPay = true }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <p className="text-[13px] text-[#374151]">
         Total : <span className="font-bold text-[#111]">{formatInr(packageAmount + addonExtra(selected))}</span>
       </p>
-      <button
-        type="button"
-        className="h-8 px-4 rounded-lg bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
-      >
-        Pay
-      </button>
+      {showPay ? (
+        <button
+          type="button"
+          onClick={onPay}
+          className="h-8 px-4 rounded-lg bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
+        >
+          Pay
+        </button>
+      ) : null}
     </div>
   );
 }
 
-function AddonsPreview({ selected, onToggle, packageAmount, showPay = true }) {
+function AddonsPreview({ selected, onToggle, packageAmount, showPay = true, onPay }) {
   return (
     <div className={showPay ? "pb-1" : ""}>
       <div className="flex flex-col gap-2.5">
@@ -635,7 +638,7 @@ function AddonsPreview({ selected, onToggle, packageAmount, showPay = true }) {
       </div>
       {showPay ? (
         <div className="mt-3.5">
-          <AddonPayBar selected={selected} packageAmount={packageAmount} />
+          <AddonPayBar selected={selected} packageAmount={packageAmount} onPay={onPay} />
         </div>
       ) : null}
     </div>
@@ -969,8 +972,10 @@ export default function OverviewDashboard({
   selectedPackageKey = null,
   onPackageSelect,
 }) {
+  const paymentReady = atLeast(currentStage, "P1");
   const [openPanels, setOpenPanels] = useState([]);
   const [messageOpen, setMessageOpen] = useState(false);
+  const [payQuoteOpen, setPayQuoteOpen] = useState(false);
   const [biodataOpen, setBiodataOpen] = useState(false);
   const [showBiodataProfile, setShowBiodataProfile] = useState(false);
   const [profileInitial, setProfileInitial] = useState(null);
@@ -1515,7 +1520,7 @@ export default function OverviewDashboard({
               iconColor="#22C55E"
               title="Send Link"
               titleColor="#1F2937"
-              subtitle="Share biodata or payment link"
+              subtitle={paymentReady ? "Share biodata or payment link" : "Share a biodata link"}
               onClick={onSend}
             />
             <ActionTile
@@ -1702,7 +1707,12 @@ export default function OverviewDashboard({
                   </div>
                 </div>
                 <div className={`px-3.5 pb-3 ${addonsExpanded ? "pt-3.5" : "pt-1"}`}>
-                  <AddonPayBar selected={selectedAddons} packageAmount={rupeeNumber(packagePrice)} />
+                  <AddonPayBar
+                    selected={selectedAddons}
+                    packageAmount={rupeeNumber(packagePrice)}
+                    showPay={paymentReady}
+                    onPay={() => setPayQuoteOpen(true)}
+                  />
                 </div>
               </div>
             </section>
@@ -1822,6 +1832,25 @@ export default function OverviewDashboard({
       />
 
       <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
+      <Modal
+        open={payQuoteOpen}
+        onClose={() => setPayQuoteOpen(false)}
+        title="Payment link"
+        subtitle="Quotation on the left, payment link on the right"
+        icon={<IndianRupee size={18} />}
+        iconBg="#FDF2F3"
+        iconColor="#7A0A17"
+        width="max-w-6xl"
+        zClass="z-[70]"
+      >
+        <PackageQuoteTab
+          empty={!atLeast(currentStage, "P4")}
+          variant="pay"
+          clientName={deal?.name || ""}
+          deal={deal}
+          currentStage={currentStage}
+        />
+      </Modal>
 
       <Modal open={recentOpen} onClose={() => setRecentOpen(false)} title="Recent Activity" width="max-w-lg">
         <RecentActivityCards events={allEvents} />
@@ -1854,6 +1883,11 @@ export default function OverviewDashboard({
           selected={selectedAddons}
           onToggle={toggleAddon}
           packageAmount={rupeeNumber(packagePrice)}
+          showPay={paymentReady}
+          onPay={() => {
+            setAddonsOpen(false);
+            setPayQuoteOpen(true);
+          }}
         />
       </Modal>
 
@@ -2004,7 +2038,13 @@ export default function OverviewDashboard({
         width="max-w-6xl"
         zClass="z-[80]"
       >
-        <PackageQuoteTab empty={!atLeast(currentStage, "P4")} variant="discount" clientName={deal?.name || ""} />
+        <PackageQuoteTab
+          empty={!atLeast(currentStage, "P4")}
+          variant="discount"
+          clientName={deal?.name || ""}
+          deal={deal}
+          currentStage={currentStage}
+        />
       </Modal>
 
       <Modal
@@ -2028,10 +2068,13 @@ export default function OverviewDashboard({
         }
       >
         <PackageQuoteTab
-          empty={!atLeast(currentStage, "P4")}
+          empty={false}
           selectedKey={selectedPackageKey}
           onPackageSelect={onPackageSelect}
           onBindSave={setPackageSave}
+          clientName={deal?.name || ""}
+          deal={deal}
+          currentStage={currentStage}
         />
       </Modal>
 

@@ -342,22 +342,22 @@ export default function AnnouncementsPage({ embedded = false }) {
                         <span className="inline-flex items-center h-[20px] px-2 rounded-md bg-[#E8F2FE] text-[11px] font-semibold text-[#3B82F6]">
                           {a.type}
                         </span>
-                        <span className={`inline-flex items-center h-[20px] px-2 rounded-md text-[11px] font-semibold ${PRIORITY_STYLES[a.priority]}`}>
-                          {a.priority}
-                        </span>
                         {a.actor && <span className="text-[11px] text-[#9CA3AF]">by {a.actor}</span>}
                         <span className="text-[11px] text-[#9CA3AF]">{a.time}</span>
                       </div>
                     </div>
                   </button>
                   <div className="flex items-center gap-2 shrink-0 mt-1">
+                    <span className={`inline-flex items-center h-[20px] px-2 rounded-md text-[11px] font-bold shrink-0 ${PRIORITY_STYLES[a.priority]}`}>
+                      {a.priority}
+                    </span>
                     <button
                       type="button"
                       onClick={() => {
                         markAnnouncementRead(a.id);
                         setCommentFor(a);
                       }}
-                      className="size-8 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center hover:bg-[#FFE8CC] transition-colors"
+                      className="size-7 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center hover:bg-[#FEE9D8] transition-colors"
                       aria-label={`Comment on ${a.title}`}
                     >
                       <MessageSquare size={14} />

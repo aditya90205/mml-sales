@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Flag, Mail, MessageSquare, Phone } from "lucide-react";
+import { Download, Flag, Mail, MessageSquare, Phone } from "lucide-react";
 import { toast } from "react-toastify";
 import StatusPill from "../components/common/StatusPill";
 import ClientStatusBadge from "../components/common/ClientStatusBadge.jsx";
@@ -824,6 +824,7 @@ export default function PostSalesPage() {
             className={tab === "payment" || tab === "followup" || tab === "upsell" || tab === "referral" || tab === "renewal" ? "border-[#7A0A17]/45 text-[#7A0A17]" : ""}
             onClick={() => toast.info(`${outlineLabel}…`)}
           >
+            {outlineLabel.startsWith("Export") ? <Download size={14} /> : null}
             {outlineLabel}
           </OutlineBtn>
           <PrimaryBtn onClick={onPrimary}>{primaryLabel}</PrimaryBtn>

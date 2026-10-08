@@ -1324,7 +1324,7 @@ export default function PipelineBoard() {
             onClick={() => toast.success("Pipeline deals exported successfully!")}
             className="inline-flex items-center gap-2 h-[38px] px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
           >
-            <Download size={15} /> Export
+            <Download size={14} /> Export
           </button>
           <button
             type="button"

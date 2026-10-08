@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Download } from "lucide-react";
 import { toast } from "react-toastify";
 import StatusPill from "../../../components/common/StatusPill";
 import { useTableSort } from "../../../components/common/useTableSort.jsx";
@@ -45,7 +46,9 @@ export default function CrossBranchFlagsPage() {
       title="Cross-Branch Price Enquiry Flags"
       actions={
         <>
-          <OutlineButton onClick={() => toast.info("Flags exported.")}>Export</OutlineButton>
+          <OutlineButton onClick={() => toast.info("Flags exported.")}>
+            <Download size={14} /> Export
+          </OutlineButton>
           <PrimaryButton onClick={() => toast.success("Escalated to Sales Head.")}>Escalate to Sales Head</PrimaryButton>
         </>
       }

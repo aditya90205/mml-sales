@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Ban,
-  Bell,
   Briefcase,
   Building2,
   Calendar,
   Clock,
-  Copy,
   Eye,
   FileText,
   Globe,
@@ -20,7 +18,6 @@ import {
   MessageSquare,
   Pencil,
   Phone,
-  Send,
   Star,
   User,
   Users,
@@ -28,11 +25,12 @@ import {
   Wallet,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import SendLinkModal from "../../../components/common/SendLinkModal";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
 import OverviewDashboard from "./OverviewDashboard";
+import { atLeast } from "./stageContent.jsx";
 import LeadActivityHistory from "./LeadActivityHistory";
-import { recordLeadActivity } from "../../../utils/leadActivityStore.js";
 import {
   coerceCreateLeadValue,
   formatLookingForLabel,
@@ -335,203 +333,6 @@ function dashToEmpty(value) {
   return String(value);
 }
 
-const SEND_LINK_OPTIONS = [
-  { id: "payment", label: "Payment link", icon: IndianRupee },
-  { id: "biodata", label: "Biodata upload", icon: FileText },
-];
-
-const SEND_CHANNEL_OPTIONS = [
-  { id: "email", label: "Email", icon: Mail },
-  { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
-  { id: "inapp", label: "In-app notification", icon: Bell },
-];
-
-function shareUrl(deal, linkType) {
-  const id = String(deal?.id || deal?.mmlId || deal?.dealCode || "client").replace(/\s+/g, "");
-  const slug = linkType === "biodata" ? "biodata" : "pay";
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  return `${origin}/share/${slug}/${encodeURIComponent(id)}`;
-}
-
-function defaultLinkMessage(deal, linkType) {
-  const name = String(deal?.name || "there").trim() || "there";
-  const link = shareUrl(deal, linkType);
-  if (linkType === "biodata") {
-    return `Hi ${name}, please upload your biodata using this link:\n${link}`;
-  }
-  return `Hi ${name}, please complete your payment using this link:\n${link}`;
-}
-
-function SendFormModal({ open, onClose, deal, currentStage }) {
-  const [channels, setChannels] = useState(["email"]);
-  const [linkType, setLinkType] = useState("payment");
-  const [message, setMessage] = useState("");
-  const email = String(deal.email || "").trim();
-  const mobile = String(deal.mobile || deal.phone || "").trim();
-  const linkLabel = linkType === "biodata" ? "Biodata upload" : "Payment link";
-  const link = shareUrl(deal, linkType);
-
-  useEffect(() => {
-    if (!open) return;
-    setChannels(email && email !== "—" ? ["email"] : ["whatsapp"]);
-    setLinkType("payment");
-    setMessage(defaultLinkMessage(deal, "payment"));
-  }, [open, deal.name, email]);
-
-  const toggleChannel = (id) => {
-    setChannels((current) =>
-      current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
-    );
-  };
-
-  const copyLink = () => {
-    const text = shareUrl(deal, linkType);
-    navigator.clipboard?.writeText(text).then(
-      () => toast.success(`${linkLabel} copied.`),
-      () => toast.error("Could not copy the link.")
-    );
-  };
-
-  const handleSend = (e) => {
-    e.preventDefault();
-    if (channels.length === 0) {
-      toast.error("Select at least one channel.");
-      return;
-    }
-    if (channels.includes("email") && (!email || email === "—")) {
-      toast.error("This client has no email yet.");
-      return;
-    }
-    if (channels.includes("whatsapp") && (!mobile || mobile === "—")) {
-      toast.error("This client has no mobile yet.");
-      return;
-    }
-    const body = message.trim();
-    if (!body) {
-      toast.error("Please type a message.");
-      return;
-    }
-    const selected = SEND_CHANNEL_OPTIONS.filter((opt) => channels.includes(opt.id)).map((opt) => opt.label);
-    const via = selected.join(", ");
-    recordLeadActivity(deal, currentStage, {
-      type: "details",
-      title: `${linkLabel} sent to client`,
-      detail: `Sent via ${via} — ${body}`,
-    });
-    toast.success(`${linkLabel} sent to ${deal.name || "client"} via ${via}.`);
-    onClose?.();
-  };
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Send link"
-      subtitle="Share a payment link or biodata upload link with this client"
-      icon={<Send size={18} />}
-      iconBg="#FDF2F3"
-      iconColor="#7A0A17"
-      width="max-w-lg"
-      footer={
-        <>
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            form="send-profile-form"
-            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-          >
-            <Send size={14} />
-            Send
-          </button>
-        </>
-      }
-    >
-      <form id="send-profile-form" onSubmit={handleSend} className="flex flex-col gap-4">
-        <div>
-          <p className="text-[13px] font-bold text-[#111] mb-1.5">Send</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            {SEND_LINK_OPTIONS.map((opt) => {
-              const active = linkType === opt.id;
-              const Icon = opt.icon;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    setLinkType(opt.id);
-                    setMessage(defaultLinkMessage(deal, opt.id));
-                  }}
-                  className={`inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-[13px] font-semibold border transition-colors ${
-                    active
-                      ? "bg-[#7A0A17] text-white border-[#7A0A17]"
-                      : "bg-white text-[#374151] border-black/12 hover:bg-[#FAFAFB]"
-                  }`}
-                >
-                  <Icon size={14} />
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div>
-          <p className="text-[13px] font-bold text-[#111] mb-1.5">Channel</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            {SEND_CHANNEL_OPTIONS.map((opt) => {
-              const active = channels.includes(opt.id);
-              const Icon = opt.icon;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => toggleChannel(opt.id)}
-                  className={`inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-[13px] font-semibold border transition-colors ${
-                    active
-                      ? "bg-[#7A0A17] text-white border-[#7A0A17]"
-                      : "bg-white text-[#374151] border-black/12 hover:bg-[#FAFAFB]"
-                  }`}
-                >
-                  <Icon size={14} />
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div>
-          <label className="block text-[13px] font-bold text-[#111] mb-1.5">Link</label>
-          <div className="flex items-center gap-2 h-11 border border-black/12 rounded-xl px-3.5 bg-[#FAFAFB]">
-            <span className="flex-1 min-w-0 truncate text-[13px] text-[#374151]">{link}</span>
-            <button type="button" onClick={copyLink} aria-label="Copy link" title="Copy link" className="shrink-0 text-[#6B7280] hover:text-[#7A0A17]">
-              <Copy size={15} />
-            </button>
-          </div>
-        </div>
-        <div>
-          <label htmlFor="send-link-message" className="block text-[13px] font-bold text-[#111] mb-1.5">
-            Message <span className="text-[#E8395B]">*</span>
-          </label>
-          <textarea
-            id="send-link-message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={4}
-            placeholder="Type a message to send with this link..."
-            className="w-full border border-black/12 rounded-xl px-3.5 py-3 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17] resize-none"
-          />
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
 function ProfileDetailsView({ details, onFollowUp }) {
   const lookingLabel = formatLookingForLabel(details.lookingCustom || details.lookingFor) || details.lookingFor;
 
@@ -739,11 +540,19 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved, 
         </div>
       </div>
       )}
-      <SendFormModal
+      <SendLinkModal
         open={sendOpen}
         onClose={() => setSendOpen(false)}
         deal={deal}
         currentStage={currentStage}
+        linkTypes={atLeast(currentStage, "P1") ? ["payment", "biodata"] : ["biodata"]}
+        initialType={atLeast(currentStage, "P1") ? "payment" : "biodata"}
+        title="Send link"
+        subtitle={
+          atLeast(currentStage, "P1")
+            ? "Share a payment or biodata link on mml.com"
+            : "Share a biodata link on mml.com"
+        }
       />
       <Modal
         open={mode === "view"}

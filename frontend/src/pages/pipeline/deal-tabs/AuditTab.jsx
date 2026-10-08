@@ -1,3 +1,4 @@
+import { Download } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTableSort } from "../../../components/common/useTableSort.jsx";
 import TableCard from "../../../components/common/TableCard";
@@ -28,7 +29,13 @@ export default function AuditTab({ currentStage = "P0" }) {
     <TableCard
       title="Audit"
       subtitle="Immutable log of every view, edit, export and approval"
-      action={<TabHeaderButton onClick={() => toast.info("Audit log exported.")}>Export log</TabHeaderButton>}
+      action={
+        <TabHeaderButton onClick={() => toast.info("Audit log exported.")}>
+          <span className="inline-flex items-center gap-1.5">
+            <Download size={14} /> Export log
+          </span>
+        </TabHeaderButton>
+      }
       columns={COLUMNS}
       sort={sort}
       onSort={toggle}

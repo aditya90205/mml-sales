@@ -6,6 +6,7 @@ import {
   Calendar as CalendarIcon,
   ChevronDown,
   Clock,
+  Download,
   Globe,
   Mail,
   MessageSquare,
@@ -238,7 +239,7 @@ export default function CreateCampaignPage() {
               onClick={() => toast.info("Exporting results...")}
               className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
             >
-              Export results
+              <Download size={14} /> Export results
             </button>
             <button
               type="button"

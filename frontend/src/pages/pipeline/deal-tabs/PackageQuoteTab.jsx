@@ -5,9 +5,11 @@ import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
 import TableCard from "../../../components/common/TableCard";
 import StatusPill from "../../../components/common/StatusPill";
+import SendLinkModal from "../../../components/common/SendLinkModal";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
-import { dashRows, EMPTY } from "./stageContent.jsx";
+import { clientShareId } from "../../../utils/shareLinks";
+import { atLeast, dashRows, EMPTY } from "./stageContent.jsx";
 
 export const PACKAGES = [
   {
@@ -318,13 +320,17 @@ function DiscountApprovalsCard({ empty = false }) {
 const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
-function QuotationCard({ empty = false, clientName = "" }) {
+function QuotationCard({ empty = false, clientName = "", deal, currentStage, showSend = true, viewOnly = false }) {
+  const paymentReady = atLeast(currentStage, "P1");
   const [items, setItems] = useState(QUOTE_ITEMS);
   const visibleItems = dashRows(items, empty, ["item"]);
   const { sorted, sort, toggle } = useTableSort(visibleItems, { defaultKey: "item" });
   const [open, setOpen] = useState(false);
+  const [sendType, setSendType] = useState(null);
   const [itemName, setItemName] = useState("");
   const [quoted, setQuoted] = useState("");
+  const client = deal?.name ? deal : { ...deal, name: clientName || deal?.name || "Client" };
+  const quoteCode = clientShareId(client);
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -353,16 +359,17 @@ function QuotationCard({ empty = false, clientName = "" }) {
     <div className="bg-white border border-black/8 rounded-2xl p-5 min-w-0">
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <h3 className="text-[14px] font-bold text-[#111]">
-          Quotation — {clientName ? `${clientName} · ` : ""}MML-D-10428
+          Quotation — {clientName ? `${clientName} · ` : ""}{quoteCode}
         </h3>
         <div className="flex items-center gap-2">
           <span className="text-[10.5px] font-semibold text-[#6B7280] bg-[#F1F2F4] rounded-full px-2.5 py-1">
             {empty ? EMPTY : "Draft v2"}
           </span>
-          <TabHeaderButton onClick={() => setOpen(true)}>Add add-on</TabHeaderButton>
+          {viewOnly ? null : <TabHeaderButton onClick={() => setOpen(true)}>Add add-on</TabHeaderButton>}
         </div>
       </div>
 
+      {viewOnly ? null : (
       <Modal
         open={open}
         onClose={() => setOpen(false)}
@@ -399,6 +406,7 @@ function QuotationCard({ empty = false, clientName = "" }) {
           </div>
         </form>
       </Modal>
+      )}
 
       <div className="overflow-x-auto -mx-1">
         <table className="w-full border-collapse min-w-[480px]">
@@ -464,21 +472,39 @@ function QuotationCard({ empty = false, clientName = "" }) {
         >
           Preview PDF
         </button>
-        <button
-          type="button"
-          onClick={() => toast.success("Quote sent to client.")}
-          className="h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
-        >
-          Send quote to client
-        </button>
-        <button
-          type="button"
-          onClick={() => toast.success("Payment link copied and ready to share.")}
-          className="h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
-        >
-          Payment link
-        </button>
+        {showSend ? (
+          <button
+            type="button"
+            onClick={() => setSendType("quote")}
+            className="h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            Send quote to client
+          </button>
+        ) : null}
+        {showSend && paymentReady ? (
+          <button
+            type="button"
+            onClick={() => setSendType("payment")}
+            className="h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            Payment link
+          </button>
+        ) : null}
       </div>
+
+      {showSend ? (
+        <SendLinkModal
+          open={Boolean(sendType)}
+          onClose={() => setSendType(null)}
+          deal={client}
+          currentStage={currentStage}
+          linkTypes={paymentReady ? ["quote", "payment"] : ["quote"]}
+          initialType={sendType || "quote"}
+          title="Send message"
+          subtitle="Quotation and payment links use a fixed mml.com address"
+          zClass="z-[110]"
+        />
+      ) : null}
     </div>
   );
 }
@@ -529,7 +555,7 @@ function DataRevealCard({ empty = false }) {
 }
 
 /** Package & Quote tab — package catalogue, quotation, and discount approvals. */
-export default function PackageQuoteTab({ empty = false, selectedKey = null, onPackageSelect, onBindSave, variant = "full", clientName = "" }) {
+export default function PackageQuoteTab({ empty = false, selectedKey = null, onPackageSelect, onBindSave, variant = "full", clientName = "", deal, currentStage }) {
   const [pendingKey, setPendingKey] = useState(selectedKey);
   const onBindSaveRef = useRef(onBindSave);
   onBindSaveRef.current = onBindSave;
@@ -581,11 +607,32 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
   const upsellPkg = saved || pending || PACKAGES.find((pkg) => pkg.key === "premium");
   const upsellCard = <UpsellPitchCard pkg={upsellPkg} clientName={clientName} />;
 
+  if (variant === "pay") {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+        <div className="min-w-0">
+          <QuotationCard empty={empty} clientName={clientName} deal={deal} currentStage={currentStage} showSend={false} viewOnly />
+        </div>
+        <div className="min-w-0">
+          <SendLinkModal
+            embedded
+            open
+            hideHeader
+            deal={deal?.name ? deal : { ...deal, name: clientName }}
+            currentStage={currentStage}
+            linkTypes={["payment"]}
+            initialType="payment"
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (variant === "discount") {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
         <div className="min-w-0">
-          <QuotationCard empty={empty} clientName={clientName} />
+          <QuotationCard empty={empty} clientName={clientName} deal={deal} currentStage={currentStage} />
         </div>
         <div className="min-w-0">
           <DiscountApprovalsCard empty={empty} />
@@ -642,7 +689,7 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
         <div className="min-w-0">
-          <QuotationCard empty={empty} clientName={clientName} />
+          <QuotationCard empty={empty} clientName={clientName} deal={deal} currentStage={currentStage} />
         </div>
         <div className="min-w-0 flex flex-col gap-5">
           <DiscountApprovalsCard empty={empty} />

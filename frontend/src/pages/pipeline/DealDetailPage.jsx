@@ -805,6 +805,8 @@ export default function DealDetailPage({
             selectedKey={selectedPackage?.key ?? null}
             onPackageSelect={handlePackageSelect}
             clientName={deal?.name || ""}
+            deal={deal}
+            currentStage={currentStage}
           />
         );
       case "discounts":
