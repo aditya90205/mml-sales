@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import EmailActivityButton from "../../../components/common/EmailActivityButton.jsx";
+import ChangeProfilePhotoModal from "../../../components/common/ChangeProfilePhotoModal.jsx";
 import NotificationTypeIcon from "../../../components/common/NotificationTypeIcon.jsx";
 import SendMessageModal from "../../../components/common/SendMessageModal.jsx";
 import BiodataUploadModal from "../../../components/pipeline/BiodataUploadModal";
@@ -70,6 +71,7 @@ import { calendarItemLifecycle } from "../../../utils/calendarLifecycle.js";
 import { formatLookingForLabel } from "../../../utils/leadFields.js";
 import { upsertClientFromBiodata } from "../../../utils/clientsData.js";
 import { findLeadById, moveLeadToStage, updateLead } from "../../../utils/pipelineStore.js";
+import { savePipelineProfilePhoto, usePipelineProfilePhoto } from "../../../utils/pipelineProfilePhoto.js";
 import {
   buildLeadIntakePayload,
   leadPatchFromIntake,
@@ -999,6 +1001,7 @@ export default function OverviewDashboard({
   const [flagAddOpen, setFlagAddOpen] = useState(false);
   const [viewingFlag, setViewingFlag] = useState(null);
   const [scoreOpen, setScoreOpen] = useState(false);
+  const [photoOpen, setPhotoOpen] = useState(false);
   const [addedFlags, setAddedFlags] = useState([]);
   const [flagLabel, setFlagLabel] = useState("");
   const [flagToneValue, setFlagToneValue] = useState("amber");
@@ -1134,6 +1137,8 @@ export default function OverviewDashboard({
   const priority = shown(deal.priority);
   const priorityTone = PRIORITY_TONES[priority] || PRIORITY_TONES.Medium;
   const mmlId = String(deal.mmlId || deal.dealCode || "-").replace(/\s+/g, "");
+  const profilePhotoKey = deal?.id || mmlId;
+  const profilePhoto = usePipelineProfilePhoto(profilePhotoKey);
   const formDigits = String(deal.mmlId || deal.dealCode || "").replace(/\D/g, "");
   const formId = formDigits ? `MML-${formDigits.slice(-5)}` : "-";
   const activePackage =
@@ -1368,9 +1373,24 @@ export default function OverviewDashboard({
           </div>
 
           <div className="flex items-start gap-3.5 mt-4">
-            <span className="size-[76px] rounded-full bg-[#F3E4E6] text-[#7A0A17] text-[20px] font-bold grid place-items-center shrink-0 overflow-hidden">
-              {initials(deal.name) || "—"}
-            </span>
+            <button
+              type="button"
+              onClick={() => setPhotoOpen(true)}
+              className="relative size-[76px] shrink-0 rounded-full"
+              title="Change profile photo"
+              aria-label="Change profile photo"
+            >
+              <span className="size-full rounded-full bg-[#F3E4E6] text-[#7A0A17] text-[20px] font-bold grid place-items-center overflow-hidden">
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="" className="size-full object-cover" />
+                ) : (
+                  initials(deal.name) || "—"
+                )}
+              </span>
+              <span className="absolute bottom-0 right-0 size-6 rounded-full bg-[#7A0A17] text-white grid place-items-center ring-2 ring-white">
+                <Pencil size={12} strokeWidth={2.4} />
+              </span>
+            </button>
             <div className="min-w-0 flex-1 pt-0.5">
               <div className="flex items-center gap-1.5 min-w-0">
                 <h2 className="text-[17px] font-bold text-[#1F2937] leading-none truncate min-w-0">{deal.name || "Lead"}</h2>
@@ -1998,6 +2018,12 @@ export default function OverviewDashboard({
           onPackageSelect={onPackageSelect}
         />
       </Modal>
+
+      <ChangeProfilePhotoModal
+        open={photoOpen}
+        onClose={() => setPhotoOpen(false)}
+        onSave={(dataUrl) => savePipelineProfilePhoto(profilePhotoKey, dataUrl)}
+      />
 
       <Modal open={historyOpen} onClose={() => setHistoryOpen(false)} title="Lead History" width="max-w-3xl">
         <LeadActivityHistory lead={deal} currentStage={currentStage} />

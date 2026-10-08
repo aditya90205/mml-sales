@@ -1006,7 +1006,7 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-4 sm:p-5 pb-3 flex flex-col min-w-0 [container-type:inline-size]">
 
-      <div className="flex items-center justify-between gap-3 mt-4">
+      <div className="flex items-center justify-between gap-3 mt-4 mb-4">
         <h2 className="text-[16px] font-bold text-[#111] flex items-center gap-2">
           <Filter size={16} className="text-[#7A0A17]" fill="#7A0A17" strokeWidth={2} />
           Sales Funnel (P0 - P6)
