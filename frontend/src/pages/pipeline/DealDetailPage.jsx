@@ -13,6 +13,7 @@ import {
   MoreVertical,
   Phone,
   PhoneOff,
+  RotateCcw,
   Snowflake,
   Sparkles,
   Star,
@@ -41,7 +42,15 @@ import PaymentsTab from "./deal-tabs/PaymentsTab";
 import P6ChecklistTab from "./deal-tabs/P6ChecklistTab";
 import ComingSoonTab from "./deal-tabs/ComingSoonTab";
 import { EMPTY, atLeast, historyUntil, maybeDash, stageGateFor } from "./deal-tabs/stageContent.jsx";
-import { isSampleLead, p0StatusOf, updateLead, SAMPLE_CLIENT_PROFILE } from "../../utils/pipelineStore.js";
+import {
+  formatHoldDate,
+  isSampleLead,
+  monthLabel,
+  p0StatusOf,
+  reactivateColdLead,
+  SAMPLE_CLIENT_PROFILE,
+  updateLead,
+} from "../../utils/pipelineStore.js";
 import { buildDemoHistory, ensureLeadHistory, recordLeadActivity } from "../../utils/leadActivityStore.js";
 import { formatLookingForLabel, splitName } from "../../utils/leadFields.js";
 import { addExtraEvent, taskFormToCalendarItem } from "../../utils/calendarStore.js";
@@ -270,7 +279,19 @@ function holdFromLead(lead) {
     reasons: lead.winLossReasons || "",
     tone: lead.dealStatus === "cold" ? "Cold" : "Lost",
     briefNote: lead.winLossNote || "",
+    reactivateMode: lead.reactivateMode || "",
+    reactivateMonths: lead.reactivateMonths || "",
+    reactivateAt: lead.reactivateAt || "",
+    coldHeldAt: lead.coldHeldAt || "",
   };
+}
+
+function holdTimingLabel(hold) {
+  if (!hold?.reactivateAt) return "";
+  const date = formatHoldDate(hold.reactivateAt);
+  const span = monthLabel(hold.reactivateMonths);
+  if (date && span) return `${date} (${span})`;
+  return date || span;
 }
 
 /**
@@ -323,6 +344,36 @@ export default function DealDetailPage({
   useEffect(() => {
     setCurrentStage(stageFromBoard);
   }, [stageFromBoard]);
+
+  useEffect(() => {
+    if (!lead?.id || lead.dealStatus !== "cold" || lead.reactivateMode !== "scheduled" || !lead.reactivateAt) return;
+    const at = new Date(lead.reactivateAt).getTime();
+    if (Number.isNaN(at) || at > Date.now()) return;
+    const result = reactivateColdLead(lead.id, { automatic: true });
+    if (!result) return;
+    setWinLossOverride(null);
+    toast.success(`${lead.name || "This lead"} is back in the pipeline. The hold period has ended.`);
+  }, [lead?.id, lead?.dealStatus, lead?.reactivateMode, lead?.reactivateAt, lead?.name]);
+
+  useEffect(() => {
+    const dueAt = lead?.reactivateAt ? new Date(lead.reactivateAt).getTime() : NaN;
+    const dueScheduled =
+      lead?.dealStatus === "cold" &&
+      lead?.reactivateMode === "scheduled" &&
+      !Number.isNaN(dueAt) &&
+      dueAt <= Date.now();
+    if (dueScheduled) return;
+    setWinLossOverride(holdFromLead(lead));
+  }, [
+    lead?.id,
+    lead?.dealStatus,
+    lead?.winLossReasons,
+    lead?.winLossNote,
+    lead?.reactivateMode,
+    lead?.reactivateMonths,
+    lead?.reactivateAt,
+    lead?.coldHeldAt,
+  ]);
 
   useEffect(() => {
     setIsPremium(Boolean(lead?.starred));
@@ -539,10 +590,39 @@ export default function DealDetailPage({
 
   const openWinLossModal = (mode) => setWinLossModal({ open: true, mode });
 
-  const handleWinLossSave = ({ reasons, briefNote, mode }) => {
+  const handleWinLossSave = ({ reasons, briefNote, mode, reactivation }) => {
     const tone = mode === "cold" ? "Cold" : "Lost";
     const dealStatus = mode === "cold" ? "cold" : "lost";
-    setWinLossOverride({ reasons, tone, briefNote });
+    const holdPatch =
+      mode === "cold" && reactivation
+        ? {
+            reactivateMode: reactivation.mode,
+            reactivateMonths: reactivation.months,
+            reactivateAt: reactivation.reactivateAt,
+            coldHeldAt: reactivation.heldAt,
+            temperatureBeforeHold:
+              lead?.dealStatus === "cold"
+                ? lead?.temperatureBeforeHold || "Warm"
+                : lead?.temperature && lead.temperature !== "Cold"
+                  ? lead.temperature
+                  : "Warm",
+          }
+        : {
+            reactivateMode: "",
+            reactivateMonths: "",
+            reactivateAt: "",
+            coldHeldAt: "",
+            temperatureBeforeHold: "",
+          };
+    setWinLossOverride({
+      reasons,
+      tone,
+      briefNote,
+      reactivateMode: holdPatch.reactivateMode,
+      reactivateMonths: holdPatch.reactivateMonths,
+      reactivateAt: holdPatch.reactivateAt,
+      coldHeldAt: holdPatch.coldHeldAt,
+    });
     setWinLossModal({ open: false, mode });
     setActiveTab("overview");
     if (lead?.id) {
@@ -552,21 +632,44 @@ export default function DealDetailPage({
         winLossReasons: reasons,
         winLossNote: briefNote,
         lost: dealStatus === "lost",
+        ...holdPatch,
       });
     }
+    const timing = mode === "cold" ? holdTimingLabel(holdPatch) : "";
     recordLeadActivity(lead, currentStage, {
       type: mode === "cold" ? "flag" : "stage",
       title:
         mode === "cold"
           ? `${deal.name} moved to Cold & Hold`
           : `${deal.name} marked as lost`,
-      detail: reasons,
+      detail:
+        mode === "cold"
+          ? `${reasons}${
+              reactivation?.mode === "manual"
+                ? ` · Manual reactivation · Timing: ${timing}`
+                : ` · Automatic reactivation · Timing: ${timing}`
+            }`
+          : reasons,
     });
     toast.success(
       mode === "cold"
-        ? `${deal.name} moved to Cold & Hold. Win / loss reasons updated.`
+        ? reactivation?.mode === "manual"
+          ? `${deal.name} moved to Cold & Hold. Reactivate manually. Timing: ${timing}.`
+          : `${deal.name} moved to Cold & Hold. Automatic reactivation on ${timing}.`
         : `${deal.name} marked as lost. Win / loss reasons updated.`
     );
+  };
+
+  const handleReactivate = () => {
+    if (!lead?.id) {
+      setWinLossOverride(null);
+      toast.success(`${deal.name} reactivated and is back in the pipeline.`);
+      return;
+    }
+    const result = reactivateColdLead(lead.id);
+    if (!result) return;
+    setWinLossOverride(null);
+    toast.success(`${deal.name} reactivated and is back in the pipeline.`);
   };
 
   const handleConfirmMove = () => {
@@ -758,35 +861,53 @@ export default function DealDetailPage({
               >
                 <Flag size={14} /> Mark lost
               </button>
-              <button
-                type="button"
-                onClick={() => openWinLossModal("cold")}
-                className="inline-flex items-center gap-1.5 h-[38px] px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
-              >
-                Move to Cold &amp; Hold
-                <ChevronDown size={14} className="text-[#9CA3AF]" />
-              </button>
+              {holdStatus === "cold" ? (
+                winLossOverride?.reactivateMode === "scheduled" ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="inline-flex items-center gap-1.5 h-[38px] px-4 rounded-xl bg-[#FCF5F6] border border-[#E8D4D8] text-[13px] font-semibold text-[#7A0A17] cursor-default"
+                  >
+                    <Snowflake size={14} />
+                    Reactivates {formatHoldDate(winLossOverride?.reactivateAt) || "later"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleReactivate}
+                    className="inline-flex items-center gap-1.5 h-[38px] px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#7A0A17] transition-colors"
+                  >
+                    <RotateCcw size={14} />
+                    Reactivate
+                  </button>
+                )
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => openWinLossModal("cold")}
+                  className="inline-flex items-center gap-1.5 h-[38px] px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+                >
+                  Move to Cold &amp; Hold
+                  <ChevronDown size={14} className="text-[#9CA3AF]" />
+                </button>
+              )}
             </div>
           </div>
 
           {holdStatus ? (
             <div
               role="status"
-              className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
+              className={`flex flex-wrap items-start gap-3 rounded-xl border px-4 py-3 ${
                 holdStatus === "cold"
-                  ? "border-[#D6E4F5] bg-[#E8F2FE]"
+                  ? "border-[#E8D4D8] bg-[#FCF5F6]"
                   : "border-[#E8D4D8] bg-[#F8EEF0]"
               }`}
             >
-              <span
-                className={`size-8 rounded-lg bg-white grid place-items-center shrink-0 ${
-                  holdStatus === "cold" ? "text-[#3B82F6]" : "text-[#7A0A17]"
-                }`}
-              >
+              <span className="size-8 rounded-lg bg-white grid place-items-center shrink-0 text-[#7A0A17]">
                 {holdStatus === "cold" ? <Snowflake size={16} /> : <Flag size={16} />}
               </span>
-              <div className="min-w-0">
-                <p className={`text-[13px] font-bold ${holdStatus === "cold" ? "text-[#1D4ED8]" : "text-[#7A0A17]"}`}>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-bold text-[#7A0A17]">
                   {holdStatus === "cold" ? "Moved to Cold & Hold" : "Marked as Lost"}
                 </p>
                 <p className="text-[12px] text-[#6B7280] mt-0.5 leading-snug">
@@ -795,6 +916,16 @@ export default function DealDetailPage({
                     : "This deal is closed as lost. P0 to P6 are inactive."}
                   {winLossOverride?.reasons ? ` Reason: ${winLossOverride.reasons}.` : ""}
                 </p>
+                {holdStatus === "cold" && (
+                  <p className="text-[12px] font-semibold text-[#7A0A17] mt-1.5 leading-snug">
+                    {winLossOverride?.reactivateMode === "scheduled"
+                      ? `Reactivate option: After ${monthLabel(winLossOverride.reactivateMonths) || "a set time"}`
+                      : "Reactivate option: Manual"}
+                    {holdTimingLabel(winLossOverride)
+                      ? ` · Timing: ${holdTimingLabel(winLossOverride)}`
+                      : ""}
+                  </p>
+                )}
               </div>
             </div>
           ) : null}

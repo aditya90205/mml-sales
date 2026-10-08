@@ -184,17 +184,19 @@ function tabFromParam(tabParam) {
   return "Documents";
 }
 
-export default function DocumentsPage() {
+export default function DocumentsPage({ embedded = false }) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState(() => tabFromParam(tabParam));
+  const tabParam = embedded ? null : searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(() => (embedded ? "Documents" : tabFromParam(tabParam)));
 
   useEffect(() => {
+    if (embedded) return;
     setActiveTab(tabFromParam(tabParam));
-  }, [tabParam]);
+  }, [embedded, tabParam]);
 
   const selectTab = (tab) => {
     setActiveTab(tab);
+    if (embedded) return;
     const query = TAB_QUERY[tab];
     if (query) {
       setSearchParams({ tab: query }, { replace: true });
@@ -204,7 +206,8 @@ export default function DocumentsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-5 p-5 md:p-6 min-h-full">
+    <div className={embedded ? "flex flex-col gap-4" : "flex flex-col gap-5 p-5 md:p-6 min-h-full"}>
+      {!embedded && (
       <div>
         <h1 className="text-[22px] font-extrabold text-[#111827] tracking-tight">
           Documents & Media
@@ -213,6 +216,7 @@ export default function DocumentsPage() {
           Manage company documents, media library, and tutorials
         </p>
       </div>
+      )}
 
       <div className="border-b border-black/8">
         <nav className="flex items-center gap-6 overflow-x-auto">

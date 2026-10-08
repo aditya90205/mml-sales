@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { toast } from "react-toastify";
 import {
@@ -51,6 +51,7 @@ import {
 } from "../components/hrms/HrmsEntityModals.jsx";
 import conductReviewIcon from "../assets/conduct-review.png";
 import ExitTab from "../components/hrms/ExitTab.jsx";
+import DocumentsPage from "./DocumentsPage.jsx";
 import { PromotionsTransfersSection } from "../components/hrms/PromotionTransferSection.jsx";
 import SearchField from "../components/common/SearchField.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
@@ -725,7 +726,7 @@ function Pagination({ page, totalPages, totalItems, pageSize, itemLabel, onChang
             type="button"
             onClick={() => onChange(n)}
             className={`size-7 rounded-lg font-bold ${
-              n === page ? "bg-[#16A34A] text-white" : "border border-black/10 bg-white hover:bg-[#FAFAFB] text-[#374151]"
+              n === page ? "bg-[#7A0A17] text-white" : "border border-black/10 bg-white hover:bg-[#FAFAFB] text-[#374151]"
             }`}
           >
             {n}
@@ -860,7 +861,7 @@ function HourlyWorkTable() {
             <td className="px-4 py-3">{row.module}</td>
             <td className="px-4 py-3 text-[#4B5563]">{row.description}</td>
             <td className="px-4 py-3 text-[#6B7280]">{row.by}</td>
-            <td className="px-4 py-3 font-extrabold text-[#3B82F6]">{row.hours}</td>
+            <td className="px-4 py-3 font-extrabold text-[#7A0A17]">{row.hours}</td>
           </tr>
         ))}
       </tbody>
@@ -948,8 +949,8 @@ function AttendancePanel({ kpis, days, onRegularize }) {
             </ul>
           </div>
 
-          <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2 text-[#1D4ED8] font-extrabold text-sm">
+          <div className="bg-[#FCF5F6] border border-[#7A0A17]/20 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2 text-[#7A0A17] font-extrabold text-sm">
               <BadgeCheck size={16} /> Standard Attendance Policy
             </div>
             <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
@@ -1185,7 +1186,7 @@ function AwardsContestPanel({
                                 e.preventDefault();
                                 toast.info(`Opening certificate: ${row.certificateLabel}`);
                               }}
-                              className="inline-flex items-center gap-1 text-[#2563EB] hover:underline font-semibold"
+                              className="inline-flex items-center gap-1 text-[#7A0A17] hover:underline font-semibold"
                             >
                               <ExternalLink size={12} />
                               {row.certificateLabel}
@@ -1198,7 +1199,7 @@ function AwardsContestPanel({
                                 e.preventDefault();
                                 toast.info(`Opening photo: ${row.photoLabel}`);
                               }}
-                              className="inline-flex items-center gap-1 text-[#2563EB] hover:underline font-semibold"
+                              className="inline-flex items-center gap-1 text-[#7A0A17] hover:underline font-semibold"
                             >
                               <ExternalLink size={12} />
                               {row.photoLabel}
@@ -1474,12 +1475,12 @@ function TimesheetManualTable() {
             <td className="px-4 py-3">{row.module}</td>
             <td className="px-4 py-3 text-[#4B5563]">{row.description}</td>
             <td className="px-4 py-3 text-[#6B7280]">{row.by}</td>
-            <td className="px-4 py-3 font-extrabold text-[#3B82F6]">{row.hours}</td>
+            <td className="px-4 py-3 font-extrabold text-[#7A0A17]">{row.hours}</td>
             <td className="px-4 py-3">
               <div className="flex items-center gap-1.5">
                 <button type="button" className="text-[#16A34A] hover:opacity-80"><CheckCircle2 size={16} /></button>
                 <button type="button" className="text-[#DC2626] hover:opacity-80"><X size={16} /></button>
-                <button type="button" className="text-[#0284C7] hover:opacity-80"><Edit size={15} /></button>
+                <button type="button" className="text-[#7A0A17] hover:opacity-80"><Edit size={15} /></button>
                 <button type="button" className="text-[#DC2626] hover:opacity-80"><Trash2 size={15} /></button>
               </div>
             </td>
@@ -1911,7 +1912,7 @@ function GoalsReviewsPanel({
                       <button
                         type="button"
                         onClick={() => onToggleRemark(g.id)}
-                        className="inline-flex items-center gap-1 text-[10px] font-bold text-[#3B82F6] mt-0.5"
+                        className="inline-flex items-center gap-1 text-[10px] font-bold text-[#7A0A17] mt-0.5"
                       >
                         {isExpanded ? "Show less" : "Show more"}
                         <ChevronDown size={11} className={isExpanded ? "rotate-180 transition-transform" : "transition-transform"} />
@@ -2338,13 +2339,28 @@ const SUMMARY_EMPLOYEE = {
   designation: USER.role,
 };
 
+const SUMMARY_SECTION_IDS = new Set(["warnings-complaints", "target-achievement"]);
+
 export default function HrmsPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const [selectedMonth, setSelectedMonth] = useState("April");
   const [selectedYear, setSelectedYear] = useState("2025");
-  const [activeTab, setActiveTab] = useState(() =>
-    HRMS_TABS.includes(searchParams.get("tab")) ? searchParams.get("tab") : "Summary"
-  );
+  const [activeTab, setActiveTab] = useState(() => {
+    const section = window.location.hash.replace("#", "");
+    if (SUMMARY_SECTION_IDS.has(section)) return "Summary";
+    return HRMS_TABS.includes(searchParams.get("tab")) ? searchParams.get("tab") : "Summary";
+  });
+
+  useEffect(() => {
+    const section = location.hash.replace("#", "");
+    if (!SUMMARY_SECTION_IDS.has(section)) return;
+    setActiveTab("Summary");
+    const timer = window.setTimeout(() => {
+      document.getElementById(section)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [location.hash, location.search]);
 
   const attendanceDays = useMemo(
     () => getAttendanceDays(selectedMonth, selectedYear),
@@ -2367,7 +2383,7 @@ export default function HrmsPage() {
       { title: "Late Days", value: `${lateDays} Days`, sub: "Total late arrivals", icon: Clock, iconBg: "#FEE2E2", iconColor: "#DC2626" },
       { title: "Total Leaves", value: `${leaveDays} Days`, sub: "Absent days this month", icon: CalendarPlus, iconBg: "#FEF3C7", iconColor: "#D97706" },
       { title: "Half Days", value: `${halfDays} Days`, sub: "Total half days", icon: Coffee, iconBg: "#F3E8FF", iconColor: "#7C3AED" },
-      { title: "Grand Total", value: `${grand}/${totalDays}`, sub: "Present days this month", icon: BarChart3, iconBg: "#DBEAFE", iconColor: "#2563EB" },
+      { title: "Grand Total", value: `${grand}/${totalDays}`, sub: "Present days this month", icon: BarChart3, iconBg: "#FCF5F6", iconColor: "#7A0A17" },
     ];
   }, [attendanceDays, attendancePresent]);
 
@@ -2381,15 +2397,20 @@ export default function HrmsPage() {
   const [shiftModalOpen, setShiftModalOpen] = useState(false);
   const [timesheetModal, setTimesheetModal] = useState(null);
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
-  const [achievementModalOpen, setAchievementModalOpen] = useState(false);
+  const [achievementModalOpen, setAchievementModalOpen] = useState(
+    () => searchParams.get("open") === "achievement"
+  );
   const [incentivesModalOpen, setIncentivesModalOpen] = useState(false);
   const [awardsModalOpen, setAwardsModalOpen] = useState(false);
   const [promotionModalOpen, setPromotionModalOpen] = useState(false);
-  const [warningModalOpen, setWarningModalOpen] = useState(false);
+  const [warningModalOpen, setWarningModalOpen] = useState(
+    () => searchParams.get("open") === "warnings"
+  );
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
   const [trainingsModalOpen, setTrainingsModalOpen] = useState(false);
   const [assetsModalOpen, setAssetsModalOpen] = useState(false);
   const [exitModalOpen, setExitModalOpen] = useState(false);
+  const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
   const [salarySlip, setSalarySlip] = useState(null);
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [viewExpense, setViewExpense] = useState(null);
@@ -2399,6 +2420,35 @@ export default function HrmsPage() {
   const [shiftChangeRequests, setShiftChangeRequests] = useState(INITIAL_SHIFT_CHANGE_REQUESTS);
   const [sendMessageOpen, setSendMessageOpen] = useState(false);
   const [addManualRowOpen, setAddManualRowOpen] = useState(false);
+
+  const deepLinkOpenedAt = useRef(0);
+  const deepLink = searchParams.get("open");
+  if ((deepLink === "achievement" || deepLink === "warnings") && deepLinkOpenedAt.current === 0) {
+    deepLinkOpenedAt.current = Date.now();
+  }
+
+  const closeDeepLinkModal = (key, setOpen) => {
+    if (Date.now() - deepLinkOpenedAt.current < 400) return;
+    setOpen(false);
+    setSearchParams((prev) => {
+      if (prev.get("open") !== key) return prev;
+      const next = new URLSearchParams(prev);
+      next.delete("open");
+      return next;
+    }, { replace: true });
+  };
+
+  const closeAchievementModal = () => closeDeepLinkModal("achievement", setAchievementModalOpen);
+  const closeWarningsModal = () => closeDeepLinkModal("warnings", setWarningModalOpen);
+
+  useEffect(() => {
+    const open = searchParams.get("open");
+    if (open !== "achievement" && open !== "warnings") return;
+    setActiveTab("Summary");
+    deepLinkOpenedAt.current = Date.now();
+    if (open === "achievement") setAchievementModalOpen(true);
+    if (open === "warnings") setWarningModalOpen(true);
+  }, [searchParams]);
 
   // Trainings / Goals & Reviews / Asset tab state
   const [trainings, setTrainings] = useState(INITIAL_TRAININGS);
@@ -2747,6 +2797,7 @@ export default function HrmsPage() {
             onOpenTrainings={() => setTrainingsModalOpen(true)}
             onOpenAssets={() => setAssetsModalOpen(true)}
             onOpenExit={() => setExitModalOpen(true)}
+            onOpenDocuments={() => setDocumentsModalOpen(true)}
             onViewPromotions={() => setPromotionModalOpen(true)}
             onViewWarnings={() => setWarningModalOpen(true)}
             onViewGoals={() => setGoalsModalOpen(true)}
@@ -3128,7 +3179,7 @@ export default function HrmsPage() {
         subtitle={`${selectedMonth} ${selectedYear} · 18 / 22 Days · 82%`}
         icon={<Calendar size={17} />}
         iconBg="#FDECEC"
-        iconColor="#9F1239"
+        iconColor="#7A0A17"
         width="max-w-6xl"
         zClass="z-40"
         contain
@@ -3142,10 +3193,10 @@ export default function HrmsPage() {
 
       <Modal
         open={achievementModalOpen}
-        onClose={() => setAchievementModalOpen(false)}
+        onClose={closeAchievementModal}
         hideHeader
         width="max-w-[440px]"
-        zClass="z-40"
+        zClass="z-[80]"
       >
         <div className="-mx-6 -mt-5 -mb-5">
           <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
@@ -3161,7 +3212,7 @@ export default function HrmsPage() {
             </div>
             <button
               type="button"
-              onClick={() => setAchievementModalOpen(false)}
+              onClick={closeAchievementModal}
               className="p-1 rounded-lg text-[#9CA3AF] hover:bg-black/5 hover:text-[#111827] transition-colors shrink-0"
               aria-label="Close KPI scorecard"
             >
@@ -3189,7 +3240,7 @@ export default function HrmsPage() {
         subtitle={`${selectedMonth} ${selectedYear} · Target 82% · ₹ 38,000 earned`}
         icon={<Target size={17} />}
         iconBg="#FDECEC"
-        iconColor="#9F1239"
+        iconColor="#7A0A17"
         width="max-w-6xl"
         zClass="z-40"
         contain
@@ -3204,7 +3255,7 @@ export default function HrmsPage() {
         subtitle="My rank #2 · Out of 18"
         icon={<Trophy size={17} />}
         iconBg="#FDECEC"
-        iconColor="#9F1239"
+        iconColor="#7A0A17"
         width="max-w-6xl"
         zClass="z-40"
         contain
@@ -3229,14 +3280,14 @@ export default function HrmsPage() {
 
       <Modal
         open={warningModalOpen}
-        onClose={() => setWarningModalOpen(false)}
+        onClose={closeWarningsModal}
         title="Warnings and Complaints"
         subtitle="Official notices and HR-logged issues"
         icon={<AlertTriangle size={17} />}
         iconBg="#FDECEC"
         iconColor="#E11D48"
         width="max-w-6xl"
-        zClass="z-40"
+        zClass="z-[80]"
         contain
       >
         <ComplaintsWarningsPanel embedded onViewNotice={() => setNoticeModalOpen(true)} />
@@ -3376,6 +3427,21 @@ export default function HrmsPage() {
         contain
       >
         <ExitTab />
+      </Modal>
+
+      <Modal
+        open={documentsModalOpen}
+        onClose={() => setDocumentsModalOpen(false)}
+        title="Documents & Media"
+        subtitle="Company documents, media library, and tutorials"
+        icon={<FileText size={17} />}
+        iconBg="#EEF2FF"
+        iconColor="#4F46E5"
+        width="max-w-6xl"
+        zClass="z-40"
+        contain
+      >
+        <DocumentsPage embedded />
       </Modal>
 
       <Modal
@@ -3646,7 +3712,7 @@ export default function HrmsPage() {
               <DetailField icon={LayoutGrid} label="Total Expenses" full>{viewExpense.totalExpenses}</DetailField>
               <DetailField icon={LayoutGrid} label="Documents" full>
                 {viewExpense.documentName ? (
-                  <span className="inline-flex items-center gap-2 text-[#3B82F6] font-semibold">
+                  <span className="inline-flex items-center gap-2 text-[#7A0A17] font-semibold">
                     <FileText size={14} /> {viewExpense.documentName}
                   </span>
                 ) : (

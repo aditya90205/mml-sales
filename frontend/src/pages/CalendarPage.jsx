@@ -20,6 +20,7 @@ import {
   CalendarCheck2,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { AIAssistantModal } from "../components/common/AIAssistant.jsx";
 import Modal from "../components/ui/Modal";
 import CreateMeetingEventModal from "../components/calendar/CreateMeetingEventModal";
 import CreateEventModal from "../components/calendar/CreateEventModal";
@@ -383,7 +384,7 @@ export const INITIAL_EVENTS = [
       "Full 2-hour video reviewed. Walked Kapoor Family through five shortlisted matches, confirmed two to pursue, and agreed to move into package negotiation.",
     activationStatus: "Active",
     priority: "High",
-    stage: "In Progress",
+    stage: "Completed",
     stars: 20,
     description: "Walk Kapoor Family through 5 shortlisted matches and confirm next visit.",
     dueDate: addDays(startOfWeek(ANCHOR), 49),
@@ -493,7 +494,7 @@ export const INITIAL_EVENTS = [
     link: "https://meet.google.com/mml-home-visit",
     meetingLink: "https://meet.google.com/mml-home-visit",
     assignees: ["Aditya Sharma"],
-    stage: "Review",
+    stage: "Completed",
     description: "Weekly sync on scheduled home visits and capture checklist readiness.",
   }),
   mk(2, 11, 12, "Follow up on Token Payment", "task", {
@@ -502,6 +503,7 @@ export const INITIAL_EVENTS = [
     assignees: ["Rahul Verma"],
     priority: "Critical",
     stars: 22,
+    stage: "Completed",
     description: "Follow up on the outstanding token payment and share the payment link.",
   }),
   mk(2, 14, 16, "Profile Curation Review", "meeting", {
@@ -854,6 +856,7 @@ export default function CalendarPage() {
   const [createMeetingOpen, setCreateMeetingOpen] = useState(false);
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [createOtherOpen, setCreateOtherOpen] = useState(false);
+  const [askAiOpen, setAskAiOpen] = useState(false);
   const [taskPrefill, setTaskPrefill] = useState(null);
   const [meetingPrefill, setMeetingPrefill] = useState(null);
   const [schedulingUnscheduledId, setSchedulingUnscheduledId] = useState(null);
@@ -1573,7 +1576,10 @@ export default function CalendarPage() {
 
         <button
           type="button"
-          onClick={() => toast.info("Ask AI: try “find me a free slot tomorrow”.")}
+          onClick={() => {
+            setCreateMenuOpen(false);
+            setAskAiOpen(true);
+          }}
           className="text-left bg-[#FCF5F6] border border-[#7A0A17]/12 rounded-2xl p-3.5 hover:bg-[#F9ECEE] transition-colors"
         >
           <div className="flex items-center justify-between">
@@ -1801,6 +1807,7 @@ export default function CalendarPage() {
         onEdit={() => selectedTaskEvent && openEditItem(selectedTaskEvent)}
         onUpdateTask={syncTaskViewToEvent}
       />
+      <AIAssistantModal open={askAiOpen} onClose={() => setAskAiOpen(false)} />
       <CreateEventModal
         open={createEventOpen}
         onClose={closeEventModal}

@@ -535,6 +535,7 @@ export default function CreateMeetingEventModal({
   defaultDate,
   initial = null,
   mode = "create",
+  scheduleOnly = false,
 }) {
   const isEvent = entityLabel === "Event";
   const isEdit = mode === "edit";
@@ -860,6 +861,51 @@ export default function CreateMeetingEventModal({
       return;
     }
 
+    if (scheduleOnly && !isEvent) {
+      if (!form.startDate || !form.endDate) {
+        toast.error("Start date and end date are required.");
+        return;
+      }
+      if (!form.startTime || !form.endTime) {
+        toast.error("Start time and end time are required.");
+        return;
+      }
+      if (!computedDuration) {
+        toast.error("End date and time must be after the start date and time.");
+        return;
+      }
+      if (form.reminderChannels.length === 0) {
+        toast.error("Please select how reminders should be sent.");
+        return;
+      }
+      const duration = form.duration || computedDuration || "30 minutes";
+      const endTime = form.endTime;
+      const meetingWithTypes = normalizeMeetingWithTypes(form.meetingWithTypes || form.meetingWith);
+      const inviteGroups = inviteGroupsFromPeople(form.people, meetingWithTypes);
+      const resolvedDescription = resolvedMeetingDescription();
+      onSave?.({
+        ...form,
+        description: resolvedDescription,
+        customDescription: form.description === "Other" ? form.customDescription : "",
+        startDate: form.startDate,
+        endDate: form.endDate,
+        startTime: form.startTime,
+        endTime,
+        duration,
+        meetingWithTypes,
+        meetingWith: primaryMeetingWith(meetingWithTypes),
+        inviteGroups,
+        meetingTypes: form.meetingType ? [form.meetingType] : [],
+        emailIds: (form.emails || []).join("; "),
+        logisticsRequired: form.meetingType === "face" ? Boolean(form.logisticsRequired) : false,
+      });
+      toast.success("Meeting scheduled.");
+      setForm(emptyForm);
+      setEmailDraft("");
+      onClose();
+      return;
+    }
+
     if (isEvent) {
       if (!form.emailIds && form.people.length === 0) {
         toast.error("Please add at least one Email Id or select an Employee/Client.");
@@ -965,7 +1011,7 @@ export default function CreateMeetingEventModal({
         form={formId}
         className="h-9 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
       >
-        {isEdit ? "Save" : "Send & Save"}
+        {scheduleOnly ? "Schedule" : isEdit ? "Save" : "Send & Save"}
       </button>
     </>
   );
@@ -974,13 +1020,15 @@ export default function CreateMeetingEventModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title={isEdit ? `Edit ${label}` : `Create ${label}`}
+      title={scheduleOnly ? "Schedule" : isEdit ? `Edit ${label}` : `Create ${label}`}
       subtitle={
-        isEdit
-          ? `Update ${label.toLowerCase()} details`
-          : isEvent
-            ? "Schedule a new event on the calendar"
-            : "Schedule a meeting or appointment"
+        scheduleOnly
+          ? "Set the start time and reminder"
+          : isEdit
+            ? `Update ${label.toLowerCase()} details`
+            : isEvent
+              ? "Schedule a new event on the calendar"
+              : "Schedule a meeting or appointment"
       }
       icon={<CalendarDays size={16} />}
       iconBg={isEvent ? "#FDECF3" : "#FDECEE"}
@@ -1255,6 +1303,158 @@ export default function CreateMeetingEventModal({
                 {isEdit ? "Save" : "Send & Save"}
               </button>
             </div>
+          </>
+        ) : scheduleOnly ? (
+          <>
+            <div className="rounded-xl bg-[#FAFAFB] border border-black/8 px-3.5 py-3">
+              <p className="text-[11px] font-bold text-[#9CA3AF] tracking-wide">MEETING</p>
+              <p className="text-[14px] font-bold text-[#111] mt-1">{form.title || "Untitled meeting"}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Start Date" required>
+                <input type="date" value={form.startDate} onChange={(e) => set("startDate")(e.target.value)} className={INPUT} />
+              </Field>
+              <Field label="End Date" required>
+                <input type="date" value={form.endDate} onChange={(e) => set("endDate")(e.target.value)} className={INPUT} />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Start Time">
+                <input
+                  type="time"
+                  value={form.startTime}
+                  onChange={(e) => setStartTimeAndSync(e.target.value)}
+                  className={INPUT}
+                />
+              </Field>
+              <Field label="Duration" required>
+                <input
+                  type="time"
+                  value={durationToTimeInput(form.duration || "1 hour")}
+                  onChange={(e) => setDurationType(e.target.value)}
+                  className={INPUT}
+                />
+              </Field>
+            </div>
+
+            <Field label="End Time" hint="Filled automatically from start time + duration — you can still edit it.">
+              <input
+                type="time"
+                value={form.endTime}
+                onChange={(e) => setEndTimeAndSync(e.target.value)}
+                className={INPUT}
+              />
+            </Field>
+
+            <Field
+              label="Reminder"
+              required
+              hint={`Reminders go out on ${channelLabel} to every attendee address and mobile on file.`}
+            >
+              <div className="flex flex-wrap gap-2">
+                {REMINDER_CHANNELS.map((ch) => (
+                  <button
+                    key={ch.key}
+                    type="button"
+                    onClick={() => toggleInArray("reminderChannels")(ch.key)}
+                    className={`h-9 px-4 rounded-full border text-[13px] font-semibold transition-colors ${
+                      form.reminderChannels.includes(ch.key) ? PILL_ACTIVE : PILL_IDLE
+                    }`}
+                  >
+                    {ch.label}
+                  </button>
+                ))}
+              </div>
+            </Field>
+
+            <div className="flex flex-col gap-1.5">
+              <p className="text-[12.5px] font-semibold text-[#374151]">Reminder template</p>
+              <div className="flex items-center gap-2">
+                <select
+                  value={form.messageTemplate}
+                  onChange={(e) => set("messageTemplate")(e.target.value)}
+                  className={`${INPUT} flex-1`}
+                >
+                  {MESSAGE_TEMPLATES.map((t) => (
+                    <option key={t.key || "none"} value={t.key}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleMakeWithAI}
+                  className="h-10 px-3.5 rounded-xl border border-[#E8395B]/40 text-[#E8395B] inline-flex items-center gap-1.5 text-[13px] font-semibold whitespace-nowrap hover:bg-[#FDECEE]"
+                >
+                  <Sparkles size={14} /> Make with AI
+                </button>
+              </div>
+              {form.messageBody ? (
+                <textarea
+                  rows={3}
+                  value={form.messageBody}
+                  onChange={(e) => set("messageBody")(e.target.value)}
+                  className={`${INPUT} h-auto py-2.5 resize-none mt-1`}
+                />
+              ) : null}
+            </div>
+
+            <Field label="Reminder Frequency">
+              <div className="flex flex-wrap gap-2">
+                {REMINDER_FREQUENCIES.map((freq) => (
+                  <button
+                    key={freq.key}
+                    type="button"
+                    onClick={() => toggleInArray("reminderFrequency")(freq.key)}
+                    className={`h-9 px-3.5 rounded-full border text-[12.5px] font-semibold whitespace-nowrap transition-colors ${
+                      form.reminderFrequency.includes(freq.key) ? PILL_ACTIVE : PILL_IDLE
+                    }`}
+                  >
+                    {freq.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap mt-2">
+                <input
+                  type="number"
+                  min="1"
+                  value={reminderAmount}
+                  onChange={(e) => setReminderAmount(e.target.value)}
+                  className="w-[72px] h-10 px-3 rounded-xl bg-white border border-black/10 text-[13px] outline-none focus:border-[#7A0A17]/40"
+                />
+                <select
+                  value={reminderUnit}
+                  onChange={(e) => setReminderUnit(e.target.value)}
+                  className="h-10 px-3 rounded-xl bg-white border border-black/10 text-[13px] outline-none focus:border-[#7A0A17]/40"
+                >
+                  {REMINDER_UNITS.map((unit) => (
+                    <option key={unit} value={unit}>
+                      {unit}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={addCustomReminder}
+                  className="h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712]"
+                >
+                  Add reminder
+                </button>
+              </div>
+              {form.customReminders.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {form.customReminders.map((item) => (
+                    <Chip
+                      key={item}
+                      label={item}
+                      onRemove={() => set("customReminders")(form.customReminders.filter((x) => x !== item))}
+                    />
+                  ))}
+                </div>
+              )}
+            </Field>
           </>
         ) : (
           <>

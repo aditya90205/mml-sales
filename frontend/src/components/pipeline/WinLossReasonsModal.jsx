@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
 import { toast } from "react-toastify";
+import {
+  REACTIVATE_MONTH_OPTIONS,
+  addCalendarMonths,
+  formatHoldDate,
+  monthLabel,
+} from "../../utils/pipelineStore.js";
 
 const REASONS = [
   { id: "price", label: "Price / Budget / ROI", action: "escalation" },
@@ -36,6 +42,9 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
   const [priceEscalated, setPriceEscalated] = useState(false);
   const [others, setOthers] = useState("");
   const [briefNote, setBriefNote] = useState("");
+  const [afterSetTime, setAfterSetTime] = useState(false);
+  const [manualReactivate, setManualReactivate] = useState(false);
+  const [reactivateMonths, setReactivateMonths] = useState(3);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -46,6 +55,9 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
     setPriceEscalated(false);
     setOthers("");
     setBriefNote("");
+    setAfterSetTime(false);
+    setManualReactivate(false);
+    setReactivateMonths(3);
     setError("");
   }, [open, mode]);
 
@@ -88,8 +100,12 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
       setError("Select at least one reason.");
       return;
     }
-    if (mode === "lost" && !briefNote.trim()) {
+    if (!briefNote.trim()) {
       setError("Brief Comment / Note is required.");
+      return;
+    }
+    if (mode === "cold" && !afterSetTime) {
+      setError("Select After a set time.");
       return;
     }
 
@@ -104,12 +120,25 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
     });
     if (others.trim()) reasonParts.push(`Others: ${others.trim()}`);
 
+    const heldAt = new Date();
+    const reactivateAt = addCalendarMonths(heldAt, reactivateMonths);
     onSave?.({
       reasons: reasonParts.join(", "),
       briefNote: briefNote.trim(),
       mode,
+      reactivation:
+        mode === "cold"
+          ? {
+              mode: manualReactivate ? "manual" : "scheduled",
+              months: reactivateMonths,
+              heldAt: heldAt.toISOString(),
+              reactivateAt: reactivateAt.toISOString(),
+            }
+          : null,
     });
   };
+
+  const reviewDateLabel = formatHoldDate(addCalendarMonths(new Date(), reactivateMonths));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal="true" role="dialog">
@@ -188,6 +217,51 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
             })}
           </div>
 
+          {mode === "cold" && (
+            <div className="mt-2 border-b border-black/6">
+              <button
+                type="button"
+                onClick={() => {
+                  setAfterSetTime((on) => {
+                    if (on) setManualReactivate(false);
+                    return !on;
+                  });
+                }}
+                className="w-full flex items-center gap-3 py-3 text-left"
+              >
+                <ReasonCheck checked={afterSetTime} />
+                <span className="text-[13.5px] font-medium text-[#111]">After a set time</span>
+              </button>
+              {afterSetTime && (
+                <div className="pb-3 pl-8">
+                  <select
+                    value={reactivateMonths}
+                    onChange={(e) => setReactivateMonths(Number(e.target.value))}
+                    aria-label="Reactivate timing"
+                    className="w-full h-10 px-3 rounded-xl border border-black/10 bg-white text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/35 focus:ring-2 focus:ring-[#7A0A17]/10"
+                  >
+                    {REACTIVATE_MONTH_OPTIONS.map((months) => (
+                      <option key={months} value={months}>
+                        {monthLabel(months)}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-[12px] font-medium text-[#6B7280]">
+                    Timing: {reviewDateLabel}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setManualReactivate((on) => !on)}
+                    className="mt-2 w-full flex items-center gap-3 py-2 text-left"
+                  >
+                    <ReasonCheck checked={manualReactivate} />
+                    <span className="text-[13.5px] font-medium text-[#111]">Manual</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="mt-5 flex flex-col gap-4">
             <div>
               <label className="text-[13px] font-semibold text-[#111]">Others</label>
@@ -202,7 +276,7 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
             <div>
               <label className="text-[13px] font-semibold text-[#111]">
                 Brief Comment / Note
-                {mode === "lost" && <span className="text-[#E8395B]"> *</span>}
+                <span className="text-[#E8395B]"> *</span>
               </label>
               <textarea
                 value={briefNote}

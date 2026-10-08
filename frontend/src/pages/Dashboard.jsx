@@ -3,18 +3,10 @@ import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
-  Plus,
-  RefreshCw,
   History,
-  Activity,
   Users,
   ArrowRight,
   X,
-  Paperclip,
-  Copy,
-  Download,
-  Mic,
-  Send,
   Star,
   Flag,
   MessageSquare,
@@ -31,13 +23,13 @@ import {
   FileText,
   Heart,
   Crown,
-  Sparkles,
   Filter,
   Phone,
   TrendingUp,
   IndianRupee,
   User,
 } from "lucide-react";
+import AIAssistant from "../components/common/AIAssistant.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
@@ -301,7 +293,7 @@ const PERFORMANCE_DETAIL_META = {
 const LEAD_HEALTH = [
   { key: "hot",  label: "Hot Leads",  count: 18, icon: Flame,     bg: "#FDECEE", fg: "#E8395B" },
   { key: "warm", label: "Warm Leads", count: 18, icon: Flame,     bg: "#FFF3E4", fg: "#F59E0B" },
-  { key: "cold", label: "Cold Leads", count: 18, icon: Snowflake, bg: "#E8F2FE", fg: "#3B82F6" },
+  { key: "cold", label: "Cold Leads", count: 18, icon: Snowflake, bg: "#FCF5F6", fg: "#7A0A17" },
 ];
 
 const FUNNEL_STAGE_IDS = ["P0", "P1", "P2", "P3", "P4", "P5", "P6"];
@@ -364,154 +356,6 @@ function buildPipelineFunnel(leadsByStage) {
   };
 }
 
-const AI_ACTIONS = [
-  { label: "Create",   icon: Plus,      color: "#16A34A" },
-  { label: "Refresh",  icon: RefreshCw, color: "#3B82F6" },
-  { label: "History",  icon: History,   color: "#E8395B" },
-  { label: "Activity", icon: Activity,  color: "#8B5CF6" },
-];
-
-const AI_TAGS = ["Summary of the month", "Tomorrow Meetings"];
-
-const PRIORITY_ITEMS = [
-  {
-    parts: [
-      { text: "5 high-value leads waiting for " },
-      { text: "follow-up", detail: "followup" },
-    ],
-  },
-  {
-    parts: [
-      { text: "₹18,400 in " },
-      { text: "discount", detail: "discount" },
-      { text: " approvals pending across 3 requests" },
-    ],
-  },
-  {
-    parts: [
-      { text: "2 " },
-      { text: "client", detail: "client" },
-      { text: " profiles awaiting completion before their " },
-      { text: "meetings", detail: "meetings" },
-    ],
-  },
-  {
-    parts: [
-      { text: "You're at 74% of this month's ₹25L " },
-      { text: "target", detail: "target" },
-    ],
-  },
-  {
-    parts: [
-      { text: "1 urgent " },
-      { text: "complaint", detail: "complaint" },
-      { text: " flagged — needs a same-day response" },
-    ],
-  },
-  {
-    parts: [
-      { text: "AI recommends contacting clients " },
-      { text: "Ananya Verma", detail: "ananya" },
-      { text: " and " },
-      { text: "Vikram Chawla", detail: "vikram" },
-      { text: " today — both are close to closing" },
-    ],
-  },
-];
-
-const PRIORITY_DETAILS = {
-  followup: {
-    title: "Follow-ups waiting",
-    subtitle: "5 high-value leads",
-    intro: "These leads are due today and still waiting for a follow-up.",
-    items: [
-      { title: "Kuhu Sharma", meta: "P0 · Hot · High", note: "6 hrs left · Outbound follow-up call" },
-      { title: "Ankit Sharma", meta: "P0 · Hot · High", note: "6 hrs left · Confirm first meeting" },
-      { title: "Aditya Sharma", meta: "P3 · Medium", note: "24 hrs left · Confirm video call slot" },
-      { title: "Ananya Verma", meta: "P4 · High", note: "Due today · Pricing confirmation" },
-      { title: "Vikram Chawla", meta: "P4 · High", note: "Due today · Close the deal" },
-    ],
-  },
-  discount: {
-    title: "Discount approvals",
-    subtitle: "₹18,400 pending · 3 requests",
-    intro: "These discount requests are still waiting for approval.",
-    items: [
-      { title: "Ananya Verma", meta: "₹7,200 · 12%", note: "Pending · Branch Head · Premium" },
-      { title: "Vikram Chawla", meta: "₹6,400 · 10%", note: "Pending · Team Lead · Classic" },
-      { title: "Neha Kapoor", meta: "₹4,800 · 8%", note: "Pending · Branch Head · Premium" },
-    ],
-  },
-  client: {
-    title: "Incomplete profiles",
-    subtitle: "2 clients before their meetings",
-    intro: "These profiles need to be finished before the meetings can go ahead.",
-    items: [
-      { title: "Ananya Verma", meta: "72% complete", note: "Missing family details and photos" },
-      { title: "Vikram Chawla", meta: "64% complete", note: "Missing preferences and documents" },
-    ],
-  },
-  meetings: {
-    title: "Meetings waiting",
-    subtitle: "2 meetings blocked on profile completion",
-    intro: "Both meetings are today. Profiles still need to be completed first.",
-    items: [
-      { title: "Ananya Verma", meta: "Today · 6:30 PM", note: "Video call · P4 negotiation" },
-      { title: "Vikram Chawla", meta: "Today · 8:00 PM", note: "Follow-up call · pricing" },
-    ],
-  },
-  target: {
-    title: "Monthly target",
-    subtitle: "74% of ₹25L",
-    intro: "This month's sales target and what is still left.",
-    stats: [
-      { label: "Target", value: "₹25L" },
-      { label: "Achieved", value: "₹18.5L" },
-      { label: "Remaining", value: "₹6.5L" },
-    ],
-    progress: 74,
-    note: "Ananya Verma and Vikram Chawla are both close to closing and can cover most of the remaining gap.",
-  },
-  complaint: {
-    title: "Urgent complaint",
-    subtitle: "Same-day response needed",
-    intro: "One complaint is still open and needs a reply today.",
-    fields: [
-      { label: "Client", value: "Meera Joshi" },
-      { label: "Raised", value: "Today, 9:40 AM" },
-      { label: "Severity", value: "High" },
-      { label: "Status", value: "Open" },
-    ],
-    note: "Client reported a missed callback after the last meeting. A same-day response is required.",
-  },
-  ananya: {
-    title: "Ananya Verma",
-    subtitle: "P4 Negotiation · close to closing",
-    fields: [
-      { label: "Stage", value: "P4 Negotiation" },
-      { label: "Priority", value: "High" },
-      { label: "Discount", value: "₹7,200 pending" },
-      { label: "Profile", value: "72% complete" },
-      { label: "Meeting", value: "Today, 6:30 PM" },
-      { label: "Next step", value: "Contact today" },
-    ],
-    note: "Moved from P3 Video Call to P4 Negotiation. Ready to close once the discount and profile are confirmed today.",
-  },
-  vikram: {
-    title: "Vikram Chawla",
-    subtitle: "P4 Negotiation · close to closing",
-    fields: [
-      { label: "Stage", value: "P4 Negotiation" },
-      { label: "Priority", value: "High" },
-      { label: "Discount", value: "₹6,400 pending" },
-      { label: "Profile", value: "64% complete" },
-      { label: "Meeting", value: "Today, 8:00 PM" },
-      { label: "Next step", value: "Contact today" },
-    ],
-    note: "Token discussion is pending. Close today if the discount is confirmed and the profile is completed.",
-  },
-};
-
 const PRIORITY_STYLES = {
   High:   { color: "#E8395B", bg: "#FDECEE" },
   Medium: { color: "#F59E0B", bg: "#FFF3E4" },
@@ -521,7 +365,7 @@ const PRIORITY_STYLES = {
 const TEMPERATURE_STYLES = {
   Hot:  { color: "#E8395B", bg: "#FDECEE" },
   Warm: { color: "#F59E0B", bg: "#FFF3E4" },
-  Cold: { color: "#3B82F6", bg: "#E8F2FE" },
+  Cold: { color: "#7A0A17", bg: "#FCF5F6" },
 };
 
 /** Same short My Leads set the dashboard showed before the full pipeline list. */
@@ -1107,201 +951,6 @@ function RecentUpdatesCard() {
         )}
       </Modal>
     </>
-  );
-}
-
-function PriorityDetailBody({ detail }) {
-  return (
-    <div className="flex flex-col gap-4">
-      {detail.intro && (
-        <p className="text-[13.5px] text-[#374151] leading-relaxed">{detail.intro}</p>
-      )}
-      {detail.stats && (
-        <div className="grid grid-cols-3 gap-2">
-          {detail.stats.map((stat) => (
-            <div key={stat.label} className="rounded-xl bg-[#F7F8FC] px-3 py-2.5">
-              <p className="text-[11px] text-[#9CA3AF]">{stat.label}</p>
-              <p className="text-[15px] font-bold text-[#111] mt-0.5">{stat.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
-      {typeof detail.progress === "number" && (
-        <div>
-          <div className="h-2 rounded-full bg-[#F1F2F4] overflow-hidden">
-            <div className="h-full rounded-full bg-[#7A0A17]" style={{ width: `${detail.progress}%` }} />
-          </div>
-          <p className="text-[12px] text-[#6B7280] mt-1.5">{detail.progress}% of this month's target</p>
-        </div>
-      )}
-      {detail.fields && (
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
-          {detail.fields.map((field) => (
-            <div key={field.label}>
-              <dt className="text-[11px] text-[#9CA3AF]">{field.label}</dt>
-              <dd className="text-[13px] font-semibold text-[#111] mt-0.5">{field.value}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-      {detail.items && (
-        <ul className="flex flex-col divide-y divide-black/6 -my-1">
-          {detail.items.map((item) => (
-            <li key={item.title} className="py-3">
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-[13.5px] font-semibold text-[#111]">{item.title}</p>
-                <p className="text-[12px] text-[#6B7280] whitespace-nowrap">{item.meta}</p>
-              </div>
-              <p className="text-[12.5px] text-[#6B7280] mt-0.5">{item.note}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-      {detail.note && (
-        <p className="text-[13px] text-[#374151] leading-relaxed">{detail.note}</p>
-      )}
-    </div>
-  );
-}
-
-function AIAssistant() {
-  const [message, setMessage] = useState("");
-  const [tags, setTags] = useState(AI_TAGS);
-  const [activeTag, setActiveTag] = useState(null);
-  const [detailId, setDetailId] = useState(null);
-  const detail = detailId ? PRIORITY_DETAILS[detailId] : null;
-
-  const contentHeading = activeTag || "Today's Priority";
-
-  return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col gap-3.5 h-full">
-      <div className="flex items-center justify-between gap-3 px-1">
-        <h2 className="text-[17px] font-bold text-[#111] flex items-center gap-2">
-          <Sparkles size={16} className="text-[#8B5CF6]" fill="#8B5CF6" strokeWidth={0} />
-          Your Personal Assistant
-        </h2>
-        <div className="flex items-center gap-1.5">
-          {AI_ACTIONS.map(({ label, icon: Icon, color }) => (
-            <button
-              key={label}
-              type="button"
-              title={label}
-              className="size-7 rounded-lg grid place-items-center hover:bg-black/4 transition-colors"
-            >
-              <Icon size={14} style={{ color }} strokeWidth={2} />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        {tags.map((tag) => {
-          const isActive = activeTag === tag;
-          return (
-            <span
-              key={tag}
-              role="button"
-              tabIndex={0}
-              onClick={() => setActiveTag(isActive ? null : tag)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setActiveTag(isActive ? null : tag);
-                }
-              }}
-              aria-pressed={isActive}
-              className={`inline-flex items-center gap-2 text-[11px] rounded-lg px-2.5 py-1.5 cursor-pointer transition-colors border ${
-                isActive
-                  ? "bg-[#FDF2F3] border-[#7A0A17]/40 text-[#7A0A17] font-semibold"
-                  : "text-[#4B5563] bg-[#F1F2F4] border-transparent hover:bg-[#E9EAEC]"
-              }`}
-            >
-              {tag}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setTags((prev) => {
-                    const next = prev.filter((x) => x !== tag);
-                    if (tag === activeTag) setActiveTag(null);
-                    return next;
-                  });
-                }}
-                className={`hover:opacity-80 ${isActive ? "text-[#7A0A17]" : "text-[#6B7280] hover:text-[#111]"}`}
-                aria-label={`Remove ${tag}`}
-              >
-                <X size={11} />
-              </button>
-            </span>
-          );
-        })}
-        <button type="button" className="inline-flex items-center gap-1 text-[11px] text-[#4B5563] hover:text-[#111] transition-colors">
-          See All <ArrowRight size={11} />
-        </button>
-      </div>
-
-      <div className="flex flex-col gap-3 flex-1 min-h-0">
-        <h3 className="text-[15px] font-bold text-[#111]">{contentHeading}</h3>
-
-        <ul className="flex flex-col gap-2 flex-1">
-          {PRIORITY_ITEMS.map((item, i) => (
-            <li key={i} className="flex items-start gap-2.5 text-[13px] text-[#374151]">
-              <span className="size-[5px] rounded-full bg-[#C9CDD4] shrink-0 mt-[7px]" />
-              <span className="leading-relaxed">
-                {item.parts.map((part, j) =>
-                  part.detail ? (
-                    <button
-                      key={j}
-                      type="button"
-                      onClick={() => setDetailId(part.detail)}
-                      className="inline p-0 bg-transparent border-0 text-[#2563EB] underline underline-offset-2 decoration-current hover:text-[#1D4ED8] cursor-pointer"
-                    >
-                      {part.text}
-                    </button>
-                  ) : (
-                    <span key={j}>{part.text}</span>
-                  )
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
-
-        <div className="border border-black/10 rounded-xl p-3 mt-auto">
-          <textarea
-            rows={2}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Ask MML anything..."
-            className="w-full resize-none bg-transparent text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none"
-          />
-          <div className="flex items-center justify-end gap-1">
-            {[Paperclip, Copy, Download, Mic].map((Icon, i) => (
-              <button key={i} type="button" className="p-2 text-[#6B7280] hover:text-[#111] rounded-lg hover:bg-black/4 transition-colors">
-                <Icon size={15} strokeWidth={1.6} />
-              </button>
-            ))}
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 ml-1.5 px-4 h-9 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
-            >
-              Ask anything <Send size={13} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <Modal
-        open={Boolean(detail)}
-        onClose={() => setDetailId(null)}
-        title={detail?.title || "Details"}
-        subtitle={detail?.subtitle}
-        width="max-w-md"
-        zClass="z-50"
-      >
-        {detail && <PriorityDetailBody detail={detail} />}
-      </Modal>
-    </div>
   );
 }
 
@@ -2395,6 +2044,7 @@ export default function Dashboard() {
         entityLabel="Meeting"
         defaultDate={new Date()}
         initial={meetingPrefill}
+        scheduleOnly={Boolean(schedulingUnscheduledId)}
         onSave={(form) => {
           const item = addExtraEvent(meetingFormToCalendarItem(form, "meeting"));
           if (schedulingUnscheduledId) {

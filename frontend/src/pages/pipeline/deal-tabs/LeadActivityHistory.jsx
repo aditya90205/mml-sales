@@ -16,6 +16,7 @@ import {
   UserRound,
   Video,
 } from "lucide-react";
+import { formatLookingForLabel } from "../../../utils/leadFields.js";
 import {
   clientSummaryFromLead,
   ensureLeadHistory,
@@ -73,6 +74,76 @@ function formatTime(iso) {
     minute: "2-digit",
     hour12: true,
   });
+}
+
+function filled(value) {
+  const text = String(value ?? "").trim();
+  if (!text || text === "-" || text === "—" || text === "–") return "";
+  return text;
+}
+
+function looksLikeSchedule(value) {
+  return /^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(String(value || "").trim());
+}
+
+function nextActionText(lead, details) {
+  const candidates = [lead?.nextActionNote, details.nextAction, lead?.nextAction];
+  const note = candidates.map(filled).find((value) => value && !looksLikeSchedule(value));
+  return note || "";
+}
+
+function asLines(text) {
+  return String(text || "")
+    .split(/(?<=[.!?])\s+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+}
+
+function shortClientLines(lead, events = []) {
+  const fromMeeting = events.find((event) => filled(event.clientSummary));
+  if (fromMeeting) return asLines(fromMeeting.clientSummary);
+
+  const details = lead?.overviewDetails || {};
+  const name = lead?.name || "The client";
+  const place = [
+    filled(lead?.areaOfHouse) || filled(lead?.area) || filled(details.areaOfHouse),
+    filled(lead?.city) || filled(details.city),
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const looking = formatLookingForLabel(filled(lead?.lookingFor) || filled(details.lookingFor));
+  const pack = filled(lead?.packageInterest) || filled(details.packageInterest);
+  const next = nextActionText(lead, details);
+
+  const seek = looking ? ` and is looking for a ${looking.toLowerCase()}` : "";
+  const who = place
+    ? `${name} is based in ${place}${seek}.`
+    : `${name}${seek || " is in early discussion with the family"}.`;
+
+  const lines = [who];
+  if (pack) lines.push(`The family is warm on ${pack} and wants a short follow-up before they decide.`);
+  if (next) lines.push(`Next step: ${next.replace(/\.$/, "")}.`);
+  else if (!pack) lines.push("Preferences are still being captured on the next call.");
+  return lines.slice(0, 3);
+}
+
+function ClientSummaryPanel({ lead, events }) {
+  const lines = shortClientLines(lead, events);
+  if (!lines.length) return null;
+
+  return (
+    <div className="rounded-xl border border-[#DBEAFE] bg-[#F8FBFF] px-3.5 py-2.5">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#2563EB]">Client summary</p>
+      <div className="mt-1 flex flex-col gap-0.5">
+        {lines.map((line) => (
+          <p key={line} className="text-[13px] text-[#1F2937] leading-relaxed">
+            {line}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function groupByDate(events) {
@@ -169,12 +240,15 @@ export default function LeadActivityHistory({ lead, currentStage = "P0" }) {
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [filterOpen]);
 
+  const allEvents = useMemo(
+    () => ensureLeadHistory(lead, currentStage),
+    [lead, currentStage, tick]
+  );
   const events = useMemo(() => {
-    const all = ensureLeadHistory(lead, currentStage);
-    if (filter === "all") return all;
+    if (filter === "all") return allEvents;
     const types = FILTER_TYPES[filter] || [];
-    return all.filter((event) => types.includes(event.type));
-  }, [lead, currentStage, filter, tick]);
+    return allEvents.filter((event) => types.includes(event.type));
+  }, [allEvents, filter]);
 
   const groups = groupByDate(events);
   const name = lead?.name || "this lead";
@@ -223,6 +297,8 @@ export default function LeadActivityHistory({ lead, currentStage = "P0" }) {
           )}
         </div>
       </div>
+
+      <ClientSummaryPanel lead={lead} events={allEvents} />
 
       <div className="border-b border-black/8">
         <span className="inline-block text-[13px] font-semibold text-[#7A0A17] pb-2 border-b-2 border-[#7A0A17]">

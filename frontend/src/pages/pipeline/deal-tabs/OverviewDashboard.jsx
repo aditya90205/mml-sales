@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
+  ArrowRight,
   Briefcase,
   Calendar,
   Check,
@@ -11,6 +12,7 @@ import {
   Crown,
   Download,
   Eye,
+  FileText,
   Flag,
   Gift,
   Globe,
@@ -19,7 +21,6 @@ import {
   IndianRupee,
   MapPin,
   Pencil,
-  Megaphone,
   Infinity,
   Link2,
   MessageSquare,
@@ -28,7 +29,6 @@ import {
   RefreshCw,
   Star,
   Sun,
-  Upload,
   UserRound,
   Users,
   Video,
@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import EmailActivityButton from "../../../components/common/EmailActivityButton.jsx";
+import NotificationTypeIcon from "../../../components/common/NotificationTypeIcon.jsx";
 import SendMessageModal from "../../../components/common/SendMessageModal.jsx";
 import BiodataUploadModal from "../../../components/pipeline/BiodataUploadModal";
 import BiodataProfileModal from "../../../components/pipeline/BiodataProfileModal";
@@ -65,6 +66,7 @@ import {
   recordLeadActivity,
   subscribeLeadActivity,
 } from "../../../utils/leadActivityStore.js";
+import { calendarItemLifecycle } from "../../../utils/calendarLifecycle.js";
 import { formatLookingForLabel } from "../../../utils/leadFields.js";
 import { upsertClientFromBiodata } from "../../../utils/clientsData.js";
 import { findLeadById, moveLeadToStage, updateLead } from "../../../utils/pipelineStore.js";
@@ -84,7 +86,7 @@ import {
 const TEMPERATURE_TONES = {
   Hot: { color: "#E8395B", bg: "#FDECEE" },
   Warm: { color: "#F59E0B", bg: "#FFF3E4" },
-  Cold: { color: "#3B82F6", bg: "#E8F2FE" },
+  Cold: { color: "#7A0A17", bg: "#FCF5F6" },
   Lost: { color: "#7A0A17", bg: "#FCF5F6" },
 };
 
@@ -300,15 +302,12 @@ function hoursLeftLabel(ev) {
 const NEXT_ACTION_PREVIEW = 3;
 
 function splitCalendarItems(events, category) {
-  const now = Date.now();
   const due = [];
   const completed = [];
   for (const ev of events || []) {
     if (ev?.category !== category || String(ev.id || "").startsWith("nm-")) continue;
-    const start = eventStart(ev);
-    const status = String(ev.meta?.status || ev.meta?.stage || ev.meta?.activationStatus || "").toLowerCase();
-    const done = status === "completed" || status === "done" || (start ? start.getTime() < now : false);
-    (done ? completed : due).push(ev);
+    const life = calendarItemLifecycle(ev);
+    (life === "completed" ? completed : due).push(ev);
   }
   const time = (ev) => eventStart(ev)?.getTime() || 0;
   due.sort((a, b) => time(a) - time(b));
@@ -323,32 +322,42 @@ function formatItemStamp(ev) {
   return `${date} · ${formatClockTime(start)}`;
 }
 
+const LIFECYCLE_PILL = {
+  completed: { label: "Completed", className: "bg-[#E7F8EF] text-[#16A34A]" },
+  due: { label: "Due", className: "bg-[#F3F4F6] text-[#6B7280]" },
+};
+
 function StatusItemList({ items, empty, onOpen, icon: Icon, iconBg, iconColor, fallback }) {
   if (!items.length) {
     return <p className="text-[13px] text-[#9CA3AF] py-6 text-center">{empty}</p>;
   }
   return (
     <div className="flex flex-col gap-2">
-      {items.map((ev) => (
-        <button
-          key={ev.id}
-          type="button"
-          onClick={() => onOpen(ev)}
-          className="flex items-center gap-3 w-full rounded-xl border border-[#EEF1F4] px-3 py-2.5 text-left hover:border-[#E2E6EB] hover:bg-[#FAFAFB] transition-colors"
-        >
-          <span className="size-9 rounded-xl grid place-items-center shrink-0" style={{ backgroundColor: iconBg, color: iconColor }}>
-            <Icon size={16} strokeWidth={2.1} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[13px] font-semibold text-[#1F2937] truncate">{ev.title || fallback}</span>
-            <span className="block text-[12px] text-[#9CA3AF] mt-0.5 truncate">
-              {formatItemStamp(ev)}
-              {ev.meta?.client ? ` · ${ev.meta.client}` : ev.meta?.assignees?.[0] ? ` · ${ev.meta.assignees[0]}` : ""}
+      {items.map((ev) => {
+        const life = calendarItemLifecycle(ev) === "completed" ? "completed" : "due";
+        const pill = LIFECYCLE_PILL[life];
+        return (
+          <button
+            key={ev.id}
+            type="button"
+            onClick={() => onOpen(ev)}
+            className="flex items-center gap-3 w-full rounded-xl border border-[#EEF1F4] px-3 py-2.5 text-left hover:border-[#E2E6EB] hover:bg-[#FAFAFB] transition-colors"
+          >
+            <span className="size-9 rounded-xl grid place-items-center shrink-0" style={{ backgroundColor: iconBg, color: iconColor }}>
+              <Icon size={16} strokeWidth={2.1} />
             </span>
-          </span>
-          <ChevronRight size={16} className="text-[#D1D5DB] shrink-0" />
-        </button>
-      ))}
+            <span className="min-w-0 flex-1">
+              <span className="block text-[13px] font-semibold text-[#1F2937] truncate">{ev.title || fallback}</span>
+              <span className="block text-[12px] text-[#9CA3AF] mt-0.5 truncate">
+                {formatItemStamp(ev)}
+                {ev.meta?.client ? ` · ${ev.meta.client}` : ev.meta?.assignees?.[0] ? ` · ${ev.meta.assignees[0]}` : ""}
+              </span>
+            </span>
+            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${pill.className}`}>{pill.label}</span>
+            <ChevronRight size={16} className="text-[#D1D5DB] shrink-0" />
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -497,29 +506,38 @@ function ProfileStat({ icon: Icon, label, value, className = "" }) {
   );
 }
 
+const ACTIVITY_NOTIFY_TYPE = {
+  payment: "Payment",
+  quote: "Payment",
+  call: "Follow-up",
+  meeting: "Meeting",
+  handover: "Client",
+  document: "Lead",
+  details: "Lead",
+  stage: "Lead",
+  created: "Lead",
+  assignment: "Lead",
+  score: "Approval",
+  note: "Follow-up",
+  flag: "Approval",
+};
+
 function RecentActivityCards({ events, empty = "No activity yet." }) {
   if (!events.length) {
     return <p className="text-[12.5px] text-[#9CA3AF] py-3">{empty}</p>;
   }
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col divide-y divide-black/6">
       {events.map((event) => (
-        <div
-          key={event.id}
-          className="flex items-start gap-3 min-w-0 rounded-xl border border-[#EEF1F6] bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
-        >
-          <span className="size-9 rounded-full bg-[#F3EEFF] text-[#7C3AED] grid place-items-center shrink-0">
-            <Megaphone size={16} strokeWidth={2.1} />
-          </span>
+        <div key={event.id} className="flex items-start gap-3 py-3.5 min-w-0">
+          <NotificationTypeIcon type={ACTIVITY_NOTIFY_TYPE[event.type] || "Lead"} title={event.title} />
           <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-[13px] font-bold text-[#1E293B] leading-snug">{event.title}</p>
-              <span className="text-[11px] font-medium text-[#9CA3AF] shrink-0 pt-0.5">{timeAgo(event.at)}</span>
-            </div>
+            <p className="text-[13px] font-bold text-[#111] leading-snug">{event.title}</p>
             {event.detail ? (
-              <p className="text-[12px] text-[#9CA3AF] mt-0.5 leading-snug">{event.detail}</p>
+              <p className="text-[12px] text-[#9CA3AF] leading-snug mt-0.5 line-clamp-2">{event.detail}</p>
             ) : null}
           </div>
+          <span className="text-[11px] text-[#9CA3AF] whitespace-nowrap shrink-0 pt-0.5">{timeAgo(event.at)}</span>
         </div>
       ))}
     </div>
@@ -962,6 +980,12 @@ export default function OverviewDashboard({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
   const [packageOpen, setPackageOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [discountOpen, setDiscountOpen] = useState(() => searchParams.get("openDiscount") === "1");
+  const discountOpenedAt = useRef(0);
+  if (searchParams.get("openDiscount") === "1" && discountOpenedAt.current === 0) {
+    discountOpenedAt.current = Date.now();
+  }
   const [quotePanel, setQuotePanel] = useState(null);
   const profileCardRef = useRef(null);
   const activityCardRef = useRef(null);
@@ -987,6 +1011,23 @@ export default function OverviewDashboard({
   const [selectedTaskEvent, setSelectedTaskEvent] = useState(null);
   const [selectedOtherEvent, setSelectedOtherEvent] = useState(null);
   const navigate = useNavigate();
+
+  const closeDiscountModal = () => {
+    if (Date.now() - discountOpenedAt.current < 400) return;
+    setDiscountOpen(false);
+    setSearchParams((prev) => {
+      if (prev.get("openDiscount") !== "1") return prev;
+      const next = new URLSearchParams(prev);
+      next.delete("openDiscount");
+      return next;
+    }, { replace: true });
+  };
+
+  useEffect(() => {
+    if (searchParams.get("openDiscount") !== "1") return;
+    discountOpenedAt.current = Date.now();
+    setDiscountOpen(true);
+  }, [searchParams]);
 
   const closeBiodataProfile = () => {
     setShowBiodataProfile(false);
@@ -1487,9 +1528,9 @@ export default function OverviewDashboard({
               onClick={() => setCreateMeetingOpen(true)}
             />
             <ActionTile
-              icon={Upload}
-              iconBg="#E8F1FE"
-              iconColor="#3B82F6"
+              icon={FileText}
+              iconBg="#E7F8EF"
+              iconColor="#16A34A"
               title="Upload Biodata"
               titleColor="#2563EB"
               subtitle="Set next action or reminder"
@@ -1547,7 +1588,9 @@ export default function OverviewDashboard({
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-[14px] font-semibold text-[#1A5AA8] leading-none">{packagePrice}</p>
-                  <p className="text-[11px] font-normal text-[#9CA3AF] leading-none mt-1">(Approx.)</p>
+                  <p className="text-[11px] font-normal text-[#9CA3AF] leading-none mt-1">
+                    {packageAmount === 51000 ? "Default" : "(Approx.)"}
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -1661,20 +1704,16 @@ export default function OverviewDashboard({
           className={`bg-white border border-[#EEF1F4] rounded-2xl p-4 min-w-0 shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${quoteOpen ? "self-start" : "xl:h-full"}`}
           style={frozenCardStyle("activity")}
         >
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="size-8 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-                <Clock size={15} strokeWidth={2.2} />
-              </span>
-              <h3 className="text-[15px] font-bold text-[#7A0A17] truncate">Recent Activity</h3>
-            </div>
+          <div className="mb-1 px-0.5 flex items-center justify-between gap-2">
+            <h3 className="text-[15px] font-bold text-[#111] truncate">Recent Activity</h3>
             <button
               type="button"
               onClick={() => setRecentOpen(true)}
-              className="inline-flex items-center gap-0.5 text-[13px] font-semibold text-[#7A0A17] shrink-0 hover:text-[#640712]"
+              className="inline-flex items-center gap-1 h-7 text-[11px] font-semibold text-[#7A0A17] hover:text-[#5C0811] transition-colors shrink-0"
+              title="View all recent activity"
             >
               View All
-              <ChevronRight size={16} strokeWidth={2.2} />
+              <ArrowRight size={12} />
             </button>
           </div>
           <RecentActivityCards events={events} />
@@ -1686,7 +1725,7 @@ export default function OverviewDashboard({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 min-w-0 items-start">
           <button
             type="button"
-            onClick={() => setPackageOpen(true)}
+            onClick={() => setDiscountOpen(true)}
             className="w-full flex items-center gap-2.5 rounded-2xl border border-[#EEF1F4] bg-white px-3.5 py-2.5 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:border-[#E2E6EB] transition-colors"
           >
             <span className="size-8 rounded-full bg-[#8E1B32] text-white grid place-items-center shrink-0">
@@ -1927,6 +1966,20 @@ export default function OverviewDashboard({
           serviceAssigned={null}
           onHandoverToServices={() => toast.success("Handover checklist updated.")}
         />
+      </Modal>
+
+      <Modal
+        open={discountOpen}
+        onClose={closeDiscountModal}
+        title="Request Discount"
+        subtitle="Quotation, progressive data and discount approval"
+        icon={<Zap size={18} />}
+        iconBg="#F6E4E8"
+        iconColor="#7A0A17"
+        width="max-w-6xl"
+        zClass="z-[80]"
+      >
+        <PackageQuoteTab empty={!atLeast(currentStage, "P4")} variant="discount" clientName={deal?.name || ""} />
       </Modal>
 
       <Modal

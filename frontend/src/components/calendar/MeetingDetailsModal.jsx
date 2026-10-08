@@ -1,5 +1,6 @@
-import { CalendarDays, Pencil, Users2 } from "lucide-react";
+import { CalendarDays, Pencil, Sparkles, Users2 } from "lucide-react";
 import Modal from "../ui/Modal";
+import { aiInsightsForItem, calendarItemLifecycle, lifecycleLabel } from "../../utils/calendarLifecycle";
 
 const MEETING_TYPE_LABELS = {
   video: "Virtual / Online",
@@ -113,6 +114,8 @@ export function calendarEventToMeetingView(ev) {
   endDay.setHours(0, 0, 0, 0);
 
   const eventType = m.eventCategory || m.eventType || m.formDescription || "";
+  const lifecycle = calendarItemLifecycle(ev);
+  const insights = lifecycle === "completed" ? aiInsightsForItem(ev) : { summary: "", transcript: "" };
   const bodyDescription =
     m.notes ||
     (m.description && m.description !== eventType && m.description !== m.specialInstructions
@@ -132,7 +135,8 @@ export function calendarEventToMeetingView(ev) {
     activationStatus: m.activationStatus || (endDay >= today ? "Active" : "Inactive"),
     startDate: ev.date,
     endDate,
-    status: m.stage || "New",
+    status: lifecycleLabel(lifecycle, m.stage || "New"),
+    lifecycle,
     duration: m.duration || "",
     startTime: fmtClock(m.startTime, ev.startH),
     endTime: fmtClock(m.endTime, ev.endH),
@@ -157,9 +161,11 @@ export function calendarEventToMeetingView(ev) {
       (Array.isArray(m.meetingTypes) && m.meetingTypes.includes("video")) ||
       /\bvideo\b/i.test(ev.title || ""),
     clientSummary: m.clientSummary || "",
-    transcript: m.transcript || "",
+    transcript: insights.transcript,
     notes: m.notes || "",
     meetingSummary: m.meetingSummary || m.description || m.formDescription || "",
+    aiSummary: insights.summary,
+    aiTranscript: insights.transcript,
     emailIds: m.emailIds || "—",
     link: m.meetingLink || m.link || "",
     meetingLink: m.meetingLink || m.link || "",
@@ -236,6 +242,28 @@ function EventDetailsBody({ meeting }) {
   );
 }
 
+function AiNotes({ summary, transcript }) {
+  if (!summary && !transcript) return null;
+  return (
+    <div className="sm:col-span-2 flex flex-col gap-3">
+      {summary ? (
+        <div className="rounded-xl border border-[#EDE9FE] bg-[#FBF9FF] px-3.5 py-3">
+          <p className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#7C3AED]">
+            <Sparkles size={12} /> AI summary
+          </p>
+          <p className="text-[13px] font-medium text-[#111] mt-1.5 leading-relaxed">{summary}</p>
+        </div>
+      ) : null}
+      {transcript ? (
+        <div className="rounded-xl border border-[#DBEAFE] bg-[#F8FBFF] px-3.5 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#2563EB]">Transcript</p>
+          <p className="text-[13px] text-[#111] mt-1.5 leading-relaxed whitespace-pre-line">{transcript}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function MeetingDetailsBody({ meeting }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
@@ -292,7 +320,11 @@ function MeetingDetailsBody({ meeting }) {
         <ChipList items={meeting.reminderFrequency} />
       </DetailItem>
 
-      {meeting.video ? (
+      {meeting.lifecycle === "completed" ? (
+        <AiNotes summary={meeting.aiSummary} transcript={meeting.aiTranscript} />
+      ) : null}
+
+      {meeting.video && meeting.lifecycle !== "completed" ? (
         <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)] gap-4 rounded-xl border border-black/8 bg-[#FAFAFB] px-3.5 py-3">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Attachment</p>

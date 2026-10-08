@@ -204,7 +204,7 @@ export const LEADS_BY_STAGE = {
     }, { profile: false }),
   ],
   P1: [
-    sampleLead({ id: "p1-1", name: "Harshit Sharma", starred: false, mmlId: "10032634", temperature: "Hot",  score: 8.5, priority: "High",   completion: 40,  days: 4,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
+    sampleLead({ id: "p1-1", name: "Harshit Sharma", starred: false, mmlId: "10032634", temperature: "Hot",  score: 8.5, priority: "High",   completion: 40,  days: 4,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM", dealStatus: "lost", lost: true, winLossReasons: "No response after follow-ups" }),
     sampleLead({ id: "p1-2", name: "Arjun Rampal",   starred: false, mmlId: "10032635", temperature: "Hot",  score: 8.5, priority: "High",   completion: 100, days: 2,  hrs: 24, source: "Brand Walking",     lastDiscussion: "20/08/25, 11:30 AM", nextAction: "29/08/25, 11:30 AM" }),
   ],
   P2: [
@@ -343,6 +343,22 @@ function hydrateMmlIds(data) {
   return { next, changed };
 }
 
+function hydrateLostSample(data) {
+  const next = cloneLeads(data);
+  let changed = false;
+  next.P1 = (next.P1 || []).map((lead) => {
+    if (lead?.id !== "p1-1" || lead.dealStatus) return lead;
+    changed = true;
+    return {
+      ...lead,
+      dealStatus: "lost",
+      lost: true,
+      winLossReasons: lead.winLossReasons || "No response after follow-ups",
+    };
+  });
+  return { next, changed };
+}
+
 function loadLeads() {
   if (typeof window === "undefined") return cloneLeads(LEADS_BY_STAGE);
   try {
@@ -353,8 +369,9 @@ function loadLeads() {
     const contacts = hydrateMissingContacts(parsed);
     const profiles = hydrateSampleProfiles(contacts.next);
     const ids = hydrateMmlIds(profiles.next);
-    const next = ids.next;
-    if (contacts.changed || profiles.changed || ids.changed) {
+    const lost = hydrateLostSample(ids.next);
+    const next = lost.next;
+    if (contacts.changed || profiles.changed || ids.changed || lost.changed) {
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       } catch {
@@ -383,7 +400,88 @@ export function p0StatusOf(lead) {
   return "new";
 }
 
+export const REACTIVATE_MONTH_OPTIONS = [1, 3, 6];
+
+export function monthLabel(months) {
+  const count = Number(months);
+  if (!count) return "";
+  return `${count} ${count === 1 ? "month" : "months"}`;
+}
+
+export function addCalendarMonths(from, months) {
+  const date = new Date(from);
+  const day = date.getDate();
+  date.setDate(1);
+  date.setMonth(date.getMonth() + Number(months || 0));
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  date.setDate(Math.min(day, lastDay));
+  return date;
+}
+
+export function formatHoldDate(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function clearedColdHold(lead) {
+  const temperature =
+    lead?.temperatureBeforeHold && lead.temperatureBeforeHold !== "Cold"
+      ? lead.temperatureBeforeHold
+      : "Warm";
+  return {
+    ...lead,
+    dealStatus: "",
+    temperature,
+    lost: false,
+    reactivateMode: "",
+    reactivateMonths: "",
+    reactivateAt: "",
+    coldHeldAt: "",
+    temperatureBeforeHold: "",
+  };
+}
+
+/** Bring scheduled Cold & Hold leads back once their reactivation date has passed. */
+function releaseDueColdHolds() {
+  const now = Date.now();
+  let changed = false;
+  const released = [];
+  const next = cloneLeads(leads);
+  for (const stageId of STAGE_IDS) {
+    next[stageId] = (next[stageId] || []).map((lead) => {
+      if (lead?.dealStatus !== "cold" || lead.reactivateMode !== "scheduled" || !lead.reactivateAt) {
+        return lead;
+      }
+      const at = new Date(lead.reactivateAt).getTime();
+      if (Number.isNaN(at) || at > now) return lead;
+      changed = true;
+      released.push({
+        id: lead.id,
+        name: lead.name,
+        stageId,
+        months: lead.reactivateMonths,
+      });
+      return clearedColdHold(lead);
+    });
+  }
+  if (!changed) return;
+  leads = next;
+  persistLeads();
+  released.forEach((row) => {
+    addLeadActivity(row.id, {
+      type: "flag",
+      title: `${row.name || "Lead"} reactivated after Cold & Hold`,
+      detail: row.months
+        ? `Automatic reactivation after ${monthLabel(row.months)}`
+        : "Automatic reactivation",
+      stage: row.stageId,
+    });
+  });
+}
+
 let leads = loadLeads();
+releaseDueColdHolds();
 
 function emit() {
   persistLeads();
@@ -470,6 +568,35 @@ export function updateLead(leadId, patch = {}) {
   if (!updated) return null;
   emit();
   return { lead: { ...updated }, stageId: foundStage };
+}
+
+/** Clear Cold & Hold and return the lead to its previous temperature. */
+export function reactivateColdLead(leadId, { automatic = false } = {}) {
+  const found = findLeadById(leadId);
+  if (!found || found.lead.dealStatus !== "cold") return null;
+  const restored = clearedColdHold(found.lead);
+  const result = updateLead(leadId, {
+    dealStatus: "",
+    temperature: restored.temperature,
+    lost: false,
+    reactivateMode: "",
+    reactivateMonths: "",
+    reactivateAt: "",
+    coldHeldAt: "",
+    temperatureBeforeHold: "",
+  });
+  if (!result) return null;
+  addLeadActivity(leadId, {
+    type: "flag",
+    title: `${found.lead.name || "Lead"} reactivated after Cold & Hold`,
+    detail: automatic
+      ? `Automatic reactivation after ${monthLabel(found.lead.reactivateMonths) || "the hold period"}`
+      : `Reactivated manually${
+          found.lead.reactivateAt ? ` · review timing ${formatHoldDate(found.lead.reactivateAt)}` : ""
+        }`,
+    stage: found.stageId,
+  });
+  return result;
 }
 
 /** Move a lead to another pipeline column. Same-stage calls just patch in place. */

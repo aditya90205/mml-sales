@@ -13,6 +13,7 @@ import {
   Pencil,
   Plus,
   Send,
+  Sparkles,
   Star,
   Trash2,
   User,
@@ -20,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import Modal from "../ui/Modal";
+import { aiInsightsForItem, calendarItemLifecycle } from "../../utils/calendarLifecycle";
 
 const PRIORITY_FILL = {
   Low: "bg-[#E7F8EF] text-[#16A34A]",
@@ -34,6 +36,7 @@ const STAGE_DOT = {
   Review: "#3B82F6",
   Blocked: "#A855F7",
   Done: "#16A34A",
+  Completed: "#16A34A",
 };
 
 function fmtDate(d) {
@@ -86,11 +89,14 @@ function TabBar({ tabs, active, onChange }) {
 export function calendarEventToTaskView(ev) {
   if (!ev) return null;
   const m = ev.meta || {};
+  const lifecycle = calendarItemLifecycle(ev);
+  const insights = lifecycle === "completed" ? aiInsightsForItem(ev) : { summary: "", transcript: "" };
+  const stage = lifecycle === "completed" ? "Completed" : m.stage || "New";
   return {
     id: ev.id,
     title: ev.title,
     description: m.description || "",
-    stage: m.stage || "New",
+    stage,
     priority: m.priority || "Medium",
     project: m.project || "Sales Pipeline",
     milestone: m.milestone || "Planning",
@@ -115,6 +121,9 @@ export function calendarEventToTaskView(ev) {
     reminderChannels: m.reminderChannels || [],
     startH: ev.startH,
     endH: ev.endH,
+    lifecycle,
+    aiSummary: insights.summary,
+    aiTranscript: insights.transcript,
   };
 }
 
@@ -270,6 +279,25 @@ export default function TaskDetailsModal({
             <DetailItem label="Special Instructions" icon={FileText}>
               <span className="font-medium text-[#374151]">{task.specialInstructions}</span>
             </DetailItem>
+          ) : null}
+
+          {task.lifecycle === "completed" && (task.aiSummary || task.aiTranscript) ? (
+            <div className="flex flex-col gap-3">
+              {task.aiSummary ? (
+                <div className="rounded-xl border border-[#EDE9FE] bg-[#FBF9FF] px-3.5 py-3">
+                  <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#7C3AED]">
+                    <Sparkles size={13} /> AI summary
+                  </p>
+                  <p className="text-[14px] text-[#111] mt-1.5 leading-relaxed">{task.aiSummary}</p>
+                </div>
+              ) : null}
+              {task.aiTranscript ? (
+                <div className="rounded-xl border border-[#DBEAFE] bg-[#F8FBFF] px-3.5 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#2563EB]">Transcript</p>
+                  <p className="text-[14px] text-[#111] mt-1.5 leading-relaxed whitespace-pre-line">{task.aiTranscript}</p>
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </div>
       )}

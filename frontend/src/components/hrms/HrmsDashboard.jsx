@@ -80,19 +80,11 @@ function readIdleMinutes() {
   return 15;
 }
 
-function Card({ children, className = "" }) {
+function Card({ children, className = "", id }) {
   return (
-    <section className={`bg-white border border-[#E6EBF2] rounded-2xl shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${className}`}>
+    <section id={id} className={`bg-white border border-[#E6EBF2] rounded-2xl shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${className}`}>
       {children}
     </section>
-  );
-}
-
-function SoftIcon({ icon: Icon, className }) {
-  return (
-    <span className={`size-9 rounded-xl grid place-items-center shrink-0 ${className}`}>
-      <Icon size={18} strokeWidth={2.1} />
-    </span>
   );
 }
 
@@ -189,12 +181,12 @@ function MiniBars({ bars }) {
 }
 
 const TARGET_BARS = [
-  { h: 16, fill: "#FECACA" },
-  { h: 26, fill: "#F87171" },
-  { h: 18, fill: "#DC2626" },
-  { h: 32, fill: "#B91C1C" },
-  { h: 22, fill: "#9F1239" },
-  { h: 40, fill: "#7F1D1D" },
+  { h: 16, fill: "#F3D0D4" },
+  { h: 26, fill: "#E4A8B0" },
+  { h: 18, fill: "#C46A76" },
+  { h: 32, fill: "#A33D4C" },
+  { h: 22, fill: "#7A0A17" },
+  { h: 40, fill: "#5C0812" },
 ];
 
 const INCENTIVE_BARS = [
@@ -207,12 +199,12 @@ const INCENTIVE_BARS = [
 ];
 
 const AWARD_BARS = [
-  { h: 12, fill: "#FECDD3" },
-  { h: 18, fill: "#FDA4AF" },
-  { h: 24, fill: "#FB7185" },
-  { h: 30, fill: "#F43F5E" },
-  { h: 36, fill: "#E11D48" },
-  { h: 44, fill: "#BE123C" },
+  { h: 12, fill: "#F3D0D4" },
+  { h: 18, fill: "#E4A8B0" },
+  { h: 24, fill: "#C46A76" },
+  { h: 30, fill: "#A33D4C" },
+  { h: 36, fill: "#7A0A17" },
+  { h: 44, fill: "#5C0812" },
 ];
 
 function TimesheetDonut() {
@@ -235,8 +227,8 @@ function TimesheetDonut() {
       </svg>
       <div className="absolute inset-0 grid place-items-center text-center">
         <div>
-          <p className="text-[12px] font-extrabold text-[#1E3A8A] leading-none">8h 0m</p>
-          <p className="text-[10px] font-semibold text-[#7BA3D0] mt-0.5">Total</p>
+          <p className="text-[12px] font-extrabold text-[#7A0A17] leading-none">8h 0m</p>
+          <p className="text-[10px] font-semibold text-[#A67A82] mt-0.5">Total</p>
         </div>
       </div>
     </div>
@@ -282,6 +274,7 @@ export default function HrmsDashboard({
   onOpenTrainings,
   onOpenAssets,
   onOpenExit,
+  onOpenDocuments,
   onViewPromotions,
   onViewWarnings,
   onViewGoals,
@@ -344,7 +337,7 @@ export default function HrmsDashboard({
               <Link to="/profile" className="text-[#9CA3AF] hover:text-[#374151]" aria-label="View profile" title="View profile">
                 <Eye size={15} />
               </Link>
-              <Link to="/profile" className="text-[#60A5FA] hover:text-[#2563EB]" aria-label="Edit profile" title="Edit profile">
+              <Link to="/profile" className="text-[#7A0A17] hover:text-[#600712]" aria-label="Edit profile" title="Edit profile">
                 <Pencil size={14} />
               </Link>
             </div>
@@ -380,47 +373,44 @@ export default function HrmsDashboard({
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <KpiCard
               icon={CalendarDays}
-              iconClass="bg-[#FDECEC] text-[#9F1239]"
               title="Attendance"
               onOpen={onOpenAttendance}
               chart={<ProgressRing value={82} />}
             >
-              <p className="text-[20px] font-extrabold text-[#1E3A8A] leading-none mt-3">18 / 22 Days</p>
-              <p className="text-[13px] font-semibold text-[#2563EB] mt-1.5">This Month</p>
+              <p className="text-[20px] font-extrabold text-[#7A0A17] leading-none mt-3">18 / 22 Days</p>
+              <p className="text-[13px] font-semibold text-[#7A0A17] mt-1.5">This Month</p>
             </KpiCard>
 
             <KpiCard
+              id="target-achievement"
               icon={Target}
-              iconClass="bg-[#FDECEC] text-[#9F1239]"
               title="Target Achievement"
               onOpen={onOpenAchievement}
               chart={<MiniBars bars={TARGET_BARS} />}
             >
-              <p className="text-[22px] font-extrabold text-[#1E3A8A] leading-none mt-3">82%</p>
-              <p className="text-[13px] font-semibold text-[#2563EB] mt-1.5">This Month</p>
+              <p className="text-[22px] font-extrabold text-[#7A0A17] leading-none mt-3">82%</p>
+              <p className="text-[13px] font-semibold text-[#7A0A17] mt-1.5">This Month</p>
             </KpiCard>
 
             <KpiCard
               icon={IndianRupee}
-              iconClass="bg-[#FDECEC] text-[#9F1239]"
               title="Incentive Earned"
               onOpen={onOpenIncentives}
               chart={<MiniBars bars={INCENTIVE_BARS} />}
             >
-              <p className="text-[22px] font-extrabold text-[#1E3A8A] leading-none mt-3">₹ 38,000</p>
+              <p className="text-[22px] font-extrabold text-[#7A0A17] leading-none mt-3">₹ 38,000</p>
               <p className="text-[13px] font-bold text-[#16A34A] mt-1.5">120% of target</p>
             </KpiCard>
 
             <KpiCard
               icon={Trophy}
-              iconClass="bg-[#FDECEC] text-[#9F1239]"
               title="Awards & Contests"
               onOpen={onOpenAwards}
-              trailing={<ChevronRight size={16} className="text-[#9F1239]" />}
+              trailing={<ChevronRight size={16} className="text-[#7A0A17]" />}
               chart={<MiniBars bars={AWARD_BARS} />}
             >
               <p className="text-[11px] font-semibold text-[#9CA3AF] mt-2">My Rank</p>
-              <p className="text-[22px] font-extrabold text-[#1E3A8A] leading-none">#2</p>
+              <p className="text-[22px] font-extrabold text-[#7A0A17] leading-none">#2</p>
               <p className="text-[12px] font-medium text-[#9CA3AF] mt-0.5">Out of 18</p>
             </KpiCard>
           </div>
@@ -466,12 +456,12 @@ export default function HrmsDashboard({
               </div>
               <div className="mt-4 flex items-baseline gap-1.5">
                 <p className="text-[35px] font-bold text-[#000000] leading-none">2/7</p>
-                <p className="text-[13px] text-[#3B82F6] font-medium">used this year</p>
+                <p className="text-[13px] text-[#7A0A17] font-medium">used this year</p>
               </div>
               <button
                 type="button"
                 onClick={onLeaveBalance}
-                className="mt-1.5 text-left text-[13px] font-medium text-[#3B82F6] hover:underline whitespace-nowrap"
+                className="mt-1.5 text-left text-[13px] font-medium text-[#7A0A17] hover:underline whitespace-nowrap"
               >
                 Leave Balance - 1 day available
               </button>
@@ -487,18 +477,18 @@ export default function HrmsDashboard({
               </div>
               <div className="space-y-2">
                 {expenses.slice(0, 2).map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-2 rounded-xl bg-[#F3F7FF] px-3 py-2.5">
+                  <div key={item.id} className="flex items-center justify-between gap-2 rounded-xl bg-[#FCF5F6] px-3 py-2.5">
                     <div className="min-w-0">
                       <p className="text-[13px] font-bold text-[#111827] truncate">{item.purpose}</p>
                       <p className="text-[11px] text-[#9CA3AF] font-medium leading-snug">
                         {item.destination.split(",")[0]}: <span className="whitespace-nowrap">{item.startDate}</span>
                       </p>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0 text-[#7C93B8]">
+                    <div className="flex items-center gap-1 shrink-0 text-[#7A0A17]">
                       <button
                         type="button"
                         onClick={() => onViewExpense(item)}
-                        className="size-7 rounded-lg hover:text-[#2563EB] grid place-items-center"
+                        className="size-7 rounded-lg hover:text-[#600712] grid place-items-center"
                         aria-label={`View ${item.purpose}`}
                       >
                         <Eye size={15} />
@@ -506,7 +496,7 @@ export default function HrmsDashboard({
                       <button
                         type="button"
                         onClick={() => onViewExpense(item)}
-                        className="size-7 rounded-lg hover:text-[#2563EB] grid place-items-center"
+                        className="size-7 rounded-lg hover:text-[#600712] grid place-items-center"
                         aria-label={`Edit ${item.purpose}`}
                       >
                         <Pencil size={14} />
@@ -534,7 +524,7 @@ export default function HrmsDashboard({
               </div>
               <div className="space-y-2">
                 {["March", "February"].map((month) => (
-                  <div key={month} className="flex items-center justify-between gap-2 rounded-xl bg-[#F3F7FF] px-3 py-2.5">
+                  <div key={month} className="flex items-center justify-between gap-2 rounded-xl bg-[#FCF5F6] px-3 py-2.5">
                     <button
                       type="button"
                       onClick={() => onOpenSalary?.(month)}
@@ -573,7 +563,7 @@ export default function HrmsDashboard({
               </div>
             </Card>
 
-            <Card className="p-4 bg-[#FFF6F6] border-[#F6D5D5]">
+            <Card id="warnings-complaints" className="p-4 bg-[#FFF6F6] border-[#F6D5D5]">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 min-w-0">
                   <span className="size-9 rounded-full bg-[#FDECEC] text-[#E11D48] grid place-items-center shrink-0">
@@ -593,7 +583,7 @@ export default function HrmsDashboard({
               </div>
             </Card>
 
-            <div className="rounded-2xl bg-[#6E1630] text-white p-4 shadow-sm">
+            <div className="rounded-2xl bg-[#7A0A17] text-white p-4 shadow-sm">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <Clock size={18} strokeWidth={2.2} className="shrink-0" />
@@ -620,7 +610,7 @@ export default function HrmsDashboard({
           <Card className="p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3 mb-3">
               <div className="flex items-center gap-2 text-left">
-                <SoftIcon icon={Target} className="bg-[#FDECEC] text-[#7A0A17]" />
+                <MaroonIcon icon={Target} />
                 <span className="text-[15px] font-extrabold text-[#111827]">Goals & Review</span>
               </div>
               <button
@@ -675,7 +665,7 @@ export default function HrmsDashboard({
                           <button
                             type="button"
                             onClick={() => onToggleRemark(goal.id)}
-                            className="inline-flex items-center gap-0.5 text-[11px] font-bold text-[#3B82F6] mt-0.5"
+                            className="inline-flex items-center gap-0.5 text-[11px] font-bold text-[#7A0A17] mt-0.5"
                           >
                             {open ? "Show less" : "Show more"}
                             <ChevronDown size={12} className={open ? "rotate-180" : ""} />
@@ -715,7 +705,7 @@ export default function HrmsDashboard({
           <Card className="p-4">
             <div className="flex items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2.5 min-w-0">
-                <span className="size-9 rounded-full bg-[#E8F1FE] text-[#3B82F6] grid place-items-center shrink-0">
+                <span className="size-9 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
                   <Megaphone size={16} strokeWidth={2.2} />
                 </span>
                 <p className="text-[15px] font-extrabold text-[#111827] truncate">Recent Announcements</p>
@@ -793,7 +783,7 @@ export default function HrmsDashboard({
           <Card className="p-4">
             <button type="button" onClick={onOpenTrainings} className="w-full flex items-center justify-between gap-2 text-left">
               <span className="flex items-center gap-2">
-                <SoftIcon icon={GraduationCap} className="bg-[#FDECEC] text-[#7A0A17]" />
+                <MaroonIcon icon={GraduationCap} />
                 <span className="text-[13px] font-extrabold text-[#111827]">Trainings</span>
               </span>
               <ChevronRight size={16} className="text-[#9CA3AF]" />
@@ -813,7 +803,7 @@ export default function HrmsDashboard({
           <Card className="p-4">
             <button type="button" onClick={onOpenAssets} className="w-full flex items-center justify-between gap-2 text-left">
               <span className="flex items-center gap-2">
-                <SoftIcon icon={Laptop} className="bg-[#F4F6FA] text-[#475569]" />
+                <MaroonIcon icon={Laptop} />
                 <span className="text-[13px] font-extrabold text-[#111827]">Assets</span>
               </span>
               <ChevronRight size={16} className="text-[#9CA3AF]" />
@@ -823,7 +813,7 @@ export default function HrmsDashboard({
           <Card className="p-4">
             <div className="flex items-center justify-between gap-2">
               <button type="button" onClick={onOpenExit} className="flex items-center gap-2 text-left min-w-0">
-                <SoftIcon icon={LogOut} className="bg-[#FDECEC] text-[#7A0A17]" />
+                <MaroonIcon icon={LogOut} />
                 <span className="text-[13px] font-extrabold text-[#111827]">Exit & Separation</span>
               </button>
               <button
@@ -834,6 +824,16 @@ export default function HrmsDashboard({
                 Initiate resignation
               </button>
             </div>
+          </Card>
+
+          <Card className="p-4">
+            <button type="button" onClick={onOpenDocuments} className="w-full flex items-center justify-between gap-2 text-left">
+              <span className="flex items-center gap-2">
+                <MaroonIcon icon={FileText} />
+                <span className="text-[13px] font-extrabold text-[#111827]">Documents & Media</span>
+              </span>
+              <ChevronRight size={16} className="text-[#9CA3AF]" />
+            </button>
           </Card>
         </div>
       </div>
@@ -931,9 +931,9 @@ export default function HrmsDashboard({
   );
 }
 
-function KpiCard({ icon, iconClass, title, onOpen, chart, children, trailing }) {
+function KpiCard({ icon, title, onOpen, chart, children, trailing, id }) {
   return (
-    <Card className="p-4 cursor-pointer hover:border-[#9F1239]/25">
+    <Card id={id} className="p-4 cursor-pointer hover:border-[#7A0A17]/25">
       <div
         role="button"
         tabIndex={0}
@@ -947,8 +947,8 @@ function KpiCard({ icon, iconClass, title, onOpen, chart, children, trailing }) 
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <SoftIcon icon={icon} className={iconClass} />
-            <p className="text-[13px] font-extrabold text-[#9F1239] leading-tight">{title}</p>
+            <MaroonIcon icon={icon} />
+            <p className="text-[13px] font-extrabold text-[#7A0A17] leading-tight">{title}</p>
           </div>
           {trailing}
         </div>

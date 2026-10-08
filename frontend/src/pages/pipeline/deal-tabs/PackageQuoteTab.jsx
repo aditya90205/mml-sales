@@ -300,7 +300,7 @@ function UpsellBanner() {
 const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
-function QuotationCard({ empty = false }) {
+function QuotationCard({ empty = false, clientName = "" }) {
   const [items, setItems] = useState(QUOTE_ITEMS);
   const visibleItems = dashRows(items, empty, ["item"]);
   const { sorted, sort, toggle } = useTableSort(visibleItems, { defaultKey: "item" });
@@ -334,7 +334,9 @@ function QuotationCard({ empty = false }) {
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-5 min-w-0">
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-        <h3 className="text-[14px] font-bold text-[#111]">Quotation — MML-D-10428</h3>
+        <h3 className="text-[14px] font-bold text-[#111]">
+          Quotation — {clientName ? `${clientName} · ` : ""}MML-D-10428
+        </h3>
         <div className="flex items-center gap-2">
           <span className="text-[10.5px] font-semibold text-[#6B7280] bg-[#F1F2F4] rounded-full px-2.5 py-1">
             {empty ? EMPTY : "Draft v2"}
@@ -509,12 +511,28 @@ function DataRevealCard({ empty = false }) {
 }
 
 /** Package & Quote tab — package catalogue, upsell prompt and the live quotation. */
-export default function PackageQuoteTab({ empty = false, selectedKey = null, onPackageSelect }) {
+export default function PackageQuoteTab({ empty = false, selectedKey = null, onPackageSelect, variant = "full", clientName = "" }) {
   const handleSelect = (pkg) => {
     if (empty) return;
     onPackageSelect?.(pkg);
     toast.success(`${pkg.name} package selected.`);
   };
+
+  const quoteAndReveal = (
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-5 items-start">
+      <QuotationCard empty={empty} clientName={clientName} />
+      <DataRevealCard empty={empty} />
+    </div>
+  );
+
+  if (variant === "discount") {
+    return (
+      <div className="flex flex-col gap-5">
+        {quoteAndReveal}
+        <DiscountApprovalsCard empty={empty} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -553,10 +571,7 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
 
       <UpsellBanner />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-5 items-start">
-        <QuotationCard empty={empty} />
-        <DataRevealCard empty={empty} />
-      </div>
+      {quoteAndReveal}
     </div>
   );
 }

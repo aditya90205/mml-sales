@@ -65,11 +65,13 @@ const TYPE_STYLES = {
 };
 
 const TITLE_OVERRIDES = [
-  { match: /bio\s*data|document/i, Icon: FileText, bg: "bg-[#F8FAFC]", color: "text-[#475569]", ring: "ring-[#CBD5E1]" },
-  { match: /stage\s*moved|moved from/i, Icon: ArrowRightLeft, bg: "bg-[#EEF2FF]", color: "text-[#4F46E5]", ring: "ring-[#C7D2FE]" },
-  { match: /converted|registered/i, Icon: UserCheck, bg: "bg-[#ECFDF5]", color: "text-[#059669]", ring: "ring-[#A7F3D0]" },
+  { match: /bio\s*data|kyc|document/i, Icon: FileText, bg: "bg-[#F8FAFC]", color: "text-[#475569]", ring: "ring-[#CBD5E1]" },
+  { match: /stage\s*(advanced|moved)|moved from/i, Icon: ArrowRightLeft, bg: "bg-[#EEF2FF]", color: "text-[#4F46E5]", ring: "ring-[#C7D2FE]" },
+  { match: /handover/i, Icon: UserCheck, bg: "bg-[#ECFDF5]", color: "text-[#059669]", ring: "ring-[#A7F3D0]" },
   { match: /payment\s*due|pending/i, Icon: IndianRupee, bg: "bg-[#FEF3C7]", color: "text-[#D97706]", ring: "ring-[#FDE68A]" },
+  { match: /payment/i, Icon: IndianRupee, bg: "bg-[#ECFDF5]", color: "text-[#059669]", ring: "ring-[#A7F3D0]" },
   { match: /discount\s*approved|approved/i, Icon: ShieldCheck, bg: "bg-[#ECFDF5]", color: "text-[#059669]", ring: "ring-[#A7F3D0]" },
+  { match: /converted|registered/i, Icon: UserCheck, bg: "bg-[#ECFDF5]", color: "text-[#059669]", ring: "ring-[#A7F3D0]" },
 ];
 
 function resolveStyle(type, title = "") {
