@@ -804,6 +804,7 @@ export default function DealDetailPage({
             empty={!atLeast(currentStage, "P4")}
             selectedKey={selectedPackage?.key ?? null}
             onPackageSelect={handlePackageSelect}
+            clientName={deal?.name || ""}
           />
         );
       case "discounts":

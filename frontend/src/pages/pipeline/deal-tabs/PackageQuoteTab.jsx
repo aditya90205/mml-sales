@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, TrendingUp, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
@@ -63,15 +63,12 @@ const INITIAL_APPROVALS = [
 const APPROVAL_STATUS_TONES = { Pending: "amber", Approved: "green" };
 
 const APPROVAL_COLUMNS = [
-  { label: "Raised", key: "raised" },
-  { label: "Requested", key: "requested" },
-  { label: "Discount", key: "discount" },
-  { label: "Approver", key: "approver" },
-  { label: "Level", key: "level" },
-  { label: "Status", key: "status" },
+  { label: "Raised", key: "raised", width: "16%" },
+  { label: "Requested", key: "requested", width: "20%" },
+  { label: "Discount", key: "discount", width: "16%" },
+  { label: "Approver", key: "approver", width: "29%" },
+  { label: "Status", key: "status", width: "19%" },
 ];
-
-const UPSELL_TAGS = ["Intake form", "Visit notes - 2", "Shortlist - 5 families", "Cross-branch flag", "Wallet history"];
 
 const QUOTE_ITEMS = [
   { item: "Premium Package", note: "12 months membership", type: "Base", qty: 1, quoted: "₹51,000", rate: "₹51,000" },
@@ -93,21 +90,62 @@ const DATA_REVEAL_LEVELS = [
   { label: "Level 4 — Address", note: "Exclusive only · Branch Head approval", done: false },
 ];
 
-function PackageCard({ pkg, empty = false, selected = false, onSelect }) {
+const UPSELL_SOURCES = ["Intake form", "Visit notes · 2", "Shortlist · 5 families", "Cross-branch flag", "Wallet history"];
+
+function UpsellPitchCard({ pkg, clientName = "" }) {
+  const from = pkg?.name || "Premium";
+  const price = pkg?.price || "₹51,000";
+  const who = clientName.trim() || "Client";
+  return (
+    <div className="rounded-2xl border border-black/8 bg-white px-4 py-3.5">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="text-[14px] font-bold text-[#111]">Upsell from {from} — what can actually be pitched</h3>
+          <p className="text-[12.5px] text-[#4B5563] mt-1 leading-relaxed">
+            {who} is on {from} at {price}. Ask for the angles their own record supports, ranked, with the objection you will get and the words to use.
+          </p>
+          <p className="text-[12px] text-[#6B7280] mt-1 leading-relaxed">
+            It reads the intake form, visit notes, shortlist and the cross-branch flag — nothing is pitched that the record does not support.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => toast.info("AI pitch angles coming soon.")}
+          className="h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors shrink-0"
+        >
+          Ask AI what to pitch
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-2 mt-3">
+        {UPSELL_SOURCES.map((label) => (
+          <span
+            key={label}
+            className="inline-flex items-center h-7 px-2.5 rounded-full border border-black/10 bg-white text-[11.5px] text-[#4B5563]"
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PackageCard({ pkg, empty = false, selected = false, current = false, onSelect }) {
   const isHighlighted = !empty && selected;
   return (
     <div
-      className={`relative rounded-2xl border p-5 flex flex-col transition-colors ${
+      className={`rounded-2xl border p-5 flex flex-col transition-colors ${
         isHighlighted ? "bg-[#FEF4F5] border-[#F7C9CF]" : "bg-white border-black/8"
       }`}
     >
-      {pkg.upsellBadge && (
-        <span className="absolute -top-3 right-4 inline-flex items-center gap-1 text-[10.5px] font-bold text-white bg-[#7A0A17] rounded-full px-2.5 py-1">
-          <TrendingUp size={11} /> UPSELL · {pkg.upsellBadge}
-        </span>
-      )}
-
-      <h3 className="text-[15px] font-bold text-[#111]">{pkg.name}</h3>
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="text-[15px] font-bold text-[#111]">{pkg.name}</h3>
+        {pkg.upsellBadge && (
+          <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-white bg-[#7A0A17] rounded-full px-2.5 py-1 shrink-0">
+            <TrendingUp size={11} /> UPSELL · {pkg.upsellBadge}
+          </span>
+        )}
+      </div>
       <p className="text-[24px] font-bold text-[#111] mt-1">{pkg.price}</p>
       <p className="text-[11.5px] text-[#9CA3AF] mt-0.5">{pkg.subtitle}</p>
 
@@ -130,7 +168,16 @@ function PackageCard({ pkg, empty = false, selected = false, onSelect }) {
             type="button"
             className="w-full h-10 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold"
           >
-            Selected
+            {current ? "Current package" : "Selected"}
+          </button>
+        ) : current ? (
+          <button
+            type="button"
+            disabled={empty}
+            onClick={() => onSelect?.(pkg)}
+            className="w-full h-10 rounded-xl bg-white border border-[#7A0A17]/30 text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#FCF5F6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Current package
           </button>
         ) : (
           <button
@@ -197,16 +244,19 @@ function DiscountApprovalsCard({ empty = false }) {
         columns={APPROVAL_COLUMNS}
         sort={sort}
         onSort={toggle}
+        compact
         footnote="Up to 10% — Team Lead. 10-20% — Branch Head. Above 20% — Founder."
       >
         {sorted.map((row, i) => (
           <tr key={`${row.raised}-${i}`} className="border-b border-black/5 last:border-0">
-            <td className="px-3 py-2.5 text-[12.5px] font-semibold text-[#111] whitespace-nowrap">{row.raised}</td>
-            <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.requested}</td>
-            <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.discount}</td>
-            <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.approver}</td>
-            <td className="px-3 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{row.level}</td>
-            <td className="px-3 py-2.5 whitespace-nowrap">
+            <td className="px-1.5 py-2 text-[12px] font-semibold text-[#111] whitespace-nowrap">{row.raised}</td>
+            <td className="px-1.5 py-2 text-[12px] text-[#4B5563] whitespace-nowrap">{row.requested}</td>
+            <td className="px-1.5 py-2 text-[12px] text-[#4B5563] whitespace-nowrap">{row.discount}</td>
+            <td className="px-1.5 py-2 whitespace-nowrap">
+              <p className="text-[12px] font-semibold text-[#111]">{row.approver}</p>
+              {row.level ? <p className="text-[10.5px] text-[#9CA3AF]">{row.level}</p> : null}
+            </td>
+            <td className="px-1.5 py-2 whitespace-nowrap">
               {row.status === "-" ? (
                 <span className="text-[12px] text-[#9CA3AF]">-</span>
               ) : (
@@ -262,38 +312,6 @@ function DiscountApprovalsCard({ empty = false }) {
         </form>
       </Modal>
     </>
-  );
-}
-
-function UpsellBanner() {
-  return (
-    <div className="bg-white border border-black/8 rounded-2xl p-5 flex items-center justify-between gap-5 flex-wrap">
-      <div className="min-w-0 flex-1">
-        <h4 className="text-[14px] font-bold text-[#111]">Upsell from Premium — what can actually be pitched</h4>
-        <p className="text-[12.5px] text-[#4B5563] mt-1.5 leading-relaxed">
-          She is on Premium at ₹51,000. Ask for the angles her own record supports, ranked, with the objection you
-          will get and the words to use.
-        </p>
-        <p className="text-[11.5px] text-[#9CA3AF] mt-1.5">
-          It reads her intake form, visit notes, shortlist and the cross-branch flag — nothing is pitched that the
-          record does not support.
-        </p>
-        <div className="flex flex-wrap gap-2 mt-3">
-          {UPSELL_TAGS.map((tag) => (
-            <span key={tag} className="text-[10.5px] font-medium text-[#6B7280] bg-[#F9FAFB] border border-black/8 rounded-full px-2.5 py-1">
-              {tag}
-            </span>
-          ))}
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={() => toast.info("AI pitch suggestions coming soon.")}
-        className="shrink-0 h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
-      >
-        Ask AI what to pitch
-      </button>
-    </div>
   );
 }
 
@@ -510,35 +528,89 @@ function DataRevealCard({ empty = false }) {
   );
 }
 
-/** Package & Quote tab — package catalogue, upsell prompt and the live quotation. */
-export default function PackageQuoteTab({ empty = false, selectedKey = null, onPackageSelect, variant = "full", clientName = "" }) {
+/** Package & Quote tab — package catalogue, quotation, and discount approvals. */
+export default function PackageQuoteTab({ empty = false, selectedKey = null, onPackageSelect, onBindSave, variant = "full", clientName = "" }) {
+  const [pendingKey, setPendingKey] = useState(selectedKey);
+  const onBindSaveRef = useRef(onBindSave);
+  onBindSaveRef.current = onBindSave;
+
+  useEffect(() => {
+    setPendingKey(selectedKey);
+  }, [selectedKey]);
+
+  const pending = PACKAGES.find((pkg) => pkg.key === pendingKey) || null;
+  const saved = PACKAGES.find((pkg) => pkg.key === selectedKey) || null;
+  const dirty = Boolean(pendingKey && pendingKey !== selectedKey);
+  const saveDisabled = empty || !pending;
+
   const handleSelect = (pkg) => {
     if (empty) return;
-    onPackageSelect?.(pkg);
-    toast.success(`${pkg.name} package selected.`);
+    setPendingKey(pkg.key);
   };
 
-  const quoteAndReveal = (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-5 items-start">
-      <QuotationCard empty={empty} clientName={clientName} />
-      <DataRevealCard empty={empty} />
-    </div>
-  );
+  const handleSavePackage = () => {
+    if (saveDisabled) return;
+    if (!dirty) {
+      toast.success(`${pending.name} package is already saved.`);
+      return;
+    }
+    onPackageSelect?.(pending);
+    toast.success(`${pending.name} package saved.`);
+  };
+
+  const saveHint = dirty
+    ? `${pending.name} selected. Save to change the package.`
+    : saved
+      ? `${saved.name} is the current package.`
+      : "Pick a package, then save.";
+  const saveRef = useRef(handleSavePackage);
+  saveRef.current = handleSavePackage;
+
+  useEffect(() => {
+    onBindSaveRef.current?.({
+      disabled: saveDisabled,
+      onSave: () => saveRef.current(),
+      subtitle: dirty
+        ? `Save to change the package to ${pending.name}`
+        : saved
+          ? `${saved.name} is the current package`
+          : "Select a package, then save",
+    });
+  }, [saveDisabled, dirty, pending, saved]);
+
+  const upsellPkg = saved || pending || PACKAGES.find((pkg) => pkg.key === "premium");
+  const upsellCard = <UpsellPitchCard pkg={upsellPkg} clientName={clientName} />;
 
   if (variant === "discount") {
     return (
-      <div className="flex flex-col gap-5">
-        {quoteAndReveal}
-        <DiscountApprovalsCard empty={empty} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+        <div className="min-w-0">
+          <QuotationCard empty={empty} clientName={clientName} />
+        </div>
+        <div className="min-w-0">
+          <DiscountApprovalsCard empty={empty} />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-5">
+      {!onBindSave && <p className="text-[12.5px] font-medium text-[#6B7280]">{saveHint}</p>}
+
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h2 className="text-[16px] font-bold text-[#111]">Package catalogue</h2>
         <div className="flex items-center gap-2">
+          {!onBindSave && (
+            <button
+              type="button"
+              disabled={saveDisabled}
+              onClick={handleSavePackage}
+              className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Save
+            </button>
+          )}
           <button
             type="button"
             className="h-9 px-4 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
@@ -561,17 +633,22 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
             key={pkg.key}
             pkg={pkg}
             empty={empty}
-            selected={selectedKey === pkg.key}
+            selected={pendingKey === pkg.key}
+            current={selectedKey === pkg.key}
             onSelect={handleSelect}
           />
         ))}
       </div>
 
-      <DiscountApprovalsCard empty={empty} />
-
-      <UpsellBanner />
-
-      {quoteAndReveal}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+        <div className="min-w-0">
+          <QuotationCard empty={empty} clientName={clientName} />
+        </div>
+        <div className="min-w-0 flex flex-col gap-5">
+          <DiscountApprovalsCard empty={empty} />
+          {upsellCard}
+        </div>
+      </div>
     </div>
   );
 }

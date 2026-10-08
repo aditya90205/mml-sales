@@ -982,6 +982,11 @@ export default function OverviewDashboard({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
   const [packageOpen, setPackageOpen] = useState(false);
+  const [packageSave, setPackageSave] = useState({
+    disabled: true,
+    onSave: () => {},
+    subtitle: "Select a package, then save",
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   const [discountOpen, setDiscountOpen] = useState(() => searchParams.get("openDiscount") === "1");
   const discountOpenedAt = useRef(0);
@@ -2006,16 +2011,27 @@ export default function OverviewDashboard({
         open={packageOpen}
         onClose={() => setPackageOpen(false)}
         title="Package"
-        subtitle="Catalogue, quote and discount"
+        subtitle={packageSave.subtitle}
         icon={<Gift size={18} />}
         iconBg="#FFF2E0"
         iconColor="#E8B400"
         width="max-w-6xl"
+        headerActions={
+          <button
+            type="button"
+            disabled={packageSave.disabled}
+            onClick={packageSave.onSave}
+            className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Save
+          </button>
+        }
       >
         <PackageQuoteTab
           empty={!atLeast(currentStage, "P4")}
           selectedKey={selectedPackageKey}
           onPackageSelect={onPackageSelect}
+          onBindSave={setPackageSave}
         />
       </Modal>
 

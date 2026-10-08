@@ -6,11 +6,22 @@ import { SortableTh } from "./useTableSort.jsx";
  * `columns` may be strings or `{ label, key, unsortable }`.
  * Pass `sort` + `onSort` from `useTableSort` to enable header sorting.
  */
-export default function TableCard({ title, subtitle, badge, action, columns, children, footnote, sort, onSort }) {
+export default function TableCard({
+  title,
+  subtitle,
+  badge,
+  action,
+  columns,
+  children,
+  footnote,
+  sort,
+  onSort,
+  compact = false,
+}) {
   const cols = columns.map((col) => (typeof col === "string" ? { label: col } : col));
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-5">
+    <div className={`bg-white border border-black/8 rounded-2xl p-5 ${compact ? "min-w-0" : ""}`}>
       <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
         <div className="min-w-0">
           <h3 className="text-[14px] font-bold text-[#111]">{title}</h3>
@@ -24,8 +35,15 @@ export default function TableCard({ title, subtitle, badge, action, columns, chi
         )}
       </div>
 
-      <div className="overflow-x-auto -mx-1">
-        <table className="w-full border-collapse min-w-[560px]">
+      <div className={compact ? "min-w-0" : "overflow-x-auto -mx-1"}>
+        <table className={`w-full border-collapse ${compact ? "table-fixed" : "min-w-[560px]"}`}>
+          {compact && (
+            <colgroup>
+              {cols.map((col) => (
+                <col key={col.key || col.label} style={col.width ? { width: col.width } : undefined} />
+              ))}
+            </colgroup>
+          )}
           <thead>
             <tr className="bg-[#FAF3F2]">
               {cols.map((col, i) => (
@@ -36,7 +54,7 @@ export default function TableCard({ title, subtitle, badge, action, columns, chi
                   sort={sort}
                   onSort={onSort}
                   unsortable={col.unsortable}
-                  className={`px-3 py-2 text-left text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide whitespace-nowrap ${
+                  className={`${compact ? "px-1.5 tracking-normal" : "px-3 tracking-wide"} py-2 text-left text-[10px] font-semibold text-[#9CA3AF] uppercase whitespace-nowrap ${
                     i === 0 ? "rounded-l-lg" : ""
                   } ${i === cols.length - 1 ? "rounded-r-lg" : ""}`}
                 />
