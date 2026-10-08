@@ -810,7 +810,7 @@ export default function DealDetailPage({
           />
         );
       case "discounts":
-        return <DiscountApprovalsTab empty={!atLeast(currentStage, "P4")} />;
+        return <DiscountApprovalsTab />;
       case "documents":
         return <DocumentsKycTab empty={!atLeast(currentStage, "P5")} />;
       case "notes":

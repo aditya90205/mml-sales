@@ -8,11 +8,11 @@ const TONES = {
 };
 
 /** Small colored status/summary badge reused across deal-detail tables. */
-export default function StatusPill({ tone = "gray", children }) {
+export default function StatusPill({ tone = "gray", children, className = "" }) {
   const t = TONES[tone] || TONES.gray;
   return (
     <span
-      className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap"
+      className={`inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap text-center ${className}`}
       style={{ color: t.color, backgroundColor: t.bg }}
     >
       {children}

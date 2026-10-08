@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Check, Minus, Pencil, Plus, TrendingUp, X } from "lucide-react";
-import { toast } from "react-toastify";
+import { Check, Minus, Plus, TrendingUp, X } from "lucide-react";
 import { AppPage, MetricCard, OutlineBtn, Panel, PrimaryBtn, Td } from "../components/common/AppPage.jsx";
 import StatusPill from "../components/common/StatusPill";
 
@@ -69,7 +68,7 @@ const COMPARISON_ROWS = [
   { label: "Priority matchmaking queue", basic: false, premium: false, exclusive: true },
 ];
 
-function PackageCard({ pkg, currency, onEdit }) {
+function PackageCard({ pkg, currency }) {
   const price = currency === "usd" ? pkg.priceUsd : pkg.price;
   return (
     <div
@@ -97,14 +96,6 @@ function PackageCard({ pkg, currency, onEdit }) {
           </li>
         ))}
       </ul>
-
-      <button
-        type="button"
-        onClick={() => onEdit(pkg)}
-        className="w-full h-10 mt-5 rounded-xl bg-white border border-black/12 text-[#111] text-[12.5px] font-semibold hover:bg-[#FAFAFB] transition-colors inline-flex items-center justify-center gap-1.5"
-      >
-        <Pencil size={13} /> Edit package
-      </button>
     </div>
   );
 }
@@ -136,12 +127,7 @@ export default function PackagesPlansPage() {
       <Panel title="Package catalogue" subtitle="Live pricing and active client count per package">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {PACKAGES.map((pkg) => (
-            <PackageCard
-              key={pkg.key}
-              pkg={pkg}
-              currency={currency}
-              onEdit={(p) => toast.info(`Editing ${p.name} package — coming soon.`)}
-            />
+            <PackageCard key={pkg.key} pkg={pkg} currency={currency} />
           ))}
         </div>
       </Panel>

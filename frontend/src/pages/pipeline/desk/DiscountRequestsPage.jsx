@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { MessageSquare } from "lucide-react";
 import { toast } from "react-toastify";
+import SendMessageModal from "../../../components/common/SendMessageModal";
 import StatusPill from "../../../components/common/StatusPill";
 import { useTableSort } from "../../../components/common/useTableSort.jsx";
 import {
@@ -45,6 +47,7 @@ export default function DiscountRequestsPage() {
   const [justification, setJustification] = useState(JUSTIFICATION);
   const [status, setStatus] = useState("all");
   const [period, setPeriod] = useState("quarter");
+  const [commentFor, setCommentFor] = useState(null);
 
   const rows = useMemo(
     () => REQUESTS.filter((r) => status === "all" || r.status === status),
@@ -159,12 +162,29 @@ export default function DiscountRequestsPage() {
               </Td>
               <Td>{row.approver}</Td>
               <Td>
-                <StatusPill tone={row.tone}>{row.status}</StatusPill>
+                <span className="inline-flex items-center gap-1.5">
+                  <StatusPill tone={row.tone} className="w-[4.75rem]">{row.status}</StatusPill>
+                  <button
+                    type="button"
+                    onClick={() => setCommentFor(row)}
+                    className="size-7 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center shrink-0 hover:bg-[#FEE9D8] transition-colors"
+                    aria-label={`Comment on ${row.client}`}
+                  >
+                    <MessageSquare size={14} />
+                  </button>
+                </span>
               </Td>
             </tr>
           ))}
         </DeskTable>
       </SectionCard>
+
+      <SendMessageModal
+        open={!!commentFor}
+        onClose={() => setCommentFor(null)}
+        title={commentFor ? `Comment · ${commentFor.client}` : "Comment"}
+        zClass="z-[120]"
+      />
     </DeskPage>
   );
 }

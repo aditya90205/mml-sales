@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { MessageSquare } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTableSort } from "../../../components/common/useTableSort.jsx";
 import TableCard from "../../../components/common/TableCard";
 import StatusPill from "../../../components/common/StatusPill";
+import SendMessageModal from "../../../components/common/SendMessageModal";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
-import { dashRows } from "./stageContent.jsx";
 
 const INITIAL_APPROVALS = [
   { raised: "28 July", requested: "₹51,000", discount: "14.7%", approver: "Pooja Sharma", level: "Branch Head", status: "Pending" },
@@ -26,10 +27,11 @@ const COLUMNS = [
 const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
-export default function DiscountApprovalsTab({ empty = false }) {
+export default function DiscountApprovalsTab() {
   const [rows, setRows] = useState(INITIAL_APPROVALS);
-  const { sorted, sort, toggle } = useTableSort(dashRows(rows, empty), { defaultKey: "raised" });
+  const { sorted, sort, toggle } = useTableSort(rows, { defaultKey: "raised" });
   const [open, setOpen] = useState(false);
+  const [commentFor, setCommentFor] = useState(null);
   const [requested, setRequested] = useState("");
   const [discount, setDiscount] = useState("");
   const [level, setLevel] = useState("Team Lead");
@@ -80,7 +82,17 @@ export default function DiscountApprovalsTab({ empty = false }) {
               {row.status === "-" ? (
                 <span className="text-[12px] text-[#9CA3AF]">-</span>
               ) : (
-                <StatusPill tone={STATUS_TONES[row.status] || "gray"}>{row.status}</StatusPill>
+                <span className="inline-flex items-center gap-1.5">
+                  <StatusPill tone={STATUS_TONES[row.status] || "gray"} className="w-[4.75rem]">{row.status}</StatusPill>
+                  <button
+                    type="button"
+                    onClick={() => setCommentFor(row)}
+                    className="size-7 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center shrink-0 hover:bg-[#FEE9D8] transition-colors"
+                    aria-label={`Comment on ${row.raised}`}
+                  >
+                    <MessageSquare size={14} />
+                  </button>
+                </span>
               )}
             </td>
           </tr>
@@ -130,6 +142,13 @@ export default function DiscountApprovalsTab({ empty = false }) {
           </div>
         </form>
       </Modal>
+
+      <SendMessageModal
+        open={!!commentFor}
+        onClose={() => setCommentFor(null)}
+        title={commentFor ? `Comment · ${commentFor.raised}` : "Comment"}
+        zClass="z-[120]"
+      />
     </>
   );
 }

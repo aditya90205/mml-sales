@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import Modal from "../ui/Modal";
-import { AchievementKpiModal, WarningsComplaintsModal } from "../hrms/HrmsSummaryModals.jsx";
+import { WarningsComplaintsModal } from "../hrms/HrmsSummaryModals.jsx";
 
 const AI_ACTIONS = [
   { label: "Create", icon: Plus, color: "#16A34A" },
@@ -35,7 +35,7 @@ const PRIORITY_ITEMS = [
   },
   {
     parts: [
-      { text: "₹18,400 in discount approvals pending for " },
+      { text: "₹51,000 in discount approvals pending for " },
       { text: "Harshit Sharma", to: "/pipeline?openLead=p1-1&tab=overview&openDiscount=1" },
     ],
   },
@@ -45,12 +45,6 @@ const PRIORITY_ITEMS = [
       { text: " and " },
       { text: "Ankit Sharma", to: "/pipeline?openLead=p0-2&tab=overview" },
       { text: " profiles awaiting completion before their meetings" },
-    ],
-  },
-  {
-    parts: [
-      { text: "You're at 74% of this month's ₹25L " },
-      { text: "target", modal: "achievement" },
     ],
   },
   {
@@ -221,7 +215,6 @@ export default function AIAssistant({ onClose, variant = "card" }) {
         </div>
       </div>
 
-      <AchievementKpiModal open={hrmsModal === "achievement"} onClose={() => setHrmsModal(null)} />
       <WarningsComplaintsModal open={hrmsModal === "warnings"} onClose={() => setHrmsModal(null)} />
     </div>
   );

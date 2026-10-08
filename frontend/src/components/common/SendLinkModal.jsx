@@ -29,6 +29,7 @@ export default function SendLinkModal({
   zClass = "z-[90]",
   embedded = false,
   hideHeader = false,
+  beforeSend = null,
 }) {
   const formId = `send-link-${useId().replace(/:/g, "")}`;
   const options = linkTypes.map((id) => LINK_TYPE_META[id]).filter(Boolean);
@@ -203,7 +204,10 @@ export default function SendLinkModal({
           </div>
         )}
         <div className="px-5 py-5">{form}</div>
-        <div className="flex justify-end px-5 py-4 border-t border-black/10">{sendButton}</div>
+        <div className="flex justify-end items-center gap-2.5 px-5 py-4 border-t border-black/10">
+          {beforeSend}
+          {sendButton}
+        </div>
       </div>
     );
   }

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, TrendingUp, X } from "lucide-react";
+import { Check, MessageSquare, TrendingUp, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
 import TableCard from "../../../components/common/TableCard";
 import StatusPill from "../../../components/common/StatusPill";
 import SendLinkModal from "../../../components/common/SendLinkModal";
+import SendMessageModal from "../../../components/common/SendMessageModal";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
 import { clientShareId } from "../../../utils/shareLinks";
@@ -65,11 +66,11 @@ const INITIAL_APPROVALS = [
 const APPROVAL_STATUS_TONES = { Pending: "amber", Approved: "green" };
 
 const APPROVAL_COLUMNS = [
-  { label: "Raised", key: "raised", width: "16%" },
-  { label: "Requested", key: "requested", width: "20%" },
-  { label: "Discount", key: "discount", width: "16%" },
-  { label: "Approver", key: "approver", width: "29%" },
-  { label: "Status", key: "status", width: "19%" },
+  { label: "Raised", key: "raised", width: "14%" },
+  { label: "Requested", key: "requested", width: "17%" },
+  { label: "Discount", key: "discount", width: "13%" },
+  { label: "Approver", key: "approver", width: "24%" },
+  { label: "Status", key: "status", width: "32%" },
 ];
 
 const QUOTE_ITEMS = [
@@ -205,10 +206,11 @@ function PackageCard({ pkg, empty = false, selected = false, current = false, on
   );
 }
 
-function DiscountApprovalsCard({ empty = false }) {
+function DiscountApprovalsCard() {
   const [rows, setRows] = useState(INITIAL_APPROVALS);
-  const { sorted, sort, toggle } = useTableSort(dashRows(rows, empty), { defaultKey: "raised" });
+  const { sorted, sort, toggle } = useTableSort(rows, { defaultKey: "raised" });
   const [open, setOpen] = useState(false);
+  const [commentFor, setCommentFor] = useState(null);
   const [requested, setRequested] = useState("");
   const [discount, setDiscount] = useState("");
   const [level, setLevel] = useState("Team Lead");
@@ -258,11 +260,21 @@ function DiscountApprovalsCard({ empty = false }) {
               <p className="text-[12px] font-semibold text-[#111]">{row.approver}</p>
               {row.level ? <p className="text-[10.5px] text-[#9CA3AF]">{row.level}</p> : null}
             </td>
-            <td className="px-1.5 py-2 whitespace-nowrap">
+            <td className="py-2 pl-1 pr-0 whitespace-nowrap">
               {row.status === "-" ? (
                 <span className="text-[12px] text-[#9CA3AF]">-</span>
               ) : (
-                <StatusPill tone={APPROVAL_STATUS_TONES[row.status] || "gray"}>{row.status}</StatusPill>
+                <span className="inline-flex items-center gap-1">
+                  <StatusPill tone={APPROVAL_STATUS_TONES[row.status] || "gray"} className="w-[4.5rem]">{row.status}</StatusPill>
+                  <button
+                    type="button"
+                    onClick={() => setCommentFor(row)}
+                    className="size-7 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center shrink-0 hover:bg-[#FEE9D8] transition-colors"
+                    aria-label={`Comment on ${row.raised}`}
+                  >
+                    <MessageSquare size={14} />
+                  </button>
+                </span>
               )}
             </td>
           </tr>
@@ -313,6 +325,13 @@ function DiscountApprovalsCard({ empty = false }) {
           </div>
         </form>
       </Modal>
+
+      <SendMessageModal
+        open={!!commentFor}
+        onClose={() => setCommentFor(null)}
+        title={commentFor ? `Comment · ${commentFor.raised}` : "Comment"}
+        zClass="z-[120]"
+      />
     </>
   );
 }
@@ -320,11 +339,10 @@ function DiscountApprovalsCard({ empty = false }) {
 const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
-function QuotationCard({ empty = false, clientName = "", deal, currentStage, showSend = true, viewOnly = false }) {
+function QuotationCard({ clientName = "", deal, currentStage, showSend = true, viewOnly = false }) {
   const paymentReady = atLeast(currentStage, "P1");
   const [items, setItems] = useState(QUOTE_ITEMS);
-  const visibleItems = dashRows(items, empty, ["item"]);
-  const { sorted, sort, toggle } = useTableSort(visibleItems, { defaultKey: "item" });
+  const { sorted, sort, toggle } = useTableSort(items, { defaultKey: "item" });
   const [open, setOpen] = useState(false);
   const [sendType, setSendType] = useState(null);
   const [itemName, setItemName] = useState("");
@@ -363,7 +381,7 @@ function QuotationCard({ empty = false, clientName = "", deal, currentStage, sho
         </h3>
         <div className="flex items-center gap-2">
           <span className="inline-block text-[10.5px] font-semibold text-[#6B7280] bg-[#F1F2F4] rounded-md px-2 py-0.5 whitespace-nowrap">
-            {empty ? EMPTY : "Draft v2"}
+            Draft v2
           </span>
           {viewOnly ? null : <TabHeaderButton onClick={() => setOpen(true)}>Add add-on</TabHeaderButton>}
         </div>
@@ -453,25 +471,28 @@ function QuotationCard({ empty = false, clientName = "", deal, currentStage, sho
         {QUOTE_SUMMARY.map((row) => (
           <div key={row.label} className="flex items-center justify-between text-[12.5px] text-[#4B5563]">
             <span>{row.label}</span>
-            <span className="font-medium text-[#111]">{empty ? EMPTY : row.value}</span>
+            <span className="font-medium text-[#111]">{row.value}</span>
           </div>
         ))}
         <div className="flex items-center justify-between text-[13.5px] font-bold text-[#111] pt-2 border-t border-black/6 mt-1">
           <span>Total payable</span>
-          <span>{empty ? EMPTY : "₹53,100"}</span>
+          <span>₹53,100</span>
         </div>
       </div>
 
       <p className="text-[11.5px] text-[#9CA3AF] mt-4">Quote can be sent once the discount is approved.</p>
 
+      {viewOnly && !showSend ? null : (
       <div className="flex items-center gap-2.5 mt-3 flex-wrap">
-        <button
-          type="button"
-          onClick={() => toast.info("Generating quote PDF preview...")}
-          className="h-10 px-4 rounded-xl bg-white border border-black/12 text-[#111] text-[12.5px] font-semibold hover:bg-[#FAFAFB] transition-colors"
-        >
-          Preview PDF
-        </button>
+        {viewOnly ? null : (
+          <button
+            type="button"
+            onClick={() => toast.info("Generating quote PDF preview...")}
+            className="h-10 px-4 rounded-xl bg-white border border-black/12 text-[#111] text-[12.5px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+          >
+            Preview PDF
+          </button>
+        )}
         {showSend ? (
           <button
             type="button"
@@ -491,6 +512,7 @@ function QuotationCard({ empty = false, clientName = "", deal, currentStage, sho
           </button>
         ) : null}
       </div>
+      )}
 
       {showSend ? (
         <SendLinkModal
@@ -611,7 +633,7 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
         <div className="min-w-0">
-          <QuotationCard empty={empty} clientName={clientName} deal={deal} currentStage={currentStage} showSend={false} viewOnly />
+          <QuotationCard clientName={clientName} deal={deal} currentStage={currentStage} showSend={false} viewOnly />
         </div>
         <div className="min-w-0">
           <SendLinkModal
@@ -622,6 +644,15 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
             currentStage={currentStage}
             linkTypes={["payment"]}
             initialType="payment"
+            beforeSend={
+              <button
+                type="button"
+                onClick={() => toast.info("Generating quote PDF preview...")}
+                className="h-10 px-4 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+              >
+                Preview PDF
+              </button>
+            }
           />
         </div>
       </div>
@@ -632,10 +663,10 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
         <div className="min-w-0">
-          <QuotationCard empty={empty} clientName={clientName} deal={deal} currentStage={currentStage} />
+          <QuotationCard clientName={clientName} deal={deal} currentStage={currentStage} />
         </div>
         <div className="min-w-0">
-          <DiscountApprovalsCard empty={empty} />
+          <DiscountApprovalsCard />
         </div>
       </div>
     );
@@ -689,10 +720,10 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
         <div className="min-w-0">
-          <QuotationCard empty={empty} clientName={clientName} deal={deal} currentStage={currentStage} />
+          <QuotationCard clientName={clientName} deal={deal} currentStage={currentStage} />
         </div>
         <div className="min-w-0 flex flex-col gap-5">
-          <DiscountApprovalsCard empty={empty} />
+          <DiscountApprovalsCard />
           {upsellCard}
         </div>
       </div>
