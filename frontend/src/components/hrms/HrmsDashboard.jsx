@@ -387,6 +387,8 @@ export default function HrmsDashboard({
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <KpiCard
               icon={CalendarDays}
+              iconBg="#E9F6EC"
+              iconFg="#288270"
               title="Attendance"
               onOpen={onOpenAttendance}
               chart={<ProgressRing value={82} />}
@@ -398,6 +400,8 @@ export default function HrmsDashboard({
             <KpiCard
               id="target-achievement"
               icon={Target}
+              iconBg="#F6E6F8"
+              iconFg="#B86FBE"
               title="Target Achievement"
               onOpen={onOpenAchievement}
               chart={<MiniBars id="kpi-target" bars={TARGET_BARS} />}
@@ -408,6 +412,8 @@ export default function HrmsDashboard({
 
             <KpiCard
               icon={IndianRupee}
+              iconBg="#E9F6EC"
+              iconFg="#16A34A"
               title="Incentive Earned"
               onOpen={onOpenIncentives}
               chart={<MiniBars id="kpi-incentive" bars={INCENTIVE_BARS} />}
@@ -418,6 +424,8 @@ export default function HrmsDashboard({
 
             <KpiCard
               icon={Trophy}
+              iconBg="#FFF3E4"
+              iconFg="#F59E0B"
               title="Awards & Contests"
               onOpen={onOpenAwards}
               trailing={<ChevronRight size={16} className="text-[#9CA3AF]" />}
@@ -440,8 +448,8 @@ export default function HrmsDashboard({
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <OutlinePill onClick={onRegularize}>Regularize</OutlinePill>
-                  <OutlinePill onClick={onTimesheetDetails} tone="ghost">Details</OutlinePill>
+                  <SolidPill onClick={onRegularize}>Regularize</SolidPill>
+                  <SolidPill onClick={onTimesheetDetails}>Details</SolidPill>
                 </div>
               </div>
               <div className="mt-4 flex items-center gap-3">
@@ -491,7 +499,7 @@ export default function HrmsDashboard({
               </div>
               <div className="space-y-2">
                 {expenses.slice(0, 2).map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-2 rounded-xl bg-[#FCF5F6] px-3 py-2.5">
+                  <div key={item.id} className="flex items-center justify-between gap-2 rounded-xl bg-[#FAFAFB] border border-black/6 px-3 py-2.5">
                     <div className="min-w-0">
                       <p className="text-[13px] font-bold text-[#111] truncate">{item.purpose}</p>
                       <p className="text-[11px] text-[#9CA3AF] font-medium leading-snug">
@@ -502,18 +510,18 @@ export default function HrmsDashboard({
                       <button
                         type="button"
                         onClick={() => onViewExpense(item)}
-                        className="size-7 rounded-lg hover:text-[#600712] grid place-items-center"
+                        className="size-7 rounded-lg hover:bg-[#FDF2F3] hover:text-[#600712] grid place-items-center"
                         aria-label={`View ${item.purpose}`}
                       >
-                        <Eye size={15} />
+                        <Eye size={15} strokeWidth={2} />
                       </button>
                       <button
                         type="button"
                         onClick={() => onViewExpense(item)}
-                        className="size-7 rounded-lg hover:text-[#600712] grid place-items-center"
+                        className="size-7 rounded-lg hover:bg-[#FDF2F3] hover:text-[#600712] grid place-items-center"
                         aria-label={`Edit ${item.purpose}`}
                       >
-                        <Pencil size={14} />
+                        <Pencil size={14} strokeWidth={2} />
                       </button>
                     </div>
                   </div>
@@ -538,7 +546,7 @@ export default function HrmsDashboard({
               </div>
               <div className="space-y-2">
                 {["March", "February"].map((month) => (
-                  <div key={month} className="flex items-center justify-between gap-2 rounded-xl bg-[#FCF5F6] px-3 py-2.5">
+                  <div key={month} className="flex items-center justify-between gap-2 rounded-xl bg-[#FAFAFB] border border-black/6 px-3 py-2.5">
                     <button
                       type="button"
                       onClick={() => onOpenSalary?.(month)}
@@ -549,10 +557,10 @@ export default function HrmsDashboard({
                     <button
                       type="button"
                       onClick={() => toast.success(`${month} ${selectedYear} payslip download started.`)}
-                      className="size-7 rounded-lg text-[#7A0A17] hover:bg-white grid place-items-center"
+                      className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center"
                       aria-label={`Download ${month} ${selectedYear} payslip`}
                     >
-                      <Download size={15} />
+                      <Download size={15} strokeWidth={2} />
                     </button>
                   </div>
                 ))}
@@ -573,7 +581,13 @@ export default function HrmsDashboard({
                     <p className="text-[12px] font-bold text-[#16A34A] mt-2">Promoted 2 times last year</p>
                   </div>
                 </div>
-                <OutlinePill onClick={onViewPromotions}>View</OutlinePill>
+                <button
+                  type="button"
+                  onClick={onViewPromotions}
+                  className="inline-flex items-center h-7 text-[12px] font-semibold text-[#7A0A17] hover:text-[#5C0811] transition-colors shrink-0"
+                >
+                  View
+                </button>
               </div>
             </Card>
 
@@ -591,7 +605,13 @@ export default function HrmsDashboard({
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0">
-                  <OutlinePill onClick={onViewWarnings} tone="notice">View Notice</OutlinePill>
+                  <button
+                    type="button"
+                    onClick={onViewWarnings}
+                    className="inline-flex items-center h-7 text-[12px] font-semibold text-[#7A0A17] hover:text-[#5C0811] transition-colors"
+                  >
+                    View Notice
+                  </button>
                   <ChevronRight size={16} className="text-[#9CA3AF]" />
                 </div>
               </div>
@@ -725,7 +745,7 @@ export default function HrmsDashboard({
               <button
                 type="button"
                 onClick={() => setListOpen(true)}
-                className="h-8 px-3.5 rounded-full border border-[#7A0A17]/25 bg-white text-[12px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] shrink-0"
+                className="inline-flex items-center gap-1 h-7 text-[11px] font-semibold text-[#7A0A17] hover:text-[#5C0811] transition-colors shrink-0"
               >
                 View All
               </button>
@@ -941,9 +961,9 @@ export default function HrmsDashboard({
   );
 }
 
-function KpiCard({ icon, title, onOpen, chart, children, trailing, id }) {
+function KpiCard({ icon: Icon, iconBg, iconFg, title, onOpen, chart, children, trailing, id }) {
   return (
-    <Card id={id} className="p-4 cursor-pointer hover:border-[#7A0A17]/25">
+    <Card id={id} className="p-4 cursor-pointer hover:border-black/15 hover:shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-[border-color,box-shadow]">
       <div
         role="button"
         tabIndex={0}
@@ -956,8 +976,13 @@ function KpiCard({ icon, title, onOpen, chart, children, trailing, id }) {
         }}
       >
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <MaroonIcon icon={icon} />
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span
+              className="size-10 rounded-[10px] grid place-items-center shrink-0"
+              style={{ backgroundColor: iconBg }}
+            >
+              <Icon size={18} style={{ color: iconFg }} strokeWidth={1.7} />
+            </span>
             <p className="text-[13px] font-extrabold text-[#111] leading-tight">{title}</p>
           </div>
           {trailing}
