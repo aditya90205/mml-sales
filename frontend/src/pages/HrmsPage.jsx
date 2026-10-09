@@ -1087,8 +1087,8 @@ function AwardsContestPanel({
             <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-2.5">
-                  <span className="size-9 rounded-full bg-[#FFF7ED] text-[#F59E0B] grid place-items-center">
-                    <Trophy size={16} />
+                  <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
+                    <Trophy size={16} strokeWidth={2} />
                   </span>
                   <div>
                     <h3 className="text-sm font-extrabold text-[#111827]">My awards</h3>
@@ -1137,7 +1137,7 @@ function AwardsContestPanel({
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span className="inline-flex items-center gap-1.5">
-                              <Trophy size={12} className="text-[#F59E0B] shrink-0" />
+                              <Trophy size={12} className="text-[#7A0A17] shrink-0" />
                               {row.awardType}
                             </span>
                           </td>
@@ -1193,8 +1193,8 @@ function AwardsContestPanel({
             <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-2.5">
-                  <span className="size-9 rounded-full bg-[#E7F8EF] text-[#16A34A] grid place-items-center">
-                    <Target size={16} />
+                  <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
+                    <Target size={16} strokeWidth={2} />
                   </span>
                   <div>
                     <h3 className="text-sm font-extrabold text-[#111827]">My contests</h3>
@@ -1316,14 +1316,11 @@ function AwardsContestPanel({
   );
 }
 
-function AttendanceStatCard({ title, value, sub, icon: Icon, iconBg, iconColor }) {
+function AttendanceStatCard({ title, value, sub, icon: Icon }) {
   return (
     <div className="bg-white border border-black/10 rounded-2xl px-3.5 py-3 shadow-sm flex items-center gap-3 min-w-0">
-      <span
-        className="size-11 rounded-xl grid place-items-center shrink-0"
-        style={{ backgroundColor: iconBg, color: iconColor }}
-      >
-        <Icon size={20} />
+      <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
+        <Icon size={16} strokeWidth={2} />
       </span>
       <div className="min-w-0">
         <p className="text-[12px] font-semibold text-[#6B7280] leading-tight">{title}</p>
@@ -1589,8 +1586,8 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
             {/* Header Payroll Selector Bar */}
             <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <span className="size-10 rounded-full bg-[#FCF5F6] text-[#7A0A17] grid place-items-center border border-[#7A0A17]/20">
-                  <Receipt size={20} />
+                <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
+                  <Receipt size={16} strokeWidth={2} />
                 </span>
                 <div>
                   <h3 className="text-base font-extrabold text-[#111827]">Ankur Sharma</h3>
@@ -1623,7 +1620,7 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
                   <p className="text-xs font-bold text-[#6B7280]">Basic Salary</p>
                   <p className="text-2xl font-black text-[#111827] mt-1">₹75,000.00</p>
                 </div>
-                <span className="size-10 rounded-full bg-[#FEE2E2] text-[#DC2626] grid place-items-center font-bold">
+                <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17] text-[16px] font-bold">
                   ₹
                 </span>
               </div>
@@ -1633,8 +1630,8 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
                   <p className="text-xs font-bold text-[#6B7280]">Gross Pay</p>
                   <p className="text-2xl font-black text-[#111827] mt-1">₹91,295.65</p>
                 </div>
-                <span className="size-10 rounded-full bg-[#DCFCE7] text-[#15803D] grid place-items-center">
-                  <TrendingUp size={20} />
+                <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
+                  <TrendingUp size={16} strokeWidth={2} />
                 </span>
               </div>
 
@@ -1643,7 +1640,7 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
                   <p className="text-xs font-bold text-[#6B7280]">Net Salary</p>
                   <p className="text-2xl font-black text-[#111827] mt-1">₹74,033.15</p>
                 </div>
-                <span className="size-10 rounded-full bg-[#DCFCE7] text-[#15803D] grid place-items-center font-bold">
+                <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17] text-[16px] font-bold">
                   ₹
                 </span>
               </div>
@@ -1892,7 +1889,7 @@ function GoalsReviewsPanel({
                         <button
                           type="button"
                           onClick={() => onGoalAction("view", g)}
-                          className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center"
+                          className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center"
                           title="View"
                           aria-label={`View ${g.title}`}
                         >
@@ -1901,7 +1898,7 @@ function GoalsReviewsPanel({
                         <button
                           type="button"
                           onClick={() => onGoalAction("edit", g)}
-                          className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center"
+                          className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center"
                           title="Edit"
                           aria-label={`Edit ${g.title}`}
                         >
@@ -1910,7 +1907,7 @@ function GoalsReviewsPanel({
                         <button
                           type="button"
                           onClick={() => onGoalAction("review", g)}
-                          className="size-7 rounded-lg bg-[#EEF0FE] hover:bg-[#DCE0FC] grid place-items-center transition-colors"
+                          className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center transition-colors"
                           title="Conduct review"
                           aria-label={`Conduct review for ${g.title}`}
                         >
@@ -1919,7 +1916,7 @@ function GoalsReviewsPanel({
                         <button
                           type="button"
                           onClick={() => onGoalAction("delete", g)}
-                          className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center"
+                          className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center"
                           title="Delete"
                           aria-label={`Delete ${g.title}`}
                         >
@@ -2038,7 +2035,7 @@ function TrainingsPanel({
                       <button
                         type="button"
                         onClick={() => onAction("view", t)}
-                        className="size-7 rounded-lg bg-[#FEF3C7] text-[#D97706] hover:bg-[#FDE68A] grid place-items-center"
+                        className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center"
                         title="View"
                         aria-label={`View ${t.program}`}
                       >
@@ -2047,7 +2044,7 @@ function TrainingsPanel({
                       <button
                         type="button"
                         onClick={() => onAction("edit", t)}
-                        className="size-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] hover:bg-[#BAE6FD] grid place-items-center"
+                        className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center"
                         title="Edit"
                         aria-label={`Edit ${t.program}`}
                       >
@@ -2056,7 +2053,7 @@ function TrainingsPanel({
                       <button
                         type="button"
                         onClick={() => onAction("delete", t)}
-                        className="size-7 rounded-lg bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FCA5A5] grid place-items-center"
+                        className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center"
                         title="Delete"
                         aria-label={`Delete ${t.program}`}
                       >
@@ -2153,7 +2150,7 @@ function AssetsPanel({
                         <button
                           type="button"
                           onClick={() => toast.info(`Reassigning ${a.name}`)}
-                          className="size-7 rounded-lg bg-[#FEF3C7] hover:bg-[#FDE68A] grid place-items-center"
+                          className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center"
                           aria-label="Reassign"
                         >
                           <img src={yellowLoopIcon} alt="" className="size-3.5" />
@@ -2161,7 +2158,7 @@ function AssetsPanel({
                         <button
                           type="button"
                           onClick={() => toast.success(`${a.name} marked as returned`)}
-                          className="size-7 rounded-lg bg-[#FEE2E2] hover:bg-[#FCA5A5] grid place-items-center"
+                          className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center"
                           aria-label="Mark returned"
                         >
                           <img src={redBackIcon} alt="" className="size-3.5" />
@@ -2243,11 +2240,11 @@ export default function HrmsPage() {
     const halfDays = attendanceDays.filter((d) => d.status === "1/2").length;
     const grand = Number.isInteger(attendancePresent) ? String(attendancePresent) : attendancePresent.toFixed(1);
     return [
-      { title: "Total Present Days", value: `${presentDays} Days`, sub: `Out of ${totalDays} Days`, icon: CalendarCheck, iconBg: "#DCFCE7", iconColor: "#16A34A" },
-      { title: "Late Days", value: `${lateDays} Days`, sub: "Total late arrivals", icon: Clock, iconBg: "#FEE2E2", iconColor: "#DC2626" },
-      { title: "Total Leaves", value: `${leaveDays} Days`, sub: "Absent days this month", icon: CalendarPlus, iconBg: "#FEF3C7", iconColor: "#D97706" },
-      { title: "Half Days", value: `${halfDays} Days`, sub: "Total half days", icon: Coffee, iconBg: "#F3E8FF", iconColor: "#7C3AED" },
-      { title: "Grand Total", value: `${grand}/${totalDays}`, sub: "Present days this month", icon: BarChart3, iconBg: "#FCF5F6", iconColor: "#7A0A17" },
+      { title: "Total Present Days", value: `${presentDays} Days`, sub: `Out of ${totalDays} Days`, icon: CalendarCheck },
+      { title: "Late Days", value: `${lateDays} Days`, sub: "Total late arrivals", icon: Clock },
+      { title: "Total Leaves", value: `${leaveDays} Days`, sub: "Absent days this month", icon: CalendarPlus },
+      { title: "Half Days", value: `${halfDays} Days`, sub: "Total half days", icon: Coffee },
+      { title: "Grand Total", value: `${grand}/${totalDays}`, sub: "Present days this month", icon: BarChart3 },
     ];
   }, [attendanceDays, attendancePresent]);
 
@@ -2846,8 +2843,8 @@ export default function HrmsPage() {
               <X size={18} />
             </button>
             <div className="flex items-center gap-3 mb-4">
-              <span className="size-10 rounded-xl bg-[#FCF5F6] text-[#7A0A17] grid place-items-center">
-                <AlertCircle size={20} />
+              <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
+                <AlertCircle size={16} strokeWidth={2} />
               </span>
               <div>
                 <h3 className="text-lg font-bold text-[#111]">Report an Issue</h3>
@@ -2887,8 +2884,8 @@ export default function HrmsPage() {
               <X size={18} />
             </button>
             <div className="flex items-center gap-3 mb-4">
-              <span className="size-10 rounded-xl bg-[#FCF5F6] text-[#7A0A17] grid place-items-center">
-                <AlertTriangle size={20} />
+              <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
+                <AlertTriangle size={16} strokeWidth={2} />
               </span>
               <div>
                 <h3 className="text-lg font-bold text-[#111]">Official Warning Notice</h3>
@@ -2913,8 +2910,8 @@ export default function HrmsPage() {
         <div className="flex flex-col gap-4 text-xs">
           <div className="bg-[#FFF3E4] border border-[#F59E0B]/20 rounded-xl p-4 grid grid-cols-2 gap-4">
             <div className="flex items-center gap-2.5">
-              <span className="size-8 rounded-lg bg-white text-[#D97706] grid place-items-center shrink-0">
-                <Clock size={16} />
+              <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
+                <Clock size={16} strokeWidth={2} />
               </span>
               <div>
                 <p className="font-bold text-[#111827]">General</p>
@@ -2922,8 +2919,8 @@ export default function HrmsPage() {
               </div>
             </div>
             <div className="flex items-center gap-2.5">
-              <span className="size-8 rounded-lg bg-white text-[#D97706] grid place-items-center shrink-0">
-                <Calendar size={16} />
+              <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
+                <Calendar size={16} strokeWidth={2} />
               </span>
               <div>
                 <p className="font-bold text-[#111827]">Days</p>
@@ -2998,8 +2995,8 @@ export default function HrmsPage() {
         title="Request Shift Change"
         subtitle="Current Shift: General Shift (9:00 AM - 6:00 PM)"
         icon={<Clock size={17} />}
-        iconBg="#DCFCE7"
-        iconColor="#15803D"
+        iconBg="transparent"
+        iconColor="#7A0A17"
         width="max-w-md"
         footer={
           <>
@@ -3042,7 +3039,7 @@ export default function HrmsPage() {
         title="Attendance"
         subtitle={`${selectedMonth} ${selectedYear} · 18 / 22 Days · 82%`}
         icon={<Calendar size={17} />}
-        iconBg="#FDECEC"
+        iconBg="transparent"
         iconColor="#7A0A17"
         width="max-w-6xl"
         zClass="z-40"
@@ -3063,7 +3060,7 @@ export default function HrmsPage() {
         title="Incentives"
         subtitle={`${selectedMonth} ${selectedYear} · Target 82% · ₹ 38,000 earned`}
         icon={<Target size={17} />}
-        iconBg="#FDECEC"
+        iconBg="transparent"
         iconColor="#7A0A17"
         width="max-w-6xl"
         zClass="z-40"
@@ -3078,7 +3075,7 @@ export default function HrmsPage() {
         title="Awards & Contests"
         subtitle="My rank #2 · Out of 18"
         icon={<Trophy size={17} />}
-        iconBg="#FDECEC"
+        iconBg="transparent"
         iconColor="#7A0A17"
         width="max-w-6xl"
         zClass="z-40"
@@ -3093,7 +3090,7 @@ export default function HrmsPage() {
         title="Promotions and Transfers"
         subtitle="Promotions and transfers till today"
         icon={<TrendingUp size={17} />}
-        iconBg="#FDECEC"
+        iconBg="transparent"
         iconColor="#7A0A17"
         width="max-w-6xl"
         zClass="z-40"
@@ -3110,7 +3107,7 @@ export default function HrmsPage() {
         title="Goals & Review"
         subtitle="Employee goals and reviews"
         icon={<Target size={17} />}
-        iconBg="#FDECEC"
+        iconBg="transparent"
         iconColor="#7A0A17"
         width="max-w-6xl"
         zClass="z-40"
@@ -3152,7 +3149,7 @@ export default function HrmsPage() {
         title="Trainings"
         subtitle="Assigned programs and sessions"
         icon={<GraduationCap size={17} />}
-        iconBg="#FDECEC"
+        iconBg="transparent"
         iconColor="#7A0A17"
         width="max-w-6xl"
         zClass="z-40"
@@ -3192,8 +3189,8 @@ export default function HrmsPage() {
         title="Assets"
         subtitle="Assigned company assets"
         icon={<Laptop size={17} />}
-        iconBg="#F4F6FA"
-        iconColor="#475569"
+        iconBg="transparent"
+        iconColor="#7A0A17"
         width="max-w-6xl"
         zClass="z-40"
         contain
@@ -3231,7 +3228,7 @@ export default function HrmsPage() {
         title="Exit & Separation"
         subtitle="Termination record and resignation"
         icon={<LogOut size={17} />}
-        iconBg="#FDECEC"
+        iconBg="transparent"
         iconColor="#7A0A17"
         width="max-w-4xl"
         zClass="z-40"
@@ -3246,8 +3243,8 @@ export default function HrmsPage() {
         title="Documents & Media"
         subtitle="Company documents, media library, and tutorials"
         icon={<FileText size={17} />}
-        iconBg="#EEF2FF"
-        iconColor="#4F46E5"
+        iconBg="transparent"
+        iconColor="#7A0A17"
         width="max-w-6xl"
         zClass="z-40"
         contain
@@ -3261,7 +3258,7 @@ export default function HrmsPage() {
         title="Salary & Payslip"
         subtitle={salarySlip || undefined}
         icon={<Receipt size={17} />}
-        iconBg="#FDECEC"
+        iconBg="transparent"
         iconColor="#7A0A17"
         width="max-w-6xl"
         zClass="z-40"
@@ -3488,8 +3485,8 @@ export default function HrmsPage() {
         onClose={() => setViewExpense(null)}
         title="Expense Details"
         icon={<BarChart3 size={17} />}
-        iconBg="#E7F8EF"
-        iconColor="#16A34A"
+        iconBg="transparent"
+        iconColor="#7A0A17"
         width="max-w-md"
       >
         {viewExpense && (
@@ -3612,7 +3609,7 @@ export default function HrmsPage() {
         title="Apply for Leave"
         subtitle={`Available Balance: ${selectedAvailable} day${selectedAvailable === 1 ? "" : "s"}`}
         icon={<Calendar size={17} />}
-        iconBg="#FDE9EC"
+        iconBg="transparent"
         iconColor="#7A0A17"
         width="max-w-md"
         footer={

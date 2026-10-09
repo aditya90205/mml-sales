@@ -65,8 +65,8 @@ export function ComplaintsWarningsPanel({ onViewNotice, embedded = false }) {
       <div className={embedded ? "min-w-0" : "bg-white border border-black/10 rounded-2xl p-5 shadow-sm"}>
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           <div className="flex items-center gap-2.5">
-            <span className="size-9 rounded-full bg-[#FCF5F6] text-[#7A0A17] grid place-items-center">
-              <AlertTriangle size={16} />
+            <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
+              <AlertTriangle size={16} strokeWidth={2} />
             </span>
             <div>
               <h3 className="text-sm font-extrabold text-[#111827]">Complaints &amp; warnings</h3>
@@ -153,8 +153,8 @@ function OfficialNoticeOverlay({ onClose }) {
           <X size={18} />
         </button>
         <div className="flex items-center gap-3 mb-4">
-          <span className="size-10 rounded-xl bg-[#FCF5F6] text-[#7A0A17] grid place-items-center">
-            <AlertTriangle size={20} />
+          <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
+            <AlertTriangle size={16} strokeWidth={2} />
           </span>
           <div>
             <h3 className="text-lg font-bold text-[#111]">Official Warning Notice</h3>
@@ -226,8 +226,8 @@ export function WarningsComplaintsModal({ open, onClose }) {
         title="Warnings and Complaints"
         subtitle="Official notices and HR-logged issues"
         icon={<AlertTriangle size={17} />}
-        iconBg="#FDECEC"
-        iconColor="#E11D48"
+        iconBg="transparent"
+        iconColor="#7A0A17"
         width="max-w-6xl"
         zClass="z-[80]"
         contain

@@ -88,16 +88,10 @@ function Card({ children, className = "", id }) {
   );
 }
 
-function MaroonIcon({ icon: Icon, tone = "rose", filled = false }) {
-  const tones = {
-    rose: "bg-[#FDECEE] text-[#E8395B]",
-    purple: "bg-[#F0EBFE] text-[#8B5CF6]",
-    green: "bg-[#E7F8EF] text-[#16A34A]",
-    orange: "bg-[#FFF3E4] text-[#F59E0B]",
-  };
+function MaroonIcon({ icon: Icon, filled = false }) {
   return (
-    <span className={`size-9 rounded-full grid place-items-center shrink-0 ${tones[tone] || tones.rose}`}>
-      <Icon size={16} strokeWidth={2.2} fill={filled ? "currentColor" : "none"} />
+    <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
+      <Icon size={16} strokeWidth={2} fill={filled ? "currentColor" : "none"} />
     </span>
   );
 }
@@ -173,44 +167,62 @@ function ProgressRing({ value }) {
   );
 }
 
-function MiniBars({ bars }) {
-  const gap = 5;
-  const width = 86;
+function MiniBars({ bars, id }) {
+  const gap = 4;
+  const width = 92;
+  const height = 46;
   const barW = (width - gap * (bars.length - 1)) / bars.length;
   return (
-    <svg viewBox={`0 0 ${width} 48`} className="w-[86px] h-12 shrink-0" aria-hidden="true">
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-[92px] h-12 shrink-0" aria-hidden="true">
+      <defs>
+        {bars.map((bar, i) => (
+          <linearGradient key={i} id={`${id}-${i}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={bar.highlight} />
+            <stop offset="100%" stopColor={bar.fill} />
+          </linearGradient>
+        ))}
+      </defs>
       {bars.map((bar, i) => (
-        <rect key={i} x={i * (barW + gap)} y={48 - bar.h} width={barW} height={bar.h} rx="2.2" fill={bar.fill} />
+        <rect
+          key={i}
+          x={i * (barW + gap)}
+          y={height - bar.h}
+          width={barW}
+          height={bar.h}
+          rx="3"
+          fill={`url(#${id}-${i})`}
+        />
       ))}
     </svg>
   );
 }
 
+// Dashboard capsule highlights only — every bar stays light, no dark end.
 const TARGET_BARS = [
-  { h: 16, fill: "#F6E6F8" },
-  { h: 26, fill: "#E8D0EC" },
-  { h: 18, fill: "#D4B0DC" },
-  { h: 32, fill: "#C490CC" },
-  { h: 22, fill: "#B86FBE" },
-  { h: 40, fill: "#89518E" },
+  { h: 16, highlight: "#FDF8FE", fill: "#F6E6F8" },
+  { h: 26, highlight: "#F8EAF9", fill: "#F1DCF4" },
+  { h: 18, highlight: "#F6E6F8", fill: "#EED6F2" },
+  { h: 32, highlight: "#F3DFF5", fill: "#E8CCEE" },
+  { h: 22, highlight: "#F0D8F2", fill: "#E4C4EA" },
+  { h: 40, highlight: "#EDD2EF", fill: "#E0BBE6" },
 ];
 
 const INCENTIVE_BARS = [
-  { h: 12, fill: "#E9F6EC" },
-  { h: 18, fill: "#C8E8D4" },
-  { h: 24, fill: "#A8D8C0" },
-  { h: 30, fill: "#7FC9A9" },
-  { h: 36, fill: "#4AA88A" },
-  { h: 44, fill: "#288270" },
+  { h: 12, highlight: "#F7FCF8", fill: "#E9F6EC" },
+  { h: 18, highlight: "#EEF8F1", fill: "#DDF3E4" },
+  { h: 24, highlight: "#E9F6EC", fill: "#D2EEDC" },
+  { h: 30, highlight: "#E3F4E8", fill: "#C8E9D4" },
+  { h: 36, highlight: "#DCF1E4", fill: "#BEE4CC" },
+  { h: 44, highlight: "#D7F0E2", fill: "#B4DFC4" },
 ];
 
 const AWARD_BARS = [
-  { h: 12, fill: "#FEE9D8" },
-  { h: 18, fill: "#F8D4B8" },
-  { h: 24, fill: "#F0B888" },
-  { h: 30, fill: "#E89060" },
-  { h: 36, fill: "#E76B3D" },
-  { h: 44, fill: "#C94818" },
+  { h: 12, highlight: "#FFF9F4", fill: "#FEE9D8" },
+  { h: 18, highlight: "#FEF1E6", fill: "#FDE0C8" },
+  { h: 24, highlight: "#FEE9D8", fill: "#FCD6B8" },
+  { h: 30, highlight: "#FDE3CC", fill: "#FBCCA8" },
+  { h: 36, highlight: "#FCDCC0", fill: "#FAC298" },
+  { h: 44, highlight: "#FBD5B4", fill: "#F8B888" },
 ];
 
 function TimesheetDonut() {
@@ -248,13 +260,9 @@ function priorityClass(priority) {
 }
 
 function recentItemIcon(type) {
-  if (type === "Holiday" || type === "Event") {
-    return { Icon: CalendarDays, className: "bg-[#E7F8EF] text-[#16A34A]" };
-  }
-  if (type === "Training") {
-    return { Icon: GraduationCap, className: "bg-[#F0EBFE] text-[#8B5CF6]" };
-  }
-  return { Icon: FileText, className: "bg-[#EEF0FE] text-[#6366F1]" };
+  if (type === "Holiday" || type === "Event") return CalendarDays;
+  if (type === "Training") return GraduationCap;
+  return FileText;
 }
 
 function requestStatusClass(status) {
@@ -379,7 +387,6 @@ export default function HrmsDashboard({
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <KpiCard
               icon={CalendarDays}
-              tone="rose"
               title="Attendance"
               onOpen={onOpenAttendance}
               chart={<ProgressRing value={82} />}
@@ -391,10 +398,9 @@ export default function HrmsDashboard({
             <KpiCard
               id="target-achievement"
               icon={Target}
-              tone="purple"
               title="Target Achievement"
               onOpen={onOpenAchievement}
-              chart={<MiniBars bars={TARGET_BARS} />}
+              chart={<MiniBars id="kpi-target" bars={TARGET_BARS} />}
             >
               <p className="text-[22px] font-extrabold text-[#111] leading-none mt-3">82%</p>
               <p className="text-[13px] font-semibold text-[#6B7280] mt-1.5">This Month</p>
@@ -402,10 +408,9 @@ export default function HrmsDashboard({
 
             <KpiCard
               icon={IndianRupee}
-              tone="green"
               title="Incentive Earned"
               onOpen={onOpenIncentives}
-              chart={<MiniBars bars={INCENTIVE_BARS} />}
+              chart={<MiniBars id="kpi-incentive" bars={INCENTIVE_BARS} />}
             >
               <p className="text-[22px] font-extrabold text-[#111] leading-none mt-3">₹ 38,000</p>
               <p className="text-[13px] font-bold text-[#16A34A] mt-1.5">120% of target</p>
@@ -413,11 +418,10 @@ export default function HrmsDashboard({
 
             <KpiCard
               icon={Trophy}
-              tone="orange"
               title="Awards & Contests"
               onOpen={onOpenAwards}
               trailing={<ChevronRight size={16} className="text-[#9CA3AF]" />}
-              chart={<MiniBars bars={AWARD_BARS} />}
+              chart={<MiniBars id="kpi-award" bars={AWARD_BARS} />}
             >
               <p className="text-[11px] font-semibold text-[#9CA3AF] mt-2">My Rank</p>
               <p className="text-[22px] font-extrabold text-[#111] leading-none">#2</p>
@@ -576,8 +580,8 @@ export default function HrmsDashboard({
             <Card id="warnings-complaints" className="p-4 bg-[#FCF5F6] border-[#7A0A17]/15">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 min-w-0">
-                  <span className="size-9 rounded-full bg-[#FDECEE] text-[#E8395B] grid place-items-center shrink-0">
-                    <AlertTriangle size={18} strokeWidth={2.2} />
+                  <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
+                    <AlertTriangle size={16} strokeWidth={2} />
                   </span>
                   <div className="min-w-0">
                     <p className="text-[14px] font-extrabold text-[#111] leading-tight">Warnings and Complaints</p>
@@ -611,7 +615,7 @@ export default function HrmsDashboard({
                   <Settings size={15} />
                 </button>
               </div>
-              <p className="text-[12.5px] text-[#6B7280] font-medium mt-3 pl-[46px] max-w-[260px] leading-snug">
+              <p className="text-[12.5px] text-[#6B7280] font-medium mt-3 pl-10 max-w-[260px] leading-snug">
                 You will be alerted after {idleMinutes} minutes of inactivity.
               </p>
             </div>
@@ -688,17 +692,17 @@ export default function HrmsDashboard({
                         </td>
                         <td className="py-3">
                           <div className="flex items-center gap-1.5">
-                            <button type="button" onClick={() => onGoalAction("view", goal)} className="size-7 rounded-lg bg-[#FFF3E4] text-[#F59E0B] grid place-items-center" aria-label={`View ${goal.title}`}>
-                              <Eye size={13} />
+                            <button type="button" onClick={() => onGoalAction("view", goal)} className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center" aria-label={`View ${goal.title}`}>
+                              <Eye size={14} />
                             </button>
-                            <button type="button" onClick={() => onGoalAction("edit", goal)} className="size-7 rounded-lg bg-[#E8F2FE] text-[#3B82F6] grid place-items-center" aria-label={`Edit ${goal.title}`}>
-                              <Edit size={13} />
+                            <button type="button" onClick={() => onGoalAction("edit", goal)} className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center" aria-label={`Edit ${goal.title}`}>
+                              <Edit size={14} />
                             </button>
-                            <button type="button" onClick={() => onGoalAction("review", goal)} className="size-7 rounded-lg bg-[#EEF0FE] grid place-items-center" aria-label={`Review ${goal.title}`}>
+                            <button type="button" onClick={() => onGoalAction("review", goal)} className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center" aria-label={`Review ${goal.title}`}>
                               <img src={conductReviewIcon} alt="" className="size-3.5 object-contain" />
                             </button>
-                            <button type="button" onClick={() => onGoalAction("delete", goal)} className="size-7 rounded-lg bg-[#FDECEE] text-[#E8395B] grid place-items-center" aria-label={`Delete ${goal.title}`}>
-                              <Trash2 size={13} />
+                            <button type="button" onClick={() => onGoalAction("delete", goal)} className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center" aria-label={`Delete ${goal.title}`}>
+                              <Trash2 size={14} />
                             </button>
                           </div>
                         </td>
@@ -728,7 +732,7 @@ export default function HrmsDashboard({
             </div>
             <div className="space-y-2">
               {recent.map((item) => {
-                const { Icon, className } = recentItemIcon(item.type);
+                const Icon = recentItemIcon(item.type);
                 return (
                   <div key={item.id} className="flex items-center gap-2 rounded-xl bg-[#FAFAFB] border border-black/6 px-3 py-2.5">
                     <button
@@ -736,8 +740,8 @@ export default function HrmsDashboard({
                       onClick={() => openDetail(item)}
                       className="flex items-center gap-2 min-w-0 flex-1 text-left"
                     >
-                      <span className={`size-7 rounded-lg grid place-items-center shrink-0 ${className}`}>
-                        <Icon size={14} />
+                      <span className="size-7 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
+                        <Icon size={15} strokeWidth={2} />
                       </span>
                       <span className="text-[13px] font-bold text-[#111] truncate">{item.title}</span>
                     </button>
@@ -745,7 +749,7 @@ export default function HrmsDashboard({
                     <button
                       type="button"
                       onClick={() => openComment(item)}
-                      className="size-7 rounded-lg bg-[#FDF2F3] text-[#7A0A17] grid place-items-center shrink-0 hover:bg-[#F6E4E8] transition-colors"
+                      className="size-7 rounded-lg text-[#7A0A17] grid place-items-center shrink-0 hover:bg-[#FDF2F3] transition-colors"
                       aria-label={`Comment on ${item.title}`}
                     >
                       <MessageSquare size={14} />
@@ -775,7 +779,7 @@ export default function HrmsDashboard({
                     <button
                       type="button"
                       onClick={() => setCommentFor(item)}
-                      className="size-7 rounded-lg bg-[#FDF2F3] text-[#7A0A17] grid place-items-center shrink-0 hover:bg-[#F6E4E8] transition-colors"
+                      className="size-7 rounded-lg text-[#7A0A17] grid place-items-center shrink-0 hover:bg-[#FDF2F3] transition-colors"
                       aria-label={`Comment on ${item.title}`}
                     >
                       <MessageSquare size={14} />
@@ -850,8 +854,8 @@ export default function HrmsDashboard({
         title="Announcements"
         subtitle="All announcements"
         icon={<Megaphone size={17} />}
-        iconBg="#FDECEE"
-        iconColor="#E8395B"
+        iconBg="transparent"
+        iconColor="#7A0A17"
         width="max-w-3xl"
       >
         <AnnouncementsPage embedded />
@@ -878,7 +882,7 @@ export default function HrmsDashboard({
         title="Idle Alert Settings"
         subtitle="Choose how long inactivity should wait before you are alerted."
         icon={<Clock size={17} />}
-        iconBg="#FDECEE"
+        iconBg="transparent"
         iconColor="#7A0A17"
         width="max-w-md"
         footer={
@@ -937,7 +941,7 @@ export default function HrmsDashboard({
   );
 }
 
-function KpiCard({ icon, title, tone = "rose", onOpen, chart, children, trailing, id }) {
+function KpiCard({ icon, title, onOpen, chart, children, trailing, id }) {
   return (
     <Card id={id} className="p-4 cursor-pointer hover:border-[#7A0A17]/25">
       <div
@@ -953,7 +957,7 @@ function KpiCard({ icon, title, tone = "rose", onOpen, chart, children, trailing
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <MaroonIcon icon={icon} tone={tone} />
+            <MaroonIcon icon={icon} />
             <p className="text-[13px] font-extrabold text-[#111] leading-tight">{title}</p>
           </div>
           {trailing}
