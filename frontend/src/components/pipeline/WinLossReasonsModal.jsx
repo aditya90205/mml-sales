@@ -118,12 +118,19 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
     });
     if (others.trim()) reasonParts.push(`Others: ${others.trim()}`);
 
+    const followUps = REASONS.filter((r) => r.inputType === "date" && details[r.id]?.trim()).map((r) => ({
+      reasonId: r.id,
+      label: r.label,
+      date: details[r.id].trim(),
+    }));
+
     const heldAt = new Date();
     const reactivateAt = addCalendarMonths(heldAt, reactivateMonths);
     onSave?.({
       reasons: reasonParts.join(", "),
       briefNote: briefNote.trim(),
       mode,
+      followUps,
       reactivation:
         mode === "cold"
           ? {

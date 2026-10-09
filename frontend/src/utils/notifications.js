@@ -1,4 +1,5 @@
 const STORAGE_KEY = "mml_sales_notification_unread";
+const EXTRA_KEY = "mml_sales_notification_extra";
 const EVENT = "mml-sales-notifications";
 
 export const NOTIFICATION_TYPES = [
@@ -194,12 +195,55 @@ function writeUnreadMap(map) {
   emit();
 }
 
+function readExtraNotifications() {
+  try {
+    const raw = localStorage.getItem(EXTRA_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeExtraNotifications(list) {
+  try {
+    localStorage.setItem(EXTRA_KEY, JSON.stringify(list.slice(0, 80)));
+  } catch {
+    /* ignore */
+  }
+  emit();
+}
+
 export function readNotifications() {
   const unreadMap = readUnreadMap();
-  return DEFAULT_NOTIFICATIONS.map((n) => ({
+  const withUnread = (n) => ({
     ...n,
-    unread: unreadMap[n.id] !== undefined ? Boolean(unreadMap[n.id]) : n.unread,
-  }));
+    unread: unreadMap[n.id] !== undefined ? Boolean(unreadMap[n.id]) : Boolean(n.unread),
+  });
+  return [...readExtraNotifications().map(withUnread), ...DEFAULT_NOTIFICATIONS.map(withUnread)];
+}
+
+/** Prepend a live notification (cold/lost, follow-ups, etc.) for the TopBar bell. */
+export function pushNotification(partial = {}) {
+  const id = partial.id || `live-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const item = {
+    id,
+    actor: partial.actor || "Pipeline",
+    title: partial.title || "Update",
+    message: partial.message || "",
+    type: partial.type || "Lead",
+    time: partial.time || "Just now",
+    period: partial.period || "today",
+    unread: partial.unread !== false,
+    to: partial.to || "/pipeline",
+  };
+  const next = [item, ...readExtraNotifications().filter((n) => n.id !== id)];
+  writeExtraNotifications(next);
+  const map = readUnreadMap();
+  map[id] = true;
+  writeUnreadMap(map);
+  return item;
 }
 
 export function markNotificationRead(id) {
@@ -211,7 +255,7 @@ export function markNotificationRead(id) {
 
 export function markAllNotificationsRead() {
   const map = {};
-  DEFAULT_NOTIFICATIONS.forEach((n) => {
+  [...DEFAULT_NOTIFICATIONS, ...readExtraNotifications()].forEach((n) => {
     map[n.id] = false;
   });
   writeUnreadMap(map);

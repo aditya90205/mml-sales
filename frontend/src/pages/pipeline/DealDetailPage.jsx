@@ -54,6 +54,7 @@ import {
 import { buildDemoHistory, ensureLeadHistory, recordLeadActivity } from "../../utils/leadActivityStore.js";
 import { formatLookingForLabel, leadHasMobileNumber, P2_MOBILE_REQUIRED_MESSAGE, splitName } from "../../utils/leadFields.js";
 import { addExtraEvent, taskFormToCalendarItem } from "../../utils/calendarStore.js";
+import { pushNotification } from "../../utils/notifications.js";
 
 const BASE_TABS = [
   { key: "overview",  label: "Overview (P0-P1)" },
@@ -279,6 +280,8 @@ function holdFromLead(lead) {
     reasons: lead.winLossReasons || "",
     tone: lead.dealStatus === "cold" ? "Cold" : "Lost",
     briefNote: lead.winLossNote || "",
+    heldStage: lead.winLossStage || "",
+    followUps: Array.isArray(lead.winLossFollowUps) ? lead.winLossFollowUps : [],
     reactivateMode: lead.reactivateMode || "",
     reactivateMonths: lead.reactivateMonths || "",
     reactivateAt: lead.reactivateAt || "",
@@ -292,6 +295,51 @@ function holdTimingLabel(hold) {
   const span = monthLabel(hold.reactivateMonths);
   if (date && span) return `${date} (${span})`;
   return date || span;
+}
+
+function formatFollowUpDate(value) {
+  if (!value) return "";
+  const asHold = formatHoldDate(value);
+  if (asHold) return asHold;
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return String(value);
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function stageLabelForHold(stageId, contactedP0 = false) {
+  if (stageId === "P0") return contactedP0 ? "P0 Contacted" : "P0 New";
+  return STAGE_LABELS[stageId] || stageId || "Unknown stage";
+}
+
+function buildHoldNotificationMessage({
+  stageLabel,
+  reasons,
+  briefNote,
+  mode,
+  reactivation,
+  followUps = [],
+}) {
+  const parts = [`Stage: ${stageLabel}`];
+  if (reasons) parts.push(`Why: ${reasons}`);
+  if (briefNote) parts.push(`Note: ${briefNote}`);
+  if (mode === "cold") {
+    if (reactivation?.mode === "manual") {
+      parts.push("Next steps: Reactivate manually");
+    } else {
+      const when = formatHoldDate(reactivation?.reactivateAt) || "later";
+      const span = monthLabel(reactivation?.months);
+      parts.push(
+        `Next steps: Automatic follow-up on ${when}${span ? ` (after ${span})` : ""}`
+      );
+    }
+  }
+  followUps.forEach((item) => {
+    const when = formatFollowUpDate(item.date);
+    if (when) parts.push(`Follow-up (${item.label}): ${when}`);
+  });
+  return parts.join(" · ");
 }
 
 /**
@@ -341,6 +389,33 @@ export default function DealDetailPage({
       : "lost"
     : null;
   const isLost = holdStatus === "lost";
+  const holdMetaItems = holdStatus
+    ? [
+        {
+          label: "Stage",
+          value: winLossOverride?.heldStage || stageLabelForHold(currentStage, isContactedP0),
+        },
+        winLossOverride?.reasons ? { label: "Why", value: winLossOverride.reasons } : null,
+        winLossOverride?.briefNote ? { label: "Note", value: winLossOverride.briefNote } : null,
+        ...(winLossOverride?.followUps || []).map((item) => ({
+          label: "Follow-up",
+          value: `${item.label} on ${formatFollowUpDate(item.date)}`,
+        })),
+        holdStatus === "cold"
+          ? {
+              label: "Next steps",
+              value: [
+                winLossOverride?.reactivateMode === "scheduled"
+                  ? `Automatic follow-up after ${monthLabel(winLossOverride.reactivateMonths) || "a set time"}`
+                  : "Reactivate manually",
+                holdTimingLabel(winLossOverride) ? `Date: ${holdTimingLabel(winLossOverride)}` : "",
+              ]
+                .filter(Boolean)
+                .join(" · "),
+            }
+          : null,
+      ].filter(Boolean)
+    : [];
 
   useEffect(() => {
     setCurrentStage(stageFromBoard);
@@ -591,9 +666,10 @@ export default function DealDetailPage({
 
   const openWinLossModal = (mode) => setWinLossModal({ open: true, mode });
 
-  const handleWinLossSave = ({ reasons, briefNote, mode, reactivation }) => {
+  const handleWinLossSave = ({ reasons, briefNote, mode, reactivation, followUps = [] }) => {
     const tone = mode === "cold" ? "Cold" : "Lost";
     const dealStatus = mode === "cold" ? "cold" : "lost";
+    const heldStage = stageLabelForHold(currentStage, isContactedP0);
     const holdPatch =
       mode === "cold" && reactivation
         ? {
@@ -619,6 +695,8 @@ export default function DealDetailPage({
       reasons,
       tone,
       briefNote,
+      heldStage,
+      followUps,
       reactivateMode: holdPatch.reactivateMode,
       reactivateMonths: holdPatch.reactivateMonths,
       reactivateAt: holdPatch.reactivateAt,
@@ -632,32 +710,71 @@ export default function DealDetailPage({
         temperature: tone,
         winLossReasons: reasons,
         winLossNote: briefNote,
+        winLossStage: heldStage,
+        winLossFollowUps: followUps,
         lost: dealStatus === "lost",
         ...holdPatch,
       });
     }
     const timing = mode === "cold" ? holdTimingLabel(holdPatch) : "";
+    const detailMessage = buildHoldNotificationMessage({
+      stageLabel: heldStage,
+      reasons,
+      briefNote,
+      mode,
+      reactivation,
+      followUps,
+    });
     recordLeadActivity(lead, currentStage, {
       type: mode === "cold" ? "flag" : "stage",
       title:
         mode === "cold"
           ? `${deal.name} moved to Cold & Hold`
           : `${deal.name} marked as lost`,
-      detail:
-        mode === "cold"
-          ? `${reasons}${
-              reactivation?.mode === "manual"
-                ? ` · Manual reactivation · Timing: ${timing}`
-                : ` · Automatic reactivation · Timing: ${timing}`
-            }`
-          : reasons,
+      detail: detailMessage,
     });
+
+    const leadPath = lead?.id ? `/pipeline?openLead=${encodeURIComponent(lead.id)}` : "/pipeline";
+    pushNotification({
+      actor: "Pipeline",
+      title:
+        mode === "cold"
+          ? `${deal.name} moved to Cold & Hold`
+          : `${deal.name} marked as lost`,
+      message: detailMessage,
+      type: mode === "cold" ? "Follow-up" : "Lead",
+      to: leadPath,
+    });
+
+    if (mode === "cold" && reactivation?.mode === "scheduled" && reactivation?.reactivateAt) {
+      const when = formatHoldDate(reactivation.reactivateAt) || "the review date";
+      pushNotification({
+        actor: "Follow-up",
+        title: `Follow up ${deal.name}`,
+        message: `Automatic Cold & Hold review on ${when}. Stage was ${heldStage}. Why: ${reasons || "—"}.`,
+        type: "Follow-up",
+        to: leadPath,
+      });
+    }
+
+    followUps.forEach((item) => {
+      const when = formatFollowUpDate(item.date);
+      if (!when) return;
+      pushNotification({
+        actor: "Follow-up",
+        title: `Follow up ${deal.name}`,
+        message: `${item.label} — next follow-up on ${when}. Stage: ${heldStage}.`,
+        type: "Follow-up",
+        to: leadPath,
+      });
+    });
+
     toast.success(
       mode === "cold"
         ? reactivation?.mode === "manual"
-          ? `${deal.name} moved to Cold & Hold. Reactivate manually. Timing: ${timing}.`
-          : `${deal.name} moved to Cold & Hold. Automatic reactivation on ${timing}.`
-        : `${deal.name} marked as lost. Win / loss reasons updated.`
+          ? `${deal.name} moved to Cold & Hold at ${heldStage}. Reactivate manually.`
+          : `${deal.name} moved to Cold & Hold at ${heldStage}. Automatic follow-up on ${timing || "the review date"}.`
+        : `${deal.name} marked as lost at ${heldStage}. Win / loss reasons saved.`
     );
   };
 
@@ -928,18 +1045,24 @@ export default function DealDetailPage({
                   {holdStatus === "cold"
                     ? "This deal is on hold. P0 to P6 are inactive."
                     : "This deal is closed as lost. P0 to P6 are inactive."}
-                  {winLossOverride?.reasons ? ` Reason: ${winLossOverride.reasons}.` : ""}
                 </p>
-                {holdStatus === "cold" && (
-                  <p className="text-[12px] font-semibold text-[#7A0A17] mt-1.5 leading-snug">
-                    {winLossOverride?.reactivateMode === "scheduled"
-                      ? `Reactivate option: After ${monthLabel(winLossOverride.reactivateMonths) || "a set time"}`
-                      : "Reactivate option: Manual"}
-                    {holdTimingLabel(winLossOverride)
-                      ? ` · Timing: ${holdTimingLabel(winLossOverride)}`
-                      : ""}
-                  </p>
-                )}
+                {holdMetaItems.length ? (
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5 text-[12px] leading-snug text-[#374151]">
+                    {holdMetaItems.map((item, index) => (
+                      <p key={`${item.label}-${index}`} className="min-w-0 flex items-start gap-2">
+                        {index % 2 === 1 ? (
+                          <span className="hidden sm:inline text-[#D1D5DB] font-normal shrink-0" aria-hidden>
+                            |
+                          </span>
+                        ) : null}
+                        <span className="min-w-0">
+                          <span className="font-semibold text-[#7A0A17]">{item.label}:</span>{" "}
+                          <span className="break-words">{item.value}</span>
+                        </span>
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : null}
