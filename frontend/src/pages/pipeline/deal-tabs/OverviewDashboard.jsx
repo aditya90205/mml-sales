@@ -1253,11 +1253,16 @@ export default function OverviewDashboard({
   const [recentOpen, setRecentOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [packageOpen, setPackageOpen] = useState(false);
+  const [packageModalVariant, setPackageModalVariant] = useState("full");
   const [packageSave, setPackageSave] = useState({
     disabled: true,
     onSave: () => {},
     subtitle: "Select a package, then save",
   });
+  const openPackageModal = (variant = "full") => {
+    setPackageModalVariant(variant);
+    setPackageOpen(true);
+  };
   const [searchParams, setSearchParams] = useSearchParams();
   const [discountOpen, setDiscountOpen] = useState(() => searchParams.get("openDiscount") === "1");
   const discountOpenedAt = useRef(0);
@@ -1899,7 +1904,7 @@ export default function OverviewDashboard({
                 brandAction
                 onAction={() => {
                   if (paymentVerified) setInvoiceOpen(true);
-                  else setPackageOpen(true);
+                  else openPackageModal("full");
                 }}
               />
               <div className="w-full rounded-xl bg-[#FFF2E0] px-4 py-3 flex items-center gap-2.5">
@@ -2162,6 +2167,7 @@ export default function OverviewDashboard({
           deal={deal}
           currentStage={currentStage}
           onPaymentLinkSent={() => setPayQuoteOpen(false)}
+          onChangePackage={() => openPackageModal("catalogue")}
         />
       </Modal>
 
@@ -2448,11 +2454,15 @@ export default function OverviewDashboard({
         iconBg="#FFF2E0"
         iconColor="#E8B400"
         width="max-w-6xl"
+        zClass="z-[90]"
         headerActions={
           <button
             type="button"
             disabled={packageSave.disabled}
-            onClick={packageSave.onSave}
+            onClick={() => {
+              packageSave.onSave();
+              setPackageOpen(false);
+            }}
             className="h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Save
@@ -2461,6 +2471,7 @@ export default function OverviewDashboard({
       >
         <PackageQuoteTab
           empty={false}
+          variant={packageModalVariant}
           selectedKey={selectedPackageKey}
           onPackageSelect={onPackageSelect}
           onBindSave={setPackageSave}

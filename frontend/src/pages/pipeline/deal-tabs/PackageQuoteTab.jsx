@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Check, ChevronDown, MessageSquare, Trash2, TrendingUp, X } from "lucide-react";
+import { Check, ChevronDown, MessageSquare, Package, Trash2, TrendingUp, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
@@ -490,7 +490,7 @@ function DiscountApprovalsCard() {
 const FIELD =
   "w-full border border-black/12 rounded-xl px-3.5 py-2.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]";
 
-function QuotationCard({ clientName = "", deal, currentStage, showSend = true, viewOnly = false }) {
+function QuotationCard({ clientName = "", deal, currentStage, showSend = true, viewOnly = false, onChangePackage }) {
   const paymentReady = atLeast(currentStage, "P1");
   const quote = useQuote();
   const items = quote.items;
@@ -742,7 +742,7 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
                   }`}
                 />
               ))}
-              <th className="px-1 py-2 rounded-r-lg" aria-label="Remove add-on" />
+              <th className="px-1 py-2 rounded-r-lg" aria-label="Row actions" />
             </tr>
           </thead>
           <tbody>
@@ -757,7 +757,17 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
                 <td className="px-2 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{formatInr(row.quoted)}</td>
                 <td className="px-2 py-2.5 text-[12px] text-[#4B5563] whitespace-nowrap">{formatInr(row.rate)}</td>
                 <td className="px-1 py-2.5 text-right">
-                  {row.type === "Add-on" ? (
+                  {row.type === "Base" && onChangePackage ? (
+                    <button
+                      type="button"
+                      onClick={onChangePackage}
+                      className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center ml-auto"
+                      aria-label="Change package"
+                      title="Change package"
+                    >
+                      <Package size={14} />
+                    </button>
+                  ) : row.type === "Add-on" ? (
                     <button
                       type="button"
                       onClick={() => handleRemoveAddon(row)}
@@ -948,7 +958,7 @@ function PaymentLinkPanel({ deal, clientName = "", currentStage, onLinkSent }) {
 }
 
 /** Package & Quote tab — package catalogue, quotation, and discount approvals. */
-export default function PackageQuoteTab({ empty = false, selectedKey = null, onPackageSelect, onBindSave, variant = "full", clientName = "", deal, currentStage, onPaymentLinkSent }) {
+export default function PackageQuoteTab({ empty = false, selectedKey = null, onPackageSelect, onBindSave, variant = "full", clientName = "", deal, currentStage, onPaymentLinkSent, onChangePackage }) {
   const [pendingKey, setPendingKey] = useState(selectedKey);
   const onBindSaveRef = useRef(onBindSave);
   onBindSaveRef.current = onBindSave;
@@ -1012,7 +1022,14 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
         <div className="min-w-0">
-          <QuotationCard clientName={clientName} deal={deal} currentStage={currentStage} showSend={false} viewOnly />
+          <QuotationCard
+            clientName={clientName}
+            deal={deal}
+            currentStage={currentStage}
+            showSend={false}
+            viewOnly
+            onChangePackage={onChangePackage}
+          />
         </div>
         <div className="min-w-0">
           <PaymentLinkPanel
@@ -1038,6 +1055,8 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
       </div>
     );
   }
+
+  const catalogueOnly = variant === "catalogue";
 
   return (
     <div className="flex flex-col gap-5">
@@ -1085,15 +1104,17 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-        <div className="min-w-0">
-          <QuotationCard clientName={clientName} deal={deal} currentStage={currentStage} />
+      {catalogueOnly ? null : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+          <div className="min-w-0">
+            <QuotationCard clientName={clientName} deal={deal} currentStage={currentStage} />
+          </div>
+          <div className="min-w-0 flex flex-col gap-5">
+            <DiscountApprovalsCard />
+            {upsellCard}
+          </div>
         </div>
-        <div className="min-w-0 flex flex-col gap-5">
-          <DiscountApprovalsCard />
-          {upsellCard}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
