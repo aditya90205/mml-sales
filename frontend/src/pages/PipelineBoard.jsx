@@ -24,6 +24,7 @@ import {
   Video,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { leadHasMobileNumber, P2_MOBILE_REQUIRED_MESSAGE } from "../utils/leadFields.js";
 import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
@@ -1115,6 +1116,10 @@ export default function PipelineBoard() {
       toast.error("Could not move this lead.");
       return null;
     }
+    if (fromStage === "P1" && spec.to === "P2" && !leadHasMobileNumber(lead)) {
+      toast.error(P2_MOBILE_REQUIRED_MESSAGE);
+      return null;
+    }
     const moved = moveLeadToStage(lead.id, spec.to, {
       ...spec.patch,
       overviewDetails: lead.overviewDetails,
@@ -1209,6 +1214,9 @@ export default function PipelineBoard() {
 
   const handleMoveStage = (lead, stageKey) => {
     if (stageKey === "P0" || stageKey === "P1") {
+      if (stageKey === "P1" && !leadHasMobileNumber(lead)) {
+        toast.error(P2_MOBILE_REQUIRED_MESSAGE);
+      }
       handleOpenDeal(lead, stageKey);
       return;
     }

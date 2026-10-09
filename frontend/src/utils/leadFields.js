@@ -40,6 +40,8 @@ export const CREATE_LEAD_COMPARE_FIELDS = [
 ];
 
 export const CONTACT_REQUIRED_MESSAGE = "Enter at least one valid mobile number or email.";
+export const P2_MOBILE_REQUIRED_MESSAGE =
+  "Add a mobile number before moving this lead to P2.";
 
 export const FIELD_DUMMY_HINTS = {
   firstName: "e.g. Ritika",
@@ -83,6 +85,18 @@ export function isValidMobile(value) {
 /** Profile / lead contact rule: at least one of mobile or email. */
 export function hasValidMobileOrEmail(form = {}) {
   return isValidMobile(form.mobile) || isValidEmail(form.email);
+}
+
+/** P1 → P2 needs a real mobile, including numbers saved on the deal. */
+export function leadHasMobileNumber(source = {}) {
+  const values = [
+    source.mobile,
+    source.phone,
+    source.overviewDetails?.mobile,
+    source.overviewDetails?.phone,
+    source.intakeValues?.mobile,
+  ];
+  return values.some((value) => isValidMobile(value));
 }
 
 export function splitName(name = "") {

@@ -9,6 +9,13 @@ export const DEFAULT_UNSCHEDULED = [
   { id: "u4", title: "Prepare Sharma Match Shortlist", type: "Prospect", duration: "45 min" },
 ];
 
+const REFILL_UNSCHEDULED = [
+  { id: "u5", title: "Send Kapoor Family Shortlist", type: "Prospect", duration: "30 min" },
+  { id: "u6", title: "Confirm Sharma Visit Slot", type: "Lead", duration: "30 min" },
+  { id: "u7", title: "Share Mehta Package Options", type: "Prospect", duration: "45 min" },
+  { id: "u8", title: "Call back pending P0 leads", type: "Lead", duration: "30 min" },
+];
+
 function pad2(n) {
   return String(n).padStart(2, "0");
 }
@@ -270,15 +277,24 @@ function readJson(key, fallback) {
   }
 }
 
+function seedUnscheduled(source = DEFAULT_UNSCHEDULED) {
+  const stamp = Date.now();
+  return source.map((item, index) => ({
+    ...item,
+    id: `${item.id}-${stamp}-${index}`,
+  }));
+}
+
 export function readUnscheduled() {
   const list = readJson(UNSCHEDULED_KEY, null);
-  if (!Array.isArray(list)) {
+  if (!Array.isArray(list) || list.length === 0) {
+    const seeded = seedUnscheduled();
     try {
-      localStorage.setItem(UNSCHEDULED_KEY, JSON.stringify(DEFAULT_UNSCHEDULED));
+      localStorage.setItem(UNSCHEDULED_KEY, JSON.stringify(seeded));
     } catch {
       /* ignore */
     }
-    return DEFAULT_UNSCHEDULED;
+    return seeded;
   }
   return list;
 }
@@ -293,7 +309,8 @@ function writeUnscheduled(list) {
 }
 
 export function removeUnscheduled(id) {
-  writeUnscheduled(readUnscheduled().filter((item) => item.id !== id));
+  const next = readUnscheduled().filter((item) => item.id !== id);
+  writeUnscheduled(next.length ? next : seedUnscheduled(REFILL_UNSCHEDULED));
 }
 
 export function readExtraEvents() {

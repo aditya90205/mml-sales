@@ -19,6 +19,7 @@ import {
   LEAD_OCCUPATIONS,
   LEAD_RELATIONS,
   classifyField,
+  CONTACT_REQUIRED_MESSAGE,
   firstValidationMessage,
   validateCreateLeadFields,
 } from "../../utils/leadFields.js";
@@ -392,9 +393,12 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
       clientId: initial?.clientId,
       mode: initial?.existingLeadId || initial?.mode === "update" ? "update" : "create",
     });
-    const msg = firstValidationMessage(validateCreateLeadFields(lead, { requireContact: false }));
+    const msg = firstValidationMessage(validateCreateLeadFields(lead, { requireContact: !hasExisting }));
     if (msg) {
       setError(msg);
+      if (!hasExisting && msg === CONTACT_REQUIRED_MESSAGE) {
+        toast.error("Lead not saved. Add a mobile number or email first.");
+      }
       return;
     }
     onSave?.(lead);
@@ -494,7 +498,7 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
         subtitle={
           hasExisting
             ? "Existing client. Extra details go to Profile Create (P2)."
-            : "New biodata. Save to create this profile in Sales Pipeline."
+            : "New biodata. Add a mobile number or email, then save to create this profile."
         }
         icon={<UserPlus size={18} />}
         iconBg="#F3E8F0"
@@ -558,12 +562,13 @@ export default function BiodataProfileModal({ open, onClose, onSave, initial = n
                 {expanded ? (
                   <div className={`p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3.5 ${cols === 3 ? "lg:grid-cols-3" : "lg:grid-cols-5"}`}>
                     {section.fields.map((field) => {
-                      const conflict = hasFieldConflict(
-                        field.key,
-                        imported[field.key],
-                        existing[field.key],
-                        hasExisting
-                      );
+                      const contactMissing =
+                        !hasExisting &&
+                        error === CONTACT_REQUIRED_MESSAGE &&
+                        (field.key === "mobile" || field.key === "email");
+                      const conflict =
+                        contactMissing ||
+                        hasFieldConflict(field.key, imported[field.key], existing[field.key], hasExisting);
                       const noteConflict = field.noteKey
                         ? hasFieldConflict(
                             field.noteKey,

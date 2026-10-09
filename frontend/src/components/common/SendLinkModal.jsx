@@ -30,6 +30,9 @@ export default function SendLinkModal({
   embedded = false,
   hideHeader = false,
   beforeSend = null,
+  afterSend = null,
+  onSent = null,
+  closeOnSend = true,
 }) {
   const formId = `send-link-${useId().replace(/:/g, "")}`;
   const options = linkTypes.map((id) => LINK_TYPE_META[id]).filter(Boolean);
@@ -94,7 +97,8 @@ export default function SendLinkModal({
       });
     }
     toast.success(`${linkLabel} sent to ${deal?.name || "client"} via ${via}.`);
-    onClose?.();
+    onSent?.({ linkType: activeType, channels: selected, message: body });
+    if (closeOnSend) onClose?.();
   };
 
   const sendButton = (
@@ -204,9 +208,10 @@ export default function SendLinkModal({
           </div>
         )}
         <div className="px-5 py-5">{form}</div>
-        <div className="flex justify-end items-center gap-2.5 px-5 py-4 border-t border-black/10">
+        <div className="flex justify-end items-center gap-2.5 px-5 py-4 border-t border-black/10 flex-wrap">
           {beforeSend}
           {sendButton}
+          {afterSend}
         </div>
       </div>
     );

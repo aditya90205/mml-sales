@@ -52,7 +52,7 @@ import {
   updateLead,
 } from "../../utils/pipelineStore.js";
 import { buildDemoHistory, ensureLeadHistory, recordLeadActivity } from "../../utils/leadActivityStore.js";
-import { formatLookingForLabel, splitName } from "../../utils/leadFields.js";
+import { formatLookingForLabel, leadHasMobileNumber, P2_MOBILE_REQUIRED_MESSAGE, splitName } from "../../utils/leadFields.js";
 import { addExtraEvent, taskFormToCalendarItem } from "../../utils/calendarStore.js";
 
 const BASE_TABS = [
@@ -674,6 +674,15 @@ export default function DealDetailPage({
 
   const handleConfirmMove = () => {
     if (holdStatus || !nextStage) return;
+    if (currentStage === "P1" && !leadHasMobileNumber({
+      ...lead,
+      mobile: savedDetails?.mobile || lead?.mobile,
+      phone: savedDetails?.phone || lead?.phone,
+      overviewDetails: savedDetails || lead?.overviewDetails,
+    })) {
+      toast.error(P2_MOBILE_REQUIRED_MESSAGE);
+      return;
+    }
     const fromStage = currentStage;
     if (nextStage === "Contacted") {
       setP0Contacted(true);

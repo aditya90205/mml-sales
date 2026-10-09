@@ -1627,10 +1627,7 @@ export default function CalendarPage() {
             <p className="text-[10.5px] font-bold text-[#9CA3AF] tracking-wide">UNSCHEDULED</p>
             <p className="text-[10.5px] text-[#9CA3AF]">click or drag onto grid</p>
           </div>
-          {unscheduled.length === 0 ? (
-            <p className="text-[12px] text-[#9CA3AF] py-2">All caught up.</p>
-          ) : (
-            unscheduled.map((item) => (
+          {unscheduled.map((item) => (
               <UnscheduledItem
                 key={item.id}
                 item={item}
@@ -1638,8 +1635,7 @@ export default function CalendarPage() {
                 onDragEnd={clearDrag}
                 onClick={() => openUnscheduledMeeting(item)}
               />
-            ))
-          )}
+          ))}
         </div>
       </aside>
 

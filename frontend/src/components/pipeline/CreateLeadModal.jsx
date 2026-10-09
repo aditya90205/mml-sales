@@ -889,6 +889,9 @@ export default function CreateLeadModal({ open, onClose, onCreate, initial = nul
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <p className="sm:col-span-2 text-[12px] text-[#6B7280] -mb-1">
+                Mobile number or email — at least one is required.
+              </p>
               <ComparedField
                 fieldKey="mobile"
                 label="Mobile Number"

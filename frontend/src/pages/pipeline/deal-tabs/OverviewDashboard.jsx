@@ -40,10 +40,14 @@ import EmailActivityButton from "../../../components/common/EmailActivityButton.
 import ChangeProfilePhotoModal from "../../../components/common/ChangeProfilePhotoModal.jsx";
 import NotificationTypeIcon from "../../../components/common/NotificationTypeIcon.jsx";
 import SendMessageModal from "../../../components/common/SendMessageModal.jsx";
+import PaymentInvoiceModal from "../../../components/common/PaymentInvoiceModal.jsx";
+import VerifyPaymentModal from "../../../components/common/VerifyPaymentModal.jsx";
 import BiodataUploadModal from "../../../components/pipeline/BiodataUploadModal";
 import BiodataProfileModal from "../../../components/pipeline/BiodataProfileModal";
 import LeadScoreModal from "../../../components/pipeline/LeadScoreModal";
 import Modal from "../../../components/ui/Modal";
+import { clientShareId } from "../../../utils/shareLinks";
+import { packageTerm, usePaymentVerify } from "../../../utils/paymentVerifyStore";
 import CreateMeetingEventModal from "../../../components/calendar/CreateMeetingEventModal";
 import TaskDetailsModal, { calendarEventToTaskView } from "../../../components/calendar/TaskDetailsModal";
 import EventDetailsModal, { calendarEventToEventView } from "../../../components/calendar/EventDetailsModal";
@@ -246,6 +250,13 @@ function formatStampDate(iso) {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleDateString("en-GB");
+}
+
+function formatPackageDate(iso) {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 function splitStamp(value) {
@@ -583,20 +594,41 @@ function addonExtra(selected) {
   return ADDON_CATALOG.filter((item) => selected.includes(item.id)).reduce((sum, item) => sum + item.price, 0);
 }
 
-function AddonPayBar({ selected, packageAmount, onPay, showPay = true }) {
+function AddonPayBar({
+  selected,
+  packageAmount,
+  onPay,
+  showPay = true,
+  payLabel = "Pay",
+  showVerify = false,
+  onVerify,
+}) {
   return (
     <div className="flex items-center justify-between gap-2">
       <p className="text-[13px] text-[#374151]">
         Total : <span className="font-bold text-[#111]">{formatInr(packageAmount + addonExtra(selected))}</span>
       </p>
-      {showPay ? (
-        <button
-          type="button"
-          onClick={onPay}
-          className="h-8 px-4 rounded-lg bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
-        >
-          Pay
-        </button>
+      {showPay || showVerify ? (
+        <div className="flex items-center gap-2 shrink-0">
+          {showVerify ? (
+            <button
+              type="button"
+              onClick={onVerify}
+              className="h-8 px-4 rounded-lg bg-white border border-[#7A0A17] text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#FDF2F3] transition-colors"
+            >
+              Verify
+            </button>
+          ) : null}
+          {showPay ? (
+            <button
+              type="button"
+              onClick={onPay}
+              className="h-8 px-4 rounded-lg bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
+            >
+              {payLabel}
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
@@ -957,6 +989,93 @@ function CardHead({ icon: Icon, title, action, onAction, accent = false, brandAc
   );
 }
 
+function PackageDetailModal({ open, onClose, pkg, term, addons = [], amount }) {
+  if (!pkg) return null;
+  const included = (pkg.features || []).filter((feature) => feature.included);
+  const months = term?.months || pkg.months || 12;
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Package detail"
+      subtitle={pkg.subtitle || `${months} months`}
+      icon={<Gift size={18} />}
+      iconBg="#FFF2E0"
+      iconColor="#E8B400"
+      width="max-w-md"
+      zClass="z-[80]"
+      footer={
+        <button
+          type="button"
+          onClick={onClose}
+          className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+        >
+          Close
+        </button>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <div className="rounded-xl bg-[#FFF2E0] px-4 py-3 flex items-center gap-2.5">
+          <Crown size={18} className="text-[#E8B400] shrink-0" fill="#E8B400" strokeWidth={1.5} />
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] font-semibold text-[#1A5AA8] truncate">{pkg.name} Package</p>
+            <p className="text-[11.5px] text-[#6B7280] mt-0.5">{months} months</p>
+          </div>
+          <p className="text-[14px] font-semibold text-[#1A5AA8] shrink-0">{pkg.price}</p>
+        </div>
+
+        <div className="rounded-xl border border-black/8 px-4 py-3 flex flex-col gap-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#7A0A17]">Validity</p>
+          <div className="flex items-center justify-between gap-3 text-[13px]">
+            <span className="text-[#6B7280]">From</span>
+            <span className="font-semibold text-[#111]">{formatPackageDate(term?.validFrom)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-3 text-[13px]">
+            <span className="text-[#6B7280]">Expires</span>
+            <span className="font-semibold text-[#111]">{formatPackageDate(term?.validUntil)}</span>
+          </div>
+        </div>
+
+        {included.length ? (
+          <div>
+            <p className="text-[13px] font-bold text-[#111] mb-2">Included</p>
+            <ul className="flex flex-col gap-2">
+              {included.map((feature) => (
+                <li key={feature.label} className="flex items-start gap-2 text-[13px] text-[#374151]">
+                  <span className="size-[18px] rounded-full bg-[#10B981] text-white grid place-items-center shrink-0 mt-0.5">
+                    <Check size={11} strokeWidth={3} />
+                  </span>
+                  {feature.label}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {addons.length ? (
+          <div>
+            <p className="text-[13px] font-bold text-[#111] mb-2">Add-ons</p>
+            <ul className="flex flex-col gap-2">
+              {addons.map((item) => (
+                <li key={item.id} className="flex items-center justify-between gap-3 text-[13px]">
+                  <span className="text-[#374151]">{item.name}</span>
+                  <span className="font-semibold text-[#111]">{formatInr(item.price)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-black/6 text-[14px] font-bold text-[#111]">
+          <span>Total</span>
+          <span>{formatInr(amount)}</span>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 function filled(value) {
   const text = String(value ?? "").trim();
   if (!text || text === "-" || text === "—" || text === "–") return "";
@@ -974,9 +1093,16 @@ export default function OverviewDashboard({
   onPackageSelect,
 }) {
   const paymentReady = atLeast(currentStage, "P1");
+  const paymentDealKey = clientShareId(deal);
+  const paymentVerify = usePaymentVerify(paymentDealKey);
+  const paymentLinkSent = Boolean(paymentVerify?.linkSent);
+  const paymentVerified = Boolean(paymentVerify?.verified);
   const [openPanels, setOpenPanels] = useState([]);
   const [messageOpen, setMessageOpen] = useState(false);
   const [payQuoteOpen, setPayQuoteOpen] = useState(false);
+  const [verifyPaymentOpen, setVerifyPaymentOpen] = useState(false);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [packageDetailOpen, setPackageDetailOpen] = useState(false);
   const [biodataOpen, setBiodataOpen] = useState(false);
   const [showBiodataProfile, setShowBiodataProfile] = useState(false);
   const [profileInitial, setProfileInitial] = useState(null);
@@ -1608,9 +1734,12 @@ export default function OverviewDashboard({
               <CardHead
                 icon={Gift}
                 title="Package"
-                action="Select Package"
+                action={paymentVerified ? "View Invoice" : "Select Package"}
                 brandAction
-                onAction={() => setPackageOpen(true)}
+                onAction={() => {
+                  if (paymentVerified) setInvoiceOpen(true);
+                  else setPackageOpen(true);
+                }}
               />
               <div className="w-full rounded-xl bg-[#FFF2E0] px-4 py-3 flex items-center gap-2.5">
                 <Crown size={18} className="text-[#E8B400] shrink-0" fill="#E8B400" strokeWidth={1.5} />
@@ -1712,7 +1841,13 @@ export default function OverviewDashboard({
                     selected={selectedAddons}
                     packageAmount={rupeeNumber(packagePrice)}
                     showPay={paymentReady}
-                    onPay={() => setPayQuoteOpen(true)}
+                    payLabel={paymentVerified ? "Detail" : "Pay"}
+                    showVerify={paymentReady && paymentLinkSent && !paymentVerified}
+                    onVerify={() => setVerifyPaymentOpen(true)}
+                    onPay={() => {
+                      if (paymentVerified) setPackageDetailOpen(true);
+                      else setPayQuoteOpen(true);
+                    }}
                   />
                 </div>
               </div>
@@ -1850,8 +1985,39 @@ export default function OverviewDashboard({
           clientName={deal?.name || ""}
           deal={deal}
           currentStage={currentStage}
+          onPaymentLinkSent={() => setPayQuoteOpen(false)}
         />
       </Modal>
+
+      <VerifyPaymentModal
+        open={verifyPaymentOpen}
+        onClose={() => setVerifyPaymentOpen(false)}
+        dealId={paymentDealKey}
+        clientName={deal?.name || ""}
+        packageName={packageName}
+        packageMonths={activePackage.months}
+        amount={packageAmount + addonExtra(selectedAddons)}
+        onVerified={() => setVerifyPaymentOpen(false)}
+      />
+
+      <PaymentInvoiceModal
+        open={invoiceOpen}
+        onClose={() => setInvoiceOpen(false)}
+        invoice={paymentVerify}
+      />
+
+      <PackageDetailModal
+        open={packageDetailOpen}
+        onClose={() => setPackageDetailOpen(false)}
+        pkg={
+          PACKAGES.find((item) =>
+            String(paymentVerify?.packageName || "").toLowerCase().includes(item.name.toLowerCase())
+          ) || activePackage
+        }
+        term={packageTerm(paymentVerify)}
+        addons={ADDON_CATALOG.filter((item) => selectedAddons.includes(item.id))}
+        amount={paymentVerify?.amount ?? packageAmount + addonExtra(selectedAddons)}
+      />
 
       <Modal open={recentOpen} onClose={() => setRecentOpen(false)} title="Recent Activity" width="max-w-lg">
         <RecentActivityCards events={allEvents} />

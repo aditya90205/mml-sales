@@ -72,7 +72,7 @@ import {
 } from "../utils/calendarStore.js";
 import { CLIENTS, upsertClientFromBiodata } from "../utils/clientsData.js";
 import { addLeadToStage, addP0Lead, countStageLeads, findLeadById, findLeadByMobileOrEmail, moveLeadToStage, p0StatusOf, readLeads, subscribePipeline, updateLead } from "../utils/pipelineStore.js";
-import { contactToLeadFields } from "../utils/leadFields.js";
+import { contactToLeadFields, hasValidMobileOrEmail } from "../utils/leadFields.js";
 import { buildLeadIntakePayload, leadPatchFromIntake, pipelinePatchFromBiodata, setPendingBiodata, takePendingBiodata } from "../utils/biodataDraftStore.js";
 import { assignPendingBiodataFile, rememberBiodataFile, rememberPendingBiodataFile } from "../utils/biodataFileStore.js";
 import { addTaskFromForm, getTodayTaskStats, readTasks, subscribeTasks } from "../utils/tasksStore.js";
@@ -832,9 +832,7 @@ function UnscheduledCard({ item, onSchedule }) {
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-3.5 flex-1 min-w-0">
       <p className="text-[10.5px] font-bold text-[#9CA3AF] tracking-wide">UNSCHEDULED</p>
-      {!item ? (
-        <p className="text-[12px] text-[#9CA3AF] mt-3">All caught up.</p>
-      ) : (
+      {item ? (
         <button
           type="button"
           onClick={() => onSchedule?.(item)}
@@ -848,6 +846,8 @@ function UnscheduledCard({ item, onSchedule }) {
             </p>
           </div>
         </button>
+      ) : (
+        <p className="text-[12px] text-[#9CA3AF] mt-3">Loading next activity…</p>
       )}
     </div>
   );
@@ -1805,6 +1805,10 @@ export default function Dashboard() {
             }
 
             if (fromBiodata) {
+              if (!hasValidMobileOrEmail(lead)) {
+                toast.error("Lead not saved. Add a mobile number or email first.");
+                return;
+              }
               const created = addLeadToStage("P2", {
                 starred: false,
                 score: 9.0,
@@ -2030,7 +2034,7 @@ export default function Dashboard() {
                 `Existing client ${match?.name || leadRef?.lead?.name || "found"}. Check the fields, then save to update Profile Create (P2).`
               );
             } else {
-              toast.info("New biodata — check the fields, then save to create this profile in Sales Pipeline.");
+              toast.info("New biodata — check the fields. A mobile number or email is required, otherwise the lead is not created.");
             }
           }}
         />

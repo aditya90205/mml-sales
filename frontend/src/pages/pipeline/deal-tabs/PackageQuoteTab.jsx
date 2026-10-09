@@ -10,6 +10,7 @@ import SendMessageModal from "../../../components/common/SendMessageModal";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
 import { clientShareId } from "../../../utils/shareLinks";
+import { markPaymentLinkSent } from "../../../utils/paymentVerifyStore";
 import { atLeast, dashRows, EMPTY } from "./stageContent.jsx";
 
 export const PACKAGES = [
@@ -17,6 +18,7 @@ export const PACKAGES = [
     key: "basic",
     name: "Basic",
     price: "₹25,000",
+    months: 6,
     subtitle: "6 months · junior RM",
     features: [
       { label: "Profile creation & curation", included: true },
@@ -31,6 +33,7 @@ export const PACKAGES = [
     key: "premium",
     name: "Premium",
     price: "₹51,000",
+    months: 12,
     subtitle: "12 months, senior RM only",
     features: [
       { label: "Everything in Classic", included: true },
@@ -45,6 +48,7 @@ export const PACKAGES = [
     key: "exclusive",
     name: "Exclusive",
     price: "₹1,25,000",
+    months: 12,
     subtitle: "12 months, senior RM only",
     upsellBadge: "+74,000",
     features: [
@@ -77,15 +81,82 @@ const SALESPERSON_DISCOUNT_CAP = 5;
 const WALLET_CREDITS = 1000;
 const GST_RATE = 0.18;
 
-const DEFAULT_QUOTE_ITEMS = [
-  { id: "premium", item: "Premium Package", note: "12 months membership", type: "Base", qty: 1, quoted: 51000, rate: 51000 },
-  { id: "kundli", item: "Kundli / horoscope service", note: "Redeemable against wallet credits", type: "Add-on", qty: 1, quoted: 51000, rate: 2500 },
-  { id: "verified", item: "Verified Profile Report", note: "Included in Premium – no charge", type: "Add-on", qty: 1, quoted: 51000, rate: 0 },
-];
+function parseMoney(value) {
+  const n = Number(String(value ?? "").replace(/[₹,\s]/g, ""));
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function packagePrice(pkg) {
+  return parseMoney(pkg?.price);
+}
+
+function buildBaseQuoteItem(pkg) {
+  const price = packagePrice(pkg);
+  return {
+    id: "base-package",
+    item: `${pkg.name} Package`,
+    note: pkg.subtitle || "Membership",
+    type: "Base",
+    qty: 1,
+    quoted: price,
+    rate: price,
+  };
+}
+
+function buildQuoteItemsForPackage(pkg, existingItems = []) {
+  const includesVerified = pkg.key === "premium" || pkg.key === "exclusive";
+  const addons = existingItems
+    .filter((item) => item.type === "Add-on")
+    .map((item) => {
+      if (item.id === "verified") {
+        return {
+          ...item,
+          note: includesVerified ? `Included in ${pkg.name} – no charge` : "Not included in this package",
+          quoted: includesVerified ? 0 : Number(item.rate) || 0,
+          rate: includesVerified ? 0 : Number(item.rate) || 0,
+        };
+      }
+      const rate = Number(item.rate) || 0;
+      return { ...item, quoted: rate, rate };
+    });
+
+  const hasKundli = addons.some((item) => item.id === "kundli");
+  const hasVerified = addons.some((item) => item.id === "verified");
+  const nextAddons = [...addons];
+
+  if (!hasKundli) {
+    nextAddons.push({
+      id: "kundli",
+      item: "Kundli / horoscope service",
+      note: "Redeemable against wallet credits",
+      type: "Add-on",
+      qty: 1,
+      quoted: 2500,
+      rate: 2500,
+    });
+  }
+  if (!hasVerified) {
+    nextAddons.push({
+      id: "verified",
+      item: "Verified Profile Report",
+      note: includesVerified ? `Included in ${pkg.name} – no charge` : "Not included in this package",
+      type: "Add-on",
+      qty: 1,
+      quoted: 0,
+      rate: 0,
+    });
+  }
+
+  return [buildBaseQuoteItem(pkg), ...nextAddons];
+}
+
+const DEFAULT_PACKAGE = PACKAGES.find((pkg) => pkg.key === "premium") || PACKAGES[0];
+const DEFAULT_QUOTE_ITEMS = buildQuoteItemsForPackage(DEFAULT_PACKAGE);
 
 let quoteSnapshot = {
   items: DEFAULT_QUOTE_ITEMS,
   discountPercent: 0,
+  packageKey: DEFAULT_PACKAGE.key,
 };
 const quoteListeners = new Set();
 
@@ -114,11 +185,6 @@ function formatDeduction(amount) {
   return `-${formatInr(amount)}`;
 }
 
-function parseMoney(value) {
-  const n = Number(String(value ?? "").replace(/[₹,\s]/g, ""));
-  return Number.isFinite(n) ? n : NaN;
-}
-
 function quoteTotals(items, discountPercent) {
   const subtotal = items.reduce((sum, item) => sum + (Number(item.rate) || 0) * (Number(item.qty) || 1), 0);
   const discount = Math.round((subtotal * (Number(discountPercent) || 0)) / 100);
@@ -127,6 +193,20 @@ function quoteTotals(items, discountPercent) {
   const taxable = afterDiscount - wallet;
   const gst = Math.round(taxable * GST_RATE);
   return { subtotal, discount, wallet, gst, total: taxable + gst };
+}
+
+function applyPackageToQuote(pkg) {
+  if (!pkg) return;
+  if (quoteSnapshot.packageKey === pkg.key) {
+    const base = quoteSnapshot.items.find((item) => item.type === "Base");
+    if (base && base.item === `${pkg.name} Package` && Number(base.rate) === packagePrice(pkg)) return;
+  }
+  quoteSnapshot = {
+    ...quoteSnapshot,
+    packageKey: pkg.key,
+    items: buildQuoteItemsForPackage(pkg, quoteSnapshot.items),
+  };
+  emitQuote();
 }
 
 function addQuoteItem(item) {
@@ -724,8 +804,39 @@ function DataRevealCard({ empty = false }) {
   );
 }
 
+function PaymentLinkPanel({ deal, clientName = "", currentStage, onLinkSent }) {
+  const client = deal?.name ? deal : { ...deal, name: clientName };
+  const dealKey = clientShareId(client);
+
+  return (
+    <SendLinkModal
+      embedded
+      open
+      hideHeader
+      deal={client}
+      currentStage={currentStage}
+      linkTypes={["payment"]}
+      initialType="payment"
+      closeOnSend={false}
+      onSent={() => {
+        markPaymentLinkSent(dealKey);
+        onLinkSent?.();
+      }}
+      beforeSend={
+        <button
+          type="button"
+          onClick={() => toast.info("Generating quote PDF preview...")}
+          className="h-10 px-4 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+        >
+          Preview PDF
+        </button>
+      }
+    />
+  );
+}
+
 /** Package & Quote tab — package catalogue, quotation, and discount approvals. */
-export default function PackageQuoteTab({ empty = false, selectedKey = null, onPackageSelect, onBindSave, variant = "full", clientName = "", deal, currentStage }) {
+export default function PackageQuoteTab({ empty = false, selectedKey = null, onPackageSelect, onBindSave, variant = "full", clientName = "", deal, currentStage, onPaymentLinkSent }) {
   const [pendingKey, setPendingKey] = useState(selectedKey);
   const onBindSaveRef = useRef(onBindSave);
   onBindSaveRef.current = onBindSave;
@@ -738,10 +849,17 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
   const saved = PACKAGES.find((pkg) => pkg.key === selectedKey) || null;
   const dirty = Boolean(pendingKey && pendingKey !== selectedKey);
   const saveDisabled = empty || !pending;
+  const activePackage = pending || saved;
+
+  useEffect(() => {
+    if (empty || !activePackage) return;
+    applyPackageToQuote(activePackage);
+  }, [empty, activePackage]);
 
   const handleSelect = (pkg) => {
     if (empty) return;
     setPendingKey(pkg.key);
+    applyPackageToQuote(pkg);
   };
 
   const handleSavePackage = () => {
@@ -750,6 +868,7 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
       toast.success(`${pending.name} package is already saved.`);
       return;
     }
+    applyPackageToQuote(pending);
     onPackageSelect?.(pending);
     toast.success(`${pending.name} package saved.`);
   };
@@ -774,7 +893,7 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
     });
   }, [saveDisabled, dirty, pending, saved]);
 
-  const upsellPkg = saved || pending || PACKAGES.find((pkg) => pkg.key === "premium");
+  const upsellPkg = pending || saved || PACKAGES.find((pkg) => pkg.key === "premium");
   const upsellCard = <UpsellPitchCard pkg={upsellPkg} clientName={clientName} />;
 
   if (variant === "pay") {
@@ -784,23 +903,11 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
           <QuotationCard clientName={clientName} deal={deal} currentStage={currentStage} showSend={false} viewOnly />
         </div>
         <div className="min-w-0">
-          <SendLinkModal
-            embedded
-            open
-            hideHeader
-            deal={deal?.name ? deal : { ...deal, name: clientName }}
+          <PaymentLinkPanel
+            deal={deal}
+            clientName={clientName}
             currentStage={currentStage}
-            linkTypes={["payment"]}
-            initialType="payment"
-            beforeSend={
-              <button
-                type="button"
-                onClick={() => toast.info("Generating quote PDF preview...")}
-                className="h-10 px-4 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
-              >
-                Preview PDF
-              </button>
-            }
+            onLinkSent={onPaymentLinkSent}
           />
         </div>
       </div>
