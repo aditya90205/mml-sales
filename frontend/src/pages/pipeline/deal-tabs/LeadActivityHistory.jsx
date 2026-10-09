@@ -36,7 +36,7 @@ const FILTER_TYPES = {
   stage: ["stage", "handover", "score"],
   contact: ["created", "assignment", "call", "meeting", "details"],
   files: ["document", "quote", "payment"],
-  notes: ["note", "flag"],
+  notes: ["note", "flag", "summary"],
 };
 
 const TYPE_META = {
@@ -52,6 +52,7 @@ const TYPE_META = {
   payment: { icon: CreditCard, bg: "#E7F8EF", color: "#16A34A" },
   handover: { icon: Handshake, bg: "#F3E8F0", color: "#7A0A17" },
   note: { icon: StickyNote, bg: "#FAFAFB", color: "#4B5563" },
+  summary: { icon: FileText, bg: "#F3E8FF", color: "#7C3AED" },
   flag: { icon: Star, bg: "#FFF3E4", color: "#D97706" },
   image: { icon: Image, bg: "#EEF2FF", color: "#4338CA" },
 };
@@ -343,6 +344,24 @@ export default function LeadActivityHistory({ lead, currentStage = "P0" }) {
                               <p className="text-[12.5px] text-[#4B5563] mt-0.5 leading-relaxed">
                                 {event.detail}
                               </p>
+                            ) : null}
+                            {event.type === "summary" && (event.transcript || event.attachment) ? (
+                              <div className="mt-2 flex flex-col gap-2">
+                                {event.transcript ? (
+                                  <InsightBlock
+                                    label="Transcript"
+                                    className="border-[#EDE9FE] bg-[#FBF9FF] text-[#7C3AED]"
+                                  >
+                                    <p className="whitespace-pre-line">{event.transcript}</p>
+                                  </InsightBlock>
+                                ) : null}
+                                {event.attachment ? (
+                                  <p className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#374151]">
+                                    <Paperclip size={13} className="text-[#6B7280]" />
+                                    {event.attachment}
+                                  </p>
+                                ) : null}
+                              </div>
                             ) : null}
                           </div>
                           {isVideoActivity(event) ? (

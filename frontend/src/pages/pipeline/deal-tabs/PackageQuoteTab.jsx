@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Check, MessageSquare, Trash2, TrendingUp, X } from "lucide-react";
+import { Check, ChevronDown, MessageSquare, Trash2, TrendingUp, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
@@ -9,6 +9,7 @@ import SendLinkModal from "../../../components/common/SendLinkModal";
 import SendMessageModal from "../../../components/common/SendMessageModal";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
+import { addCustomAddon, getAddonCatalog, useAddonCatalog } from "../../../utils/addonCatalog";
 import { clientShareId } from "../../../utils/shareLinks";
 import { markPaymentLinkSent } from "../../../utils/paymentVerifyStore";
 import { atLeast, dashRows, EMPTY } from "./stageContent.jsx";
@@ -103,55 +104,50 @@ function buildBaseQuoteItem(pkg) {
   };
 }
 
-function buildQuoteItemsForPackage(pkg, existingItems = []) {
-  const includesVerified = pkg.key === "premium" || pkg.key === "exclusive";
+export function quoteAddonLine(addon, pkg) {
+  const included = Array.isArray(addon?.includedIn) && addon.includedIn.includes(pkg?.key);
+  const price = included ? 0 : Number(addon?.price) || 0;
+  let note = addon?.note || "Added to this quote";
+  if (included) note = `Included in ${pkg?.name || "package"} – no charge`;
+  else if (addon?.id === "verified") note = "Not included in this package";
+  return {
+    id: addon.id,
+    item: addon.name,
+    note,
+    type: "Add-on",
+    qty: 1,
+    quoted: price,
+    rate: price,
+  };
+}
+
+function buildQuoteItemsForPackage(pkg, existingItems = [], { seedDefaults = false } = {}) {
+  const catalog = getAddonCatalog();
+  const byId = new Map(catalog.map((addon) => [addon.id, addon]));
   const addons = existingItems
     .filter((item) => item.type === "Add-on")
     .map((item) => {
-      if (item.id === "verified") {
-        return {
-          ...item,
-          note: includesVerified ? `Included in ${pkg.name} – no charge` : "Not included in this package",
-          quoted: includesVerified ? 0 : Number(item.rate) || 0,
-          rate: includesVerified ? 0 : Number(item.rate) || 0,
-        };
+      const addon = byId.get(item.id);
+      if (!addon) {
+        const rate = Number(item.rate) || 0;
+        return { ...item, quoted: rate, rate };
       }
-      const rate = Number(item.rate) || 0;
-      return { ...item, quoted: rate, rate };
+      return quoteAddonLine(addon, pkg);
     });
 
-  const hasKundli = addons.some((item) => item.id === "kundli");
-  const hasVerified = addons.some((item) => item.id === "verified");
-  const nextAddons = [...addons];
-
-  if (!hasKundli) {
-    nextAddons.push({
-      id: "kundli",
-      item: "Kundli / horoscope service",
-      note: "Redeemable against wallet credits",
-      type: "Add-on",
-      qty: 1,
-      quoted: 2500,
-      rate: 2500,
-    });
-  }
-  if (!hasVerified) {
-    nextAddons.push({
-      id: "verified",
-      item: "Verified Profile Report",
-      note: includesVerified ? `Included in ${pkg.name} – no charge` : "Not included in this package",
-      type: "Add-on",
-      qty: 1,
-      quoted: 0,
-      rate: 0,
-    });
+  if (seedDefaults) {
+    catalog
+      .filter((addon) => addon.defaultOnQuote)
+      .forEach((addon) => {
+        if (!addons.some((item) => item.id === addon.id)) addons.push(quoteAddonLine(addon, pkg));
+      });
   }
 
-  return [buildBaseQuoteItem(pkg), ...nextAddons];
+  return [buildBaseQuoteItem(pkg), ...addons];
 }
 
 const DEFAULT_PACKAGE = PACKAGES.find((pkg) => pkg.key === "premium") || PACKAGES[0];
-const DEFAULT_QUOTE_ITEMS = buildQuoteItemsForPackage(DEFAULT_PACKAGE);
+const DEFAULT_QUOTE_ITEMS = buildQuoteItemsForPackage(DEFAULT_PACKAGE, [], { seedDefaults: true });
 
 let quoteSnapshot = {
   items: DEFAULT_QUOTE_ITEMS,
@@ -173,7 +169,7 @@ function getQuoteSnapshot() {
   return quoteSnapshot;
 }
 
-function useQuote() {
+export function useQuote() {
   return useSyncExternalStore(subscribeQuote, getQuoteSnapshot, getQuoteSnapshot);
 }
 
@@ -214,7 +210,21 @@ function addQuoteItem(item) {
   emitQuote();
 }
 
-function removeQuoteAddon(id) {
+export function addCatalogAddonToQuote(addon, amount) {
+  if (!addon?.id) return;
+  if (quoteSnapshot.items.some((item) => item.id === addon.id && item.type === "Add-on")) return;
+  const pkg = PACKAGES.find((item) => item.key === quoteSnapshot.packageKey) || DEFAULT_PACKAGE;
+  const line = quoteAddonLine(addon, pkg);
+  const included = Array.isArray(addon.includedIn) && addon.includedIn.includes(pkg.key);
+  const price = Number(amount);
+  if (!included && Number.isFinite(price) && price >= 0) {
+    line.quoted = price;
+    line.rate = price;
+  }
+  addQuoteItem(line);
+}
+
+export function removeQuoteAddon(id) {
   quoteSnapshot = {
     ...quoteSnapshot,
     items: quoteSnapshot.items.filter((item) => !(item.id === id && item.type === "Add-on")),
@@ -486,8 +496,14 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
   const items = quote.items;
   const totals = quoteTotals(items, quote.discountPercent);
   const { sorted, sort, toggle } = useTableSort(items, { defaultKey: "item" });
+  const catalog = useAddonCatalog();
+  const pkg = PACKAGES.find((item) => item.key === quote.packageKey) || DEFAULT_PACKAGE;
+  const onQuote = new Set(items.filter((item) => item.type === "Add-on").map((item) => item.id));
+  const available = catalog.filter((addon) => !onQuote.has(addon.id));
   const [open, setOpen] = useState(false);
   const [sendType, setSendType] = useState(null);
+  const [pickedIds, setPickedIds] = useState([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [itemName, setItemName] = useState("");
   const [quoted, setQuoted] = useState("");
   const [discountDraft, setDiscountDraft] = useState(quote.discountPercent ? String(quote.discountPercent) : "");
@@ -498,23 +514,47 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
     setDiscountDraft(quote.discountPercent ? String(quote.discountPercent) : "");
   }, [quote.discountPercent]);
 
+  const openAddonModal = () => {
+    setPickedIds([]);
+    setPickerOpen(false);
+    setItemName("");
+    setQuoted("");
+    setOpen(true);
+  };
+
+  const togglePicked = (id) => {
+    setPickedIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+    setItemName("");
+    setQuoted("");
+  };
+
+  const pickedAddons = available.filter((addon) => pickedIds.includes(addon.id));
+  const pickerLabel = pickedAddons.length
+    ? pickedAddons.map((addon) => addon.name).join(", ")
+    : "Select add-ons";
+
   const handleSave = (e) => {
     e.preventDefault();
-    const amount = parseMoney(quoted);
-    if (!itemName.trim() || !Number.isFinite(amount) || amount <= 0) {
-      toast.error("Please add an item and amount.");
+    const customName = itemName.trim();
+    const selected = available.filter((addon) => pickedIds.includes(addon.id));
+    if (!customName && !selected.length) {
+      toast.error("Select add-ons, or add a custom one.");
       return;
     }
-    addQuoteItem({
-      id: `addon-${Date.now()}`,
-      item: itemName.trim(),
-      note: "Added to this quote",
-      type: "Add-on",
-      qty: 1,
-      quoted: amount,
-      rate: amount,
-    });
-    toast.success("Line item added.");
+    if (customName) {
+      const amount = parseMoney(quoted);
+      if (!quoted.trim() || !Number.isFinite(amount) || amount < 0) {
+        toast.error("Please add an amount for the custom add-on.");
+        return;
+      }
+      const addon = addCustomAddon({ name: customName, price: amount });
+      addCatalogAddonToQuote(addon);
+    }
+    selected.forEach((addon) => addCatalogAddonToQuote(addon));
+    const count = selected.length + (customName ? 1 : 0);
+    toast.success(count === 1 ? "Add-on added to this quotation." : `${count} add-ons added to this quotation.`);
+    setPickedIds([]);
+    setPickerOpen(false);
     setItemName("");
     setQuoted("");
     setOpen(false);
@@ -557,7 +597,7 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
           <span className="inline-block text-[10.5px] font-semibold text-[#6B7280] bg-[#F1F2F4] rounded-md px-2 py-0.5 whitespace-nowrap">
             Draft v2
           </span>
-          {viewOnly ? null : <TabHeaderButton onClick={() => setOpen(true)}>Add add-on</TabHeaderButton>}
+          {viewOnly ? null : <TabHeaderButton onClick={openAddonModal}>Add add-on</TabHeaderButton>}
         </div>
       </div>
 
@@ -566,7 +606,7 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
         open={open}
         onClose={() => setOpen(false)}
         title="Add add-on"
-        subtitle="Add a line to this quotation"
+        subtitle="Catalogue add-ons not already on this quotation"
         zClass="z-[100]"
         footer={
           <>
@@ -582,19 +622,91 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
               form="addon-form"
               className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
             >
-              Add item
+              {pickedIds.length + (itemName.trim() ? 1 : 0) > 1 ? "Add items" : "Add item"}
             </button>
           </>
         }
       >
         <form id="addon-form" onSubmit={handleSave} className="flex flex-col gap-4">
           <div>
-            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Item</label>
-            <input value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="e.g. Photo reshoot" className={FIELD} />
+            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Add-ons</label>
+            {available.length ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen((open) => !open)}
+                  aria-expanded={pickerOpen}
+                  className={`${FIELD} bg-white flex items-center justify-between gap-2 text-left`}
+                >
+                  <span className={`truncate ${pickedAddons.length ? "text-[#111]" : "text-[#9CA3AF]"}`}>{pickerLabel}</span>
+                  <ChevronDown size={16} className={`shrink-0 text-[#6B7280] transition-transform duration-300 ease-out ${pickerOpen ? "rotate-180" : ""}`} />
+                </button>
+                <div
+                  className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                    pickerOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className={`mt-1 w-full max-h-52 overflow-y-auto rounded-xl border border-black/12 bg-white ${pickerOpen ? "" : "pointer-events-none"}`}>
+                      {available.map((addon) => {
+                        const line = quoteAddonLine(addon, pkg);
+                        const price = Number(line.quoted) || 0;
+                        const on = pickedIds.includes(addon.id);
+                        return (
+                          <button
+                            key={addon.id}
+                            type="button"
+                            tabIndex={pickerOpen ? 0 : -1}
+                            onClick={() => togglePicked(addon.id)}
+                            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-[#FAFAFB]"
+                          >
+                            <span
+                              className={`size-4 rounded border grid place-items-center shrink-0 transition-colors duration-200 ${
+                                on ? "border-[#7A0A17] bg-[#7A0A17] text-white" : "border-[#D1D5DB] bg-white"
+                              }`}
+                            >
+                              {on ? <Check size={10} strokeWidth={3} /> : null}
+                            </span>
+                            <span className="min-w-0 flex-1 text-[13px] font-semibold text-[#111] truncate">{line.item}</span>
+                            {price ? <span className="text-[12.5px] font-semibold text-[#111] shrink-0">{formatInr(price)}</span> : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-[12.5px] text-[#6B7280] leading-relaxed">
+                Every catalogue add-on is already on this quotation. Remove one from the quote and it will show here again.
+              </p>
+            )}
           </div>
-          <div>
-            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Quoted</label>
-            <input value={quoted} onChange={(e) => setQuoted(e.target.value)} placeholder="2500" className={FIELD} />
+          <div className="border-t border-black/8 pt-4">
+            <p className="text-[13px] font-bold text-[#111]">Custom add-on</p>
+            <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 mb-3">
+              Saved to the catalogue, so it also shows on the package add-ons list.
+            </p>
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">Item</label>
+                <input
+                  value={itemName}
+                  onChange={(e) => setItemName(e.target.value)}
+                  placeholder="e.g. Photo reshoot"
+                  className={FIELD}
+                />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-[#111] mb-1.5">Quoted</label>
+                <input
+                  value={quoted}
+                  onChange={(e) => setQuoted(e.target.value)}
+                  placeholder="2500"
+                  className={FIELD}
+                />
+              </div>
+            </div>
           </div>
         </form>
       </Modal>

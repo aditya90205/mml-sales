@@ -69,6 +69,7 @@ export function normalizeActivity(event = {}) {
     notes: event.notes || "",
     meetingSummary: event.meetingSummary || "",
     attachment: event.attachment || "",
+    historyOnly: Boolean(event.historyOnly),
   };
 }
 

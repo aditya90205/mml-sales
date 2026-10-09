@@ -4,11 +4,13 @@ import {
   ArrowRight,
   Briefcase,
   Calendar,
+  Camera,
   Check,
   ChevronDown,
   ChevronRight,
   ClipboardList,
   Clock,
+  Copy,
   Crown,
   Download,
   Eye,
@@ -20,6 +22,8 @@ import {
   History,
   IndianRupee,
   MapPin,
+  MicOff,
+  Paperclip,
   Pencil,
   Infinity,
   Link2,
@@ -27,6 +31,9 @@ import {
   Phone,
   Plus,
   RefreshCw,
+  Send,
+  ShieldCheck,
+  Sparkles,
   SquareCheck,
   Star,
   Sun,
@@ -54,7 +61,14 @@ import EventDetailsModal, { calendarEventToEventView } from "../../../components
 import MeetingDetailsModal, { calendarEventToMeetingView } from "../../../components/calendar/MeetingDetailsModal";
 import OthersDetailsModal, { calendarEventToOtherView } from "../../../components/calendar/OthersDetailsModal";
 import LeadActivityHistory from "./LeadActivityHistory";
-import PackageQuoteTab, { PACKAGES } from "./PackageQuoteTab";
+import PackageQuoteTab, {
+  PACKAGES,
+  addCatalogAddonToQuote,
+  quoteAddonLine,
+  removeQuoteAddon,
+  useQuote,
+} from "./PackageQuoteTab";
+import { useAddonCatalog } from "../../../utils/addonCatalog";
 import P6ChecklistTab from "./P6ChecklistTab";
 import P6DocumentViewModal from "./p6/P6DocumentViewModal.jsx";
 import { compareIdWithProfile, extractIdPlaceholder } from "./p6/p6ChecklistData.js";
@@ -133,10 +147,16 @@ function packageKeyFromInterest(value) {
   return "premium";
 }
 
-const ADDON_CATALOG = [
-  { id: "kundli", name: "Kundli Matching", price: 2000, icon: Sun, bg: "#FFF4E5", color: "#F59E0B" },
-  { id: "priority", name: "Priority Matchmaking", price: 8000, icon: Infinity, bg: "#F3E8FF", color: "#7C3AED" },
-];
+const ADDON_ICONS = {
+  sun: Sun,
+  infinity: Infinity,
+  shield: ShieldCheck,
+  sparkles: Sparkles,
+  gift: Gift,
+  star: Star,
+  globe: Globe,
+  camera: Camera,
+};
 
 const HANDOVER_PREVIEW = [
   { id: "aadhar", label: "Parent's Aadhar", status: "verified" },
@@ -159,6 +179,7 @@ const PREVIEW_ACTIVITY = {
   assignment: { icon: UserRound, bg: "#F3E8FF", color: "#8B5CF6" },
   score: { icon: Star, bg: "#FFF6E8", color: "#E8B923" },
   note: { icon: Video, bg: "#E8F2FE", color: "#2563EB" },
+  summary: { icon: Sparkles, bg: "#F3E8FF", color: "#7C3AED" },
 };
 
 function toIsoDate(value) {
@@ -314,6 +335,7 @@ function hoursLeftLabel(ev) {
 }
 
 const NEXT_ACTION_PREVIEW = 3;
+const ACTIVITY_PREVIEW = 3;
 
 function splitCalendarItems(events, category) {
   const due = [];
@@ -536,23 +558,139 @@ const ACTIVITY_NOTIFY_TYPE = {
   flag: "Approval",
 };
 
-function RecentActivityCards({ events, empty = "No activity yet." }) {
+function activityWhen(iso) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const day = date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+  const time = date.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
+  return `${day} · ${time}`;
+}
+
+function ConversationSummary({ deal, currentStage }) {
+  const fileRef = useRef(null);
+  const [text, setText] = useState("");
+  const [fileName, setFileName] = useState("");
+
+  const submit = (e) => {
+    e.preventDefault();
+    const summary = text.trim();
+    if (!summary) {
+      toast.error("Write a summary before submitting.");
+      return;
+    }
+    recordLeadActivity(deal, currentStage, {
+      type: "summary",
+      title: "Conversation summary",
+      transcript: summary,
+      meetingSummary: summary,
+      attachment: fileName,
+      historyOnly: true,
+      stage: currentStage,
+    });
+    toast.success("Summary saved to lead history.");
+    setText("");
+    setFileName("");
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const copySummary = async () => {
+    if (!text.trim()) {
+      toast.info("Nothing to copy yet.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Summary copied.");
+    } catch {
+      toast.error("Could not copy the summary.");
+    }
+  };
+
+  return (
+    <div className="mt-1 flex min-h-0 flex-1 flex-col border-t border-[#EEF1F4] pt-3">
+      <h3 className="text-[13px] font-bold text-[#111] flex items-center gap-1.5 leading-none shrink-0">
+        <Sparkles size={13} className="text-[#7A0A17]" fill="#7A0A17" strokeWidth={0} />
+        Summary
+      </h3>
+      <form onSubmit={submit} className="mt-2.5 flex min-h-0 flex-1 flex-col border border-[#E6E8EC] rounded-xl px-3 pt-2.5 pb-2">
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Write a quick summary of your conversation"
+          className="min-h-[4.75rem] w-full flex-1 resize-none bg-transparent text-[12.5px] text-[#111] placeholder:text-[#9CA3AF] outline-none leading-5 py-0.5"
+        />
+        {fileName ? (
+          <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-[#4B5563] max-w-full">
+            <Paperclip size={11} className="text-[#6B7280] shrink-0" />
+            <span className="truncate">{fileName}</span>
+          </p>
+        ) : null}
+        <div className="mt-1.5 flex shrink-0 items-center justify-end gap-0.5">
+          <input
+            ref={fileRef}
+            type="file"
+            className="hidden"
+            onChange={(e) => setFileName(e.target.files?.[0]?.name || "")}
+          />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="size-8 grid place-items-center text-[#6B7280] hover:text-[#111] rounded-lg hover:bg-black/[0.04] transition-colors"
+            aria-label="Attach a file"
+          >
+            <Paperclip size={15} strokeWidth={1.7} />
+          </button>
+          <button
+            type="button"
+            onClick={copySummary}
+            className="size-8 grid place-items-center text-[#6B7280] hover:text-[#111] rounded-lg hover:bg-black/[0.04] transition-colors"
+            aria-label="Copy summary"
+          >
+            <Copy size={15} strokeWidth={1.7} />
+          </button>
+          <button
+            type="button"
+            onClick={() => toast.info("Microphone is off. Type the summary instead.")}
+            className="size-8 grid place-items-center text-[#6B7280] hover:text-[#111] rounded-lg hover:bg-black/[0.04] transition-colors"
+            aria-label="Microphone is off"
+          >
+            <MicOff size={15} strokeWidth={1.7} />
+          </button>
+          <button
+            type="submit"
+            className="inline-flex items-center gap-1.5 ml-1 h-8 px-3 rounded-lg bg-[#7A0A17] text-white text-[12px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            Submit
+            <Send size={12} />
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function RecentActivityCards({ events, empty = "No activity yet.", onOpen }) {
   if (!events.length) {
     return <p className="text-[12.5px] text-[#9CA3AF] py-3">{empty}</p>;
   }
   return (
-    <div className="flex flex-col divide-y divide-black/6">
+    <div className="flex flex-col divide-y divide-[#EEF1F4]">
       {events.map((event) => (
-        <div key={event.id} className="flex items-start gap-3 py-3.5 min-w-0">
+        <button
+          key={event.id}
+          type="button"
+          onClick={() => onOpen?.(event)}
+          className="w-full flex items-center gap-3 py-3 min-w-0 text-left rounded-xl transition-colors hover:bg-[#FAFAFB] font-sans"
+        >
           <NotificationTypeIcon type={ACTIVITY_NOTIFY_TYPE[event.type] || "Lead"} title={event.title} />
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-bold text-[#111] leading-snug">{event.title}</p>
+            <p className="text-[13px] leading-snug font-semibold text-[#111]">{event.title}</p>
             {event.detail ? (
               <p className="text-[12px] text-[#9CA3AF] leading-snug mt-0.5 line-clamp-2">{event.detail}</p>
             ) : null}
           </div>
-          <span className="text-[11px] text-[#9CA3AF] whitespace-nowrap shrink-0 pt-0.5">{timeAgo(event.at)}</span>
-        </div>
+          <span className="text-[11.5px] leading-none text-[#9CA3AF] whitespace-nowrap shrink-0">{timeAgo(event.at)}</span>
+        </button>
       ))}
     </div>
   );
@@ -578,7 +716,11 @@ function HistoryPreview({ events }) {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-[12.5px] font-semibold text-[#1F2937] leading-snug">{event.title}</p>
-              {event.detail ? <p className="text-[11.5px] text-[#6B7280] mt-0.5 leading-snug">{event.detail}</p> : null}
+              {event.type === "summary" && event.transcript ? (
+                <p className="text-[11.5px] text-[#6B7280] mt-0.5 leading-snug line-clamp-3">{event.transcript}</p>
+              ) : event.detail ? (
+                <p className="text-[11.5px] text-[#6B7280] mt-0.5 leading-snug">{event.detail}</p>
+              ) : null}
               <p className="text-[11px] text-[#9CA3AF] mt-0.5">
                 by {event.actor || "RM"} {formatStampDate(event.at)}
               </p>
@@ -590,12 +732,8 @@ function HistoryPreview({ events }) {
   );
 }
 
-function addonExtra(selected) {
-  return ADDON_CATALOG.filter((item) => selected.includes(item.id)).reduce((sum, item) => sum + item.price, 0);
-}
-
 function AddonPayBar({
-  selected,
+  extra = 0,
   packageAmount,
   onPay,
   showPay = true,
@@ -606,7 +744,7 @@ function AddonPayBar({
   return (
     <div className="flex items-center justify-between gap-2">
       <p className="text-[13px] text-[#374151]">
-        Total : <span className="font-bold text-[#111]">{formatInr(packageAmount + addonExtra(selected))}</span>
+        Total : <span className="font-bold text-[#111]">{formatInr(packageAmount + extra)}</span>
       </p>
       {showPay || showVerify ? (
         <div className="flex items-center gap-2 shrink-0">
@@ -634,13 +772,13 @@ function AddonPayBar({
   );
 }
 
-function AddonsPreview({ selected, onToggle, packageAmount, showPay = true, onPay }) {
+function AddonsPreview({ items, selected, onToggle, packageAmount, extra = 0, showPay = true, onPay }) {
   return (
     <div className={showPay ? "pb-1" : ""}>
       <div className="flex flex-col gap-2.5">
-        {ADDON_CATALOG.map((item) => {
+        {items.map((item) => {
           const on = selected.includes(item.id);
-          const Icon = item.icon;
+          const Icon = ADDON_ICONS[item.icon] || Sparkles;
           return (
             <button
               key={item.id}
@@ -671,7 +809,7 @@ function AddonsPreview({ selected, onToggle, packageAmount, showPay = true, onPa
       </div>
       {showPay ? (
         <div className="mt-3.5">
-          <AddonPayBar selected={selected} packageAmount={packageAmount} onPay={onPay} />
+          <AddonPayBar extra={extra} packageAmount={packageAmount} onPay={onPay} />
         </div>
       ) : null}
     </div>
@@ -1113,6 +1251,7 @@ export default function OverviewDashboard({
   const [tasksTab, setTasksTab] = useState("due");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState(null);
   const [packageOpen, setPackageOpen] = useState(false);
   const [packageSave, setPackageSave] = useState({
     disabled: true,
@@ -1143,7 +1282,8 @@ export default function OverviewDashboard({
   const [flagLabel, setFlagLabel] = useState("");
   const [flagToneValue, setFlagToneValue] = useState("amber");
   const [flagNote, setFlagNote] = useState("");
-  const [selectedAddons, setSelectedAddons] = useState(["priority"]);
+  const quote = useQuote();
+  const addonCatalog = useAddonCatalog();
   const [tick, setTick] = useState(0);
   const [calendarEvents, setCalendarEvents] = useState(() => mergeCalendarEvents(INITIAL_EVENTS, readExtraEvents()));
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -1265,7 +1405,11 @@ export default function OverviewDashboard({
     const all = ensureLeadHistory(deal, currentStage);
     return [...all].sort((a, b) => new Date(b.at) - new Date(a.at));
   }, [deal, currentStage, tick]);
-  const events = allEvents.slice(0, 4);
+  const activityEvents = useMemo(
+    () => allEvents.filter((event) => !event.historyOnly),
+    [allEvents]
+  );
+  const events = activityEvents.slice(0, ACTIVITY_PREVIEW);
 
   const completion = Math.max(0, Math.min(100, Number(deal.profileCompletion) || 0));
   const scoreText = deal.scoreValue != null && deal.scoreValue !== "" ? Number(deal.scoreValue).toFixed(1) : "";
@@ -1289,6 +1433,17 @@ export default function OverviewDashboard({
   );
   const packageAmount = rupeeNumber(activePackage.price);
   const packagePrice = formatInr(packageAmount);
+  const selectedAddons = quote.items.filter((item) => item.type === "Add-on").map((item) => item.id);
+  const quotePackage = PACKAGES.find((item) => item.key === quote.packageKey) || activePackage;
+  const addonRows = addonCatalog.map((addon) => {
+    const line = quote.items.find((item) => item.id === addon.id && item.type === "Add-on");
+    const price = line ? Number(line.rate) || 0 : quoteAddonLine(addon, quotePackage).rate;
+    return { ...addon, price };
+  });
+  const addonExtraAmount = quote.items
+    .filter((item) => item.type === "Add-on")
+    .reduce((sum, item) => sum + (Number(item.rate) || 0) * (Number(item.qty) || 1), 0);
+  const verifiedTerm = paymentVerified ? packageTerm(paymentVerify) : null;
   const calendarActions = useMemo(() => {
     const start = new Date(Date.now() + 5 * 60 * 60 * 1000);
     const underSixHours = {
@@ -1369,8 +1524,14 @@ export default function OverviewDashboard({
     const height = lockedCardHeights.current[key];
     return height ? { height, alignSelf: "start" } : { alignSelf: "start" };
   };
-  const toggleAddon = (id) =>
-    setSelectedAddons((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+  const toggleAddon = (id) => {
+    if (quote.items.some((item) => item.id === id && item.type === "Add-on")) {
+      removeQuoteAddon(id);
+      return;
+    }
+    const addon = addonCatalog.find((item) => item.id === id);
+    if (addon) addCatalogAddonToQuote(addon);
+  };
 
   const rmFlags = [...(deal.rmFlags || []), ...addedFlags];
   const rmFlagCount = rmFlags.filter((flag) => !isEmptyFlag(flag)).length;
@@ -1744,7 +1905,17 @@ export default function OverviewDashboard({
               <div className="w-full rounded-xl bg-[#FFF2E0] px-4 py-3 flex items-center gap-2.5">
                 <Crown size={18} className="text-[#E8B400] shrink-0" fill="#E8B400" strokeWidth={1.5} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-[#1A5AA8] truncate">{packageName}</p>
+                  <p className={`text-[14px] font-semibold text-[#1A5AA8] truncate ${verifiedTerm ? "leading-none" : ""}`}>
+                    {packageName}
+                  </p>
+                  {verifiedTerm ? (
+                    <p
+                      className="text-[11px] font-normal text-[#9CA3AF] leading-none mt-1 truncate"
+                      title={`Valid from ${formatPackageDate(verifiedTerm.validFrom)} to ${formatPackageDate(verifiedTerm.validUntil)}`}
+                    >
+                      {formatPackageDate(verifiedTerm.validFrom)} – {formatPackageDate(verifiedTerm.validUntil)}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-[14px] font-semibold text-[#1A5AA8] leading-none">{packagePrice}</p>
@@ -1828,18 +1999,20 @@ export default function OverviewDashboard({
                   <div className="overflow-hidden">
                     <div className={`px-3.5 transition-opacity duration-300 ${addonsExpanded ? "opacity-100" : "opacity-0"}`}>
                       <AddonsPreview
+                        items={addonRows}
                         selected={selectedAddons}
                         onToggle={toggleAddon}
-                        packageAmount={rupeeNumber(packagePrice)}
+                        packageAmount={packageAmount}
+                        extra={addonExtraAmount}
                         showPay={false}
                       />
                     </div>
                   </div>
                 </div>
-                <div className={`px-3.5 pb-3 ${addonsExpanded ? "pt-3.5" : "pt-1"}`}>
+                <div className={`px-3.5 ${addonsExpanded ? "pt-4 pb-4" : "pt-3 pb-4"}`}>
                   <AddonPayBar
-                    selected={selectedAddons}
-                    packageAmount={rupeeNumber(packagePrice)}
+                    extra={addonExtraAmount}
+                    packageAmount={packageAmount}
                     showPay={paymentReady}
                     payLabel={paymentVerified ? "Detail" : "Pay"}
                     showVerify={paymentReady && paymentLinkSent && !paymentVerified}
@@ -1872,10 +2045,10 @@ export default function OverviewDashboard({
 
         <section
           ref={activityCardRef}
-          className={`bg-white border border-[#EEF1F4] rounded-2xl p-4 min-w-0 shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${quoteOpen ? "self-start" : "xl:h-full"}`}
+          className={`bg-white border border-[#EEF1F4] rounded-2xl p-4 min-w-0 shadow-[0_1px_2px_rgba(16,24,40,0.04)] flex flex-col ${quoteOpen ? "self-start" : "xl:h-full"}`}
           style={frozenCardStyle("activity")}
         >
-          <div className="mb-1 px-0.5 flex items-center justify-between gap-2">
+          <div className="mb-2 flex shrink-0 items-center justify-between gap-3">
             <h3 className="text-[15px] font-bold text-[#111] truncate">Recent Activity</h3>
             <button
               type="button"
@@ -1887,7 +2060,10 @@ export default function OverviewDashboard({
               <ArrowRight size={12} />
             </button>
           </div>
-          <RecentActivityCards events={events} />
+          <div className="shrink-0">
+            <RecentActivityCards events={events} onOpen={setSelectedActivity} />
+          </div>
+          <ConversationSummary deal={deal} currentStage={currentStage} />
         </section>
       </div>
 
@@ -1996,7 +2172,7 @@ export default function OverviewDashboard({
         clientName={deal?.name || ""}
         packageName={packageName}
         packageMonths={activePackage.months}
-        amount={packageAmount + addonExtra(selectedAddons)}
+        amount={packageAmount + addonExtraAmount}
         onVerified={() => setVerifyPaymentOpen(false)}
       />
 
@@ -2015,12 +2191,59 @@ export default function OverviewDashboard({
           ) || activePackage
         }
         term={packageTerm(paymentVerify)}
-        addons={ADDON_CATALOG.filter((item) => selectedAddons.includes(item.id))}
-        amount={paymentVerify?.amount ?? packageAmount + addonExtra(selectedAddons)}
+        addons={quote.items
+          .filter((item) => item.type === "Add-on")
+          .map((item) => ({ id: item.id, name: item.item, price: Number(item.rate) || 0 }))}
+        amount={paymentVerify?.amount ?? packageAmount + addonExtraAmount}
       />
 
-      <Modal open={recentOpen} onClose={() => setRecentOpen(false)} title="Recent Activity" width="max-w-lg">
-        <RecentActivityCards events={allEvents} />
+      <Modal
+        open={recentOpen}
+        onClose={() => setRecentOpen(false)}
+        title="Recent Activity"
+        subtitle={`${activityEvents.length} activit${activityEvents.length === 1 ? "y" : "ies"}`}
+        width="max-w-lg"
+      >
+        <RecentActivityCards events={activityEvents} onOpen={setSelectedActivity} />
+      </Modal>
+
+      <Modal
+        open={Boolean(selectedActivity)}
+        onClose={() => setSelectedActivity(null)}
+        title={selectedActivity?.title || "Activity"}
+        subtitle={selectedActivity ? activityWhen(selectedActivity.at) : undefined}
+        icon={
+          selectedActivity ? (
+            <NotificationTypeIcon
+              type={ACTIVITY_NOTIFY_TYPE[selectedActivity.type] || "Lead"}
+              title={selectedActivity.title}
+              size="sm"
+              className="!ring-0"
+            />
+          ) : null
+        }
+        iconBg="transparent"
+        width="max-w-md"
+        zClass="z-[60]"
+      >
+        {selectedActivity ? (
+          <div className="flex flex-col gap-2">
+            <p className="text-[14px] text-[#374151] leading-relaxed">
+              {selectedActivity.detail || "Logged on this lead."}
+            </p>
+            {selectedActivity.actor ? (
+              <p className="text-[12px] text-[#9CA3AF]">
+                By <span className="font-semibold text-[#6B7280]">{selectedActivity.actor}</span>
+              </p>
+            ) : null}
+            {selectedActivity.clientSummary ? (
+              <p className="text-[13px] text-[#374151] leading-relaxed">{selectedActivity.clientSummary}</p>
+            ) : null}
+            {selectedActivity.notes ? (
+              <p className="text-[13px] text-[#374151] leading-relaxed">{selectedActivity.notes}</p>
+            ) : null}
+          </div>
+        ) : null}
       </Modal>
 
       <Modal
@@ -2047,9 +2270,11 @@ export default function OverviewDashboard({
         width="max-w-lg"
       >
         <AddonsPreview
+          items={addonRows}
           selected={selectedAddons}
           onToggle={toggleAddon}
-          packageAmount={rupeeNumber(packagePrice)}
+          packageAmount={packageAmount}
+          extra={addonExtraAmount}
           showPay={paymentReady}
           onPay={() => {
             setAddonsOpen(false);
