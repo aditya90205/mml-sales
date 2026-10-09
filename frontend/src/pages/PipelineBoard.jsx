@@ -1244,12 +1244,16 @@ export default function PipelineBoard() {
     if (!lead?.id) return;
     const found = findStoredLeadById(lead.id);
     if (found?.stageId === "P5" || found?.stageId === "P6") {
-      stayOnDeal(found.lead, found.stageId);
+      const patched =
+        updateLead(lead.id, { paymentVerified: true }) ||
+        { lead: { ...found.lead, paymentVerified: true }, stageId: found.stageId };
+      stayOnDeal(patched.lead || found.lead, found.stageId);
       return;
     }
     const moved = moveLeadToStage(lead.id, "P5", {
       temperature: "Warm",
       completion: 100,
+      paymentVerified: true,
       overviewDetails: lead.overviewDetails,
       intakeValues: lead.intakeValues,
       p0Status: lead.p0Status,

@@ -54,8 +54,7 @@ import BiodataUploadModal from "../../../components/pipeline/BiodataUploadModal"
 import BiodataProfileModal from "../../../components/pipeline/BiodataProfileModal";
 import LeadScoreModal from "../../../components/pipeline/LeadScoreModal";
 import Modal from "../../../components/ui/Modal";
-import { clientShareId } from "../../../utils/shareLinks";
-import { packageTerm, usePaymentVerify } from "../../../utils/paymentVerifyStore";
+import { packageTerm, paymentVerifyKey, usePaymentVerifyForDeal } from "../../../utils/paymentVerifyStore";
 import CreateMeetingEventModal from "../../../components/calendar/CreateMeetingEventModal";
 import TaskDetailsModal, { calendarEventToTaskView } from "../../../components/calendar/TaskDetailsModal";
 import EventDetailsModal, { calendarEventToEventView } from "../../../components/calendar/EventDetailsModal";
@@ -1299,10 +1298,14 @@ export default function OverviewDashboard({
   onPaymentVerified,
 }) {
   const paymentReady = atLeast(currentStage, "P1");
-  const paymentDealKey = clientShareId(deal);
-  const paymentVerify = usePaymentVerify(paymentDealKey);
+  const paymentDealKey = paymentVerifyKey(deal);
+  const paymentVerify = usePaymentVerifyForDeal(deal);
   const paymentLinkSent = Boolean(paymentVerify?.linkSent);
-  const paymentVerified = Boolean(paymentVerify?.verified);
+  /** Stage P5+ means payment is already done — don't restart the Pay flow after verify→P5. */
+  const paymentVerified =
+    Boolean(paymentVerify?.verified) ||
+    Boolean(deal?.paymentVerified) ||
+    atLeast(currentStage, "P5");
   const [openPanels, setOpenPanels] = useState([]);
   const [messageOpen, setMessageOpen] = useState(false);
   const [payQuoteOpen, setPayQuoteOpen] = useState(false);

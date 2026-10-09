@@ -1,6 +1,7 @@
 /** Persist payment-link send + offline verify (txn + screenshot) per deal. */
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+import { clientShareId } from "./shareLinks";
 
 const PREFIX = "mml-payment-verify:";
 const memory = new Map();
@@ -37,6 +38,13 @@ function normalizeDealId(dealId) {
   return id && id !== "-" && id !== "—" ? id : "";
 }
 
+/** Prefer stable pipeline lead id — mmlId changes by stage series (P2→P5). */
+export function paymentVerifyKey(deal) {
+  const stable = normalizeDealId(deal?.id);
+  if (stable) return stable;
+  return normalizeDealId(clientShareId(deal));
+}
+
 export function getPaymentVerify(dealId) {
   const id = normalizeDealId(dealId);
   if (!id) return null;
@@ -58,6 +66,29 @@ function write(dealId, patch) {
   persist(id, next);
   emit();
   return next;
+}
+
+/** Read-only resolve: primary lead.id, then legacy mmlId key. */
+export function getPaymentVerifyForDeal(deal) {
+  const primary = paymentVerifyKey(deal);
+  if (primary) {
+    const current = getPaymentVerify(primary);
+    if (current) return current;
+  }
+  const legacy = normalizeDealId(clientShareId(deal));
+  if (legacy && legacy !== primary) return getPaymentVerify(legacy);
+  return null;
+}
+
+/** Copy legacy mmlId-keyed verify data onto stable lead.id once. */
+export function migratePaymentVerifyForDeal(deal) {
+  const primary = paymentVerifyKey(deal);
+  const legacy = normalizeDealId(clientShareId(deal));
+  if (!primary || !legacy || legacy === primary) return getPaymentVerify(primary);
+  if (getPaymentVerify(primary)) return getPaymentVerify(primary);
+  const old = getPaymentVerify(legacy);
+  if (!old) return null;
+  return write(primary, { ...old, dealId: primary });
 }
 
 export function markPaymentLinkSent(dealId) {
@@ -126,6 +157,21 @@ export function usePaymentVerify(dealId) {
   return useSyncExternalStore(
     subscribePaymentVerify,
     () => (id ? getPaymentVerify(id) : null),
+    getServerSnapshot
+  );
+}
+
+export function usePaymentVerifyForDeal(deal) {
+  const primary = paymentVerifyKey(deal);
+  const legacy = normalizeDealId(clientShareId(deal));
+
+  useEffect(() => {
+    migratePaymentVerifyForDeal(deal);
+  }, [primary, legacy, deal?.id, deal?.mmlId, deal?.dealCode]);
+
+  return useSyncExternalStore(
+    subscribePaymentVerify,
+    () => getPaymentVerifyForDeal(deal),
     getServerSnapshot
   );
 }

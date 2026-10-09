@@ -11,7 +11,7 @@ import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
 import { addCustomAddon, getAddonCatalog, useAddonCatalog } from "../../../utils/addonCatalog";
 import { clientShareId } from "../../../utils/shareLinks";
-import { markPaymentLinkSent } from "../../../utils/paymentVerifyStore";
+import { markPaymentLinkSent, paymentVerifyKey } from "../../../utils/paymentVerifyStore";
 import { atLeast, dashRows, EMPTY } from "./stageContent.jsx";
 
 export const PACKAGES = [
@@ -928,7 +928,7 @@ function DataRevealCard({ empty = false }) {
 
 function PaymentLinkPanel({ deal, clientName = "", currentStage, onLinkSent }) {
   const client = deal?.name ? deal : { ...deal, name: clientName };
-  const dealKey = clientShareId(client);
+  const dealKey = paymentVerifyKey(client);
 
   return (
     <SendLinkModal
