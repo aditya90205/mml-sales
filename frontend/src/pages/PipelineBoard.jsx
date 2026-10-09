@@ -1239,6 +1239,32 @@ export default function PipelineBoard() {
     applyStageMove(lead, stageKey, { stay: true });
   };
 
+  /** After payment verify, jump to P5 Payment Done (P0–P4 done; P6 not reached yet). */
+  const handlePaymentVerified = (lead) => {
+    if (!lead?.id) return;
+    const found = findStoredLeadById(lead.id);
+    if (found?.stageId === "P5" || found?.stageId === "P6") {
+      stayOnDeal(found.lead, found.stageId);
+      return;
+    }
+    const moved = moveLeadToStage(lead.id, "P5", {
+      temperature: "Warm",
+      completion: 100,
+      overviewDetails: lead.overviewDetails,
+      intakeValues: lead.intakeValues,
+      p0Status: lead.p0Status,
+    });
+    if (!moved) {
+      toast.error("Could not move this lead to P5.");
+      return;
+    }
+    logLeadMove(moved.lead, moved.fromStage, `Stage advanced ${moved.fromStage} → P5 Payment`, {
+      stage: "P5",
+    });
+    toast.success(STAGE_ADVANCE.P4.toast(lead.name));
+    stayOnDeal(moved.lead, "P5");
+  };
+
   const handleP0DetailsSaved = (lead, details = {}) => {
     handleMoveToP0Contacted(lead, details);
     setSubView("deal-detail");
@@ -1299,6 +1325,7 @@ export default function PipelineBoard() {
         initialTab={dealInitialTab}
         onBack={() => { setSubView(null); setActiveLead(null); }}
         onAdvance={handleAdvanceFromDetail}
+        onPaymentVerified={handlePaymentVerified}
         onP0DetailsSaved={handleP0DetailsSaved}
         onPremiumChange={handlePremiumChange}
       />

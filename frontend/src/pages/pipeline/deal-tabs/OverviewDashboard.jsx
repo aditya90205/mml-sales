@@ -1229,6 +1229,7 @@ export default function OverviewDashboard({
   onCreateTask,
   selectedPackageKey = null,
   onPackageSelect,
+  onPaymentVerified,
 }) {
   const paymentReady = atLeast(currentStage, "P1");
   const paymentDealKey = clientShareId(deal);
@@ -2179,7 +2180,10 @@ export default function OverviewDashboard({
         packageName={packageName}
         packageMonths={activePackage.months}
         amount={packageAmount + addonExtraAmount}
-        onVerified={() => setVerifyPaymentOpen(false)}
+        onVerified={() => {
+          setVerifyPaymentOpen(false);
+          onPaymentVerified?.();
+        }}
       />
 
       <PaymentInvoiceModal

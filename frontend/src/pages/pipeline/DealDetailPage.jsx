@@ -303,6 +303,7 @@ export default function DealDetailPage({
   onBack,
   currentStage: stageFromBoard = "P4",
   onAdvance,
+  onPaymentVerified,
   onP0DetailsSaved,
   initialTab = "overview",
   onPremiumChange,
@@ -796,6 +797,7 @@ export default function DealDetailPage({
             onCreateTask={() => setFollowUpOpen(true)}
             selectedPackageKey={selectedPackage?.key ?? null}
             onPackageSelect={handlePackageSelect}
+            onPaymentVerified={() => onPaymentVerified?.(lead)}
           />
         );
       case "intake":

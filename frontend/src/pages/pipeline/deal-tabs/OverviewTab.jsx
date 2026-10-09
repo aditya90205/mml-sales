@@ -838,6 +838,7 @@ export default function OverviewTab({
   onCreateTask,
   selectedPackageKey = null,
   onPackageSelect,
+  onPaymentVerified,
 }) {
   const actionsRef = useRef({});
   const onReady = useCallback((api) => {
@@ -863,6 +864,7 @@ export default function OverviewTab({
         onCreateTask={onCreateTask}
         selectedPackageKey={selectedPackageKey}
         onPackageSelect={onPackageSelect}
+        onPaymentVerified={onPaymentVerified}
       />
     </>
   );
