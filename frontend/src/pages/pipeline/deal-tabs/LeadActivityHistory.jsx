@@ -334,45 +334,43 @@ export default function LeadActivityHistory({ lead, currentStage = "P0" }) {
                         )}
                       </div>
                       <div className="min-w-0 flex-1 pt-1">
-                        <div className="flex items-start gap-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[13.5px] font-semibold text-[#111] leading-snug">
-                              {event.title}
+                        <div className="min-w-0">
+                          <p className="text-[13.5px] font-semibold text-[#111] leading-snug inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                            <span>{event.title}</span>
+                            {isVideoActivity(event) ? (
+                              <button
+                                type="button"
+                                aria-expanded={openVideoId === event.id}
+                                aria-label={openVideoId === event.id ? "Hide video call details" : "Open video call details"}
+                                onClick={() => setOpenVideoId((current) => (current === event.id ? null : event.id))}
+                                className="text-[12.5px] font-bold text-[#7A0A17] hover:text-[#640712] transition-colors whitespace-nowrap"
+                              >
+                                {openVideoId === event.id ? "Hide" : "View >"}
+                              </button>
+                            ) : null}
+                          </p>
+                          {event.detail ? (
+                            <p className="text-[12.5px] text-[#4B5563] mt-0.5 leading-relaxed">
+                              {event.detail}
                             </p>
-                            {event.detail ? (
-                              <p className="text-[12.5px] text-[#4B5563] mt-0.5 leading-relaxed">
-                                {event.detail}
-                              </p>
-                            ) : null}
-                            {event.type === "summary" && (event.transcript || event.attachment) ? (
-                              <div className="mt-2 flex flex-col gap-2">
-                                {event.transcript ? (
-                                  <InsightBlock
-                                    label="Transcript"
-                                    className="border-[#EDE9FE] bg-[#FBF9FF] text-[#7C3AED]"
-                                  >
-                                    <p className="whitespace-pre-line">{event.transcript}</p>
-                                  </InsightBlock>
-                                ) : null}
-                                {event.attachment ? (
-                                  <p className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#374151]">
-                                    <Paperclip size={13} className="text-[#6B7280]" />
-                                    {event.attachment}
-                                  </p>
-                                ) : null}
-                              </div>
-                            ) : null}
-                          </div>
-                          {isVideoActivity(event) ? (
-                            <button
-                              type="button"
-                              aria-expanded={openVideoId === event.id}
-                              aria-label={openVideoId === event.id ? "Hide video call details" : "Open video call details"}
-                              onClick={() => setOpenVideoId((current) => (current === event.id ? null : event.id))}
-                              className="shrink-0 text-[12.5px] font-bold text-[#7A0A17] hover:text-[#640712] transition-colors whitespace-nowrap"
-                            >
-                              {openVideoId === event.id ? "Hide" : "View >"}
-                            </button>
+                          ) : null}
+                          {event.type === "summary" && (event.transcript || event.attachment) ? (
+                            <div className="mt-2 flex flex-col gap-2">
+                              {event.transcript ? (
+                                <InsightBlock
+                                  label="Transcript"
+                                  className="border-[#EDE9FE] bg-[#FBF9FF] text-[#7C3AED]"
+                                >
+                                  <p className="whitespace-pre-line">{event.transcript}</p>
+                                </InsightBlock>
+                              ) : null}
+                              {event.attachment ? (
+                                <p className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#374151]">
+                                  <Paperclip size={13} className="text-[#6B7280]" />
+                                  {event.attachment}
+                                </p>
+                              ) : null}
+                            </div>
                           ) : null}
                         </div>
                         {isVideoActivity(event) && openVideoId === event.id ? (

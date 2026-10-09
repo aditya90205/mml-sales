@@ -741,6 +741,7 @@ function AddonPayBar({
   payLabel = "Pay",
   showVerify = false,
   onVerify,
+  disabled = false,
 }) {
   return (
     <div className="flex items-center justify-between gap-2">
@@ -753,7 +754,9 @@ function AddonPayBar({
             <button
               type="button"
               onClick={onVerify}
-              className="h-8 px-4 rounded-lg bg-white border border-[#7A0A17] text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#FDF2F3] transition-colors"
+              disabled={disabled}
+              title={disabled ? "Payment actions are disabled for Cold / Lost leads" : undefined}
+              className="h-8 px-4 rounded-lg bg-white border border-[#7A0A17] text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#FDF2F3] transition-colors disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-white"
             >
               Verify
             </button>
@@ -762,7 +765,9 @@ function AddonPayBar({
             <button
               type="button"
               onClick={onPay}
-              className="h-8 px-4 rounded-lg bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors"
+              disabled={disabled}
+              title={disabled ? "Payment actions are disabled for Cold / Lost leads" : undefined}
+              className="h-8 px-4 rounded-lg bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-[#7A0A17]"
             >
               {payLabel}
             </button>
@@ -773,7 +778,7 @@ function AddonPayBar({
   );
 }
 
-function AddonsPreview({ items, selected, onToggle, packageAmount, extra = 0, showPay = true, onPay }) {
+function AddonsPreview({ items, selected, onToggle, packageAmount, extra = 0, showPay = true, onPay, payDisabled = false }) {
   return (
     <div className={showPay ? "pb-1" : ""}>
       <div className="flex flex-col gap-2.5">
@@ -810,7 +815,7 @@ function AddonsPreview({ items, selected, onToggle, packageAmount, extra = 0, sh
       </div>
       {showPay ? (
         <div className="mt-3.5">
-          <AddonPayBar extra={extra} packageAmount={packageAmount} onPay={onPay} />
+          <AddonPayBar extra={extra} packageAmount={packageAmount} onPay={onPay} disabled={payDisabled} />
         </div>
       ) : null}
     </div>
@@ -1489,6 +1494,7 @@ export default function OverviewDashboard({
   const completion = Math.max(0, Math.min(100, Number(deal.profileCompletion) || 0));
   const scoreText = deal.scoreValue != null && deal.scoreValue !== "" ? Number(deal.scoreValue).toFixed(1) : "";
   const temperature = shown(deal.winLossTone) || "Warm";
+  const payLocked = temperature === "Cold" || temperature === "Lost";
   const tempTone = TEMPERATURE_TONES[temperature] || TEMPERATURE_TONES.Warm;
   const priority = shown(deal.priority);
   const priorityTone = PRIORITY_TONES[priority] || PRIORITY_TONES.Medium;
@@ -2123,8 +2129,13 @@ export default function OverviewDashboard({
                     showPay={paymentReady}
                     payLabel={paymentVerified ? "Detail" : "Pay"}
                     showVerify={paymentReady && paymentLinkSent && !paymentVerified}
-                    onVerify={() => setVerifyPaymentOpen(true)}
+                    disabled={payLocked}
+                    onVerify={() => {
+                      if (payLocked) return;
+                      setVerifyPaymentOpen(true);
+                    }}
                     onPay={() => {
+                      if (payLocked) return;
                       if (paymentVerified) setPackageDetailOpen(true);
                       else setPayQuoteOpen(true);
                     }}
@@ -2387,7 +2398,9 @@ export default function OverviewDashboard({
           packageAmount={packageAmount}
           extra={addonExtraAmount}
           showPay={paymentReady}
+          payDisabled={payLocked}
           onPay={() => {
+            if (payLocked) return;
             setAddonsOpen(false);
             setPayQuoteOpen(true);
           }}
