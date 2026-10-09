@@ -1766,15 +1766,15 @@ export default function OverviewDashboard({
           style={frozenCardStyle("profile")}
         >
           <div className="flex items-center justify-between gap-3">
-            <span className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md bg-[#22C55E] text-white whitespace-nowrap">
+            <span className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md bg-[#15803D] text-white whitespace-nowrap">
               Profile Complete
             </span>
-            <span className="text-[16px] font-bold text-[#16A34A] shrink-0 leading-none tabular-nums">
+            <span className="text-[16px] font-bold text-[#166534] shrink-0 leading-none tabular-nums">
               {completion}%
             </span>
           </div>
-          <div className="mt-2.5 h-[5px] rounded-full bg-[#DCFCE7] overflow-hidden">
-            <div className="h-full rounded-full bg-[#22C55E]" style={{ width: `${completion}%` }} />
+          <div className="mt-2.5 h-[5px] rounded-full bg-[#BBF7D0] overflow-hidden">
+            <div className="h-full rounded-full bg-[#15803D]" style={{ width: `${completion}%` }} />
           </div>
 
           <div className="flex items-start gap-3.5 mt-4">
