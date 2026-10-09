@@ -37,6 +37,7 @@ import {
   SquareCheck,
   Star,
   Sun,
+  Trash2,
   UserRound,
   Users,
   Video,
@@ -829,70 +830,131 @@ function flagDetail(flag) {
   return flag?.note || FLAG_NOTES[flag?.label] || "";
 }
 
-function FlagsPreview({ flags, onView }) {
-  if (!flags.length) {
-    return <p className="text-[12.5px] text-[#9CA3AF] pb-1">No RM flags yet.</p>;
-  }
+function normalizeRmFlags(flags = []) {
+  return flags
+    .filter((flag) => !isEmptyFlag(flag))
+    .map((flag, index) => ({
+      id: flag.id || `rm-flag-${index}-${flag.label}`,
+      label: flag.label,
+      tone: flag.tone || "amber",
+      note: flag.note || FLAG_NOTES[flag.label] || "",
+    }));
+}
+
+function FlagsPreview({ flags, onView, onEdit, onDelete, onAdd }) {
   return (
-    <div className="grid grid-cols-2 gap-2 pb-1">
-      {flags.map((flag, index) => {
-        const empty = isEmptyFlag(flag);
-        const tone = flagTone(flag);
-        if (empty || !onView) {
-          return (
-            <span
-              key={`${flag.label}-${index}`}
-              className="text-[11.5px] font-semibold leading-tight px-2 py-1.5 rounded-lg text-center"
-              style={{ color: tone.color, backgroundColor: tone.bg }}
-            >
-              {flag.label || "-"}
-            </span>
-          );
-        }
-        return (
-          <button
-            key={`${flag.label}-${index}`}
-            type="button"
-            onClick={() => onView(flag)}
-            className="text-[11.5px] font-semibold leading-tight px-2 py-1.5 rounded-lg text-center hover:opacity-80 transition-opacity"
-            style={{ color: tone.color, backgroundColor: tone.bg }}
-          >
-            {flag.label}
-          </button>
-        );
-      })}
+    <div className="flex flex-col gap-2.5">
+      {!flags.length ? (
+        <p className="text-[12.5px] text-[#9CA3AF]">No RM flags yet.</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          {flags.map((flag) => {
+            const tone = flagTone(flag);
+            return (
+              <div
+                key={flag.id}
+                className="flex items-center gap-1 rounded-lg px-2 py-1.5 min-w-0"
+                style={{ color: tone.color, backgroundColor: tone.bg }}
+              >
+                <button
+                  type="button"
+                  onClick={() => onView?.(flag)}
+                  className="min-w-0 flex-1 text-left text-[11.5px] font-semibold leading-tight truncate hover:opacity-80 transition-opacity"
+                >
+                  {flag.label}
+                </button>
+                {onEdit ? (
+                  <button
+                    type="button"
+                    onClick={() => onEdit(flag)}
+                    className="size-6 rounded-md grid place-items-center shrink-0 hover:bg-black/5"
+                    aria-label={`Edit ${flag.label}`}
+                    title="Edit"
+                  >
+                    <Pencil size={12} strokeWidth={2.4} />
+                  </button>
+                ) : null}
+                {onDelete ? (
+                  <button
+                    type="button"
+                    onClick={() => onDelete(flag)}
+                    className="size-6 rounded-md grid place-items-center shrink-0 hover:bg-black/5"
+                    aria-label={`Delete ${flag.label}`}
+                    title="Delete"
+                  >
+                    <Trash2 size={12} strokeWidth={2.4} />
+                  </button>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {onAdd ? (
+        <button
+          type="button"
+          onClick={onAdd}
+          className="w-full h-9 rounded-xl border border-dashed border-[#7A0A17]/35 text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#FDF2F3] transition-colors inline-flex items-center justify-center gap-1.5"
+        >
+          <Plus size={14} strokeWidth={2.4} />
+          Add flag
+        </button>
+      ) : null}
     </div>
   );
 }
 
-function RmFlagsList({ flags, onView }) {
-  const visible = flags.filter((flag) => !isEmptyFlag(flag));
-  if (!visible.length) {
+function RmFlagsList({ flags, onView, onEdit, onDelete }) {
+  if (!flags.length) {
     return <p className="text-[13px] text-[#9CA3AF]">No RM flags yet. Add one to flag this lead for the service team.</p>;
   }
   return (
     <div className="flex flex-col gap-2">
-      {visible.map((flag, index) => {
+      {flags.map((flag) => {
         const tone = flagTone(flag);
         return (
           <div
-            key={`${flag.label}-${index}`}
-            className="flex items-center gap-3 rounded-xl border border-[#EEF1F4] px-3 py-2.5"
+            key={flag.id}
+            className="flex items-center gap-2 rounded-xl border border-[#EEF1F4] px-3 py-2.5"
           >
             <span
-              className="text-[12.5px] font-semibold leading-tight px-2.5 py-1 rounded-lg"
+              className="text-[12.5px] font-semibold leading-tight px-2.5 py-1 rounded-lg min-w-0 truncate"
               style={{ color: tone.color, backgroundColor: tone.bg }}
             >
               {flag.label}
             </span>
-            <button
-              type="button"
-              onClick={() => onView(flag)}
-              className="ml-auto inline-flex items-center gap-1 text-[12px] font-semibold text-[#7A0A17] hover:text-[#640712] shrink-0"
-            >
-              <Eye size={14} />
-              View
-            </button>
+            <div className="ml-auto flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => onView?.(flag)}
+                className="inline-flex items-center gap-1 h-8 px-2 rounded-lg text-[12px] font-semibold text-[#7A0A17] hover:bg-[#FDF2F3]"
+              >
+                <Eye size={14} />
+                View
+              </button>
+              {onEdit ? (
+                <button
+                  type="button"
+                  onClick={() => onEdit(flag)}
+                  className="size-8 rounded-lg grid place-items-center text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111]"
+                  aria-label={`Edit ${flag.label}`}
+                  title="Edit"
+                >
+                  <Pencil size={14} />
+                </button>
+              ) : null}
+              {onDelete ? (
+                <button
+                  type="button"
+                  onClick={() => onDelete(flag)}
+                  className="size-8 rounded-lg grid place-items-center text-[#E8395B] hover:bg-[#FEF2F2]"
+                  aria-label={`Delete ${flag.label}`}
+                  title="Delete"
+                >
+                  <Trash2 size={14} />
+                </button>
+              ) : null}
+            </div>
           </div>
         );
       })}
@@ -1284,10 +1346,17 @@ export default function OverviewDashboard({
   const [viewingFlag, setViewingFlag] = useState(null);
   const [scoreOpen, setScoreOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
-  const [addedFlags, setAddedFlags] = useState([]);
+  const [rmFlagList, setRmFlagList] = useState(() => normalizeRmFlags(deal?.rmFlags));
+  const [editingFlagId, setEditingFlagId] = useState(null);
   const [flagLabel, setFlagLabel] = useState("");
   const [flagToneValue, setFlagToneValue] = useState("amber");
   const [flagNote, setFlagNote] = useState("");
+
+  useEffect(() => {
+    setRmFlagList(normalizeRmFlags(deal?.rmFlags));
+    setEditingFlagId(null);
+    setViewingFlag(null);
+  }, [deal?.id]);
   const quote = useQuote();
   const addonCatalog = useAddonCatalog();
   const [tick, setTick] = useState(0);
@@ -1539,12 +1608,32 @@ export default function OverviewDashboard({
     if (addon) addCatalogAddonToQuote(addon);
   };
 
-  const rmFlags = [...(deal.rmFlags || []), ...addedFlags];
-  const rmFlagCount = rmFlags.filter((flag) => !isEmptyFlag(flag)).length;
+  const rmFlagCount = rmFlagList.length;
   const resetFlagForm = () => {
+    setEditingFlagId(null);
     setFlagLabel("");
     setFlagToneValue("amber");
     setFlagNote("");
+  };
+  const openAddFlag = () => {
+    resetFlagForm();
+    setFlagAddOpen(true);
+  };
+  const openEditFlag = (flag) => {
+    setEditingFlagId(flag.id);
+    setFlagLabel(flag.label || "");
+    setFlagToneValue(flag.tone || "amber");
+    setFlagNote(flag.note || flagDetail(flag) || "");
+    setFlagAddOpen(true);
+  };
+  const deleteFlag = (flag) => {
+    setRmFlagList((prev) => prev.filter((item) => item.id !== flag.id));
+    if (viewingFlag?.id === flag.id) setViewingFlag(null);
+    recordLeadActivity(deal, currentStage, {
+      type: "flag",
+      title: `RM flag removed: ${flag.label}`,
+    });
+    toast.success("RM flag removed.");
   };
   const saveFlag = (e) => {
     e.preventDefault();
@@ -1554,16 +1643,32 @@ export default function OverviewDashboard({
       toast.error("Please add a flag name.");
       return;
     }
-    setAddedFlags((prev) => [...prev, { label, tone: flagToneValue, note }]);
-    recordLeadActivity(deal, currentStage, {
-      type: "flag",
-      title: `RM flag added: ${label}`,
-      detail: note,
-    });
-    toast.success("RM flag added.");
+    if (editingFlagId) {
+      setRmFlagList((prev) =>
+        prev.map((item) =>
+          item.id === editingFlagId ? { ...item, label, tone: flagToneValue, note } : item
+        )
+      );
+      recordLeadActivity(deal, currentStage, {
+        type: "flag",
+        title: `RM flag updated: ${label}`,
+        detail: note,
+      });
+      toast.success("RM flag updated.");
+    } else {
+      setRmFlagList((prev) => [
+        ...prev,
+        { id: `rm-flag-${Date.now()}`, label, tone: flagToneValue, note },
+      ]);
+      recordLeadActivity(deal, currentStage, {
+        type: "flag",
+        title: `RM flag added: ${label}`,
+        detail: note,
+      });
+      toast.success("RM flag added.");
+    }
     resetFlagForm();
     setFlagAddOpen(false);
-    setFlagsOpen(true);
   };
 
   const panels = [
@@ -1572,7 +1677,7 @@ export default function OverviewDashboard({
       id: "flags",
       label: "RM Flags",
       icon: Flag,
-      onAdd: () => setFlagAddOpen(true),
+      onAdd: openAddFlag,
       onView: () => setFlagsOpen(true),
     },
     { id: "handover", label: "Handover Checklist", icon: ClipboardList, onView: () => setHandoverOpen(true) },
@@ -1588,7 +1693,7 @@ export default function OverviewDashboard({
           open ? "border-[#7A0A17]" : "border-[#EEF1F4]"
         }`}
       >
-        <div className="flex items-center gap-2 h-12 px-3.5">
+        <div className="flex items-center gap-3 h-12 px-3.5">
           <button
             type="button"
             onClick={() => toggle(item.id)}
@@ -1603,37 +1708,27 @@ export default function OverviewDashboard({
               </span>
             ) : null}
           </button>
-          {item.onAdd ? (
+          <div className="flex items-center gap-2.5 shrink-0">
             <button
               type="button"
-              onClick={item.onAdd}
+              onClick={item.onView}
               tabIndex={open ? 0 : -1}
-              className={`inline-flex items-center gap-0.5 text-[12px] font-semibold text-[#7A0A17] shrink-0 hover:text-[#640712] overflow-hidden transition-all duration-300 ${
-                open ? "max-w-12 opacity-100" : "max-w-0 opacity-0 pointer-events-none"
+              className={`inline-flex items-center gap-0.5 text-[12px] font-medium text-[#9CA3AF] hover:text-[#6B7280] overflow-hidden transition-all duration-300 ${
+                open ? "max-w-28 opacity-100" : "max-w-0 opacity-0 pointer-events-none"
               }`}
             >
-              <span className="whitespace-nowrap">Add</span>
+              <span className="whitespace-nowrap">View All</span>
+              <ChevronRight size={14} />
             </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={item.onView}
-            tabIndex={open ? 0 : -1}
-            className={`inline-flex items-center gap-0.5 text-[12px] font-medium text-[#9CA3AF] shrink-0 hover:text-[#6B7280] overflow-hidden transition-all duration-300 ${
-              open ? "max-w-24 opacity-100" : "max-w-0 opacity-0 pointer-events-none"
-            }`}
-          >
-            <span className="whitespace-nowrap">View All</span>
-            <ChevronRight size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={() => toggle(item.id)}
-            className="text-[#9CA3AF] shrink-0"
-            aria-label={open ? `Close ${item.label}` : `Open ${item.label}`}
-          >
-            <ChevronDown size={16} className={`transition-transform duration-300 ease-out ${open ? "rotate-180" : ""}`} />
-          </button>
+            <button
+              type="button"
+              onClick={() => toggle(item.id)}
+              className="text-[#9CA3AF] hover:text-[#6B7280]"
+              aria-label={open ? `Close ${item.label}` : `Open ${item.label}`}
+            >
+              <ChevronDown size={16} className={`transition-transform duration-300 ease-out ${open ? "rotate-180" : ""}`} />
+            </button>
+          </div>
         </div>
         <div
           className={`grid transition-[grid-template-rows] duration-300 ease-out ${
@@ -1644,7 +1739,13 @@ export default function OverviewDashboard({
             <div className={`px-3.5 pb-3 transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0"}`}>
               {item.id === "history" ? <HistoryPreview events={allEvents} /> : null}
               {item.id === "flags" ? (
-                <FlagsPreview flags={rmFlags} onView={(flag) => setViewingFlag(flag)} />
+                <FlagsPreview
+                  flags={rmFlagList}
+                  onView={(flag) => setViewingFlag(flag)}
+                  onEdit={openEditFlag}
+                  onDelete={deleteFlag}
+                  onAdd={item.onAdd}
+                />
               ) : null}
               {item.id === "handover" ? (
                 <HandoverPreview onViewItem={(row) => setHandoverDoc(handoverDocument(row, deal?.name))} />
@@ -2305,14 +2406,19 @@ export default function OverviewDashboard({
         headerActions={
           <button
             type="button"
-            onClick={() => setFlagAddOpen(true)}
+            onClick={openAddFlag}
             className="h-8 px-3 rounded-lg bg-[#7A0A17] text-white text-[12px] font-semibold hover:bg-[#640712] transition-colors"
           >
             Add
           </button>
         }
       >
-        <RmFlagsList flags={rmFlags} onView={(flag) => setViewingFlag(flag)} />
+        <RmFlagsList
+          flags={rmFlagList}
+          onView={(flag) => setViewingFlag(flag)}
+          onEdit={openEditFlag}
+          onDelete={deleteFlag}
+        />
       </Modal>
 
       <Modal
@@ -2321,7 +2427,7 @@ export default function OverviewDashboard({
           resetFlagForm();
           setFlagAddOpen(false);
         }}
-        title="Add RM flag"
+        title={editingFlagId ? "Edit RM flag" : "Add RM flag"}
         subtitle="Visible to the RM and service team"
         icon={<Flag size={18} />}
         iconBg="#FFF3E4"
@@ -2344,7 +2450,7 @@ export default function OverviewDashboard({
               form="add-rm-flag-form"
               className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
             >
-              Save flag
+              {editingFlagId ? "Update flag" : "Save flag"}
             </button>
           </>
         }

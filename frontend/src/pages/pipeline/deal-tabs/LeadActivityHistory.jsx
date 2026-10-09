@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRightLeft,
-  ChevronRight,
   CreditCard,
   FileText,
   Filter,
@@ -370,12 +369,9 @@ export default function LeadActivityHistory({ lead, currentStage = "P0" }) {
                               aria-expanded={openVideoId === event.id}
                               aria-label={openVideoId === event.id ? "Hide video call details" : "Open video call details"}
                               onClick={() => setOpenVideoId((current) => (current === event.id ? null : event.id))}
-                              className="shrink-0 size-7 rounded-lg border border-black/10 text-[#6B7280] grid place-items-center hover:bg-[#FAFAFB] hover:text-[#111] transition-colors"
+                              className="shrink-0 text-[12.5px] font-bold text-[#7A0A17] hover:text-[#640712] transition-colors whitespace-nowrap"
                             >
-                              <ChevronRight
-                                size={15}
-                                className={`transition-transform ${openVideoId === event.id ? "rotate-90" : ""}`}
-                              />
+                              {openVideoId === event.id ? "Hide" : "View >"}
                             </button>
                           ) : null}
                         </div>

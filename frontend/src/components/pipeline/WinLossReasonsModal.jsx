@@ -42,7 +42,6 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
   const [priceEscalated, setPriceEscalated] = useState(false);
   const [others, setOthers] = useState("");
   const [briefNote, setBriefNote] = useState("");
-  const [afterSetTime, setAfterSetTime] = useState(false);
   const [manualReactivate, setManualReactivate] = useState(false);
   const [reactivateMonths, setReactivateMonths] = useState(3);
   const [error, setError] = useState("");
@@ -55,7 +54,6 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
     setPriceEscalated(false);
     setOthers("");
     setBriefNote("");
-    setAfterSetTime(false);
     setManualReactivate(false);
     setReactivateMonths(3);
     setError("");
@@ -104,7 +102,7 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
       setError("Brief Comment / Note is required.");
       return;
     }
-    if (mode === "cold" && !afterSetTime) {
+    if (mode === "cold" && !REACTIVATE_MONTH_OPTIONS.includes(Number(reactivateMonths))) {
       setError("Select After a set time.");
       return;
     }
@@ -217,52 +215,39 @@ export default function WinLossReasonsModal({ open, onClose, onSave, mode = "los
             })}
           </div>
 
-          {mode === "cold" && (
-            <div className="mt-2 border-b border-black/6">
-              <button
-                type="button"
-                onClick={() => {
-                  setAfterSetTime((on) => {
-                    if (on) setManualReactivate(false);
-                    return !on;
-                  });
-                }}
-                className="w-full flex items-center gap-3 py-3 text-left"
-              >
-                <ReasonCheck checked={afterSetTime} />
-                <span className="text-[13.5px] font-medium text-[#111]">After a set time</span>
-              </button>
-              {afterSetTime && (
-                <div className="pb-3 pl-8">
-                  <select
-                    value={reactivateMonths}
-                    onChange={(e) => setReactivateMonths(Number(e.target.value))}
-                    aria-label="Reactivate timing"
-                    className="w-full h-10 px-3 rounded-xl border border-black/10 bg-white text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/35 focus:ring-2 focus:ring-[#7A0A17]/10"
-                  >
-                    {REACTIVATE_MONTH_OPTIONS.map((months) => (
-                      <option key={months} value={months}>
-                        {monthLabel(months)}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-2 text-[12px] font-medium text-[#6B7280]">
-                    Timing: {reviewDateLabel}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setManualReactivate((on) => !on)}
-                    className="mt-2 w-full flex items-center gap-3 py-2 text-left"
-                  >
-                    <ReasonCheck checked={manualReactivate} />
-                    <span className="text-[13.5px] font-medium text-[#111]">Manual</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
           <div className="mt-5 flex flex-col gap-4">
+            {mode === "cold" ? (
+              <div>
+                <label className="text-[13px] font-semibold text-[#111]">
+                  After a set time
+                  <span className="text-[#E8395B]"> *</span>
+                </label>
+                <select
+                  value={reactivateMonths}
+                  onChange={(e) => setReactivateMonths(Number(e.target.value))}
+                  aria-label="Reactivate timing"
+                  required
+                  className="mt-2 w-full h-10 px-3 rounded-xl border border-black/10 bg-white text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/35 focus:ring-2 focus:ring-[#7A0A17]/10"
+                >
+                  {REACTIVATE_MONTH_OPTIONS.map((months) => (
+                    <option key={months} value={months}>
+                      {monthLabel(months)}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-[12px] font-medium text-[#6B7280]">
+                  Timing: {reviewDateLabel}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setManualReactivate((on) => !on)}
+                  className="mt-2 w-full flex items-center gap-3 py-2 text-left"
+                >
+                  <ReasonCheck checked={manualReactivate} />
+                  <span className="text-[13.5px] font-medium text-[#111]">Manual</span>
+                </button>
+              </div>
+            ) : null}
             <div>
               <label className="text-[13px] font-semibold text-[#111]">Others</label>
               <textarea
