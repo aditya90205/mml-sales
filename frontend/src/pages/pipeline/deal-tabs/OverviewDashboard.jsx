@@ -611,7 +611,7 @@ function ConversationSummary({ deal, currentStage }) {
     <div className="mt-1 flex min-h-0 flex-1 flex-col border-t border-[#EEF1F4] pt-3">
       <h3 className="text-[13px] font-bold text-[#111] flex items-center gap-1.5 leading-none shrink-0">
         <Sparkles size={13} className="text-[#7A0A17]" fill="#7A0A17" strokeWidth={0} />
-        Summary
+        Notes
       </h3>
       <form onSubmit={submit} className="mt-2.5 flex min-h-0 flex-1 flex-col border border-[#E6E8EC] rounded-xl px-3 pt-2.5 pb-2">
         <textarea

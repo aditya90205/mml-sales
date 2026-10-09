@@ -370,9 +370,10 @@ const TEMPERATURE_STYLES = {
 };
 
 /** Same short My Leads set the dashboard showed before the full pipeline list. */
-const DASHBOARD_MY_LEAD_IDS = new Set(["p0-1", "p0-2", "p1-1", "p1-2", "p3-1", "p4-1", "p6-1"]);
+const DASHBOARD_MY_LEAD_IDS = new Set(["p0-1", "p0-2", "p1-1", "p1-2", "p3-1", "p4-1"]);
+const DASHBOARD_MY_LEADS_LIMIT = 6;
 
-const MY_LEADS_COL_WIDTHS = ["16%", "18%", "9%", "8%", "10%", "13%", "14%", "12%"];
+const MY_LEADS_COL_WIDTHS = ["18%", "15%", "8.5%", "7%", "9%", "12.5%", "14%", "16%"];
 
 const DASH_STAGE_META = [
   { id: "P0", label: "New", color: "#E8395B", p0Status: "new", filterKey: "P0-new" },
@@ -957,24 +958,24 @@ function RecentUpdatesCard() {
 
 function ConvertTimeBar({ toPayment, toOnboarding }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[28px] border border-[#E6E8EE] mt-5 bg-[#F7F8FC] px-3 py-2 sm:px-3.5">
-      <div className="flex items-center gap-2.5 min-w-0">
-        <span className="size-9 rounded-full bg-[#EEF0FE] grid place-items-center shrink-0">
-          <History size={16} className="text-[#6366F1]" strokeWidth={2} />
+    <div className="flex items-center gap-2 rounded-[28px] border border-[#E6E8EE] shrink-0 bg-[#F7F8FC] px-2.5 py-1.5 min-w-0">
+      <div className="flex items-center gap-2 shrink-0">
+        <span className="size-8 rounded-full bg-[#EEF0FE] grid place-items-center shrink-0">
+          <History size={15} className="text-[#6366F1]" strokeWidth={2} />
         </span>
-        <p className="text-[12.5px] font-semibold text-[#374151] leading-tight">
+        <p className="text-[11px] font-semibold text-[#374151] leading-tight w-[78px]">
           Avg. Time to Convert Lead
         </p>
       </div>
-      <div className="flex-1 flex items-stretch min-w-[240px]">
-        <div className="flex-1 px-2 min-w-0">
-          <p className="text-[15px] font-bold text-[#1E3A8A] leading-tight tabular-nums">{toPayment}</p>
-          <p className="text-[10.5px] text-[#9CA3AF] leading-tight mt-0.5 whitespace-nowrap">P0 to P5 (Payment Done)</p>
+      <div className="flex-1 flex items-stretch min-w-0">
+        <div className="flex-1 px-1.5 min-w-0">
+          <p className="text-[14px] font-bold text-[#1E3A8A] leading-tight tabular-nums">{toPayment}</p>
+          <p className="text-[10px] text-[#9CA3AF] leading-tight mt-0.5">P0 to P5 (Payment Done)</p>
         </div>
         <div className="w-px bg-[#D8DCE6] my-0.5" />
-        <div className="flex-1 px-2 min-w-0">
-          <p className="text-[15px] font-bold text-[#2563EB] leading-tight tabular-nums">{toOnboarding}</p>
-          <p className="text-[10.5px] text-[#9CA3AF] leading-tight mt-0.5 whitespace-nowrap">P0 to P6 (Onboarding)</p>
+        <div className="flex-1 px-1.5 min-w-0">
+          <p className="text-[14px] font-bold text-[#2563EB] leading-tight tabular-nums">{toOnboarding}</p>
+          <p className="text-[10px] text-[#9CA3AF] leading-tight mt-0.5">P0 to P6 (Onboarding)</p>
         </div>
       </div>
     </div>
@@ -1004,9 +1005,9 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
   };
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 sm:p-5 pb-3 flex flex-col min-w-0 [container-type:inline-size]">
+    <div className="bg-white border border-black/8 rounded-2xl p-3 sm:p-3.5 pb-2.5 flex flex-col min-w-0 h-full [container-type:inline-size]">
 
-      <div className="flex items-center justify-between gap-3 mt-4 mb-4">
+      <div className="flex items-center justify-between gap-2 mb-1.5 shrink-0">
         <h2 className="text-[16px] font-bold text-[#111] flex items-center gap-2">
           <Filter size={16} className="text-[#7A0A17]" fill="#7A0A17" strokeWidth={2} />
           Sales Funnel (P0 - P6)
@@ -1039,10 +1040,13 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
         </div>
       </div>
 
-      <div className="flex items-end justify-center pt-3">
-        <div className="flex items-stretch gap-3 sm:gap-5 w-full">
+      <div className="flex-1 min-h-[420px] min-w-0 flex flex-col gap-0.5 [container-type:size]">
+        <div
+          className="flex w-full min-h-0 flex-1 items-stretch gap-2.5"
+          style={{ maxHeight: "calc((100cqi - 160px) * 386 / 301)" }}
+        >
           <div
-            className="relative w-full max-w-[230px] [@container(min-width:420px)]:max-w-[270px] [@container(min-width:520px)]:max-w-[300px] shrink-0"
+            className="relative h-full max-w-full shrink-0"
             style={{ aspectRatio: "301 / 386" }}
           >
             <img
@@ -1069,7 +1073,7 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
                   }}
                 >
                   <span
-                    className="text-white leading-tight text-center whitespace-nowrap drop-shadow-[0_1px_2px_rgba(0,0,0,0.28)] transition-[font-weight,text-shadow] duration-150"
+                    className="text-white leading-tight text-center whitespace-nowrap drop-shadow-[0_1px_2px_rgba(0,0,0,0.28)] transition-[font-weight,text-shadow] duration-150 translate-y-[5px]"
                     style={{
                       fontSize: row.key === "video" || row.key === "profile" ? 11.5 : 12.5,
                       fontWeight: isActive ? 800 : 600,
@@ -1084,9 +1088,8 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
               );
             })}
           </div>
-          
 
-          <div className="relative flex-1 min-w-0 max-w-[52%] [@container(min-width:420px)]:min-w-[148px] [@container(min-width:520px)]:min-w-[168px]">
+          <div className="relative flex-1 min-w-0 h-full">
             {FUNNEL_ROWS.map((row) => {
               const isActive = activeStage === row.filterKey;
               const dimOthers = Boolean(activeStage) && !isActive;
@@ -1096,7 +1099,7 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
                   type="button"
                   onClick={() => selectStage(row.filterKey)}
                   aria-pressed={isActive}
-                  className="absolute inset-x-0 flex items-center gap-2 text-left transition-opacity duration-150"
+                  className="absolute inset-x-0 flex items-center gap-1.5 text-left transition-opacity duration-150 overflow-hidden"
                   style={{
                     top: row.top,
                     height: row.height,
@@ -1104,44 +1107,55 @@ function SalesFunnelCard({ activeStage, onSelectStage }) {
                   }}
                 >
                   <span
-                    className="text-[12.5px] leading-none whitespace-nowrap tabular-nums transition-colors duration-150"
+                    className="text-[11px] leading-none whitespace-nowrap tabular-nums shrink-0 transition-colors duration-150"
                     style={{
                       fontWeight: isActive ? 800 : 700,
-                      color: isActive ? "#111" : "#111",
+                      color: "#111",
                     }}
                   >
                     {row.stat}
                   </span>
-                  <span className="text-[#D1D5DB] text-[12px] leading-none">→</span>
-                  <div className="min-w-0">
-                    {row.isFinal ? (
-                      <p className="text-[11.5px] leading-tight whitespace-nowrap">
-                        <span className={`font-medium ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}>Final </span>
+                  <span className="text-[#D1D5DB] text-[12px] leading-none shrink-0">→</span>
+                  {row.isFinal ? (
+                    <div className="min-w-0 leading-none">
+                      <p className={`text-[10.5px] font-medium whitespace-nowrap ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}>
+                        Final Conversion
+                      </p>
+                      <p className="mt-0.5 text-[11px] leading-none whitespace-nowrap">
                         <span className={`tabular-nums ${isActive ? "font-extrabold text-[#111]" : "font-bold text-[#111]"}`}>{row.pct}</span>
                         <span className={`font-medium ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}> ({row.dropCount})</span>
                       </p>
-                    ) : (
-                      <p className="text-[11.5px] leading-tight whitespace-nowrap">
-                        <span className={`tabular-nums ${isActive ? "font-extrabold text-[#111]" : "font-bold text-[#111]"}`}>{row.pct}</span>
-                        <span className={`font-medium ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}> {row.to}</span>
-                        {row.dropPct && (
-                          <span className="ml-1.5 pl-1.5 border-l border-[#E5E7EB]">
-                            <span className={isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}>Drop </span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="min-w-0 leading-none">
+                        <p className={`text-[12px] leading-none tabular-nums whitespace-nowrap ${isActive ? "font-extrabold text-[#111]" : "font-bold text-[#111]"}`}>
+                          {row.pct}
+                        </p>
+                        <p className={`mt-0.5 text-[10.5px] leading-none font-medium whitespace-nowrap ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}>
+                          {row.to}
+                        </p>
+                      </div>
+                      {row.dropPct && (
+                        <div className="min-w-0 leading-none shrink-0">
+                          <p className={`text-[10.5px] leading-none font-medium whitespace-nowrap ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}>
+                            Drop off
+                          </p>
+                          <p className="mt-0.5 text-[11px] leading-none whitespace-nowrap">
                             <span className={`tabular-nums ${isActive ? "font-extrabold text-[#E11D48]" : "font-bold text-[#E11D48]"}`}>{row.dropPct}</span>
-                            <span className={isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}> ({row.dropCount})</span>
-                          </span>
-                        )}
-                      </p>
-                    )}
-                  </div>
+                            <span className={`font-medium ${isActive ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}> ({row.dropCount})</span>
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </button>
               );
             })}
           </div>
-          
         </div>
+        <ConvertTimeBar toPayment={toPayment} toOnboarding={toOnboarding} />
       </div>
-      <ConvertTimeBar toPayment={toPayment} toOnboarding={toOnboarding} />
     </div>
   );
 }
@@ -1182,7 +1196,7 @@ function MyLeadsCard({
   };
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 sm:p-5 flex flex-col min-w-0 h-full">
+    <div className="bg-white border border-black/8 rounded-2xl p-3.5 sm:p-4 flex flex-col min-w-0">
       <LeadScoreModal lead={scoreLead} onClose={() => setScoreLead(null)} />
       <SendMessageModal open={messageOpen} onClose={() => setMessageOpen(false)} />
       <Modal
@@ -1359,8 +1373,8 @@ function MyLeadsCard({
           )}
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="hidden sm:flex items-center gap-3">
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden sm:flex items-center gap-2">
             {[
               { label: "Low Probability", color: "#E8395B" },
               { label: "Medium",           color: "#F59E0B" },
@@ -1376,8 +1390,8 @@ function MyLeadsCard({
         </div>
       </div>
 
-      <div className="border border-black/8 rounded-xl overflow-x-auto scrollbar-thin">
-        <table className="w-full text-left border-collapse table-fixed min-w-[1040px]">
+      <div className="border border-black/8 rounded-xl overflow-hidden">
+        <table className="w-full max-w-full text-left border-collapse table-fixed">
           <colgroup>
             {MY_LEADS_COL_WIDTHS.map((width, index) => (
               <col key={index} style={{ width }} />
@@ -1402,7 +1416,8 @@ function MyLeadsCard({
                   sort={sort}
                   onSort={toggle}
                   unsortable={h.unsortable}
-                  className="px-3 py-2.5 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide align-bottom whitespace-pre-line"
+                  dense
+                  className="px-1.5 py-2 text-[9.5px] font-semibold text-[#9CA3AF] uppercase tracking-tight align-bottom whitespace-pre-line"
                 />
               ))}
             </tr>
@@ -1424,7 +1439,7 @@ function MyLeadsCard({
                   onClick={() => navigate(leadDetailPath(lead))}
                   className="border-b border-black/6 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
                 >
-                  <td className="px-3 py-2.5 align-middle">
+                  <td className="px-1.5 py-2 align-middle overflow-hidden">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: stage.color }} />
                       <div className="min-w-0">
@@ -1445,41 +1460,41 @@ function MyLeadsCard({
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 py-2.5 align-middle">
-                    <p className="text-[12px] text-[#374151] leading-tight">
+                  <td className="px-1.5 py-2 align-middle overflow-hidden">
+                    <p className="text-[11.5px] text-[#374151] leading-tight">
                       {stage.id === "P0" ? `P0 ${stage.label}` : `${stage.id} - ${stage.label}`}{" "}
                       <span style={{ color: temp.color }} className="font-semibold">({lead.temperature || "—"})</span>
                     </p>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-1.5 py-2 whitespace-nowrap overflow-hidden">
                     <span
-                      className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md"
+                      className="inline-block text-[10.5px] font-semibold px-1.5 py-0.5 rounded-md"
                       style={{ color: pri.color, backgroundColor: pri.bg }}
                     >
                       {lead.priority}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-1.5 py-2 whitespace-nowrap overflow-hidden">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setScoreLead(lead);
                       }}
-                      className="inline-flex items-center gap-1 text-[12px] font-bold text-[#111] hover:bg-[#F3F4F6] px-1.5 py-0.5 rounded transition-colors"
+                      className="inline-flex items-center gap-0.5 text-[12px] font-bold text-[#111] hover:bg-[#F3F4F6] px-0.5 py-0.5 rounded transition-colors"
                       title="Click to view Lead Score Details"
                     >
                       {Number(lead.score || 0).toFixed(1)}
                       <Flag size={10} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} />
                     </button>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-1.5 py-2 whitespace-nowrap overflow-hidden">
                     <span className="text-[12px] font-semibold text-[#374151]">{lead.completion ?? 0}%</span>
                   </td>
-                  <td className="px-3 py-2.5 align-middle">
-                    <span className="text-[12px] text-[#374151] leading-tight">{lead.source || "—"}</span>
+                  <td className="px-1.5 py-2 align-middle overflow-hidden">
+                    <span className="text-[11.5px] text-[#374151] leading-tight">{lead.source || "—"}</span>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-1.5 py-2 whitespace-nowrap overflow-hidden" onClick={(e) => e.stopPropagation()}>
                     <FollowUpHoverCard
                       lastDiscussionAt={lead.lastDiscussion}
                       nextActionAt={lead.nextAction}
@@ -1487,10 +1502,10 @@ function MyLeadsCard({
                       urgency={`${lead.hrs} Hrs Left`}
                       onFollowUp={() => setHistoryLead({ lead, stageId: stage.id })}
                     >
-                      <div className="flex items-center gap-1.5 cursor-default">
-                        <span className="size-[15px] shrink-0 grid place-items-center">
+                      <div className="flex items-center gap-1 cursor-default">
+                        <span className="size-[14px] shrink-0 grid place-items-center">
                           {(urgent || idx % 3 === 0) && (
-                            <Video size={15} className="text-[#3B82F6]" />
+                            <Video size={13} className="text-[#3B82F6]" />
                           )}
                         </span>
                         <div>
@@ -1502,8 +1517,8 @@ function MyLeadsCard({
                       </div>
                     </FollowUpHoverCard>
                   </td>
-                  <td className="px-1.5 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-0.5">
+                  <td className="px-1 py-2 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-0">
                       {idx % 3 === 0 ? (
                         <button type="button" className="p-1 rounded-lg text-[#DC2626] hover:bg-[#FEE2E2] transition-colors" title="Dropped Call">
                           <PhoneOff size={14} />
@@ -1607,7 +1622,8 @@ export default function Dashboard() {
 
   const dashboardRows = useMemo(() => {
     const picked = allRows.filter((row) => DASHBOARD_MY_LEAD_IDS.has(row.lead.id));
-    return picked.length ? picked : allRows.slice(0, 6);
+    const list = picked.length ? picked : allRows;
+    return list.slice(0, DASHBOARD_MY_LEADS_LIMIT);
   }, [allRows]);
 
   const healthCounts = useMemo(() => {
@@ -2133,7 +2149,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(480px,min(540px,32%))] gap-4 items-stretch">
           <PerformanceScoreCard period={period} myLeads={myLeads} />
           <AIAssistant />
           <div className="flex flex-col gap-4 min-h-0">
@@ -2150,10 +2166,8 @@ export default function Dashboard() {
             </div>
             <RecentUpdatesCard />
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.55fr)_minmax(400px,1.05fr)] gap-4 items-start">
-          <div className="min-w-0">
+          <div className="min-w-0 xl:col-span-2">
             <MyLeadsCard
               rows={visibleRows}
               healthFilter={healthFilter}

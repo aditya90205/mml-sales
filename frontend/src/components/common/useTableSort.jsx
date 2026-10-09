@@ -50,26 +50,35 @@ export function SortableTh({
   unsortable = false,
   className = "",
   children,
+  dense = false,
 }) {
   const canSort = !unsortable && Boolean(sortKey) && typeof onSort === "function";
   const active = sort?.key === sortKey;
+  const iconSize = dense ? 10 : 12;
 
   return (
     <th
       onClick={() => canSort && onSort(sortKey)}
       className={`group select-none ${canSort ? "cursor-pointer hover:text-[#4B5563]" : ""} ${className}`}
     >
-      <span className="inline-flex items-end gap-1 leading-tight">
+      <span className={`inline-flex items-end leading-tight max-w-full ${dense ? "gap-0.5" : "gap-1"}`}>
         {children ?? <span className="whitespace-pre-line">{label}</span>}
         {canSort && (
           active ? (
             sort.dir === "asc" ? (
-              <ChevronUp size={12} className="text-[#7A0A17] shrink-0 mb-px" />
+              <ChevronUp size={iconSize} className="text-[#7A0A17] shrink-0 mb-px" />
             ) : (
-              <ChevronDown size={12} className="text-[#7A0A17] shrink-0 mb-px" />
+              <ChevronDown size={iconSize} className="text-[#7A0A17] shrink-0 mb-px" />
             )
           ) : (
-            <ChevronUp size={12} className="text-[#D1D5DB] opacity-0 group-hover:opacity-100 shrink-0 mb-px" />
+            <ChevronUp
+              size={iconSize}
+              className={`text-[#D1D5DB] shrink-0 mb-px ${
+                dense
+                  ? "w-0 opacity-0 overflow-hidden group-hover:w-2.5 group-hover:opacity-100"
+                  : "opacity-0 group-hover:opacity-100"
+              }`}
+            />
           )
         )}
       </span>
