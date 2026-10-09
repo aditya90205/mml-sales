@@ -602,7 +602,7 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
       </div>
 
       {viewOnly ? null : (
-      <Modal
+      <Modal    
         open={open}
         onClose={() => setOpen(false)}
         title="Add add-on"
