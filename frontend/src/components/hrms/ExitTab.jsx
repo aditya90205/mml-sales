@@ -158,7 +158,7 @@ export default function ExitTab() {
     <div className="flex flex-col gap-5">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="text-[18px] font-extrabold text-[#111827]">Exit</h2>
+          <h2 className="hrms-panel-title">Exit</h2>
           <p className="text-[13px] text-[#6B7280] mt-1">
             Termination record and resignation request — shown together for demo walkthrough.
           </p>
@@ -180,7 +180,7 @@ export default function ExitTab() {
               <BarChart3 size={16} />
             </span>
             <div className="min-w-0">
-              <h3 className="text-[15px] font-extrabold text-[#111827]">Termination Details</h3>
+              <h3 className="hrms-panel-title">Termination Details</h3>
               <p className="text-[12px] text-[#9CA3AF]">Official termination record for this employee</p>
             </div>
           </div>
@@ -213,7 +213,7 @@ export default function ExitTab() {
               </span>
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold text-[#9CA3AF]">Employee</p>
-                <p className="text-[15px] font-extrabold text-[#111]">{DEMO_TERMINATION.employeeName}</p>
+                <p className="hrms-panel-title">{DEMO_TERMINATION.employeeName}</p>
               </div>
             </div>
             <StatusBadge label={DEMO_TERMINATION.status} />
@@ -271,7 +271,7 @@ export default function ExitTab() {
                 <User size={16} />
               </span>
               <div className="min-w-0">
-                <h3 className="text-[15px] font-extrabold text-[#111827]">Resignation Details</h3>
+                <h3 className="hrms-panel-title">Resignation Details</h3>
                 <p className="text-[12px] text-[#9CA3AF]">Submitted {resignation.submittedAt}</p>
               </div>
             </div>

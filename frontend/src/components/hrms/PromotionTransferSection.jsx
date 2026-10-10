@@ -590,7 +590,7 @@ function KpiCards({ records, kind }) {
       {cards.map((card) => (
         <div key={card.label} className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
           <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">{card.label}</p>
-          <p className="text-xl font-extrabold text-[#111827] mt-1.5">{card.value}</p>
+          <p className="hrms-metric-value text-[#111827] mt-1.5">{card.value}</p>
           <p className="text-[12.5px] text-[#6B7280] mt-1">{card.sub}</p>
         </div>
       ))}
@@ -604,7 +604,7 @@ function EmptyState({ title, description, icon: Icon, action }) {
       <div className="size-14 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
         <Icon size={24} />
       </div>
-      <h3 className="text-base font-extrabold text-[#111827]">{title}</h3>
+      <h3 className="hrms-sub-title">{title}</h3>
       <p className="text-[13px] text-[#6B7280] mt-1.5 max-w-sm mx-auto leading-relaxed">{description}</p>
       {action}
     </div>
@@ -639,7 +639,7 @@ export function PromotionSection({ employee, showAll = false, embedded = false }
               <TrendingUp size={16} />
             </span>
             <div>
-              <h3 className="text-sm font-extrabold text-[#111827]">Employee Promotions</h3>
+              <h3 className="hrms-panel-title">Employee Promotions</h3>
               <p className="text-[12.5px] text-[#6B7280]">Designation changes synced from HRMS</p>
             </div>
           </div>
@@ -706,7 +706,7 @@ export function PromotionSection({ employee, showAll = false, embedded = false }
                       <button
                         type="button"
                         onClick={() => setSelected(row)}
-                        className="size-8 rounded-lg bg-[#EEF0FE] hover:bg-[#E0E7FF] text-[#4338CA] grid place-items-center transition-colors"
+                        className="size-8 rounded-lg bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#D97706] grid place-items-center transition-colors"
                         aria-label="View promotion details"
                       >
                         <Eye size={14} />
@@ -783,7 +783,7 @@ export function TransferSection({ employee, showAll = false, embedded = false })
                 <ArrowLeftRight size={16} />
               </span>
               <div>
-                <h3 className="text-sm font-extrabold text-[#111827]">Employee Transfers</h3>
+                <h3 className="hrms-panel-title">Employee Transfers</h3>
                 <p className="text-[12.5px] text-[#6B7280]">Your transfer requests and HR decisions</p>
               </div>
             </div>

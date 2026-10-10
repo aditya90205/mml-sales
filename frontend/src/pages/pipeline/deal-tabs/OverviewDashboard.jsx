@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
-  ArrowRight,
   Briefcase,
   Calendar,
   Camera,
@@ -68,7 +67,7 @@ import PackageQuoteTab, {
   removeQuoteAddon,
   useQuote,
 } from "./PackageQuoteTab";
-import { useAddonCatalog } from "../../../utils/addonCatalog";
+import { addCustomAddon, useAddonCatalog } from "../../../utils/addonCatalog";
 import P6ChecklistTab from "./P6ChecklistTab";
 import P6DocumentViewModal from "./p6/P6DocumentViewModal.jsx";
 import { compareIdWithProfile, extractIdPlaceholder } from "./p6/p6ChecklistData.js";
@@ -1183,10 +1182,9 @@ function CardHead({ icon: Icon, title, action, onAction, accent = false, brandAc
         <button
           type="button"
           onClick={onAction}
-          className={`inline-flex items-center gap-0.5 text-[12.5px] font-medium shrink-0 ${actionClass}`}
+          className={`inline-flex items-center gap-1 text-[12.5px] font-medium shrink-0 ${actionClass}`}
         >
           {action}
-          {accent || brandAction ? <ChevronRight size={14} /> : null}
         </button>
       ) : null}
     </div>
@@ -1347,6 +1345,9 @@ export default function OverviewDashboard({
   const lockedCardHeights = useRef({ profile: 0, activity: 0, next: 0 });
   const [nextActionOpen, setNextActionOpen] = useState(false);
   const [addonsOpen, setAddonsOpen] = useState(false);
+  const [addonAddOpen, setAddonAddOpen] = useState(false);
+  const [addonItemName, setAddonItemName] = useState("");
+  const [addonQuoted, setAddonQuoted] = useState("");
   const [handoverOpen, setHandoverOpen] = useState(false);
   const [handoverDoc, setHandoverDoc] = useState(null);
   const [flagsOpen, setFlagsOpen] = useState(false);
@@ -1617,6 +1618,32 @@ export default function OverviewDashboard({
     if (addon) addCatalogAddonToQuote(addon);
   };
 
+  const openAddAddon = () => {
+    setAddonItemName("");
+    setAddonQuoted("");
+    setAddonAddOpen(true);
+  };
+
+  const saveCustomAddon = (e) => {
+    e.preventDefault();
+    const name = addonItemName.trim();
+    if (!name) {
+      toast.error("Please add an item name.");
+      return;
+    }
+    const amount = Number(String(addonQuoted ?? "").replace(/[₹,\s]/g, ""));
+    if (!addonQuoted.trim() || !Number.isFinite(amount) || amount < 0) {
+      toast.error("Please add an amount for the custom add-on.");
+      return;
+    }
+    const addon = addCustomAddon({ name, price: amount });
+    addCatalogAddonToQuote(addon);
+    toast.success("Add-on added to catalogue and this quotation.");
+    setAddonItemName("");
+    setAddonQuoted("");
+    setAddonAddOpen(false);
+  };
+
   const rmFlagCount = rmFlagList.length;
   const resetFlagForm = () => {
     setEditingFlagId(null);
@@ -1722,12 +1749,11 @@ export default function OverviewDashboard({
               type="button"
               onClick={item.onView}
               tabIndex={open ? 0 : -1}
-              className={`inline-flex items-center gap-0.5 text-[12px] font-medium text-[#9CA3AF] hover:text-[#6B7280] overflow-hidden transition-all duration-300 ${
+              className={`inline-flex items-center gap-1 text-[12px] font-medium text-[#9CA3AF] hover:text-[#6B7280] overflow-hidden transition-all duration-300 ${
                 open ? "max-w-28 opacity-100" : "max-w-0 opacity-0 pointer-events-none"
               }`}
             >
               <span className="whitespace-nowrap">View All</span>
-              <ChevronRight size={14} />
             </button>
             <button
               type="button"
@@ -2088,12 +2114,11 @@ export default function OverviewDashboard({
                     type="button"
                     onClick={() => setAddonsOpen(true)}
                     tabIndex={addonsExpanded ? 0 : -1}
-                    className={`inline-flex items-center gap-0.5 text-[12.5px] font-medium text-[#7A0A17] shrink-0 hover:text-[#640712] overflow-hidden transition-all duration-300 ${
-                      addonsExpanded ? "max-w-24 opacity-100" : "max-w-0 opacity-0 pointer-events-none"
+                    className={`inline-flex items-center gap-1 text-[12.5px] font-medium text-[#7A0A17] shrink-0 hover:text-[#640712] overflow-hidden transition-all duration-300 ${
+                      addonsExpanded ? "max-w-28 opacity-100" : "max-w-0 opacity-0 pointer-events-none"
                     }`}
                   >
                     <span className="whitespace-nowrap">View All</span>
-                    <ChevronRight size={14} />
                   </button>
                   <button
                     type="button"
@@ -2178,7 +2203,6 @@ export default function OverviewDashboard({
               title="View all recent activity"
             >
               View All
-              <ArrowRight size={12} />
             </button>
           </div>
           <div className="shrink-0">
@@ -2393,6 +2417,15 @@ export default function OverviewDashboard({
         iconBg="#F3E8FF"
         iconColor="#7C3AED"
         width="max-w-lg"
+        headerActions={
+          <button
+            type="button"
+            onClick={openAddAddon}
+            className="h-8 px-3 rounded-lg bg-[#7A0A17] text-white text-[12px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            Add
+          </button>
+        }
       >
         <AddonsPreview
           items={addonRows}
@@ -2408,6 +2441,64 @@ export default function OverviewDashboard({
             setPayQuoteOpen(true);
           }}
         />
+      </Modal>
+
+      <Modal
+        open={addonAddOpen}
+        onClose={() => {
+          setAddonItemName("");
+          setAddonQuoted("");
+          setAddonAddOpen(false);
+        }}
+        title="Add add-on"
+        subtitle="Saved to the catalogue and this quotation"
+        icon={<Plus size={18} />}
+        iconBg="#F3E8FF"
+        iconColor="#7C3AED"
+        zClass="z-[60]"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setAddonItemName("");
+                setAddonQuoted("");
+                setAddonAddOpen(false);
+              }}
+              className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="overview-addon-form"
+              className="h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+            >
+              Add item
+            </button>
+          </>
+        }
+      >
+        <form id="overview-addon-form" onSubmit={saveCustomAddon} className="flex flex-col gap-3">
+          <div>
+            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Item</label>
+            <input
+              value={addonItemName}
+              onChange={(e) => setAddonItemName(e.target.value)}
+              placeholder="e.g. Photo reshoot"
+              className={FLAG_FIELD}
+            />
+          </div>
+          <div>
+            <label className="block text-[13px] font-bold text-[#111] mb-1.5">Quoted</label>
+            <input
+              value={addonQuoted}
+              onChange={(e) => setAddonQuoted(e.target.value)}
+              placeholder="2500"
+              className={FLAG_FIELD}
+            />
+          </div>
+        </form>
       </Modal>
 
       <Modal

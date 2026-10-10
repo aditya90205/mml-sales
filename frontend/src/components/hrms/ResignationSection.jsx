@@ -455,7 +455,7 @@ export default function ResignationSection({ employee }) {
           <div className="size-14 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
             <LogOut size={24} />
           </div>
-          <h3 className="text-base font-extrabold text-[#111827]">Planning to move on?</h3>
+          <h3 className="hrms-sub-title">Planning to move on?</h3>
           <p className="text-[13px] text-[#6B7280] mt-1.5 max-w-sm mx-auto leading-relaxed">
             Submit your exit request here. Your manager will review it, confirm your last working day, and
             guide you through a smooth handover.
@@ -515,7 +515,7 @@ export default function ResignationSection({ employee }) {
           <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide flex items-center gap-1.5">
             <CalendarDays size={12} /> Last working day
           </p>
-          <p className="text-xl font-extrabold text-[#111827] mt-1.5">
+          <p className="hrms-metric-value text-[#111827] mt-1.5">
             {active.approvedLastDay || active.requestedLastDay}
           </p>
           <p className="text-[12.5px] text-[#6B7280] mt-1">
@@ -538,7 +538,7 @@ export default function ResignationSection({ employee }) {
                 <p className="text-[11px] font-bold text-white/70 uppercase tracking-wide flex items-center gap-1.5">
                   <UserX size={12} /> Termination KPI
                 </p>
-                <p className="text-xl font-extrabold mt-1.5 truncate">
+                <p className="hrms-metric-value mt-1.5 truncate">
                   {active.terminationCategory || active.reason || "Involuntary"}
                 </p>
                 <p className="text-[12.5px] text-white/75 mt-1">
@@ -558,7 +558,7 @@ export default function ResignationSection({ employee }) {
         ) : withdrawn || rejected ? (
           <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
             <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">Reason</p>
-            <p className="text-xl font-extrabold text-[#111827] mt-1.5 leading-tight">{active.reason}</p>
+            <p className="hrms-metric-value text-[#111827] mt-1.5 leading-tight">{active.reason}</p>
             <p className="text-[12.5px] text-[#6B7280] mt-1">Voluntary resignation</p>
           </div>
         ) : (
@@ -566,7 +566,7 @@ export default function ResignationSection({ employee }) {
             <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide flex items-center gap-1.5">
               <Shield size={12} /> Clearance
             </p>
-            <p className="text-xl font-extrabold text-[#111827] mt-1.5">
+            <p className="hrms-metric-value text-[#111827] mt-1.5">
               {clearedCount} of {CLEARANCE_ITEMS.length}
             </p>
             <div className="mt-2 h-1.5 rounded-full bg-[#F3F4F6] overflow-hidden">
@@ -592,7 +592,7 @@ export default function ResignationSection({ employee }) {
           </p>
           {termination ? (
             <>
-              <p className="text-xl font-extrabold text-[#111827] mt-1.5">
+              <p className="hrms-metric-value text-[#111827] mt-1.5">
                 {clearedCount} of {CLEARANCE_ITEMS.length}
               </p>
               <div className="mt-2 h-1.5 rounded-full bg-[#F3F4F6] overflow-hidden">
@@ -604,14 +604,14 @@ export default function ResignationSection({ employee }) {
             </>
           ) : withdrawn || rejected ? (
             <>
-              <p className="text-xl font-extrabold text-[#111827] mt-1.5">{active.status}</p>
+              <p className="hrms-metric-value text-[#111827] mt-1.5">{active.status}</p>
               <p className="text-[12.5px] text-[#6B7280] mt-1">
                 {withdrawn ? "No longer in the exit process" : "Request was not approved"}
               </p>
             </>
           ) : (
             <>
-              <p className="text-xl font-extrabold text-[#111827] mt-1.5">{progressPct}%</p>
+              <p className="hrms-metric-value text-[#111827] mt-1.5">{progressPct}%</p>
               <p className="text-[12.5px] text-[#6B7280] mt-1">
                 {daysLeft == null
                   ? "Track every exit step"
@@ -633,7 +633,7 @@ export default function ResignationSection({ employee }) {
               {termination ? <UserX size={17} /> : <LogOut size={17} />}
             </span>
             <div>
-              <h3 className="text-sm font-extrabold text-[#111827]">
+              <h3 className="hrms-panel-title">
                 {termination ? "Termination progress" : withdrawn ? "Withdrawn request" : "Exit progress"}
               </h3>
               <p className="text-[12.5px] text-[#6B7280]">
@@ -666,7 +666,7 @@ export default function ResignationSection({ employee }) {
           {canWithdraw && (
             <div className="mb-5 rounded-xl border border-[#7A0A17]/15 bg-[#FCF5F6] px-4 py-3.5 flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0">
-                <p className="text-[13px] font-extrabold text-[#111827]">Changed your mind?</p>
+                <p className="text-[13px] font-bold text-[#111827]">Changed your mind?</p>
                 <p className="text-[12.5px] text-[#6B7280] mt-0.5 leading-relaxed">
                   You can withdraw this resignation anytime before it is completed. Your manager will be notified.
                 </p>
@@ -684,7 +684,7 @@ export default function ResignationSection({ employee }) {
           {withdrawn && (
             <div className="mb-5 rounded-xl border border-black/8 bg-[#F3F4F6] px-4 py-3.5 flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0">
-                <p className="text-[13px] font-extrabold text-[#111827]">Exit request withdrawn</p>
+                <p className="text-[13px] font-bold text-[#111827]">Exit request withdrawn</p>
                 <p className="text-[12.5px] text-[#6B7280] mt-0.5 leading-relaxed">
                   You withdrew this request on {active.timeline.find((t) => t.status === "Withdrawn")?.date || active.submittedOn}.
                   {active.withdrawNote ? ` ${active.withdrawNote}` : ""} You can submit a new exit request anytime.
@@ -703,7 +703,7 @@ export default function ResignationSection({ employee }) {
           {active.status !== "Withdrawn" && active.status !== "Rejected" && (
             <div className="mb-5 pb-5 border-b border-black/8">
               <div className="flex items-center justify-between gap-2 mb-3">
-                <p className="text-[11px] font-extrabold text-[#6B7280] uppercase tracking-wide">
+                <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">
                   End-to-end tracking
                 </p>
                 <p className="text-[11px] font-semibold text-[#7A0A17]">
@@ -723,7 +723,7 @@ export default function ResignationSection({ employee }) {
           <div className={`grid grid-cols-1 ${withdrawn || rejected ? "" : "lg:grid-cols-2"} gap-6`}>
             {!withdrawn && !rejected && (
             <div>
-              <h4 className="text-[12px] font-extrabold text-[#111827] uppercase tracking-wide mb-3 flex items-center gap-1.5">
+              <h4 className="text-[12px] font-bold text-[#111827] uppercase tracking-wide mb-3 flex items-center gap-1.5">
                 <Shield size={13} className="text-[#7A0A17]" /> Clearance checklist
                 <span className="ml-auto normal-case tracking-normal font-semibold text-[#6B7280]">
                   {clearedCount}/{CLEARANCE_ITEMS.length} done
@@ -781,7 +781,7 @@ export default function ResignationSection({ employee }) {
                       <span className="size-8 rounded-lg bg-white border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center shrink-0">
                         <MessageSquare size={14} />
                       </span>
-                      <h4 className="text-[12px] font-extrabold text-[#111827] uppercase tracking-wide">
+                      <h4 className="text-[12px] font-bold text-[#111827] uppercase tracking-wide">
                         Salesperson comment
                       </h4>
                       <span className="text-[10px] font-bold uppercase tracking-wide text-[#B91C1C] bg-[#FEE2E2] border border-[#DC2626]/15 px-1.5 py-0.5 rounded">
@@ -809,7 +809,7 @@ export default function ResignationSection({ employee }) {
               )} */}
 
               <div>
-                <h4 className="text-[12px] font-extrabold text-[#111827] uppercase tracking-wide mb-3">
+                <h4 className="text-[12px] font-bold text-[#111827] uppercase tracking-wide mb-3">
                   Activity timeline
                 </h4>
                 <div className="relative pl-1 max-h-[340px] overflow-y-auto scrollbar-thin pr-1">
