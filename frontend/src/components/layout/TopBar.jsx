@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Clock, Bell, ArrowRight, ArrowUpRight, CheckCheck, User, LogOut, CircleDot, ChevronRight } from "lucide-react";
-import SearchField from "../common/SearchField.jsx";
 import Avatar from "../ui/Avatar";
 import TimesheetDetailsModal from "../hrms/TimesheetDetailsModal";
 import NotificationTypeIcon from "../common/NotificationTypeIcon.jsx";
@@ -301,7 +300,6 @@ function ProfileMenu() {
  * notifications + profile on the right.
  */
 export default function TopBar({ page = "Dashboard" }) {
-  const [headerSearch, setHeaderSearch] = useState("");
   const location = useLocation();
   const [regularizeOpen, setRegularizeOpen] = useState(false);
 
@@ -410,16 +408,8 @@ export default function TopBar({ page = "Dashboard" }) {
         </button>
       </div>
 
-      {/* Right: search + bell + profile */}
+      {/* Right: bell + profile */}
       <div className="flex items-center gap-2 shrink-0">
-        {/* Search bar — same design as Dashboard */}
-        <SearchField
-          value={headerSearch}
-          onChange={setHeaderSearch}
-          placeholder="Search here..."
-          className="w-[230px] !h-[38px]"
-        />
-
         <NotificationBell />
         <ProfileMenu />
       </div>

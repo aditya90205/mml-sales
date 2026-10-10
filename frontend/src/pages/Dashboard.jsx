@@ -46,7 +46,6 @@ import EventDetailsModal, { calendarEventToEventView } from "../components/calen
 import MeetingDetailsModal, { calendarEventToMeetingView } from "../components/calendar/MeetingDetailsModal";
 import OthersDetailsModal, { calendarEventToOtherView } from "../components/calendar/OthersDetailsModal";
 import { INITIAL_EVENTS } from "./CalendarPage";
-import SearchField from "../components/common/SearchField.jsx";
 import { toast } from "react-toastify";
 import { USER } from "../components/layout/TopBar";
 import {
@@ -1561,7 +1560,6 @@ function MyLeadsCard({
 export default function Dashboard() {
   const navigate = useNavigate();
   const [period, setPeriod] = useState("this_month");
-  const [search, setSearch] = useState("");
   const [showCreateLead, setShowCreateLead] = useState(false);
   const [showBiodataProfile, setShowBiodataProfile] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
@@ -1930,12 +1928,8 @@ export default function Dashboard() {
     if (healthFilter) {
       list = list.filter((row) => String(row.lead.temperature || "").toLowerCase() === healthFilter);
     }
-    const q = search.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(({ lead, stage }) =>
-      `${lead.name} ${lead.mmlId || ""} ${stage.id} ${stage.label} ${lead.source || ""}`.toLowerCase().includes(q)
-    );
-  }, [allRows, dashboardRows, search, stageFilter, healthFilter]);
+    return list;
+  }, [allRows, dashboardRows, stageFilter, healthFilter]);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -2105,12 +2099,6 @@ export default function Dashboard() {
         </h1>
 
         <div className="flex items-center gap-2.5 shrink-0">
-          <SearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Search here..."
-            className="w-[240px] sm:w-[280px]"
-          />
           <PeriodSelect value={period} onChange={setPeriod} />
         </div>
       </div>

@@ -354,9 +354,15 @@ export default function HrmsDashboard({
                     <p className="hrms-tiny text-[#9CA3AF] font-medium">Today</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-1.5 ml-auto">
+                <div className="flex flex-wrap items-center gap-2 ml-auto">
                   <SolidPill onClick={onRegularize}>Regularize</SolidPill>
-                  <SolidPill onClick={onTimesheetDetails}>Details</SolidPill>
+                  <button
+                    type="button"
+                    onClick={onTimesheetDetails}
+                    className="inline-flex items-center h-7 hrms-link text-[#7A0A17] hover:text-[#5C0811] hover:underline transition-colors shrink-0"
+                  >
+                    Details
+                  </button>
                 </div>
               </div>
               <div className="mt-3 flex items-center gap-2.5 min-w-0">
