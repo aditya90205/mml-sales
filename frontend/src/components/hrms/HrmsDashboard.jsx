@@ -29,10 +29,13 @@ import {
 } from "lucide-react";
 import { USER } from "../layout/TopBar";
 import SendMessageModal from "../common/SendMessageModal.jsx";
+import { SortableTh, useTableSort } from "../common/useTableSort.jsx";
 import Modal from "../ui/Modal.jsx";
 import AnnouncementsPage, { AnnouncementDetailModal } from "../../pages/AnnouncementsPage.jsx";
 import { markAnnouncementRead, readAnnouncements, subscribeAnnouncements } from "../../utils/announcements.js";
 import conductReviewIcon from "../../assets/conduct-review.png";
+
+const GOALS_TH = "px-3 py-2.5";
 
 const TIMESHEET_SLICES = [
   { label: "Active (Productive)", time: "6h 10m", color: "#7FC9A9" },
@@ -65,7 +68,12 @@ const DONUT_SEGMENTS = [
   };
 });
 
-const GOAL_PREVIEW = ["Certification Completion", "Launch New Product Feature", "Match"];
+const GOAL_PREVIEW = [
+  "Certification Completion",
+  "Launch New Product Feature",
+  "Match",
+  "Subscription Sold",
+];
 const IDLE_MINUTE_OPTIONS = [5, 10, 15, 20, 30, 45, 60];
 const IDLE_ALERT_KEY = "hrms-idle-alert-minutes";
 
@@ -242,7 +250,10 @@ export default function HrmsDashboard({
   const recent = announcements.slice(0, 3);
   const posh = announcements.find((item) => /posh/i.test(item.title));
   const previewGoals = GOAL_PREVIEW.map((title) => goals.find((goal) => goal.title === title)).filter(Boolean);
-  const rows = previewGoals.length ? previewGoals : goals.slice(0, 3);
+  const goalPreviewRows = previewGoals.length ? previewGoals : goals.slice(0, 4);
+  const { sorted: rows, sort: goalSort, toggle: toggleGoalSort } = useTableSort(goalPreviewRows, {
+    defaultKey: "title",
+  });
 
   const openComment = (item) => {
     markAnnouncementRead(item.id);
@@ -301,8 +312,8 @@ export default function HrmsDashboard({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(280px,380px)] gap-4 items-start">
-        <div className="flex flex-col gap-4 min-w-0">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(280px,380px)] gap-4 items-stretch">
+        <div className="flex flex-col gap-4 min-w-0 h-full">
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             <KpiCard
               icon={CalendarDays}
@@ -551,8 +562,8 @@ export default function HrmsDashboard({
             </div>
           </div>
 
-          <Card className="p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3 mb-3">
+          <Card className="p-4 sm:p-5 flex-1 flex flex-col min-h-0">
+            <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
               <div className="flex items-center gap-2 text-left">
                 <MaroonIcon icon={Target} />
                 <span className="hrms-panel-title">Goals & Review</span>
@@ -565,19 +576,30 @@ export default function HrmsDashboard({
                 View all
               </button>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[820px] text-left border-collapse">
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <table className="w-full table-fixed text-left border-collapse">
+                <colgroup>
+                  <col className="w-[4%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[17%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[9%]" />
+                </colgroup>
                 <thead>
                   <tr className="hrms-table-head text-[#9CA3AF]">
-                    <th className="py-2 pr-3">#</th>
-                    <th className="py-2 pr-3">Title</th>
-                    <th className="py-2 pr-3">Employee</th>
-                    <th className="py-2 pr-3">Goal Type</th>
-                    <th className="py-2 pr-3">Start Date</th>
-                    <th className="py-2 pr-3">End Date</th>
-                    <th className="py-2 pr-3">Progress</th>
-                    <th className="py-2 pr-3">Status</th>
-                    <th className="py-2">Actions</th>
+                    <SortableTh label="#" sortKey="id" unsortable className={GOALS_TH} />
+                    <SortableTh label="Title" sortKey="title" sort={goalSort} onSort={toggleGoalSort} className={GOALS_TH} />
+                    <SortableTh label="Employee" sortKey="employee" sort={goalSort} onSort={toggleGoalSort} className={GOALS_TH} />
+                    <SortableTh label="Goal Type" sortKey="goalType" sort={goalSort} onSort={toggleGoalSort} className={GOALS_TH} />
+                    <SortableTh label="Start Date" sortKey="startDate" sort={goalSort} onSort={toggleGoalSort} className={GOALS_TH} />
+                    <SortableTh label="End Date" sortKey="endDate" sort={goalSort} onSort={toggleGoalSort} className={GOALS_TH} />
+                    <SortableTh label="Progress" sortKey="progress" sort={goalSort} onSort={toggleGoalSort} className={GOALS_TH} />
+                    <SortableTh label="Status" sortKey="status" sort={goalSort} onSort={toggleGoalSort} className={GOALS_TH} />
+                    <SortableTh label="Actions" sortKey="actions" unsortable className={GOALS_TH} />
                   </tr>
                 </thead>
                 <tbody>
@@ -586,21 +608,21 @@ export default function HrmsDashboard({
                     const open = expandedRemarks[goal.id];
                     return (
                       <tr key={goal.id} className="border-t border-black/5 align-top">
-                        <td className="py-3 pr-3 hrms-table-cell font-bold text-[#6B7280]">{index + 1}</td>
-                        <td className="py-3 pr-3 hrms-table-cell font-bold text-[#111] max-w-[140px]">{goal.title}</td>
-                        <td className="py-3 pr-3 hrms-table-cell font-semibold text-[#374151] whitespace-nowrap">
+                        <td className="px-3 py-3 hrms-table-cell font-bold text-[#6B7280]">{index + 1}</td>
+                        <td className="px-3 py-3 hrms-table-cell font-bold text-[#111] break-words">{goal.title}</td>
+                        <td className="px-3 py-3 hrms-table-cell font-semibold text-[#374151]">
                           {name.first}
                           {name.last ? <><br />{name.last}</> : null}
                         </td>
-                        <td className="py-3 pr-3 hrms-table-cell text-[#6B7280] max-w-[120px]">{goal.goalType}</td>
-                        <td className="py-3 pr-3 hrms-table-cell text-[#6B7280] whitespace-nowrap">{goal.startDate}</td>
-                        <td className="py-3 pr-3 hrms-table-cell text-[#6B7280] whitespace-nowrap">{goal.endDate}</td>
-                        <td className="py-3 pr-3 min-w-[210px]">
-                          <div className="flex items-center gap-2">
-                            <div className="h-1.5 flex-1 max-w-[92px] rounded-full bg-[#E9F6EC] overflow-hidden">
+                        <td className="px-3 py-3 hrms-table-cell text-[#6B7280] break-words">{goal.goalType}</td>
+                        <td className="px-3 py-3 hrms-table-cell text-[#6B7280]">{goal.startDate}</td>
+                        <td className="px-3 py-3 hrms-table-cell text-[#6B7280]">{goal.endDate}</td>
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="h-1.5 min-w-0 flex-1 max-w-[92px] rounded-full bg-[#E9F6EC] overflow-hidden">
                               <div className="h-full rounded-full bg-[#7FC9A9]" style={{ width: `${goal.progress}%` }} />
                             </div>
-                            <span className="hrms-table-cell font-bold text-[#111]">{goal.progress}%</span>
+                            <span className="hrms-table-cell font-bold text-[#111] shrink-0">{goal.progress}%</span>
                           </div>
                           <p className={`hrms-tiny text-[#6B7280] mt-1 ${open ? "" : "line-clamp-1"}`}>
                             <span className="text-[#E8395B] font-bold">Remarks: </span>
@@ -615,13 +637,13 @@ export default function HrmsDashboard({
                             <ChevronDown size={12} className={open ? "rotate-180" : ""} />
                           </button>
                         </td>
-                        <td className="py-3 pr-3">
+                        <td className="px-3 py-3">
                           <span className="inline-block hrms-badge px-2 py-0.5 rounded-md whitespace-nowrap bg-[#E8F2FE] text-[#3B82F6]">
                             {goal.status}
                           </span>
                         </td>
-                        <td className="py-3">
-                          <div className="flex items-center gap-1.5">
+                        <td className="px-2 py-3">
+                          <div className="flex items-center gap-1">
                             <button type="button" onClick={() => onGoalAction("view", goal)} className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center" aria-label={`View ${goal.title}`}>
                               <Eye size={14} />
                             </button>
@@ -645,7 +667,7 @@ export default function HrmsDashboard({
           </Card>
         </div>
 
-        <div className="flex flex-col gap-4 min-w-0">
+        <div className="flex flex-col gap-4 min-w-0 h-full">
           <Card className="p-4">
             <div className="flex items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2.5 min-w-0">

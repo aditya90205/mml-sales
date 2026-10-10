@@ -17,6 +17,7 @@ const USER = {
   name: "Ankur Sharma",
   role: "Sales Manager",
   email: "ankur@makemylagan.com",
+  phone: "+91 98765 43210",
   avatar:
     "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
 };

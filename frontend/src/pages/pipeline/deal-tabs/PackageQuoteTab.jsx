@@ -10,6 +10,7 @@ import SendMessageModal from "../../../components/common/SendMessageModal";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
 import { addCustomAddon, getAddonCatalog, useAddonCatalog } from "../../../utils/addonCatalog";
+import { USER } from "../../../components/layout/TopBar";
 import { clientShareId } from "../../../utils/shareLinks";
 import { markPaymentLinkSent, paymentVerifyKey } from "../../../utils/paymentVerifyStore";
 import { atLeast, dashRows, EMPTY } from "./stageContent.jsx";
@@ -179,6 +180,38 @@ function formatInr(amount) {
 
 function formatDeduction(amount) {
   return `-${formatInr(amount)}`;
+}
+
+function formatQuoteDate(value) {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function buildQuotationNumber(clientId) {
+  const digits = String(clientId || "").replace(/\D/g, "");
+  const serial = digits.slice(-4) || "0000";
+  return `MML-Q-${serial}`;
+}
+
+function quoteSalesperson(deal) {
+  const name =
+    USER?.name ||
+    deal?.assignedTo ||
+    deal?.owner ||
+    deal?.assignedBy ||
+    "Sales";
+  const phone =
+    USER?.phone ||
+    deal?.salesPhone ||
+    deal?.ownerPhone ||
+    deal?.salespersonPhone ||
+    "—";
+  return { name, phone };
 }
 
 function quoteTotals(items, discountPercent) {
@@ -509,6 +542,9 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
   const [discountDraft, setDiscountDraft] = useState(quote.discountPercent ? String(quote.discountPercent) : "");
   const client = deal?.name ? deal : { ...deal, name: clientName || deal?.name || "Client" };
   const quoteCode = clientShareId(client);
+  const quotationNo = buildQuotationNumber(quoteCode);
+  const quoteDate = formatQuoteDate(deal?.quoteDate || deal?.quotedAt);
+  const salesperson = quoteSalesperson(client);
 
   useEffect(() => {
     setDiscountDraft(quote.discountPercent ? String(quote.discountPercent) : "");
@@ -593,12 +629,7 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
         <h3 className="text-[14px] font-bold text-[#111]">
           Quotation — {clientName ? `${clientName} · ` : ""}{quoteCode}
         </h3>
-        <div className="flex items-center gap-2">
-          <span className="inline-block text-[10.5px] font-semibold text-[#6B7280] bg-[#F1F2F4] rounded-md px-2 py-0.5 whitespace-nowrap">
-            Draft v2
-          </span>
-          {viewOnly ? null : <TabHeaderButton onClick={openAddonModal}>Add add-on</TabHeaderButton>}
-        </div>
+        {viewOnly ? null : <TabHeaderButton onClick={openAddonModal}>Add add-on</TabHeaderButton>}
       </div>
 
       {viewOnly ? null : (
@@ -783,6 +814,20 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-black/6 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
+        {[
+          { label: "Date", value: quoteDate },
+          { label: "Quotation no.", value: quotationNo },
+          { label: "Salesperson", value: salesperson.name },
+          { label: "Sales contact", value: salesperson.phone },
+        ].map((row) => (
+          <div key={row.label} className="flex items-baseline justify-between gap-3 text-[12.5px]">
+            <span className="text-[#6B7280] shrink-0">{row.label}</span>
+            <span className="font-semibold text-[#111] text-right break-all">{row.value}</span>
+          </div>
+        ))}
       </div>
 
       <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-black/6">
