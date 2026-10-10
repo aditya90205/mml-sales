@@ -13,6 +13,7 @@ import {
   Calendar,
   Eye,
   Edit,
+  Pencil,
   Trash2,
   CheckCircle2,
   BadgeCheck,
@@ -384,7 +385,7 @@ function AttendanceDayCell({ d, onRegularize }) {
         onMouseLeave={scheduleClose}
       >
         <span className="text-[10px] font-bold text-[#9CA3AF]">{d.day}</span>
-        <span className="text-[10px] font-extrabold text-[#111827] whitespace-nowrap">{d.week}</span>
+        <span className="text-[10px] font-bold text-[#111827] whitespace-nowrap">{d.week}</span>
         {d.status === "P" && (
           <span className="size-6 rounded-full bg-[#DCFCE7] text-[#15803D] grid place-items-center text-xs font-bold">✓</span>
         )}
@@ -392,10 +393,10 @@ function AttendanceDayCell({ d, onRegularize }) {
           <span className="size-6 rounded-full bg-[#FEE2E2] text-[#DC2626] grid place-items-center text-xs font-bold">✕</span>
         )}
         {d.status === "1/2" && (
-          <span className="size-6 rounded-full bg-[#FEF3C7] text-[#D97706] grid place-items-center text-[10px] font-black">½</span>
+          <span className="size-6 rounded-full bg-[#FEF3C7] text-[#D97706] grid place-items-center text-[10px] font-bold">½</span>
         )}
         {d.status === "H" && (
-          <span className="size-6 rounded-full bg-[#F3E8FF] text-[#9333EA] grid place-items-center text-[10px] font-black">H</span>
+          <span className="size-6 rounded-full bg-[#F3E8FF] text-[#9333EA] grid place-items-center text-[10px] font-bold">H</span>
         )}
         {d.status === "WO" && (
           <span className="size-6 rounded-full bg-[#475569] text-white grid place-items-center text-[9px] font-bold">WO</span>
@@ -414,42 +415,42 @@ function AttendanceDayCell({ d, onRegularize }) {
             onMouseEnter={open}
             onMouseLeave={scheduleClose}
           >
-            <p className="text-[13px] font-extrabold text-[#111827]">Attendance Details</p>
+            <p className="text-[13px] font-bold text-[#111827]">Attendance Details</p>
             <p className="text-[11px] text-[#9CA3AF] font-semibold mt-0.5 mb-3">{d.dateLabel}</p>
 
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
                 <p className="text-[10px] font-bold text-[#9CA3AF] uppercase">Login</p>
-                <p className="text-[13px] font-extrabold text-[#16A34A] mt-0.5">{ts.login}</p>
+                <p className="text-[13px] font-bold text-[#16A34A] mt-0.5">{ts.login}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold text-[#9CA3AF] uppercase">Logout</p>
-                <p className="text-[13px] font-extrabold text-[#16A34A] mt-0.5">{ts.logout}</p>
+                <p className="text-[13px] font-bold text-[#16A34A] mt-0.5">{ts.logout}</p>
               </div>
             </div>
 
             <div className="space-y-3 text-[12px]">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-[#6B7280] font-semibold">System Time</span>
-                <span className="font-extrabold text-[#111827]">{formatHoursMinutes(ts.systemMin)}</span>
+                <span className="font-bold text-[#111827]">{formatHoursMinutes(ts.systemMin)}</span>
               </div>
               <div className="flex items-start justify-between gap-3">
                 <span>
-                  <span className="block font-extrabold text-[#111827]">Total</span>
+                  <span className="block font-bold text-[#111827]">Total</span>
                   <span className="block text-[10px] text-[#9CA3AF] font-semibold">(Total Time Worked)</span>
                 </span>
-                <span className={`font-extrabold ${underHours ? "text-[#DC2626]" : "text-[#16A34A]"}`}>
+                <span className={`font-bold ${underHours ? "text-[#DC2626]" : "text-[#16A34A]"}`}>
                   {formatHoursMinutes(ts.totalMin)}
                 </span>
               </div>
               <div className="h-px bg-black/8" />
               <div className="flex items-start justify-between gap-3">
                 <span>
-                  <span className="block font-extrabold text-[#111827]">Deduction</span>
+                  <span className="block font-bold text-[#111827]">Deduction</span>
                   <span className="block text-[10px] text-[#9CA3AF] font-semibold">(Time / Amount Deducted)</span>
                 </span>
                 <span className="text-right">
-                  <span className={`block font-extrabold ${deduction.minutes > 0 ? "text-[#DC2626]" : "text-[#111827]"}`}>
+                  <span className={`block font-bold ${deduction.minutes > 0 ? "text-[#DC2626]" : "text-[#111827]"}`}>
                     {formatHoursMinutes(deduction.minutes)}
                   </span>
                   <span className="block text-[10px] text-[#9CA3AF] font-semibold mt-0.5">
@@ -465,7 +466,7 @@ function AttendanceDayCell({ d, onRegularize }) {
               <button
                 type="button"
                 onClick={() => onRegularize?.()}
-                className="mt-3.5 w-full h-9 rounded-xl bg-[#7A0A17] hover:bg-[#600712] text-white text-[12px] font-extrabold transition-colors"
+                className="mt-3.5 w-full h-9 rounded-xl bg-[#7A0A17] hover:bg-[#600712] text-white text-[12px] font-bold transition-colors"
               >
                 Regularize
               </button>
@@ -774,7 +775,7 @@ function DetailField({ icon: Icon, label, children, full = false }) {
         <Icon size={12} />
         {label}
       </p>
-      <div className="text-sm font-bold text-[#111827]">{children}</div>
+      <div className="hrms-sub-title">{children}</div>
     </div>
   );
 }
@@ -783,7 +784,7 @@ const HRMS_TH = "px-4 py-3";
 
 function HrmsSortHead({ cols, sort, onSort }) {
   return (
-    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
+    <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-bold">
       {cols.map((c) => (
         <SortableTh
           key={c.key}
@@ -825,7 +826,7 @@ function HourlyWorkTable() {
             <td className="px-4 py-3">{row.module}</td>
             <td className="px-4 py-3 text-[#4B5563]">{row.description}</td>
             <td className="px-4 py-3 text-[#6B7280]">{row.by}</td>
-            <td className="px-4 py-3 font-extrabold text-[#7A0A17]">{row.hours}</td>
+            <td className="px-4 py-3 font-bold text-[#7A0A17]">{row.hours}</td>
           </tr>
         ))}
       </tbody>
@@ -844,11 +845,11 @@ function AttendancePanel({ kpis, days, onRegularize }) {
 
       <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-extrabold text-[#111827]">Attendance Records</h2>
+          <h2 className="hrms-panel-title">Attendance Records</h2>
           <button
             type="button"
             onClick={onRegularize}
-            className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-4 py-2 rounded-xl transition-all shadow-2xs"
+            className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-2xs"
           >
             Regularize
           </button>
@@ -861,7 +862,7 @@ function AttendancePanel({ kpis, days, onRegularize }) {
             className="size-10 rounded-full object-cover border border-black/10"
           />
           <div>
-            <h4 className="text-sm font-extrabold text-[#111827]">Ankur Sharma</h4>
+            <h4 className="hrms-panel-title">Ankur Sharma</h4>
             <p className="text-xs text-[#6B7280] font-medium">Relationship Manager</p>
           </div>
         </div>
@@ -900,10 +901,10 @@ function AttendancePanel({ kpis, days, onRegularize }) {
       <RegularizationPendingTable days={days} onRegularize={onRegularize} />
 
       <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-        <h3 className="text-lg font-extrabold text-[#111827] mb-4">Attendance Policies</h3>
+        <h3 className="hrms-panel-title mb-4">Attendance Policies</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-[#FFF5F5] border border-[#FECACA] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2 text-[#7A0A17] font-extrabold text-sm">
+            <div className="flex items-center gap-2 mb-2 text-[#7A0A17] font-bold text-sm">
               <Clock size={16} /> Working Hours
             </div>
             <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
@@ -914,7 +915,7 @@ function AttendancePanel({ kpis, days, onRegularize }) {
           </div>
 
           <div className="bg-[#FCF5F6] border border-[#7A0A17]/20 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2 text-[#7A0A17] font-extrabold text-sm">
+            <div className="flex items-center gap-2 mb-2 text-[#7A0A17] font-bold text-sm">
               <BadgeCheck size={16} /> Standard Attendance Policy
             </div>
             <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
@@ -925,7 +926,7 @@ function AttendancePanel({ kpis, days, onRegularize }) {
           </div>
 
           <div className="bg-[#F0FDF4] border border-[#BBF7D0] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2 text-[#15803D] font-extrabold text-sm">
+            <div className="flex items-center gap-2 mb-2 text-[#15803D] font-bold text-sm">
               <Calendar size={16} /> Leave Policy
             </div>
             <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
@@ -937,7 +938,7 @@ function AttendancePanel({ kpis, days, onRegularize }) {
           </div>
 
           <div className="bg-[#F5F3FF] border border-[#DDD6FE] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2 text-[#6D28D9] font-extrabold text-sm">
+            <div className="flex items-center gap-2 mb-2 text-[#6D28D9] font-bold text-sm">
               <AlertTriangle size={16} /> Late Arrival Policy
             </div>
             <ul className="space-y-1.5 text-xs text-[#374151] font-semibold list-disc list-inside">
@@ -958,11 +959,11 @@ function IncentivesPanel() {
           <div className="flex flex-col gap-6">
             {/* Header Statement Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <h2 className="text-xl font-extrabold text-[#111827]">My Incentive Statement</h2>
+              <h2 className="hrms-panel-title">My Incentive Statement</h2>
               <button
                 type="button"
                 onClick={() => toast.success("Incentive statement report generated!")}
-                className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-extrabold px-4 py-2 rounded-xl shadow-2xs self-start"
+                className="bg-[#7A0A17] hover:bg-[#600712] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-2xs self-start"
               >
                 + Download statement
               </button>
@@ -972,25 +973,25 @@ function IncentivesPanel() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
                 <p className="text-xs font-bold text-[#6B7280]">1. Registration incentive</p>
-                <p className="text-2xl font-black text-[#111827] mt-1">₹67,924</p>
+                <p className="hrms-metric-value text-[#111827] mt-1">₹67,924</p>
                 <p className="text-[10px] text-[#9CA3AF] mt-1 font-semibold">5 deals • slab 3-6% • net of GST</p>
               </div>
 
               <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
                 <p className="text-xs font-bold text-[#6B7280]">2. Meetings incentive</p>
-                <p className="text-2xl font-black text-[#111827] mt-1">₹2,100</p>
+                <p className="hrms-metric-value text-[#111827] mt-1">₹2,100</p>
                 <p className="text-[10px] text-[#9CA3AF] mt-1 font-semibold">42 meetings • ₹50 tier</p>
               </div>
 
               <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
                 <p className="text-xs font-bold text-[#6B7280]">3. Performance bonuses</p>
-                <p className="text-2xl font-black text-[#111827] mt-1">₹1,420</p>
+                <p className="hrms-metric-value text-[#111827] mt-1">₹1,420</p>
                 <p className="text-[10px] text-[#9CA3AF] mt-1 font-semibold">reviews, videos, photos • net of 1 penalty</p>
               </div>
 
               <div className="bg-[#FCF5F6] border border-[#7A0A17]/20 rounded-2xl p-4 shadow-sm">
                 <p className="text-xs font-bold text-[#7A0A17]">Net payable</p>
-                <p className="text-2xl font-black text-[#7A0A17] mt-1">₹71,444</p>
+                <p className="hrms-metric-value text-[#7A0A17] mt-1">₹71,444</p>
                 <p className="text-[10px] text-[#7A0A17]/80 mt-1 font-bold">paid with July salary</p>
               </div>
             </div>
@@ -999,7 +1000,7 @@ function IncentivesPanel() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
               {/* Section 1: Registration Incentive Amount */}
               <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col h-full">
-                <h3 className="text-base font-extrabold text-[#111827] mb-3">1. Incentive on registration amount</h3>
+                <h3 className="hrms-sub-title mb-3">1. Incentive on registration amount</h3>
                 <div className="overflow-x-auto border border-black/8 rounded-xl flex-1">
                   <table className="w-full text-left border-collapse text-xs h-full">
                     <RegistrationIncentiveTable />
@@ -1009,8 +1010,8 @@ function IncentivesPanel() {
 
               {/* Section 2: Meetings Incentive */}
               <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col h-full">
-                <h3 className="text-base font-extrabold text-[#111827]">2. Meetings incentive (monthly)</h3>
-                <p className="text-2xl font-black text-[#111827] mt-1">42 <span className="text-xs text-[#6B7280] font-normal">qualifying meetings</span></p>
+                <h3 className="hrms-sub-title">2. Meetings incentive (monthly)</h3>
+                <p className="hrms-metric-value text-[#111827] mt-1">42 <span className="text-xs text-[#6B7280] font-normal">qualifying meetings</span></p>
 
                 {/* Progress Bar & Note */}
                 <div className="mt-3">
@@ -1036,7 +1037,7 @@ function IncentivesPanel() {
 
               {/* Section 3: Performance Incentives */}
               <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col h-full">
-                <h3 className="text-base font-extrabold text-[#111827] mb-3">3. Additional performance incentives</h3>
+                <h3 className="hrms-sub-title mb-3">3. Additional performance incentives</h3>
                 <div className="overflow-x-auto border border-black/8 rounded-xl flex-1">
                   <table className="w-full text-left border-collapse text-xs h-full">
                     <PerformanceIncentiveTable />
@@ -1052,7 +1053,7 @@ function IncentivesPanel() {
               </p>
               <div className="flex items-center gap-4 shrink-0 text-sm">
                 <span>Gross incentive: <strong className="text-[#111827]">₹71,444</strong></span>
-                <span className="text-[#7A0A17] font-black">Net payable (post-GST): ₹71,444</span>
+                <span className="text-[#7A0A17] font-bold">Net payable (post-GST): ₹71,444</span>
               </div>
             </div>
           </div>
@@ -1077,7 +1078,7 @@ function AwardsContestPanel({
               ].map((card) => (
                 <div key={card.label} className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
                   <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">{card.label}</p>
-                  <p className="text-xl font-extrabold text-[#111827] mt-1.5">{card.value}</p>
+                  <p className="hrms-metric-value text-[#111827] mt-1.5">{card.value}</p>
                   <p className="text-[12.5px] text-[#6B7280] mt-1">{card.sub}</p>
                 </div>
               ))}
@@ -1091,7 +1092,7 @@ function AwardsContestPanel({
                     <Trophy size={16} strokeWidth={2} />
                   </span>
                   <div>
-                    <h3 className="text-sm font-extrabold text-[#111827]">My awards</h3>
+                    <h3 className="hrms-panel-title">My awards</h3>
                     <p className="text-[12.5px] text-[#6B7280]">Award type, gifts, certificates and photos</p>
                   </div>
                 </div>
@@ -1197,7 +1198,7 @@ function AwardsContestPanel({
                     <Target size={16} strokeWidth={2} />
                   </span>
                   <div>
-                    <h3 className="text-sm font-extrabold text-[#111827]">My contests</h3>
+                    <h3 className="hrms-panel-title">My contests</h3>
                     <p className="text-[12.5px] text-[#6B7280]">Challenge details, XP, difficulty and status</p>
                   </div>
                 </div>
@@ -1316,16 +1317,21 @@ function AwardsContestPanel({
   );
 }
 
-function AttendanceStatCard({ title, value, sub, icon: Icon }) {
+function AttendanceStatCard({ title, value, sub, icon: Icon, bg, fg }) {
   return (
-    <div className="bg-white border border-black/10 rounded-2xl px-3.5 py-3 shadow-sm flex items-center gap-3 min-w-0">
-      <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
-        <Icon size={16} strokeWidth={2} />
+    <div className="bg-white border border-black/8 rounded-2xl px-3.5 py-3 flex items-center gap-3 min-w-0">
+      <span
+        className="size-10 rounded-[10px] grid place-items-center shrink-0"
+        style={{ backgroundColor: bg }}
+      >
+        <Icon size={18} style={{ color: fg }} strokeWidth={1.7} />
       </span>
       <div className="min-w-0">
-        <p className="text-[12px] font-semibold text-[#6B7280] leading-tight">{title}</p>
-        <p className="text-[20px] font-black text-[#111827] leading-tight mt-0.5">{value}</p>
-        <p className="text-[11px] font-medium text-[#9CA3AF] mt-0.5">{sub}</p>
+        <p className="text-[13px] font-bold text-[#111] leading-tight truncate">{title}</p>
+        <p className="hrms-metric-value text-[#111] leading-tight mt-0.5">{value}</p>
+        {sub && (
+          <p className="text-[12px] font-semibold text-[#6B7280] mt-0.5 leading-tight">{sub}</p>
+        )}
       </div>
     </div>
   );
@@ -1351,7 +1357,7 @@ function RegularizationPendingTable({ days, onRegularize }) {
 
   return (
     <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-      <h3 className="text-base font-extrabold text-[#111827] mb-4">
+      <h3 className="hrms-sub-title mb-4">
         Days Pending for Regularization (Less than 9 Working Hours)
       </h3>
       <div className="overflow-x-auto">
@@ -1359,7 +1365,7 @@ function RegularizationPendingTable({ days, onRegularize }) {
           <thead>
             <tr className="border-b border-black/8 bg-[#F9FAFB]">
               {["Sr. No.", "Date", "Day", "Actual Working Hours", "Short by", "Calculation", "Deduction (₹)", "Action"].map((h) => (
-                <th key={h} className="px-4 py-3 text-[11px] font-extrabold text-[#6B7280] uppercase tracking-wide whitespace-nowrap">
+                <th key={h} className="px-4 py-3 text-[11px] font-bold text-[#6B7280] uppercase tracking-wide whitespace-nowrap">
                   {h}
                 </th>
               ))}
@@ -1396,8 +1402,8 @@ function RegularizationPendingTable({ days, onRegularize }) {
             {rows.length > 0 && (
               <tr>
                 <td colSpan={6} />
-                <td className="px-4 py-3.5 text-[13px] font-extrabold text-[#111827] whitespace-nowrap">Total Deduction</td>
-                <td className="px-4 py-3.5 text-[15px] font-black text-[#7A0A17] whitespace-nowrap">
+                <td className="px-4 py-3.5 text-[13px] font-bold text-[#111827] whitespace-nowrap">Total Deduction</td>
+                <td className="px-4 py-3.5 text-[15px] font-bold text-[#7A0A17] whitespace-nowrap">
                   {formatRupees(total)}
                 </td>
               </tr>
@@ -1436,12 +1442,12 @@ function TimesheetManualTable() {
             <td className="px-4 py-3">{row.module}</td>
             <td className="px-4 py-3 text-[#4B5563]">{row.description}</td>
             <td className="px-4 py-3 text-[#6B7280]">{row.by}</td>
-            <td className="px-4 py-3 font-extrabold text-[#7A0A17]">{row.hours}</td>
+            <td className="px-4 py-3 font-bold text-[#7A0A17]">{row.hours}</td>
             <td className="px-4 py-3">
               <div className="flex items-center gap-1.5">
                 <button type="button" className="text-[#16A34A] hover:opacity-80"><CheckCircle2 size={16} /></button>
                 <button type="button" className="text-[#DC2626] hover:opacity-80"><X size={16} /></button>
-                <button type="button" className="text-[#7A0A17] hover:opacity-80"><Edit size={15} /></button>
+                <button type="button" className="text-[#2563EB] hover:opacity-80"><Edit size={15} /></button>
                 <button type="button" className="text-[#DC2626] hover:opacity-80"><Trash2 size={15} /></button>
               </div>
             </td>
@@ -1511,7 +1517,7 @@ function RegistrationIncentiveTable() {
             <td className="px-4 py-2.5 font-bold">{row.incentive}</td>
           </tr>
         ))}
-        <tr className="bg-[#FAFAFB] font-extrabold">
+        <tr className="bg-[#FAFAFB] font-bold">
           <td className="px-4 py-3">Subtotal</td>
           <td className="px-4 py-3 text-[#7A0A17]">₹67,924</td>
         </tr>
@@ -1541,7 +1547,7 @@ function MeetingsIncentiveTable() {
             <td className={`px-4 py-2.5 ${row.amount === "-" ? "text-[#9CA3AF]" : "font-bold"}`}>{row.amount}</td>
           </tr>
         ))}
-        <tr className="bg-[#FAFAFB] font-extrabold">
+        <tr className="bg-[#FAFAFB] font-bold">
           <td className="px-4 py-3">Subtotal</td>
           <td className="px-4 py-3 text-[#7A0A17]">₹2,100</td>
         </tr>
@@ -1571,7 +1577,7 @@ function PerformanceIncentiveTable() {
             <td className={`px-4 py-2.5 font-bold ${row.amountTone}`}>{row.amount}</td>
           </tr>
         ))}
-        <tr className="bg-[#FAFAFB] font-extrabold">
+        <tr className="bg-[#FAFAFB] font-bold">
           <td className="px-4 py-3">Subtotal</td>
           <td className="px-4 py-3 text-[#7A0A17]">₹1,420</td>
         </tr>
@@ -1590,7 +1596,7 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
                   <Receipt size={16} strokeWidth={2} />
                 </span>
                 <div>
-                  <h3 className="text-base font-extrabold text-[#111827]">Ankur Sharma</h3>
+                  <h3 className="hrms-sub-title">Ankur Sharma</h3>
                   <p className="text-xs text-[#6B7280] font-medium">{period}</p>
                 </div>
               </div>
@@ -1618,7 +1624,7 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
               <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm flex items-center justify-between">
                 <div>
                   <p className="text-xs font-bold text-[#6B7280]">Basic Salary</p>
-                  <p className="text-2xl font-black text-[#111827] mt-1">₹75,000.00</p>
+                  <p className="hrms-metric-value text-[#111827] mt-1">₹75,000.00</p>
                 </div>
                 <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17] text-[16px] font-bold">
                   ₹
@@ -1628,7 +1634,7 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
               <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm flex items-center justify-between">
                 <div>
                   <p className="text-xs font-bold text-[#6B7280]">Gross Pay</p>
-                  <p className="text-2xl font-black text-[#111827] mt-1">₹91,295.65</p>
+                  <p className="hrms-metric-value text-[#111827] mt-1">₹91,295.65</p>
                 </div>
                 <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17]">
                   <TrendingUp size={16} strokeWidth={2} />
@@ -1638,7 +1644,7 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
               <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm flex items-center justify-between">
                 <div>
                   <p className="text-xs font-bold text-[#6B7280]">Net Salary</p>
-                  <p className="text-2xl font-black text-[#111827] mt-1">₹74,033.15</p>
+                  <p className="hrms-metric-value text-[#111827] mt-1">₹74,033.15</p>
                 </div>
                 <span className="size-8 rounded-lg grid place-items-center shrink-0 text-[#7A0A17] text-[16px] font-bold">
                   ₹
@@ -1648,38 +1654,38 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
 
             {/* Attendance Summary Bar */}
             <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <h4 className="text-xs font-extrabold text-[#111827] mb-3 uppercase tracking-wider">Attendance Summary</h4>
+              <h4 className="text-xs font-bold text-[#111827] mb-3 uppercase tracking-wider">Attendance Summary</h4>
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                 <div className="border border-black/8 rounded-xl p-2.5 text-center">
-                  <p className="text-lg font-black text-[#111827]">23</p>
+                  <p className="hrms-stat-sm text-[#111827]">23</p>
                   <p className="text-[10px] text-[#6B7280] font-bold">Working Days</p>
                 </div>
                 <div className="border border-black/8 rounded-xl p-2.5 text-center">
-                  <p className="text-lg font-black text-[#16A34A]">15</p>
+                  <p className="hrms-stat-sm text-[#16A34A]">15</p>
                   <p className="text-[10px] text-[#6B7280] font-bold">Full Present</p>
                 </div>
                 <div className="border border-black/8 rounded-xl p-2.5 text-center">
-                  <p className="text-lg font-black text-[#D97706]">6.00</p>
+                  <p className="hrms-stat-sm text-[#D97706]">6.00</p>
                   <p className="text-[10px] text-[#6B7280] font-bold">Half Days</p>
                 </div>
                 <div className="border border-black/8 rounded-xl p-2.5 text-center">
-                  <p className="text-lg font-black text-[#9333EA]">0</p>
+                  <p className="hrms-stat-sm text-[#9333EA]">0</p>
                   <p className="text-[10px] text-[#6B7280] font-bold">Holidays</p>
                 </div>
                 <div className="border border-black/8 rounded-xl p-2.5 text-center">
-                  <p className="text-lg font-black text-[#3B82F6]">0.00</p>
+                  <p className="hrms-stat-sm text-[#3B82F6]">0.00</p>
                   <p className="text-[10px] text-[#6B7280] font-bold">Paid Leave</p>
                 </div>
                 <div className="border border-black/8 rounded-xl p-2.5 text-center">
-                  <p className="text-lg font-black text-[#6B7280]">0.00</p>
+                  <p className="hrms-stat-sm text-[#6B7280]">0.00</p>
                   <p className="text-[10px] text-[#6B7280] font-bold">Unpaid Leave</p>
                 </div>
                 <div className="border border-black/8 rounded-xl p-2.5 text-center">
-                  <p className="text-lg font-black text-[#DC2626]">2</p>
+                  <p className="hrms-stat-sm text-[#DC2626]">2</p>
                   <p className="text-[10px] text-[#6B7280] font-bold">Absent</p>
                 </div>
                 <div className="border border-black/8 rounded-xl p-2.5 text-center">
-                  <p className="text-lg font-black text-[#111827]">4.0h</p>
+                  <p className="hrms-stat-sm text-[#111827]">4.0h</p>
                   <p className="text-[10px] text-[#6B7280] font-bold">Overtime</p>
                 </div>
               </div>
@@ -1692,7 +1698,7 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {/* Earnings */}
               <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-4 text-[#16A34A] font-extrabold text-sm">
+                <div className="flex items-center gap-2 mb-4 text-[#16A34A] font-bold text-sm">
                   <TrendingUp size={16} /> Earnings
                 </div>
                 <div className="divide-y divide-black/6 text-xs font-semibold">
@@ -1708,7 +1714,7 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
                     <span className="text-[#374151]">House Rent Allowance (HRA)</span>
                     <span className="font-bold text-[#16A34A]">₹30,000.00</span>
                   </div>
-                  <div className="py-3 flex justify-between text-sm font-black border-t-2 border-black/10">
+                  <div className="py-3 flex justify-between text-sm font-bold border-t-2 border-black/10">
                     <span className="text-[#111827]">Total Earnings</span>
                     <span className="text-[#16A34A]">₹107,000.00</span>
                   </div>
@@ -1717,7 +1723,7 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
 
               {/* Deductions */}
               <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-4 text-[#DC2626] font-extrabold text-sm">
+                <div className="flex items-center gap-2 mb-4 text-[#DC2626] font-bold text-sm">
                   <AlertTriangle size={16} /> Component Deductions
                 </div>
                 <div className="divide-y divide-black/6 text-xs font-semibold">
@@ -1737,7 +1743,7 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
                     <span className="text-[#374151]">Employee State Insurance (ESI)</span>
                     <span className="font-bold text-[#DC2626]">₹562.50</span>
                   </div>
-                  <div className="py-3 flex justify-between text-sm font-black border-t-2 border-black/10">
+                  <div className="py-3 flex justify-between text-sm font-bold border-t-2 border-black/10">
                     <span className="text-[#111827]">Total Deductions</span>
                     <span className="text-[#DC2626]">₹17,262.50</span>
                   </div>
@@ -1747,7 +1753,7 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
 
             {/* Final Calculation Card */}
             <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <h4 className="text-sm font-extrabold text-[#111827] mb-3">Final Calculation</h4>
+              <h4 className="hrms-panel-title mb-3">Final Calculation</h4>
               
               <div className="bg-[#FFF5F5] border border-[#7A0A17]/15 rounded-xl p-3.5 text-[11px] text-[#7A0A17] font-semibold space-y-1 mb-4">
                 <p><strong>Gross Pay Formula:</strong> Total Earnings (Basic Salary + Component Earnings) - LOP Deduction - Unpaid Leave Deduction + Overtime Earnings</p>
@@ -1780,7 +1786,7 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
                   <span className="text-[#374151]">Overtime Amount</span>
                   <span className="text-[#16A34A]">+ ₹600.00</span>
                 </div>
-                <div className="py-3 flex justify-between text-sm font-black">
+                <div className="py-3 flex justify-between text-sm font-bold">
                   <span>Gross Pay</span>
                   <span className="text-[#111827]">₹91,295.65</span>
                 </div>
@@ -1788,7 +1794,7 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
                   <span className="text-[#374151]">Component Deductions (Tax, PF etc.)</span>
                   <span className="text-[#DC2626]">- ₹17,262.50</span>
                 </div>
-                <div className="py-3 flex justify-between text-base font-black bg-[#FCF5F6] p-3 rounded-xl border border-[#7A0A17]/20 text-[#7A0A17]">
+                <div className="py-3 flex justify-between text-base font-bold bg-[#FCF5F6] p-3 rounded-xl border border-[#7A0A17]/20 text-[#7A0A17]">
                   <span>Net Salary (Take Home)</span>
                   <span>₹74,033.15</span>
                 </div>
@@ -1797,7 +1803,7 @@ function SalaryPayslipPanel({ period = "December 2026" }) {
 
             {/* Daily Attendance Records */}
             <div className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-              <h4 className="text-sm font-extrabold text-[#111827] mb-3">Daily Attendance Records</h4>
+              <h4 className="hrms-panel-title mb-3">Daily Attendance Records</h4>
               <div className="overflow-x-auto border border-black/8 rounded-xl">
                 <table className="w-full text-left border-collapse text-xs">
                   <DailyAttendanceTable />
@@ -1889,7 +1895,7 @@ function GoalsReviewsPanel({
                         <button
                           type="button"
                           onClick={() => onGoalAction("view", g)}
-                          className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center"
+                          className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center"
                           title="View"
                           aria-label={`View ${g.title}`}
                         >
@@ -1898,11 +1904,11 @@ function GoalsReviewsPanel({
                         <button
                           type="button"
                           onClick={() => onGoalAction("edit", g)}
-                          className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center"
+                          className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center"
                           title="Edit"
                           aria-label={`Edit ${g.title}`}
                         >
-                          <Edit size={13} />
+                          <Pencil size={13} />
                         </button>
                         <button
                           type="button"
@@ -1970,7 +1976,7 @@ function TrainingsPanel({
         <div className="overflow-x-auto min-w-0 border border-black/8 rounded-xl">
           <table className="w-full min-w-[860px] text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold">
+              <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-bold">
                 <SortableTh label="#" sortKey="id" unsortable className={HRMS_TH} />
                 <SortableTh label="Program" sortKey="program" sort={sort} onSort={onSort} className={HRMS_TH} />
                 <SortableTh label="Date & Time" sortKey="dateTime" sort={sort} onSort={onSort} className={HRMS_TH} />
@@ -2016,7 +2022,7 @@ function TrainingsPanel({
                   <td className="px-4 py-3">
                     {t.status === "Completed" ? (
                       <>
-                        <p className="font-extrabold">{t.score.toFixed(1)}%</p>
+                        <p className="font-bold">{t.score.toFixed(1)}%</p>
                         <span
                           className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md mt-1 ${
                             t.result === "Passed" ? "bg-[#DCFCE7] text-[#15803D]" : "bg-[#FEE2E2] text-[#DC2626]"
@@ -2035,7 +2041,7 @@ function TrainingsPanel({
                       <button
                         type="button"
                         onClick={() => onAction("view", t)}
-                        className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center"
+                        className="size-7 rounded-lg bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#D97706] grid place-items-center"
                         title="View"
                         aria-label={`View ${t.program}`}
                       >
@@ -2044,7 +2050,7 @@ function TrainingsPanel({
                       <button
                         type="button"
                         onClick={() => onAction("edit", t)}
-                        className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center"
+                        className="size-7 rounded-lg bg-[#E8F2FE] hover:bg-[#DBEAFE] text-[#2563EB] grid place-items-center"
                         title="Edit"
                         aria-label={`Edit ${t.program}`}
                       >
@@ -2240,11 +2246,46 @@ export default function HrmsPage() {
     const halfDays = attendanceDays.filter((d) => d.status === "1/2").length;
     const grand = Number.isInteger(attendancePresent) ? String(attendancePresent) : attendancePresent.toFixed(1);
     return [
-      { title: "Total Present Days", value: `${presentDays} Days`, sub: `Out of ${totalDays} Days`, icon: CalendarCheck },
-      { title: "Late Days", value: `${lateDays} Days`, sub: "Total late arrivals", icon: Clock },
-      { title: "Total Leaves", value: `${leaveDays} Days`, sub: "Absent days this month", icon: CalendarPlus },
-      { title: "Half Days", value: `${halfDays} Days`, sub: "Total half days", icon: Coffee },
-      { title: "Grand Total", value: `${grand}/${totalDays}`, sub: "Present days this month", icon: BarChart3 },
+      {
+        title: "Total Present Days",
+        value: `${presentDays} Days`,
+        sub: `Out of ${totalDays} Days`,
+        icon: CalendarCheck,
+        bg: "#E9F6EC",
+        fg: "#288270",
+      },
+      {
+        title: "Late Days",
+        value: `${lateDays} Days`,
+        sub: "Total late arrivals",
+        icon: Clock,
+        bg: "#FFF3E4",
+        fg: "#F59E0B",
+      },
+      {
+        title: "Total Leaves",
+        value: `${leaveDays} Days`,
+        sub: "Absent days this month",
+        icon: CalendarPlus,
+        bg: "#FDECEE",
+        fg: "#E8395B",
+      },
+      {
+        title: "Half Days",
+        value: `${halfDays} Days`,
+        sub: "Total half days",
+        icon: Coffee,
+        bg: "#E8F2FE",
+        fg: "#3B82F6",
+      },
+      {
+        title: "Grand Total",
+        value: `${grand}/${totalDays}`,
+        sub: "Present days this month",
+        icon: BarChart3,
+        bg: "#EEF0FE",
+        fg: "#6366F1",
+      },
     ];
   }, [attendanceDays, attendancePresent]);
 
@@ -2568,10 +2609,10 @@ export default function HrmsPage() {
   
               {/* Title */}
               <div className="mt-1">
-                <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#E8395B]">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#E8395B]">
                   YOU ARE VIEWING
                 </p>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
+                <h1 className="hrms-page-title tracking-tight">
                   {selectedMonth} {selectedYear}
                 </h1>
               </div>
@@ -2772,7 +2813,7 @@ export default function HrmsPage() {
             <div className="size-16 rounded-2xl bg-[#FCF5F6] border border-[#7A0A17]/15 text-[#7A0A17] grid place-items-center mx-auto mb-4">
               <FileText size={28} />
             </div>
-            <h3 className="text-xl font-extrabold text-[#111827]">{activeTab} Details</h3>
+            <h3 className="hrms-modal-title">{activeTab} Details</h3>
             <p className="text-sm text-[#6B7280] mt-1.5 max-w-md mx-auto">
               Viewing details and records for {activeTab} in {selectedMonth} {selectedYear}. All data synced from company database.
             </p>
@@ -2800,7 +2841,7 @@ export default function HrmsPage() {
             >
               <X size={18} />
             </button>
-            <h3 className="text-lg font-bold text-[#111] mb-2">Add Manual Timesheet Entry</h3>
+            <h3 className="hrms-modal-title mb-2">Add Manual Timesheet Entry</h3>
             <p className="text-xs text-[#6B7280] mb-4">Note: Manual entries require manager approval.</p>
             <div className="space-y-3 text-xs">
               <div>
@@ -2847,7 +2888,7 @@ export default function HrmsPage() {
                 <AlertCircle size={16} strokeWidth={2} />
               </span>
               <div>
-                <h3 className="text-lg font-bold text-[#111]">Report an Issue</h3>
+                <h3 className="hrms-modal-title">Report an Issue</h3>
                 <p className="text-xs text-[#6B7280]">Send a ticket to HR / IT support</p>
               </div>
             </div>
@@ -2888,7 +2929,7 @@ export default function HrmsPage() {
                 <AlertTriangle size={16} strokeWidth={2} />
               </span>
               <div>
-                <h3 className="text-lg font-bold text-[#111]">Official Warning Notice</h3>
+                <h3 className="hrms-modal-title">Official Warning Notice</h3>
                 <p className="text-xs text-[#6B7280]">Issued on April 12, 2025</p>
               </div>
             </div>
@@ -2934,30 +2975,30 @@ export default function HrmsPage() {
               <span className="inline-flex items-center gap-1.5 text-[#9CA3AF] font-bold uppercase text-[10px]">
                 <Clock size={12} /> Working Time
               </span>
-              <p className="font-extrabold text-[#111827] mt-1">8 hours</p>
+              <p className="font-bold text-[#111827] mt-1">8 hours</p>
             </div>
             <div className="border border-black/8 rounded-xl p-3">
               <span className="inline-flex items-center gap-1.5 text-[#9CA3AF] font-bold uppercase text-[10px]">
                 <Coffee size={12} /> Break Duration
               </span>
-              <p className="font-extrabold text-[#111827] mt-1">1 hour</p>
+              <p className="font-bold text-[#111827] mt-1">1 hour</p>
             </div>
             <div className="border border-black/8 rounded-xl p-3">
               <span className="inline-flex items-center gap-1.5 text-[#9CA3AF] font-bold uppercase text-[10px]">
                 <AlertCircle size={12} /> Grace Period
               </span>
-              <p className="font-extrabold text-[#111827] mt-1">15 minutes</p>
+              <p className="font-bold text-[#111827] mt-1">15 minutes</p>
             </div>
             <div className="border border-black/8 rounded-xl p-3">
               <span className="inline-flex items-center gap-1.5 text-[#9CA3AF] font-bold uppercase text-[10px]">
                 <CheckCircle2 size={12} /> Status
               </span>
-              <p className="font-extrabold text-[#16A34A] mt-1">Active</p>
+              <p className="font-bold text-[#16A34A] mt-1">Active</p>
             </div>
           </div>
 
           <div className="flex items-center justify-between pt-1">
-            <h3 className="font-extrabold text-[#111827]">Shift Change Request</h3>
+            <h3 className="font-bold text-[#111827]">Shift Change Request</h3>
             <button
               type="button"
               onClick={() => setShiftChangeFormOpen(true)}

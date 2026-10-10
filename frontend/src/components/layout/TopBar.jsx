@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { Clock, Bell, ArrowUpRight, CheckCheck, User, LogOut, CircleDot, ChevronRight } from "lucide-react";
+import { Clock, Bell, ArrowRight, ArrowUpRight, CheckCheck, User, LogOut, CircleDot, ChevronRight } from "lucide-react";
 import SearchField from "../common/SearchField.jsx";
 import Avatar from "../ui/Avatar";
 import TimesheetDetailsModal from "../hrms/TimesheetDetailsModal";
@@ -156,9 +156,10 @@ function NotificationBell() {
           <button
             type="button"
             onClick={() => { setOpen(false); navigate("/notifications"); }}
-            className="w-full py-3 text-sm font-semibold text-[#7A0A17] border-t border-black/8 hover:bg-[#FCF5F6] transition-colors"
+            className="w-full py-3 text-sm font-semibold text-[#7A0A17] border-t border-black/8 hover:bg-[#FCF5F6] transition-colors inline-flex items-center justify-center gap-1"
           >
             See all notifications
+            <ArrowRight size={14} />
           </button>
         </div>
       )}

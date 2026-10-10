@@ -56,7 +56,7 @@ export function ComplaintsWarningsPanel({ onViewNotice, embedded = false }) {
         ].map((card) => (
           <div key={card.label} className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
             <p className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wide">{card.label}</p>
-            <p className="text-xl font-extrabold text-[#111827] mt-1.5">{card.value}</p>
+            <p className="hrms-metric-value text-[#111827] mt-1.5">{card.value}</p>
             <p className="text-[12.5px] text-[#6B7280] mt-1">{card.sub}</p>
           </div>
         ))}
@@ -69,7 +69,7 @@ export function ComplaintsWarningsPanel({ onViewNotice, embedded = false }) {
               <AlertTriangle size={16} strokeWidth={2} />
             </span>
             <div>
-              <h3 className="text-sm font-extrabold text-[#111827]">Complaints &amp; warnings</h3>
+              <h3 className="hrms-panel-title">Complaints &amp; warnings</h3>
               <p className="text-[12.5px] text-[#6B7280]">Official notices and HR-logged issues</p>
             </div>
           </div>
@@ -157,7 +157,7 @@ function OfficialNoticeOverlay({ onClose }) {
             <AlertTriangle size={16} strokeWidth={2} />
           </span>
           <div>
-            <h3 className="text-lg font-bold text-[#111]">Official Warning Notice</h3>
+            <h3 className="hrms-modal-title">Official Warning Notice</h3>
             <p className="text-xs text-[#6B7280]">Issued on April 12, 2025</p>
           </div>
         </div>
@@ -188,7 +188,7 @@ export function AchievementKpiModal({ open, onClose }) {
                 <circle cx="12" cy="12" r="1.35" fill="white" />
               </svg>
             </span>
-            <h2 className="text-[18px] font-extrabold text-[#111827] tracking-tight">KPI Scorecard</h2>
+            <h2 className="hrms-modal-title tracking-tight">KPI Scorecard</h2>
           </div>
           <button
             type="button"
@@ -206,7 +206,7 @@ export function AchievementKpiModal({ open, onClose }) {
               className="flex items-center justify-between gap-4 px-5 py-3.5 border-t border-[#EEF1F6]"
             >
               <span className="text-[14px] font-medium text-[#6B7280]">{row.label}</span>
-              <span className="text-[15px] font-extrabold text-[#111827] tabular-nums shrink-0">{row.value}</span>
+              <span className="hrms-panel-title tabular-nums shrink-0">{row.value}</span>
             </li>
           ))}
         </ul>

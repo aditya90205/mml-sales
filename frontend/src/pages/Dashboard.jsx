@@ -5,7 +5,6 @@ import {
   ChevronDown,
   History,
   Users,
-  ArrowRight,
   X,
   Star,
   Flag,
@@ -501,7 +500,7 @@ function StatCard({ stat }) {
         <Icon size={18} style={{ color: stat.fg }} strokeWidth={1.7} />
       </span>
       <div className="min-w-0">
-        <p className="text-[11px] text-[#6B7280] leading-snug truncate">{stat.label}</p>
+        <p className="text-[13px] font-extrabold text-[#111] leading-tight truncate">{stat.label}</p>
         <p className="text-[20px] font-bold text-[#111] leading-tight mt-0.5">{stat.value}</p>
         {stat.note && (
           <p className={`text-[10px] mt-0.5 leading-tight ${
@@ -878,18 +877,14 @@ function RecentUpdatesCard() {
       <NotificationTypeIcon type={u.type} title={u.title} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <p
-            className={`text-[13px] leading-tight ${
-              u.unread ? "font-bold text-[#111]" : "font-semibold text-[#111]"
-            }`}
-          >
+          <p className="text-[13px] font-bold text-[#111] leading-tight truncate">
             {u.title}
           </p>
           {u.unread && <span className="size-1.5 rounded-full bg-[#E8395B] shrink-0" />}
         </div>
-        <p className="text-[12px] text-[#9CA3AF] leading-snug mt-0.5 line-clamp-2">{u.message}</p>
+        <p className="text-[11px] text-[#9CA3AF] font-medium leading-snug mt-0.5 line-clamp-2">{u.message}</p>
       </div>
-      <span className="text-[11px] text-[#9CA3AF] whitespace-nowrap shrink-0 pt-0.5">{u.time}</span>
+      <span className="text-[11px] text-[#9CA3AF] font-medium whitespace-nowrap shrink-0 pt-0.5">{u.time}</span>
     </button>
   );
 
@@ -897,7 +892,7 @@ function RecentUpdatesCard() {
     <>
       <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col flex-1 min-h-[420px]">
         <div className="mb-1 px-0.5 flex items-center justify-between gap-2">
-          <h2 className="text-[15px] font-bold text-[#111]">Recent Updates</h2>
+          <h2 className="text-[15px] font-extrabold text-[#111]">Recent Updates</h2>
           <button
             type="button"
             onClick={() => setViewAllOpen(true)}
@@ -905,7 +900,6 @@ function RecentUpdatesCard() {
             title="View all recent updates"
           >
             View All
-            <ArrowRight size={12} />
           </button>
         </div>
 
@@ -1223,7 +1217,6 @@ function MyLeadsCard({
             title="View all pipeline leads"
           >
             View All
-            <ArrowRight size={12} />
           </Link>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
