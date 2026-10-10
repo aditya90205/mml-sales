@@ -668,20 +668,20 @@ function PerformanceScoreCard({ period, myLeads }) {
     : null;
 
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-4 flex flex-col h-full overflow-visible">
-      <h2 className="text-[17px] font-bold text-[#111] px-1 flex items-center gap-2">
+    <div className="bg-white border border-black/8 rounded-2xl p-3 sm:p-4 flex flex-col h-full overflow-hidden sm:overflow-visible">
+      <h2 className="text-[15px] sm:text-[17px] font-bold text-[#111] px-1 flex items-center gap-2">
         <Crown size={16} className="text-[#7A0A17]" fill="#7A0A17" strokeWidth={0} />
         My Performance Score
       </h2>
 
-      <div className="flex-1 flex items-center justify-center min-h-0">
-        <div className="relative w-full max-w-[420px] aspect-square [container-type:inline-size]">
+      <div className="flex-1 flex items-center justify-center min-h-0 py-1">
+        <div className="relative w-full max-w-[min(100%,420px)] aspect-square [container-type:inline-size]">
         <div
-          className="absolute inset-[24.5%] rounded-full"
+          className="absolute inset-[24.5%] [@container(max-width:360px)]:inset-[28%] [@container(max-width:300px)]:inset-[30%] rounded-full"
           style={{ background: `conic-gradient(${gradient})`, transform: "rotate(-30deg)" }}
         />
-        <div className="absolute inset-[29.5%] rounded-full bg-white" />
-        <div className="absolute inset-[32%] rounded-full overflow-hidden">
+        <div className="absolute inset-[29.5%] [@container(max-width:360px)]:inset-[32.5%] [@container(max-width:300px)]:inset-[34%] rounded-full bg-white" />
+        <div className="absolute inset-[32%] [@container(max-width:360px)]:inset-[35%] [@container(max-width:300px)]:inset-[36.5%] rounded-full overflow-hidden">
           <img
             src={salesPersonProfile}
             alt="Sales person"
@@ -689,14 +689,16 @@ function PerformanceScoreCard({ period, myLeads }) {
             style={{ objectPosition: "center 22%" }}
           />
           <div
-            className="absolute inset-x-0 bottom-0 h-[32%] flex flex-col items-center justify-center gap-0.5 px-2 pointer-events-none"
+            className="absolute inset-x-0 bottom-0 h-[32%] flex flex-col items-center justify-center gap-0.5 px-1.5 pointer-events-none"
             style={{
               background:
                 "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.78) 22%, rgba(0,0,0,0.9) 100%)",
             }}
           >
-            <p className="text-[11px] font-medium text-white leading-tight">Overall Score</p>
-            <p className="text-[15px] font-bold text-white leading-none">
+            <p className="text-[10px] [@container(min-width:360px)]:text-[11px] font-medium text-white leading-tight">
+              Overall Score
+            </p>
+            <p className="text-[13px] [@container(min-width:360px)]:text-[15px] font-bold text-white leading-none">
               {report.overall} / 100
             </p>
           </div>
@@ -716,7 +718,7 @@ function PerformanceScoreCard({ period, myLeads }) {
               onMouseEnter={(e) => showDetail(s.key, e.currentTarget)}
               onMouseLeave={hideDetail}
             >
-              <div className="relative w-max">
+              <div className="relative w-max max-w-[42cqw]">
                 <img
                   src={s.arrow}
                   alt=""
@@ -724,47 +726,75 @@ function PerformanceScoreCard({ period, myLeads }) {
                   style={s.arrowStyle}
                 />
                 <div
-                  className="relative z-[2] rounded-[22px] cursor-default text-left hover:brightness-[0.97] hover:shadow-[0_2px_10px_rgba(0,0,0,0.08)] transition-[filter,box-shadow]"
+                  className={`relative z-[2] rounded-[clamp(14px,5cqw,22px)] cursor-default text-left hover:brightness-[0.97] hover:shadow-[0_2px_10px_rgba(0,0,0,0.08)] transition-[filter,box-shadow] flex items-center ${
+                    stacked ? "flex-col text-center" : "flex-row"
+                  }`}
                   style={{
                     backgroundColor: s.capsuleBg,
-                    display: "flex",
-                    flexDirection: stacked ? "column" : "row",
-                    alignItems: "center",
-                    textAlign: stacked ? "center" : "left",
-                    width: stacked ? 98 : undefined,
-                    minHeight: stacked ? 112 : s.minHeight || (!stacked && s.tall ? 68 : undefined),
-                    padding: stacked ? "12px 10px 11px" : s.tall || s.minHeight ? "11px 14px" : "9px 12px",
-                    gap: stacked ? 7 : 8,
+                    width: stacked ? "min(98px, 24cqw)" : undefined,
+                    minHeight: stacked
+                      ? "min(112px, 27cqw)"
+                      : s.minHeight
+                        ? `min(${s.minHeight}px, 19cqw)`
+                        : !stacked && s.tall
+                          ? "min(68px, 16cqw)"
+                          : undefined,
+                    padding: stacked
+                      ? "clamp(8px, 2.8cqw, 12px) clamp(6px, 2.4cqw, 10px) clamp(7px, 2.6cqw, 11px)"
+                      : s.tall || s.minHeight
+                        ? "clamp(7px, 2.6cqw, 11px) clamp(8px, 3.3cqw, 14px)"
+                        : "clamp(6px, 2.2cqw, 9px) clamp(7px, 2.8cqw, 12px)",
+                    gap: stacked ? "clamp(4px, 1.6cqw, 7px)" : "clamp(5px, 1.9cqw, 8px)",
                   }}
                 >
                   <span
                     className="rounded-full bg-white grid place-items-center shrink-0"
-                    style={{ width: stacked ? 28 : 22, height: stacked ? 28 : 22 }}
+                    style={{
+                      width: stacked ? "clamp(20px, 6.6cqw, 28px)" : "clamp(18px, 5.2cqw, 22px)",
+                      height: stacked ? "clamp(20px, 6.6cqw, 28px)" : "clamp(18px, 5.2cqw, 22px)",
+                    }}
                   >
                     <img
                       src={s.iconSrc}
                       alt=""
                       className="object-contain"
-                      style={{ width: stacked ? 15 : 13, height: stacked ? 15 : 13 }}
+                      style={{
+                        width: stacked ? "clamp(11px, 3.5cqw, 15px)" : "clamp(10px, 3.1cqw, 13px)",
+                        height: stacked ? "clamp(11px, 3.5cqw, 15px)" : "clamp(10px, 3.1cqw, 13px)",
+                      }}
                     />
                   </span>
                   <div className={stacked ? "w-full" : "min-w-0"}>
                     <p
                       className="font-semibold leading-tight whitespace-pre-line"
-                      style={{ color: s.labelColor, fontSize: stacked ? 11 : 11.5 }}
+                      style={{
+                        color: s.labelColor,
+                        fontSize: stacked
+                          ? "clamp(9px, 2.6cqw, 11px)"
+                          : "clamp(9.5px, 2.7cqw, 11.5px)",
+                      }}
                     >
                       {s.label}
                     </p>
-                    <p className="text-[15px] font-bold leading-tight mt-0.5" style={{ color: s.valueColor }}>
+                    <p
+                      className="font-bold leading-tight mt-0.5"
+                      style={{ color: s.valueColor, fontSize: "clamp(12px, 3.5cqw, 15px)" }}
+                    >
                       {s.value}
                       {s.target && (
-                        <span className="text-[12.5px] font-semibold" style={{ color: s.targetColor }}>
+                        <span
+                          className="font-semibold"
+                          style={{ color: s.targetColor, fontSize: "clamp(10px, 3cqw, 12.5px)" }}
+                        >
                           {" "}/ {s.target}
                         </span>
                       )}
                     </p>
                     {s.note && (
-                      <p className="text-[10px] leading-tight mt-0.5" style={{ color: s.noteColor }}>
+                      <p
+                        className="leading-tight mt-0.5"
+                        style={{ color: s.noteColor, fontSize: "clamp(8px, 2.4cqw, 10px)" }}
+                      >
                         {s.note}
                       </p>
                     )}
