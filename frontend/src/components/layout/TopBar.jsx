@@ -4,6 +4,7 @@ import { Clock, Bell, ArrowRight, ArrowUpRight, CheckCheck, User, LogOut, Circle
 import Avatar from "../ui/Avatar";
 import TimesheetDetailsModal from "../hrms/TimesheetDetailsModal";
 import NotificationTypeIcon from "../common/NotificationTypeIcon.jsx";
+import GlobalSearch from "./GlobalSearch";
 import { logout } from "../../utils/auth";
 import {
   markAllNotificationsRead,
@@ -366,9 +367,9 @@ export default function TopBar({ page = "Dashboard" }) {
         : [{ to: "/dashboard", name: routeNameMap.dashboard }];
 
   return (
-    <header className="fixed left-[58px] right-0 top-0 z-50 h-[56px] bg-white border-b border-black/8 flex items-center justify-between gap-4 px-5 shrink-0">
+    <header className="fixed left-[58px] right-0 top-0 z-50 h-[56px] bg-white border-b border-black/8 flex items-center justify-between gap-3 px-5 shrink-0">
       {/* Left: breadcrumb + session meta */}
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-3 min-w-0 shrink">
         <nav className="flex items-center gap-2 min-w-0">
           {breadcrumbs.map((b, i) => (
             <span key={`${b.to}-${b.name}-${i}`} className="flex items-center gap-2 min-w-0">
@@ -384,16 +385,16 @@ export default function TopBar({ page = "Dashboard" }) {
           ))}
         </nav>
 
-        <span className="w-px h-4 bg-black/12" />
+        <span className="w-px h-4 bg-black/12 hidden xl:block" />
 
-        <span className="flex items-center gap-1.5 text-xs text-[#6B7280] whitespace-nowrap">
+        <span className="hidden xl:flex items-center gap-1.5 text-xs text-[#6B7280] whitespace-nowrap">
           <Clock size={13} className="text-[#9CA3AF]" />
           Logged in at {SESSION.loginTime}
         </span>
 
-        <span className="w-px h-4 bg-black/12" />
+        <span className="w-px h-4 bg-black/12 hidden xl:block" />
 
-        <span className="flex items-center gap-1.5 text-xs text-[#6B7280] whitespace-nowrap">
+        <span className="hidden xl:flex items-center gap-1.5 text-xs text-[#6B7280] whitespace-nowrap">
           <span className="size-1.5 rounded-full bg-[#F59E0B]" />
           Idle: {SESSION.idle}
         </span>
@@ -401,7 +402,7 @@ export default function TopBar({ page = "Dashboard" }) {
         <button
           type="button"
           onClick={() => setRegularizeOpen(true)}
-          className="flex items-center gap-1.5 text-xs font-semibold text-[#3B82F6] whitespace-nowrap hover:underline underline-offset-2"
+          className="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-[#3B82F6] whitespace-nowrap hover:underline underline-offset-2"
         >
           <span className="size-1.5 rounded-full bg-[#3B82F6]" />
           Active: {SESSION.active}
@@ -409,8 +410,9 @@ export default function TopBar({ page = "Dashboard" }) {
         </button>
       </div>
 
-      {/* Right: bell + profile */}
-      <div className="flex items-center gap-2 shrink-0">
+      {/* Right: search + bell + profile */}
+      <div className="flex items-center gap-2.5 shrink-0">
+        <GlobalSearch />
         <NotificationBell />
         <ProfileMenu />
       </div>
