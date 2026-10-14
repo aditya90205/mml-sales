@@ -25,17 +25,20 @@ import {
   Crown,
   Filter,
   Phone,
+  Plus,
   TrendingUp,
   IndianRupee,
   User,
 } from "lucide-react";
 import AIAssistant from "../components/common/AIAssistant.jsx";
+import SuccessStoriesBlock from "../components/common/SuccessStoriesBlock.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import LeadActivityHistory from "./pipeline/deal-tabs/LeadActivityHistory";
+import CreateCampaignPage from "./CreateCampaignPage.jsx";
 import CreateLeadModal from "../components/pipeline/CreateLeadModal";
 import BiodataUploadModal from "../components/pipeline/BiodataUploadModal";
 import BiodataProfileModal from "../components/pipeline/BiodataProfileModal";
@@ -371,7 +374,21 @@ const TEMPERATURE_STYLES = {
 const DASHBOARD_MY_LEAD_IDS = new Set(["p0-1", "p0-2", "p1-1", "p1-2", "p3-1", "p4-1"]);
 const DASHBOARD_MY_LEADS_LIMIT = 6;
 
-const MY_LEADS_COL_WIDTHS = ["18%", "15%", "8.5%", "7%", "9%", "12.5%", "14%", "16%"];
+const MY_LEADS_COL_WIDTHS = ["28px", "17%", "14%", "8%", "6.5%", "8.5%", "12%", "13.5%", "15.5%"];
+
+const TEMP_GROUP_LABEL = { hot: "Hot", warm: "Warm", cold: "Cold", HOT: "Hot", WARM: "Warm", COLD: "Cold" };
+
+function resolveTempGroup(leads = []) {
+  const keys = [
+    ...new Set(
+      (Array.isArray(leads) ? leads : [])
+        .map((lead) => String(lead?.temperature || lead?.temp || "").trim().toUpperCase())
+        .filter((t) => t === "HOT" || t === "WARM" || t === "COLD")
+    ),
+  ];
+  if (keys.length !== 1) return "";
+  return TEMP_GROUP_LABEL[keys[0]] || "";
+}
 
 const DASH_STAGE_META = [
   { id: "P0", label: "New", color: "#E8395B", p0Status: "new", filterKey: "P0-new" },
@@ -499,7 +516,7 @@ function StatCard({ stat }) {
         <Icon size={18} style={{ color: stat.fg }} strokeWidth={1.7} />
       </span>
       <div className="min-w-0">
-        <p className="text-[13px] font-extrabold text-[#111] leading-tight truncate">{stat.label}</p>
+        <p className="text-[13px] font-bold text-[#111] leading-tight truncate">{stat.label}</p>
         <p className="text-[20px] font-bold text-[#111] leading-tight mt-0.5">{stat.value}</p>
         {stat.note && (
           <p className={`text-[10px] mt-0.5 leading-tight ${
@@ -1202,9 +1219,28 @@ function MyLeadsCard({
   const [scoreLead, setScoreLead] = useState(null);
   const [historyLead, setHistoryLead] = useState(null);
   const [messageOpen, setMessageOpen] = useState(false);
+  const [selectedLeadIds, setSelectedLeadIds] = useState([]);
+  const [createOpen, setCreateOpen] = useState(false);
   const leadsViewRef = useRef(null);
+  const createDialogRef = useRef(null);
   const navigate = useNavigate();
   const { sorted, sort, toggle } = useTableSort(rows, { defaultKey: "name", getValue: pipelineRowValue });
+  const canSelectCampaign =
+    !healthFilter || healthFilter === "hot" || healthFilter === "warm" || healthFilter === "cold";
+  const visibleIds = useMemo(() => sorted.map(({ lead }) => lead.id), [sorted]);
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedLeadIds.includes(id));
+  const selectedLeads = useMemo(
+    () => sorted.filter(({ lead }) => selectedLeadIds.includes(lead.id)).map(({ lead }) => lead),
+    [sorted, selectedLeadIds]
+  );
+  const campaignStageGroup = useMemo(() => {
+    const fromLeads = resolveTempGroup(selectedLeads);
+    if (fromLeads) return fromLeads;
+    if (healthFilter === "hot" || healthFilter === "warm" || healthFilter === "cold") {
+      return TEMP_GROUP_LABEL[healthFilter] || "";
+    }
+    return "";
+  }, [selectedLeads, healthFilter]);
 
   useEffect(() => {
     const h = (e) => {
@@ -1214,8 +1250,44 @@ function MyLeadsCard({
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
+  useEffect(() => {
+    setSelectedLeadIds([]);
+  }, [healthFilter, stageFilter, rows.length]);
+
+  useEffect(() => {
+    if (!createOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      const dialogs = document.querySelectorAll('[role="dialog"]');
+      const top = dialogs[dialogs.length - 1];
+      if (top && top !== createDialogRef.current) return;
+      setCreateOpen(false);
+      setSelectedLeadIds([]);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [createOpen]);
+
+  const closeCreate = () => {
+    setCreateOpen(false);
+    setSelectedLeadIds([]);
+  };
+
   const toggleHealth = (key) => {
     onHealthFilter?.(healthFilter === key ? null : key);
+  };
+
+  const toggleLeadId = (id) => {
+    setSelectedLeadIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const toggleAllVisible = () => {
+    setSelectedLeadIds(allVisibleSelected ? [] : visibleIds);
   };
 
   return (
@@ -1233,6 +1305,29 @@ function MyLeadsCard({
           <LeadActivityHistory lead={historyLead.lead} currentStage={historyLead.stageId} />
         ) : null}
       </Modal>
+      {createOpen &&
+        createPortal(
+          <div
+            ref={createDialogRef}
+            className="fixed inset-0 z-[55] flex items-center justify-center p-4 sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Create New Campaign"
+          >
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeCreate} aria-hidden />
+            <div className="relative z-10 w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl bg-[#F7F8FA] shadow-xl">
+              <div className="max-h-[92vh] overflow-y-auto scrollbar-thin">
+                <CreateCampaignPage
+                  key={`create-${campaignStageGroup || "none"}`}
+                  embedded
+                  initialGroup={campaignStageGroup}
+                  onClose={closeCreate}
+                />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2.5 min-w-0 shrink-0">
@@ -1396,6 +1491,17 @@ function MyLeadsCard({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {selectedLeadIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#7A0A17] text-white text-[12px] font-semibold hover:bg-[#640712]"
+            >
+              <Plus size={13} />
+              Create Campaign
+              <span className="tabular-nums rounded-md px-1 bg-white/20">{selectedLeadIds.length}</span>
+            </button>
+          )}
           <div className="hidden sm:flex items-center gap-2">
             {[
               { label: "Low Probability", color: "#E8395B" },
@@ -1421,6 +1527,20 @@ function MyLeadsCard({
           </colgroup>
           <thead>
             <tr className="border-b border-black/6 bg-[#FAFAFB]/80">
+              {canSelectCampaign && (
+                <th className="pl-2 pr-0 py-2 w-[28px] align-bottom">
+                  <span className="inline-flex items-end leading-tight">
+                    <input
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      onChange={toggleAllVisible}
+                      className="accent-[#7A0A17] size-3.5"
+                      aria-label="Select all leads"
+                      title="Select all"
+                    />
+                  </span>
+                </th>
+              )}
               {[
                 { label: "Client Name", key: "name" },
                 { label: "Stage", key: "stage" },
@@ -1447,7 +1567,7 @@ function MyLeadsCard({
           <tbody>
             {sorted.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-[13px] text-[#9CA3AF]">
+                <td colSpan={canSelectCampaign ? 9 : 8} className="px-3 py-10 text-center text-[13px] text-[#9CA3AF]">
                   No leads match the selected filters.
                 </td>
               </tr>
@@ -1455,12 +1575,26 @@ function MyLeadsCard({
               const temp = TEMPERATURE_STYLES[lead.temperature] || { color: "#6B7280" };
               const pri = PRIORITY_STYLES[lead.priority] || { color: "#6B7280", bg: "#F3F4F6" };
               const urgent = Number(lead.hrs) <= 8;
+              const checked = selectedLeadIds.includes(lead.id);
               return (
                 <tr
                   key={lead.id}
                   onClick={() => navigate(leadDetailPath(lead))}
                   className="border-b border-black/6 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
                 >
+                  {canSelectCampaign && (
+                    <td className="pl-2 pr-0 py-2 align-middle" onClick={(e) => e.stopPropagation()}>
+                      <span className="inline-flex items-center leading-none">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleLeadId(lead.id)}
+                          className="accent-[#7A0A17] size-3.5"
+                          aria-label={`Select ${lead.name}`}
+                        />
+                      </span>
+                    </td>
+                  )}
                   <td className="px-1.5 py-2 align-middle overflow-hidden">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: stage.color }} />
@@ -2193,6 +2327,8 @@ export default function Dashboard() {
             onSelectStage={setStageFilter}
           />
         </div>
+
+        <SuccessStoriesBlock />
       </div>
     </div>
   );

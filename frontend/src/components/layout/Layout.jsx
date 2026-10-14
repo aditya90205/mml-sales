@@ -1,5 +1,5 @@
 import useAppFitScale, { DESIGN_WIDTH, supportsCssZoom } from "../../hooks/useAppFitScale";
-// import MessagingDock from "../messaging/MessagingDock";
+import MessagingDock from "../messaging/MessagingDock";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 
@@ -23,11 +23,11 @@ export default function Layout({ children }) {
     >
       <Sidebar />
       {/* ml matches the 58px icon-only rail */}
-      <main className="ml-[58px] pt-[56px] min-h-screen flex flex-col overflow-x-hidden">
+      <main className="ml-[58px] pt-[56px] min-h-screen flex flex-col overflow-x-hidden pb-[var(--messaging-dock-safe)]">
         <TopBar />
         {children}
       </main>
-      {/* <MessagingDock /> */}
+      <MessagingDock />
     </div>
   );
 }

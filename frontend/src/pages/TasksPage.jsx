@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   ChevronDown,
-  Edit2,
   Eye,
+  Edit2,
   LayoutGrid,
   LayoutList,
   SquareCheck,
@@ -143,31 +143,28 @@ function StatBar({ stats, activeKey, onSelect }) {
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
       {stats.map((stat) => {
         const active = activeKey === stat.id;
+        const Icon = stat.icon;
         return (
           <button
             key={stat.id}
             type="button"
             onClick={() => onSelect(stat.id)}
             aria-pressed={active}
-            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left min-w-0 transition-colors ${
+            className={`bg-white border rounded-2xl px-3.5 py-3 flex items-center gap-3 text-left min-w-0 transition-[border-color,box-shadow] ${
               active
-                ? "bg-[#FCF5F6] border-[#7A0A17]/25 shadow-[0_1px_2px_rgba(122,10,23,0.08)]"
-                : "bg-white border-black/8 hover:bg-[#FAFAFB]"
+                ? "border-[#7A0A17]/25 shadow-[0_2px_10px_rgba(122,10,23,0.06)]"
+                : "border-black/8 hover:border-black/15 hover:shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
             }`}
           >
             <span
-              className="size-9 rounded-xl grid place-items-center shrink-0"
-              style={{ backgroundColor: stat.bg, color: stat.color }}
+              className="size-10 rounded-[10px] grid place-items-center shrink-0"
+              style={{ backgroundColor: stat.bg }}
             >
-              <stat.icon size={16} />
+              <Icon size={18} style={{ color: stat.color }} strokeWidth={1.7} />
             </span>
             <div className="min-w-0">
-              <p className={`text-[11px] truncate ${active ? "text-[#7A0A17] font-semibold" : "text-[#9CA3AF]"}`}>
-                {stat.label}
-              </p>
-              <p className={`text-[18px] font-bold leading-tight ${active ? "text-[#7A0A17]" : "text-[#111]"}`}>
-                {stat.value}
-              </p>
+              <p className="text-[13px] font-bold text-[#111] leading-tight truncate">{stat.label}</p>
+              <p className="text-[20px] font-bold text-[#111] leading-tight mt-0.5">{stat.value}</p>
             </div>
           </button>
         );
@@ -281,30 +278,33 @@ function TaskCard({ task, columnColor, onView, onEdit, onDelete }) {
     >
       <div className="flex items-start justify-between gap-2">
         <p className="text-[13px] font-bold text-[#111] leading-snug min-w-0">{task.title}</p>
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
             onClick={() => onView(task)}
-            className="p-1 text-[#e8b400] hover:bg-[#e8b400]/10 rounded-md transition-colors"
+            className="p-1 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] transition-colors"
             aria-label="View task"
+            title="View"
           >
-            <Eye size={13} />
+            <Eye size={14} />
           </button>
           <button
             type="button"
             onClick={() => onEdit(task)}
-            className="p-1 text-[#2b7fff] hover:bg-[#2b7fff]/10 rounded-md transition-colors"
+            className="p-1 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] transition-colors"
             aria-label="Edit task"
+            title="Edit"
           >
-            <Edit2 size={13} />
+            <Edit2 size={14} />
           </button>
           <button
             type="button"
             onClick={() => onDelete(task)}
-            className="p-1 text-[#E8395B] hover:bg-[#E8395B]/10 rounded-md transition-colors"
+            className="p-1 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] transition-colors"
             aria-label="Delete task"
+            title="Delete"
           >
-            <Trash2 size={13} />
+            <Trash2 size={14} />
           </button>
         </div>
       </div>
@@ -386,7 +386,7 @@ function TaskColumn({ column, tasks, onView, onEdit, onDelete }) {
 }
 
 const LIST_TH =
-  "text-left text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3";
+  "px-3 py-2 text-left text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide align-bottom";
 
 function getTaskListValue(row, key) {
   const task = row?.task || {};
@@ -439,7 +439,7 @@ function TaskListView({ rows, onView, onEdit, onDelete, defaultSortKey = "title"
       <div className="overflow-x-auto">
         <table className="w-full min-w-[860px] border-collapse">
           <thead>
-            <tr className="border-b border-black/8 bg-[#FAFAFB]">
+            <tr className="border-b border-black/8">
               <SortableTh label="Task" sortKey="title" sort={sort} onSort={toggle} className={LIST_TH} />
               <SortableTh label="Status" sortKey="status" sort={sort} onSort={toggle} className={LIST_TH} />
               <SortableTh label="Priority" sortKey="priority" sort={sort} onSort={toggle} className={LIST_TH} />
@@ -451,21 +451,24 @@ function TaskListView({ rows, onView, onEdit, onDelete, defaultSortKey = "title"
                 label="Actions"
                 sortKey="actions"
                 unsortable
-                className="text-right text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide px-4 py-3"
+                className="px-3 py-2 text-right text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide align-bottom"
               />
             </tr>
           </thead>
-          <tbody className="divide-y divide-black/6">
+          <tbody>
             {sorted.map(({ task, column }) => {
               const priorityLabel = displayPriority(task.priority);
               const priority = PRIORITY_STYLES[priorityLabel] || PRIORITY_STYLES.Medium;
               return (
-                <tr key={task.id} className="hover:bg-[#FAFAFB] transition-colors">
-                  <td className="px-4 py-3 text-[13px] font-semibold text-[#111] max-w-[260px]">
+                <tr
+                  key={task.id}
+                  className="border-b border-black/5 last:border-0 hover:bg-[#FAFAFB] transition-colors"
+                >
+                  <td className="px-3 py-2.5 text-[12.5px] font-semibold text-[#111] max-w-[260px]">
                     <span className="line-clamp-2">{task.title}</span>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[#4B5563] whitespace-nowrap">
+                  <td className="px-3 py-2.5">
+                    <span className="inline-flex items-center gap-1.5 text-[12px] text-[#374151] whitespace-nowrap">
                       <span
                         className="size-1.5 rounded-full shrink-0"
                         style={{ backgroundColor: column.color }}
@@ -473,15 +476,15 @@ function TaskListView({ rows, onView, onEdit, onDelete, defaultSortKey = "title"
                       {column.label}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2.5">
                     <span
-                      className="inline-block text-[10px] font-semibold px-2 py-1 rounded-md whitespace-nowrap"
+                      className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap"
                       style={{ color: priority.color, backgroundColor: priority.bg }}
                     >
                       {priorityLabel}
                     </span>
                   </td>
-                  <td className="px-4 py-3 min-w-[120px]">
+                  <td className="px-3 py-2.5 min-w-[120px]">
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-16 rounded-full bg-[#EDEEF1] overflow-hidden shrink-0">
                         <div
@@ -489,22 +492,22 @@ function TaskListView({ rows, onView, onEdit, onDelete, defaultSortKey = "title"
                           style={{ width: `${task.progress}%`, backgroundColor: column.color }}
                         />
                       </div>
-                      <span className="text-[11.5px] font-semibold text-[#111]">{task.progress}%</span>
+                      <span className="text-[12px] font-semibold text-[#374151]">{task.progress}%</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-[12px] text-[#374151] whitespace-nowrap">
+                  <td className="px-3 py-2.5 text-[12px] text-[#374151] whitespace-nowrap">
                     {task.project}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-3 py-2.5 whitespace-nowrap">
                     <span
                       className={`text-[12px] ${
-                        task.overdue ? "text-[#E8395B] font-semibold" : "text-[#6B7280]"
+                        task.overdue ? "text-[#E8395B] font-semibold" : "text-[#374151]"
                       }`}
                     >
                       {task.date}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2.5">
                     {task.assignee && task.assignee !== "Unassigned" ? (
                       <span className="inline-flex items-center gap-2 whitespace-nowrap">
                         <InitialsAvatar name={task.assignee} size={22} />
@@ -514,31 +517,34 @@ function TaskListView({ rows, onView, onEdit, onDelete, defaultSortKey = "title"
                       <span className="text-[12px] text-[#9CA3AF]">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-0.5">
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1">
                       <button
                         type="button"
                         onClick={() => onView(task)}
-                        className="p-1 text-[#e8b400] hover:bg-[#e8b400]/10 rounded-md transition-colors"
+                        className="p-1 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] transition-colors"
                         aria-label="View task"
+                        title="View"
                       >
-                        <Eye size={13} />
+                        <Eye size={14} />
                       </button>
                       <button
                         type="button"
                         onClick={() => onEdit(task)}
-                        className="p-1 text-[#2b7fff] hover:bg-[#2b7fff]/10 rounded-md transition-colors"
+                        className="p-1 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] transition-colors"
                         aria-label="Edit task"
+                        title="Edit"
                       >
-                        <Edit2 size={13} />
+                        <Edit2 size={14} />
                       </button>
                       <button
                         type="button"
                         onClick={() => onDelete(task)}
-                        className="p-1 text-[#E8395B] hover:bg-[#E8395B]/10 rounded-md transition-colors"
+                        className="p-1 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] transition-colors"
                         aria-label="Delete task"
+                        title="Delete"
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </td>

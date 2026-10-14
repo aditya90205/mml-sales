@@ -12,7 +12,7 @@ import {
   MapPin,
   Paperclip,
   Upload,
-  Pencil,
+  Edit2,
   Plus,
   Send,
   Truck,
@@ -248,10 +248,10 @@ export default function EventDetailsModal({
             <button
               type="button"
               onClick={() => onEdit(event)}
-              className="p-1.5 rounded-lg text-[#2b7fff] hover:bg-[#E8F2FE] transition-colors"
+              className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center transition-colors"
               aria-label="Edit event"
             >
-              <Pencil size={16} />
+              <Edit2 size={13} />
             </button>
           ) : null}
           <button

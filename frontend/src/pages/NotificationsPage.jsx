@@ -72,7 +72,7 @@ export default function NotificationsPage() {
       <div className="px-5 pt-5 pb-8 flex flex-col gap-4 min-w-0">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="text-[26px] font-bold text-[#111] tracking-tight">Notifications</h1>
+            <h1 className="text-[22px] font-bold text-[#111] tracking-tight">Notifications</h1>
             <p className="text-[13px] text-[#9CA3AF] mt-0.5">
               {unreadCount} unread notification{unreadCount === 1 ? "" : "s"}
             </p>

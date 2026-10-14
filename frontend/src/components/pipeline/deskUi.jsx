@@ -14,7 +14,7 @@ export function DeskPage({ title, actions, children }) {
     <div className="flex flex-col flex-1 min-h-0">
       <div className="px-3 sm:px-5 pt-4 sm:pt-5 pb-8 flex flex-col gap-4 sm:gap-5 min-w-0">
         <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
-          <h1 className="text-[22px] sm:text-[26px] font-bold text-[#111] tracking-tight min-w-0 break-words">
+          <h1 className="text-[22px] font-bold text-[#111] tracking-tight min-w-0 break-words">
             {title}
           </h1>
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 flex-wrap w-full sm:w-auto justify-end">

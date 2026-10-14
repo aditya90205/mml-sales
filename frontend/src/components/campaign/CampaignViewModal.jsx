@@ -1,5 +1,6 @@
-import { MousePointerClick, Pencil } from "lucide-react";
+import { MousePointerClick, Edit2 } from "lucide-react";
 import { toast } from "react-toastify";
+import WhatsAppIcon from "../common/WhatsAppIcon.jsx";
 import { parseChannels } from "../../utils/campaignChannels.js";
 import hugeiconsSent from "../../assets/hugeicons_sent.png";
 import charmTickDouble from "../../assets/charm_tick-double.png";
@@ -62,7 +63,7 @@ export default function CampaignViewModal({ open, onClose, campaign, onEdit }) {
             onClick={() => onEdit?.(campaign)}
             className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-[#7A0A17]/30 text-[13px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors shrink-0"
           >
-            <Pencil size={14} />
+            <Edit2 size={13} />
             Edit
           </button>
         </div>
@@ -128,13 +129,17 @@ export default function CampaignViewModal({ open, onClose, campaign, onEdit }) {
               <div>
                 <p className="text-[10px] font-extrabold uppercase tracking-wide text-[#9CA3AF] mb-1.5">Active Channels</p>
                 <div className="flex items-center gap-2">
-                  {channels.map(({ label, Icon }) => (
+                  {channels.map(({ label, Icon, isWhatsApp }) => (
                     <span
                       key={label}
                       title={label}
                       className="size-8 rounded-lg bg-[#FCF5F6] border border-[#7A0A17]/20 grid place-items-center"
                     >
-                      <Icon size={15} className="text-[#7A0A17]" />
+                      {isWhatsApp ? (
+                        <WhatsAppIcon size={15} withBg={false} color="#7A0A17" />
+                      ) : (
+                        <Icon size={15} className="text-[#7A0A17]" />
+                      )}
                     </span>
                   ))}
                 </div>

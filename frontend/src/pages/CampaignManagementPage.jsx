@@ -24,10 +24,11 @@ import hugeiconsSent from "../assets/hugeicons_sent.png";
 import charmTickDouble from "../assets/charm_tick-double.png";
 import biEnvelopeOpen from "../assets/bi_envelope-open.png";
 import { readCampaigns, removeCampaign, saveCampaigns } from "../utils/campaignsStore.js";
+import { WHATSAPP_GREEN } from "../components/common/WhatsAppIcon.jsx";
 
 const LEADS_BY_CHANNEL = [
   { label: "SMS", value: 142, color: "#7A0A17" },
-  { label: "WhatsApp", value: 118, color: "#16A34A" },
+  { label: "WhatsApp", value: 118, color: WHATSAPP_GREEN },
   { label: "App Notifications", value: 86, color: "#2563EB" },
   { label: "Email", value: 66, color: "#D6A419" },
 ];
@@ -52,19 +53,25 @@ const STATUS_STYLES = {
 function StatCard({ stat }) {
   const Icon = stat.icon;
   return (
-    <div className="bg-white border border-black/8 rounded-2xl px-4 py-3.5 flex items-center gap-3.5">
-      <span className="size-11 rounded-xl grid place-items-center shrink-0" style={{ backgroundColor: stat.bg }}>
+    <div className="bg-white border border-black/8 rounded-2xl px-3.5 py-3 flex items-center gap-3 min-w-0">
+      <span className="size-10 rounded-[10px] grid place-items-center shrink-0" style={{ backgroundColor: stat.bg }}>
         {stat.img ? (
-          <img src={stat.img} alt="" width={21} height={21} className="object-contain" />
+          <img src={stat.img} alt="" width={18} height={18} className="object-contain" />
         ) : (
-          <Icon size={21} style={{ color: stat.fg }} strokeWidth={1.7} />
+          <Icon size={18} style={{ color: stat.fg }} strokeWidth={1.7} />
         )}
       </span>
       <div className="min-w-0">
-        <p className="text-[11px] text-[#6B7280] leading-snug">{stat.label}</p>
-        <p className="text-[22px] font-bold text-[#111] leading-tight mt-0.5">{stat.value}</p>
+        <p className="text-[13px] font-bold text-[#111] leading-tight truncate">{stat.label}</p>
+        <p className="text-[20px] font-bold text-[#111] leading-tight mt-0.5">{stat.value}</p>
         {stat.note && (
-          <p className={`text-[10px] mt-0.5 leading-tight ${stat.noteTone === "green" ? "text-[#16A34A] font-medium" : "text-[#6B7280]"}`}>
+          <p className={`text-[10px] mt-0.5 leading-tight ${
+            stat.noteTone === "green"
+              ? "text-[#16A34A] font-medium"
+              : stat.noteTone === "red"
+                ? "text-[#E8395B] font-semibold"
+                : "text-[#6B7280]"
+          }`}>
             {stat.note}
           </p>
         )}
@@ -81,14 +88,14 @@ function StatusBadge({ label }) {
   );
 }
 
-function IconBtn({ label, onClick, children }) {
+function IconBtn({ label, onClick, children, className = "" }) {
   return (
     <button
       type="button"
       onClick={onClick}
       title={label}
       aria-label={label}
-      className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors"
+      className={`p-1 rounded-lg transition-colors ${className || "hover:bg-black/5"}`}
     >
       {children}
     </button>
@@ -229,7 +236,7 @@ export default function CampaignManagementPage() {
     <div className="flex flex-col flex-1 min-h-0">
       <div className="px-5 pt-5 pb-8 flex flex-col gap-5 min-w-0">
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <h1 className="text-[26px] font-bold text-[#111] tracking-tight">Campaign Management</h1>
+          <h1 className="text-[22px] font-bold text-[#111] tracking-tight">Campaign Management</h1>
           <div className="flex items-center gap-2.5">
             <button
               type="button"
@@ -279,9 +286,9 @@ export default function CampaignManagementPage() {
           </div>
 
           <div className="overflow-x-auto border border-black/8 rounded-xl">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-black/8 bg-[#FAFAFB] text-[#9CA3AF] uppercase text-[10px] font-extrabold tracking-wide">
+                <tr className="border-b border-black/8 bg-[#FAFAFB]">
                   {CAMPAIGN_COLS.map((col) => (
                     <SortableTh
                       key={col.key}
@@ -290,7 +297,7 @@ export default function CampaignManagementPage() {
                       sort={table.sort}
                       onSort={table.toggle}
                       unsortable={col.unsortable}
-                      className="px-4 py-3 whitespace-nowrap align-bottom"
+                      className="px-3 py-2 text-left text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide whitespace-nowrap align-bottom"
                     />
                   ))}
                 </tr>
@@ -298,39 +305,39 @@ export default function CampaignManagementPage() {
               <tbody className="divide-y divide-black/6">
                 {table.paged.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-[13px] text-[#9CA3AF] font-medium">
+                    <td colSpan={8} className="px-3 py-10 text-center text-[12px] text-[#9CA3AF] font-medium">
                       No campaigns found.
                     </td>
                   </tr>
                 ) : (
                   table.paged.map((row) => (
                     <tr key={row.id} className="hover:bg-[#FAFAFB] transition-colors">
-                      <td className="px-4 py-3.5">
-                        <p className="text-[13px] font-bold text-[#111] whitespace-nowrap">{row.name}</p>
-                        <p className="text-[11px] text-[#9CA3AF] mt-0.5">{row.tag}</p>
+                      <td className="px-3 py-2.5">
+                        <p className="text-[12.5px] font-semibold text-[#111] whitespace-nowrap">{row.name}</p>
+                        <p className="text-[10px] text-[#9CA3AF]">{row.tag}</p>
                       </td>
-                      <td className="px-4 py-3.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{row.target}</td>
-                      <td className="px-4 py-3.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{row.channel}</td>
-                      <td className="px-4 py-3.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{row.start}</td>
-                      <td className="px-4 py-3.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{row.end}</td>
-                      <td className="px-4 py-3.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{row.owner}</td>
-                      <td className="px-4 py-3.5"><StatusBadge label={row.status} /></td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-0.5">
-                          <IconBtn label={`View ${row.name}`} onClick={() => setViewCampaign(row)}>
-                            <Eye size={15} className="text-[#CA8A04]" />
+                      <td className="px-3 py-2.5 text-[12px] font-medium text-[#374151] whitespace-nowrap">{row.target}</td>
+                      <td className="px-3 py-2.5 text-[12px] font-medium text-[#374151] whitespace-nowrap">{row.channel}</td>
+                      <td className="px-3 py-2.5 text-[12px] font-medium text-[#374151] whitespace-nowrap">{row.start}</td>
+                      <td className="px-3 py-2.5 text-[12px] font-medium text-[#374151] whitespace-nowrap">{row.end}</td>
+                      <td className="px-3 py-2.5 text-[12px] font-medium text-[#374151] whitespace-nowrap">{row.owner}</td>
+                      <td className="px-3 py-2.5"><StatusBadge label={row.status} /></td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-1">
+                          <IconBtn label={`View ${row.name}`} onClick={() => setViewCampaign(row)} className="text-[#D97706] hover:bg-[#FEF3C7]">
+                            <Eye size={14} />
                           </IconBtn>
                           <IconBtn label={`Start ${row.name}`} onClick={() => toggleStatus(row.id)}>
-                            <img src={biPlayCircle} alt="Start" width={15} height={15} className="object-contain" />
+                            <img src={biPlayCircle} alt="Start" width={14} height={14} className="object-contain" />
                           </IconBtn>
                           <IconBtn label={`Stop ${row.name}`} onClick={() => toggleStatus(row.id)}>
-                            <img src={biStopCircle} alt="Stop" width={15} height={15} className="object-contain" />
+                            <img src={biStopCircle} alt="Stop" width={14} height={14} className="object-contain" />
                           </IconBtn>
-                          <IconBtn label={`Duplicate ${row.name}`} onClick={() => duplicateRow(row)}>
-                            <Copy size={14} className="text-[#2563EB]" />
+                          <IconBtn label={`Duplicate ${row.name}`} onClick={() => duplicateRow(row)} className="text-[#2563EB] hover:bg-[#E8F2FE]">
+                            <Copy size={14} />
                           </IconBtn>
-                          <IconBtn label={`Delete ${row.name}`} onClick={() => deleteRow(row)}>
-                            <Trash2 size={14} className="text-[#DC2626]" />
+                          <IconBtn label={`Delete ${row.name}`} onClick={() => deleteRow(row)} className="text-[#7A0A17] hover:bg-[#FDF2F3]">
+                            <Trash2 size={14} />
                           </IconBtn>
                         </div>
                       </td>

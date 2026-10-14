@@ -802,11 +802,11 @@ function QuotationCard({ clientName = "", deal, currentStage, showSend = true, v
                     <button
                       type="button"
                       onClick={() => handleRemoveAddon(row)}
-                      className="size-7 rounded-lg text-[#E8395B] hover:bg-[#FEF2F2] grid place-items-center ml-auto"
+                      className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center ml-auto"
                       aria-label={`Remove ${row.item}`}
                       title="Remove add-on"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={13} />
                     </button>
                   ) : null}
                 </td>

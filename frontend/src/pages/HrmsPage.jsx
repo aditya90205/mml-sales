@@ -12,8 +12,7 @@ import {
   Receipt,
   Calendar,
   Eye,
-  Edit,
-  Pencil,
+  Edit2,
   Trash2,
   CheckCircle2,
   BadgeCheck,
@@ -1445,10 +1444,10 @@ function TimesheetManualTable() {
             <td className="px-4 py-3 font-bold text-[#7A0A17]">{row.hours}</td>
             <td className="px-4 py-3">
               <div className="flex items-center gap-1.5">
-                <button type="button" className="text-[#16A34A] hover:opacity-80"><CheckCircle2 size={16} /></button>
-                <button type="button" className="text-[#DC2626] hover:opacity-80"><X size={16} /></button>
-                <button type="button" className="text-[#2563EB] hover:opacity-80"><Edit size={15} /></button>
-                <button type="button" className="text-[#DC2626] hover:opacity-80"><Trash2 size={15} /></button>
+                <button type="button" className="size-7 rounded-lg text-[#16A34A] hover:bg-[#DCFCE7] grid place-items-center transition-colors"><CheckCircle2 size={13} /></button>
+                <button type="button" className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center transition-colors"><X size={13} /></button>
+                <button type="button" className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center transition-colors"><Edit2 size={13} /></button>
+                <button type="button" className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center transition-colors"><Trash2 size={13} /></button>
               </div>
             </td>
           </tr>
@@ -1908,7 +1907,7 @@ function GoalsReviewsPanel({
                           title="Edit"
                           aria-label={`Edit ${g.title}`}
                         >
-                          <Pencil size={13} />
+                          <Edit2 size={13} />
                         </button>
                         <button
                           type="button"
@@ -2041,7 +2040,7 @@ function TrainingsPanel({
                       <button
                         type="button"
                         onClick={() => onAction("view", t)}
-                        className="size-7 rounded-lg bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#D97706] grid place-items-center"
+                        className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center"
                         title="View"
                         aria-label={`View ${t.program}`}
                       >
@@ -2050,11 +2049,11 @@ function TrainingsPanel({
                       <button
                         type="button"
                         onClick={() => onAction("edit", t)}
-                        className="size-7 rounded-lg bg-[#E8F2FE] hover:bg-[#DBEAFE] text-[#2563EB] grid place-items-center"
+                        className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center"
                         title="Edit"
                         aria-label={`Edit ${t.program}`}
                       >
-                        <Edit size={13} />
+                        <Edit2 size={13} />
                       </button>
                       <button
                         type="button"

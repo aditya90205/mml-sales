@@ -17,7 +17,7 @@ import {
   MapPin,
   Megaphone,
   MessageSquare,
-  Pencil,
+  Edit2,
   Receipt,
   Send,
   Settings,
@@ -278,11 +278,11 @@ export default function HrmsDashboard({
             <p className="hrms-meta text-[#6B7280]">Welcome Back,</p>
             <div className="flex items-center gap-2">
               <h1 className="hrms-page-title tracking-tight leading-tight">{USER.name}</h1>
-              <Link to="/profile" className="text-[#D97706] hover:text-[#B45309]" aria-label="View profile" title="View profile">
-                <Eye size={15} />
+              <Link to="/profile" className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center transition-colors" aria-label="View profile" title="View profile">
+                <Eye size={13} />
               </Link>
-              <Link to="/profile" className="text-[#2563EB] hover:text-[#1D4ED8]" aria-label="Edit profile" title="Edit profile">
-                <Pencil size={14} />
+              <Link to="/profile" className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center transition-colors" aria-label="Edit profile" title="Edit profile">
+                <Edit2 size={13} />
               </Link>
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-0.5 hrms-meta text-[#6B7280]">
@@ -437,7 +437,7 @@ export default function HrmsDashboard({
                         className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center"
                         aria-label={`View ${item.purpose}`}
                       >
-                        <Eye size={15} strokeWidth={2} />
+                        <Eye size={13} strokeWidth={2} />
                       </button>
                       <button
                         type="button"
@@ -445,7 +445,7 @@ export default function HrmsDashboard({
                         className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center"
                         aria-label={`Edit ${item.purpose}`}
                       >
-                        <Pencil size={14} strokeWidth={2} />
+                        <Edit2 size={13} strokeWidth={2} />
                       </button>
                     </div>
                   </div>
@@ -645,16 +645,16 @@ export default function HrmsDashboard({
                         <td className="px-2 py-3">
                           <div className="flex items-center gap-1">
                             <button type="button" onClick={() => onGoalAction("view", goal)} className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center" aria-label={`View ${goal.title}`}>
-                              <Eye size={14} />
+                              <Eye size={13} />
                             </button>
                             <button type="button" onClick={() => onGoalAction("edit", goal)} className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center" aria-label={`Edit ${goal.title}`}>
-                              <Pencil size={14} />
+                              <Edit2 size={13} />
                             </button>
                             <button type="button" onClick={() => onGoalAction("review", goal)} className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center" aria-label={`Review ${goal.title}`}>
                               <img src={conductReviewIcon} alt="" className="size-3.5 object-contain" />
                             </button>
                             <button type="button" onClick={() => onGoalAction("delete", goal)} className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center" aria-label={`Delete ${goal.title}`}>
-                              <Trash2 size={14} />
+                              <Trash2 size={13} />
                             </button>
                           </div>
                         </td>

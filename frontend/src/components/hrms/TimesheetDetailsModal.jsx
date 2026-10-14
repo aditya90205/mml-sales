@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { Pencil, Plus, MessageSquare, Trash2 } from "lucide-react";
+import { Edit2, Plus, MessageSquare, Trash2 } from "lucide-react";
 import Modal from "../ui/Modal";
 import SendMessageModal from "../common/SendMessageModal.jsx";
 import { SortableTh, useTableSort } from "../common/useTableSort.jsx";
@@ -270,7 +270,7 @@ export default function TimesheetDetailsModal({ open, onClose, employee, mode = 
                     onClick={() => setCanEdit(true)}
                     className="ml-2 inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#7A0A17] text-white text-[12px] font-semibold hover:bg-[#640712]"
                   >
-                    <Pencil size={13} /> Edit
+                    <Edit2 size={13} /> Edit
                   </button>
                 )}
               </div>
@@ -370,10 +370,10 @@ export default function TimesheetDetailsModal({ open, onClose, employee, mode = 
                             >
                               <MessageSquare size={14} />
                             </IconBtn>
-                            <IconBtn title="Edit" className="border-[#3B82F6]/30 text-[#3B82F6] hover:bg-[#E8F2FE]" onClick={() => canEdit && setEntryForm({ mode: "edit", index: e.index, initial: { ...e, by: "Manual" } })}>
-                              <Pencil size={13} />
+                            <IconBtn title="Edit" className="border-[#2563EB]/30 text-[#2563EB] hover:bg-[#E8F2FE]" onClick={() => canEdit && setEntryForm({ mode: "edit", index: e.index, initial: { ...e, by: "Manual" } })}>
+                              <Edit2 size={13} />
                             </IconBtn>
-                            <IconBtn title="Delete" className="border-[#DC2626]/30 text-[#DC2626] hover:bg-[#FEE2E2]" onClick={() => canEdit && deleteEntry(e.index)}>
+                            <IconBtn title="Delete" className="border-[#7A0A17]/30 text-[#7A0A17] hover:bg-[#FDF2F3]" onClick={() => canEdit && deleteEntry(e.index)}>
                               <Trash2 size={13} />
                             </IconBtn>
                           </div>

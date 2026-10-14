@@ -412,7 +412,7 @@ export default function ClientDatabasePage() {
     <div className="flex flex-col flex-1 min-h-0">
       <div className="px-5 pt-5 pb-8 flex flex-col gap-4 min-w-0">
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <h1 className="text-[26px] font-bold text-[#111] tracking-tight">Client Database</h1>
+          <h1 className="text-[22px] font-bold text-[#111] tracking-tight">Client Database</h1>
           <button
             type="button"
             onClick={() => toast.info("Exporting clients...")}

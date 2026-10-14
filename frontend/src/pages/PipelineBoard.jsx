@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   AlarmClock,
@@ -32,6 +33,7 @@ import Modal from "../components/ui/Modal.jsx";
 import LeadActivityHistory from "./pipeline/deal-tabs/LeadActivityHistory";
 // TopBar is now provided by Layout
 import CreateLeadModal from "../components/pipeline/CreateLeadModal";
+import CreateCampaignPage from "./CreateCampaignPage.jsx";
 import DealDetailPage from "./pipeline/DealDetailPage";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import SearchField from "../components/common/SearchField.jsx";
@@ -605,7 +607,28 @@ const TABLE_COLS = [
   { key: "actions",    label: "Actions" },
 ];
 
-function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDeal }) {
+const TEMP_GROUP_LABEL = { HOT: "Hot", WARM: "Warm", COLD: "Cold" };
+
+function resolveTempGroup(leads = []) {
+  const keys = [
+    ...new Set(
+      (Array.isArray(leads) ? leads : [])
+        .map((lead) => String(lead?.temperature || lead?.temp || "").trim().toUpperCase())
+        .filter((t) => t === "HOT" || t === "WARM" || t === "COLD")
+    ),
+  ];
+  if (keys.length !== 1) return "";
+  return TEMP_GROUP_LABEL[keys[0]] || "";
+}
+
+function PipelineTableView({
+  flatLeads,
+  onOpenScoreModal,
+  onMoveStage,
+  onOpenDeal,
+  selectedLeadIds,
+  onSelectedLeadIdsChange,
+}) {
   const navigate = useNavigate();
   const [messageOpen, setMessageOpen] = useState(false);
   const [historyLead, setHistoryLead] = useState(null);
@@ -616,6 +639,18 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
     return row.lead[key];
   }, []);
   const { sorted, sort, toggle } = useTableSort(flatLeads, { defaultKey: "name", getValue });
+  const visibleIds = useMemo(() => sorted.map(({ lead }) => lead.id), [sorted]);
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedLeadIds.includes(id));
+
+  const toggleLeadId = (id) => {
+    onSelectedLeadIdsChange?.(
+      selectedLeadIds.includes(id) ? selectedLeadIds.filter((x) => x !== id) : [...selectedLeadIds, id]
+    );
+  };
+
+  const toggleAllVisible = () => {
+    onSelectedLeadIdsChange?.(allVisibleSelected ? [] : visibleIds);
+  };
 
   const PRIORITY_FLAG = { High: "#E8395B", Medium: "#F59E0B", Low: "#16A34A" };
 
@@ -649,6 +684,22 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-black/8">
+                <th className="pl-3 pr-1 py-2 w-10 align-bottom">
+                  <span className="relative inline-flex items-end leading-tight text-[10px]">
+                    {/* Match 2-line header height so checkbox sits with CLIENT NAME / OWNER */}
+                    <span className="invisible whitespace-pre-line select-none" aria-hidden>
+                      {"Lead\nScore"}
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      onChange={toggleAllVisible}
+                      className="accent-[#7A0A17] size-3.5 absolute left-0 bottom-0"
+                      aria-label="Select all leads"
+                      title="Select all"
+                    />
+                  </span>
+                </th>
                 {TABLE_COLS.map((col) => (
                   <SortableTh
                     key={col.key}
@@ -667,12 +718,24 @@ function PipelineTableView({ flatLeads, onOpenScoreModal, onMoveStage, onOpenDea
                 const temp   = TEMPERATURE_STYLES[lead.temperature] || TONE_FALLBACK;
                 const pri    = PRIORITY_STYLES[lead.priority] || TONE_FALLBACK;
                 const urgent = lead.hrs <= 8;
+                const checked = selectedLeadIds.includes(lead.id);
                 return (
                   <tr
-                    key={idx}
+                    key={lead.id || idx}
                     onClick={() => onOpenDeal?.(lead, stage.id)}
                     className="border-b border-black/5 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
                   >
+                    <td className="pl-3 pr-1 py-2.5 align-middle" onClick={(e) => e.stopPropagation()}>
+                      <span className="inline-flex items-center leading-none">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleLeadId(lead.id)}
+                          className="accent-[#7A0A17] size-3.5"
+                          aria-label={`Select ${lead.name}`}
+                        />
+                      </span>
+                    </td>
                     {/* Client Name */}
                     <td className="px-3 py-2.5 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
@@ -875,6 +938,9 @@ export default function PipelineBoard() {
   const [stageFilter, setStageFilter]   = useState(() => stageFromSearch(searchParams)); // stage id, or null for all stages (table view)
   const [selectedScoreLead, setSelectedScoreLead] = useState(null);
   const [showCreateLead, setShowCreateLead] = useState(false);
+  const [selectedLeadIds, setSelectedLeadIds] = useState([]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const createDialogRef = useRef(null);
 
   // Dynamic state for pipeline lead items (shared with Dashboard P0 count)
   const [leadsData, setLeadsDataState]  = useState(readLeads);
@@ -1319,6 +1385,41 @@ export default function PipelineBoard() {
     [search, perPage, leadsData, stageFilter]
   );
 
+  const campaignStageGroup = useMemo(() => {
+    const selected = flatLeads
+      .filter(({ lead }) => selectedLeadIds.includes(lead.id))
+      .map(({ lead }) => lead);
+    return resolveTempGroup(selected);
+  }, [flatLeads, selectedLeadIds]);
+
+  useEffect(() => {
+    setSelectedLeadIds([]);
+  }, [flatLeads.length, view, stageFilter, search]);
+
+  useEffect(() => {
+    if (!createOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      const dialogs = document.querySelectorAll('[role="dialog"]');
+      const top = dialogs[dialogs.length - 1];
+      if (top && top !== createDialogRef.current) return;
+      setCreateOpen(false);
+      setSelectedLeadIds([]);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [createOpen]);
+
+  const closeCreateCampaign = () => {
+    setCreateOpen(false);
+    setSelectedLeadIds([]);
+  };
+
   // Sub-page view rendering
   if (subView === "deal-detail") {
     return (
@@ -1353,11 +1454,46 @@ export default function PipelineBoard() {
         />
       ) : null}
 
+      {createOpen &&
+        createPortal(
+          <div
+            ref={createDialogRef}
+            className="fixed inset-0 z-[55] flex items-center justify-center p-4 sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Create New Campaign"
+          >
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeCreateCampaign} aria-hidden />
+            <div className="relative z-10 w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl bg-[#F7F8FA] shadow-xl">
+              <div className="max-h-[92vh] overflow-y-auto scrollbar-thin">
+                <CreateCampaignPage
+                  key={`create-${campaignStageGroup || "none"}`}
+                  embedded
+                  initialGroup={campaignStageGroup}
+                  onClose={closeCreateCampaign}
+                />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
       {/* Header row */}
       <div className="flex items-center justify-between gap-4 px-5 pt-5 pb-4 flex-wrap">
         <h1 className="text-[22px] font-bold text-[#111] tracking-tight">Pipeline Board</h1>
 
         <div className="flex items-center gap-2.5 shrink-0">
+          {view === "table" && selectedLeadIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="inline-flex items-center gap-1.5 h-[38px] px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+            >
+              <Plus size={15} />
+              Create Campaign
+              <span className="tabular-nums rounded-md px-1.5 bg-white/20">{selectedLeadIds.length}</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => toast.success("Pipeline deals exported successfully!")}
@@ -1422,6 +1558,8 @@ export default function PipelineBoard() {
             onOpenScoreModal={(lead) => setSelectedScoreLead(lead)}
             onMoveStage={handleMoveStage}
             onOpenDeal={handleOpenDeal}
+            selectedLeadIds={selectedLeadIds}
+            onSelectedLeadIdsChange={setSelectedLeadIds}
           />
         )}
       </div>

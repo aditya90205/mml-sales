@@ -7,7 +7,7 @@ export function AppPage({ title, subtitle, actions, children }) {
       <div className="px-5 pt-5 pb-8 flex flex-col gap-5 min-w-0">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0">
-            <h1 className="text-[26px] font-bold text-[#111] tracking-tight">{title}</h1>
+            <h1 className="text-[22px] font-bold text-[#111] tracking-tight">{title}</h1>
             {subtitle && <p className="text-[13.5px] text-[#6B7280] mt-1 max-w-3xl leading-relaxed">{subtitle}</p>}
           </div>
           {actions && <div className="flex items-center gap-2.5 shrink-0 flex-wrap pt-0.5">{actions}</div>}

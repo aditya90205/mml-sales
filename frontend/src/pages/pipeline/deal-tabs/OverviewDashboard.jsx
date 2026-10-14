@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Briefcase,
@@ -23,7 +24,7 @@ import {
   MapPin,
   MicOff,
   Paperclip,
-  Pencil,
+  Edit2,
   Infinity,
   Link2,
   MessageSquare,
@@ -48,6 +49,7 @@ import ChangeProfilePhotoModal from "../../../components/common/ChangeProfilePho
 import NotificationTypeIcon from "../../../components/common/NotificationTypeIcon.jsx";
 import SendMessageModal from "../../../components/common/SendMessageModal.jsx";
 import PaymentInvoiceModal from "../../../components/common/PaymentInvoiceModal.jsx";
+import SuccessStoriesBlock from "../../../components/common/SuccessStoriesBlock.jsx";
 import VerifyPaymentModal from "../../../components/common/VerifyPaymentModal.jsx";
 import BiodataUploadModal from "../../../components/pipeline/BiodataUploadModal";
 import BiodataProfileModal from "../../../components/pipeline/BiodataProfileModal";
@@ -86,8 +88,8 @@ import {
   subscribeLeadActivity,
 } from "../../../utils/leadActivityStore.js";
 import { calendarItemLifecycle } from "../../../utils/calendarLifecycle.js";
-import { formatLookingForLabel } from "../../../utils/leadFields.js";
-import { upsertClientFromBiodata } from "../../../utils/clientsData.js";
+import { formatLookingForLabel, genderFromLookingFor } from "../../../utils/leadFields.js";
+import { readClients, upsertClientFromBiodata } from "../../../utils/clientsData.js";
 import { findLeadById, moveLeadToStage, updateLead } from "../../../utils/pipelineStore.js";
 import { savePipelineProfilePhoto, usePipelineProfilePhoto } from "../../../utils/pipelineProfilePhoto.js";
 import {
@@ -279,30 +281,6 @@ function formatPackageDate(iso) {
   return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function splitStamp(value) {
-  const text = shown(value);
-  if (!text) return { date: "", time: "" };
-  const [date, ...rest] = text.split(",");
-  return { date: date.trim(), time: rest.join(",").trim() };
-}
-
-function isStampDate(value) {
-  const text = shown(value);
-  return /^\d{1,2}[/. -]\d{1,2}[/. -]\d{2,4}/.test(text) || /^\d{4}-\d{2}-\d{2}/.test(text);
-}
-
-function rowStamp(value) {
-  const text = shown(value);
-  if (!text) return { date: "", time: "" };
-  if (isStampDate(text) && text.includes(",")) return splitStamp(text);
-  const date = new Date(text);
-  if (Number.isNaN(date.getTime())) return { date: text, time: "" };
-  return {
-    date: date.toLocaleDateString("en-GB"),
-    time: date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
-  };
-}
-
 function formatClockTime(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
   const hour = date.getHours() % 12 || 12;
@@ -331,6 +309,30 @@ function hoursLeftLabel(ev) {
   if (hrs == null) return "";
   if (hrs >= 48) return `${Math.round(hrs / 24)} Days Left`;
   return `${hrs} Hrs Left`;
+}
+
+function splitStamp(value) {
+  const text = shown(value);
+  if (!text) return { date: "", time: "" };
+  const [date, ...rest] = text.split(",");
+  return { date: date.trim(), time: rest.join(",").trim() };
+}
+
+function isStampDate(value) {
+  const text = shown(value);
+  return /^\d{1,2}[/. -]\d{1,2}[/. -]\d{2,4}/.test(text) || /^\d{4}-\d{2}-\d{2}/.test(text);
+}
+
+function rowStamp(value) {
+  const text = shown(value);
+  if (!text) return { date: "", time: "" };
+  if (isStampDate(text) && text.includes(",")) return splitStamp(text);
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) return { date: text, time: "" };
+  return {
+    date: date.toLocaleDateString("en-GB"),
+    time: date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }),
+  };
 }
 
 const NEXT_ACTION_PREVIEW = 3;
@@ -645,7 +647,7 @@ function ConversationSummary({ deal, currentStage }) {
             className="size-8 grid place-items-center text-[#6B7280] hover:text-[#111] rounded-lg hover:bg-black/[0.04] transition-colors"
             aria-label="Copy summary"
           >
-            <Copy size={15} strokeWidth={1.7} />
+            <Copy size={13} strokeWidth={1.7} />
           </button>
           <button
             type="button"
@@ -801,7 +803,7 @@ function AddonsPreview({ items, selected, onToggle, packageAmount, extra = 0, sh
                 <span className="block text-[12px] text-[#6B7280] mt-0.5">{formatInr(item.price)}</span>
               </span>
               {on ? (
-                <span className="size-5 rounded-full bg-[#22C55E] text-white grid place-items-center shrink-0">
+                <span className="size-5 rounded-full bg-[#16A34A] text-white grid place-items-center shrink-0">
                   <Check size={12} strokeWidth={3} />
                 </span>
               ) : (
@@ -870,22 +872,22 @@ function FlagsPreview({ flags, onView, onEdit, onDelete, onAdd }) {
                   <button
                     type="button"
                     onClick={() => onEdit(flag)}
-                    className="size-6 rounded-md grid place-items-center shrink-0 hover:bg-black/5"
+                    className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center shrink-0 transition-colors"
                     aria-label={`Edit ${flag.label}`}
                     title="Edit"
                   >
-                    <Pencil size={12} strokeWidth={2.4} />
+                    <Edit2 size={13} />
                   </button>
                 ) : null}
                 {onDelete ? (
                   <button
                     type="button"
                     onClick={() => onDelete(flag)}
-                    className="size-6 rounded-md grid place-items-center shrink-0 hover:bg-black/5"
+                    className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center shrink-0 transition-colors"
                     aria-label={`Delete ${flag.label}`}
                     title="Delete"
                   >
-                    <Trash2 size={12} strokeWidth={2.4} />
+                    <Trash2 size={13} />
                   </button>
                 ) : null}
               </div>
@@ -906,6 +908,440 @@ function FlagsPreview({ flags, onView, onEdit, onDelete, onAdd }) {
     </div>
   );
 }
+
+function partnerPreferenceFromDeal(deal) {
+  const intake = deal?.intakeValues || {};
+  const ageFrom = filled(intake.desiredAgeFrom || deal?.desiredAgeFrom);
+  const ageTo = filled(intake.desiredAgeTo || deal?.desiredAgeTo);
+  const age =
+    ageFrom && ageTo ? `${ageFrom} - ${ageTo}` : ageFrom || ageTo || "26 - 31";
+  const location =
+    filled(intake.outOfCitySpecify || deal?.preferredLocation) || "Delhi NCR, Mumbai";
+  const education =
+    filled(intake.minimumEducation || deal?.minimumEducation) || "Post graduate";
+  const income = filled(intake.minPersonalIncome || deal?.preferredIncome) || "₹25-50L+";
+  const caste =
+    filled(intake.preferredSectCaste || deal?.preferredSectCaste) || "Brahmin, Khatri";
+  return { age, location, education, income, caste };
+}
+
+function quickMatchTargetGender(deal) {
+  const looking =
+    genderFromLookingFor(deal?.lookingFor) ||
+    genderFromLookingFor(deal?.intakeValues?.lookingFor);
+  const dealGender = String(deal?.gender || "").trim().toLowerCase();
+  return (
+    looking ||
+    (dealGender === "male" ? "Female" : dealGender === "female" ? "Male" : "")
+  );
+}
+
+function parsePreferenceAgeRange(ageStr) {
+  const match = String(ageStr || "").match(/(\d+)\s*[-–—]\s*(\d+)/);
+  if (match) return { from: Number(match[1]), to: Number(match[2]) };
+  const single = Number(String(ageStr || "").match(/\d+/)?.[0]);
+  if (Number.isFinite(single)) return { from: single, to: single };
+  return { from: 26, to: 31 };
+}
+
+function parsePreferenceMinIncomeLpa(incomeStr) {
+  const nums = String(incomeStr || "").match(/\d+/g);
+  return nums?.length ? Number(nums[0]) : 0;
+}
+
+function locationTokens(locationStr) {
+  return String(locationStr || "")
+    .toLowerCase()
+    .split(/[,/|&]+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .flatMap((part) => {
+      if (part.includes("ncr") || part.includes("delhi")) return ["delhi", "ncr", "gurgaon", "noida", "gurugram", "south extension", "rohini", "vasant", "defence", "rajouri"];
+      if (part.includes("mumbai")) return ["mumbai", "bombay"];
+      return part.split(/\s+/).filter((w) => w.length > 2);
+    });
+}
+
+function educationRank(value) {
+  const text = String(value || "").toLowerCase();
+  if (/doctor|phd|mbbs|md\b/.test(text)) return 4;
+  if (/post\s*grad|mba|m\.?tech|m\.?sc|ca\b|pgdm|isb|iim/.test(text)) return 3;
+  if (/grad|b\.?tech|b\.?com|b\.?sc|ba\b|llb|under\s*grad/.test(text)) return 2;
+  if (/doesn.?t\s*matter/.test(text)) return 0;
+  return 1;
+}
+
+function clientDisplayAge(client, ageRange) {
+  const id = Number(client?.id) || 1;
+  const span = Math.max(0, ageRange.to - ageRange.from);
+  return ageRange.from + (id % (span + 1));
+}
+
+function formatMatchIncome(lpa) {
+  const n = Number(lpa);
+  if (!Number.isFinite(n) || n <= 0) return "—";
+  return `₹${n} LPA`;
+}
+
+function getQuickMatchSuggestions(deal) {
+  const preference = partnerPreferenceFromDeal(deal);
+  const targetGender = quickMatchTargetGender(deal);
+  const ageRange = parsePreferenceAgeRange(preference.age);
+  const minIncome = parsePreferenceMinIncomeLpa(preference.income);
+  const locTokens = locationTokens(preference.location);
+  const prefEduRank = educationRank(preference.education);
+  const dealClientId = String(deal?.clientId || deal?.linkedClientId || "").trim();
+  const dealName = String(deal?.name || "").trim().toLowerCase();
+  const dealLeadId = String(deal?.id || "").trim();
+
+  return readClients()
+    .filter((c) => !c.married && c.status === "Active")
+    .filter((c) => {
+      if (dealClientId && String(c.clientId || "") === dealClientId) return false;
+      if (dealName && String(c.name || "").trim().toLowerCase() === dealName) return false;
+      if (dealLeadId && String(c.linkedLeadId || "") === dealLeadId) return false;
+      if (!targetGender) return true;
+      return String(c.gender || "").toLowerCase() === targetGender.toLowerCase();
+    })
+    .map((client) => {
+      const reasons = [];
+      let score = 35;
+      const age = clientDisplayAge(client, ageRange);
+      reasons.push(`Age ${age}`);
+
+      const locBlob = `${client.area || ""} ${client.branch || ""} ${client.address || ""}`.toLowerCase();
+      const locHit = locTokens.some((token) => locBlob.includes(token));
+      if (locHit) {
+        score += 22;
+        reasons.push(client.area || client.branch || "Preferred city");
+      }
+
+      const eduRank = educationRank(client.education);
+      if (prefEduRank <= 0 || eduRank >= prefEduRank) {
+        score += 18;
+        if (client.education) reasons.push(client.education);
+      } else if (eduRank >= prefEduRank - 1) {
+        score += 8;
+      }
+
+      const income = Number(client.incomeLpa) || 0;
+      if (minIncome <= 0 || income >= minIncome) {
+        score += 18;
+        if (income > 0) reasons.push(formatMatchIncome(income));
+      } else if (income >= minIncome * 0.8) {
+        score += 8;
+      }
+
+      if (preference.caste) {
+        score += 7;
+        reasons.push(preference.caste.split(",")[0].trim());
+      }
+
+      return {
+        ...client,
+        matchAge: age,
+        matchScore: Math.min(98, Math.max(42, score + ((Number(client.id) || 0) % 5))),
+        matchReasons: reasons.slice(0, 4),
+      };
+    })
+    .sort((a, b) => b.matchScore - a.matchScore || String(a.name).localeCompare(String(b.name)));
+}
+
+function quickMatchSuggestionCount(deal) {
+  return getQuickMatchSuggestions(deal).length;
+}
+
+function buildMatchFactors(score, seed = 0) {
+  const s = Math.min(98, Math.max(42, Number(score) || 70));
+  const wobble = (n) => Math.min(99, Math.max(55, s + ((seed + n * 7) % 11) - 5));
+  return [
+    { label: "Values & Beliefs", value: wobble(1) },
+    { label: "Education & Career", value: wobble(2) },
+    { label: "Location Preference", value: wobble(3) },
+    { label: "Family Background", value: wobble(4) },
+    { label: "Lifestyle & Interests", value: wobble(5) },
+  ];
+}
+
+function MatchScoreRing({ score, size = 56, stroke = 5 }) {
+  const pct = Math.min(100, Math.max(0, Number(score) || 0));
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const filled = (pct / 100) * c;
+  const fontPx = Math.round(size * 0.28);
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="absolute inset-0 -rotate-90" aria-hidden>
+        {/* Incomplete track — theme gray */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="#E5E7EB"
+          strokeWidth={stroke}
+        />
+        {/* Filled arc — primary (sidebar) by match % */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="#7A0A17"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={`${filled} ${c - filled}`}
+        />
+      </svg>
+      <div className="absolute inset-0 grid place-items-center">
+        <span
+          className="font-extrabold tracking-tight text-[#7A0A17] leading-none"
+          style={{ fontSize: fontPx }}
+        >
+          {pct}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function CompatibilityMatchHoverCard({ score, seed }) {
+  const factors = buildMatchFactors(score, seed);
+  return (
+    <div className="rounded-2xl border border-[#7A0A17]/15 bg-white p-3.5 shadow-[0_12px_32px_rgba(122,10,23,0.14)]">
+      <div className="flex items-center gap-3 rounded-xl bg-[#FCF5F6] border border-[#7A0A17]/10 px-3 py-2.5">
+        <MatchScoreRing score={score} size={64} stroke={6} />
+        <div className="min-w-0">
+          <p className="text-[15px] font-bold text-[#111] leading-tight">Compatibility Match</p>
+          <p className="text-[11.5px] text-[#6B7280] mt-0.5 leading-snug">
+            Based on your preferences and core values.
+          </p>
+        </div>
+      </div>
+      <div className="mt-3.5 px-0.5">
+        <p className="text-[13px] font-bold text-[#111] mb-2.5">Key Match Factors</p>
+        <ul className="flex flex-col gap-2">
+          {factors.map((f) => (
+            <li
+              key={f.label}
+              className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)_36px] items-center gap-2"
+            >
+              <span className="text-[11.5px] text-[#6B7280] truncate">{f.label}</span>
+              <div className="h-1.5 rounded-full bg-[#F6E4E8] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[#7A0A17]"
+                  style={{ width: `${f.value}%` }}
+                />
+              </div>
+              <span className="text-[11.5px] font-semibold text-[#7A0A17] text-right tabular-nums">
+                {f.value}%
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function QuickMatchProfileRow({ profile }) {
+  const [hovered, setHovered] = useState(false);
+  const badgeRef = useRef(null);
+  const [popoverPos, setPopoverPos] = useState(null);
+
+  useEffect(() => {
+    if (!hovered) {
+      setPopoverPos(null);
+      return;
+    }
+
+    const place = () => {
+      if (!badgeRef.current) return;
+      const rect = badgeRef.current.getBoundingClientRect();
+      const popW = 300;
+      const popH = 280;
+      const pad = 10;
+      let left = rect.right - popW;
+      let top = rect.bottom + 8;
+      if (left < pad) left = pad;
+      if (left + popW > window.innerWidth - pad) left = window.innerWidth - popW - pad;
+      if (top + popH > window.innerHeight - pad) top = rect.top - popH - 8;
+      if (top < pad) top = pad;
+      setPopoverPos({ top, left });
+    };
+
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+    };
+  }, [hovered]);
+
+  return (
+    <li className="rounded-xl border border-[#EEF1F4] bg-white px-3.5 py-3 hover:border-[#7A0A17]/25 hover:bg-[#FDFCFC] transition-colors">
+      <div className="flex items-center gap-3">
+        <span className="size-11 rounded-full bg-[#F6E4E8] text-[#7A0A17] text-[13px] font-bold grid place-items-center shrink-0 self-center">
+          {String(profile.name || "?")
+            .split(" ")
+            .slice(0, 2)
+            .map((w) => w[0])
+            .join("")
+            .toUpperCase()}
+        </span>
+
+        <div className="min-w-0 flex-1 flex flex-col justify-center gap-1.5">
+          <div className="min-w-0">
+            <p className="text-[14px] font-bold text-[#111] truncate leading-tight">{profile.name}</p>
+            <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 leading-tight">
+              {profile.formId || profile.clientId}
+              {profile.gender ? ` · ${profile.gender}` : ""}
+              {` · ${profile.matchAge} yrs`}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {profile.education ? (
+              <span className="h-6 px-2 rounded-md bg-[#F3F4F6] text-[11px] font-medium text-[#4B5563] inline-flex items-center">
+                {profile.education}
+              </span>
+            ) : null}
+            {profile.area || profile.branch ? (
+              <span className="h-6 px-2 rounded-md bg-[#F3F4F6] text-[11px] font-medium text-[#4B5563] inline-flex items-center gap-1">
+                <MapPin size={11} className="text-[#9CA3AF]" />
+                {profile.area || profile.branch}
+              </span>
+            ) : null}
+            {Number(profile.incomeLpa) > 0 ? (
+              <span className="h-6 px-2 rounded-md bg-[#F3F4F6] text-[11px] font-medium text-[#4B5563] inline-flex items-center">
+                {formatMatchIncome(profile.incomeLpa)}
+              </span>
+            ) : null}
+          </div>
+          {profile.matchReasons?.length ? (
+            <p className="text-[11.5px] text-[#6B7280] truncate leading-tight">
+              Fits: {profile.matchReasons.join(" · ")}
+            </p>
+          ) : null}
+        </div>
+
+        <div
+          ref={badgeRef}
+          className="shrink-0 w-[72px] flex flex-col items-center justify-center gap-0.5 self-center cursor-default rounded-xl transition-transform hover:scale-105"
+          title="Hover for compatibility breakdown"
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+        >
+          <MatchScoreRing score={profile.matchScore} size={56} stroke={5.5} />
+          <span className="text-[9.5px] font-bold uppercase tracking-[0.08em] text-[#7A0A17]/75 leading-none">
+            match
+          </span>
+        </div>
+      </div>
+
+      {hovered && popoverPos
+        ? createPortal(
+            <div
+              className="fixed z-[90] w-[300px] pointer-events-none"
+              style={{ top: popoverPos.top, left: popoverPos.left }}
+            >
+              <CompatibilityMatchHoverCard
+                score={profile.matchScore}
+                seed={Number(profile.id) || 0}
+              />
+            </div>,
+            document.body
+          )
+        : null}
+    </li>
+  );
+}
+
+function QuickMatchSuggestionsModal({ open, onClose, deal }) {
+  const preference = partnerPreferenceFromDeal(deal);
+  const matches = useMemo(() => (open ? getQuickMatchSuggestions(deal) : []), [open, deal]);
+  const preferSummary = [
+    `Age ${preference.age}`,
+    preference.location,
+    preference.education,
+    preference.income,
+    preference.caste,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Quick Match Suggestions"
+      subtitle={`${matches.length} profiles matching partner preference`}
+      icon={<Sparkles size={18} />}
+      iconBg="#F6E4E8"
+      iconColor="#7A0A17"
+      width="max-w-2xl"
+      zClass="z-[70]"
+      contain
+    >
+      <p className="mb-4 text-[12px] leading-relaxed text-[#6B7280] bg-[#FDF2F3] border border-[#7A0A17]/12 rounded-xl px-3 py-2.5">
+        <span className="font-semibold text-[#7A0A17]">Preference: </span>
+        {preferSummary}
+      </p>
+
+      {matches.length === 0 ? (
+        <div className="py-10 text-center">
+          <Heart size={28} className="mx-auto text-[#D1D5DB] mb-2" />
+          <p className="text-[14px] font-semibold text-[#374151]">No matching profiles yet</p>
+          <p className="text-[12.5px] text-[#9CA3AF] mt-1">
+            Try widening age, location, or education preferences.
+          </p>
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-2.5">
+          {matches.map((profile) => (
+            <QuickMatchProfileRow key={profile.id} profile={profile} />
+          ))}
+        </ul>
+      )}
+    </Modal>
+  );
+}
+
+function PartnerPreferenceSnapshot({ deal, onQuickMatch }) {
+  const preference = partnerPreferenceFromDeal(deal);
+  const suggestionCount = quickMatchSuggestionCount(deal);
+  const items = [
+    { label: "Age", value: preference.age },
+    { label: "Location", value: preference.location },
+    { label: "Education", value: preference.education },
+    { label: "Income", value: preference.income },
+    { label: "Caste", value: preference.caste },
+  ];
+
+  return (
+    <div className="bg-white border border-[#EEF1F4] rounded-2xl p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] h-full">
+      <CardHead icon={Heart} title="Partner Preference Snapshot" brandAction dense />
+      <p className="text-[12.5px] leading-[1.7] text-[#6B7280]">
+        {items.map((item, index) => (
+          <span key={item.label}>
+            {index > 0 ? <span className="text-[#9CA3AF]"> · </span> : null}
+            <span className="font-bold text-[#374151]">{item.label}:</span> {item.value}
+          </span>
+        ))}
+      </p>
+      <button
+        type="button"
+        onClick={onQuickMatch}
+        className="mt-3.5 w-full h-10 rounded-xl border border-[#7A0A17]/40 bg-white text-[#7A0A17] text-[13px] font-semibold hover:bg-[#FDF2F3] transition-colors inline-flex items-center justify-center gap-2"
+      >
+        <Sparkles size={14} strokeWidth={2.2} className="shrink-0" />
+        Quick Match Suggestions ({suggestionCount})
+      </button>
+    </div>
+  );
+}
+
 
 function RmFlagsList({ flags, onView, onEdit, onDelete }) {
   if (!flags.length) {
@@ -930,31 +1366,32 @@ function RmFlagsList({ flags, onView, onEdit, onDelete }) {
               <button
                 type="button"
                 onClick={() => onView?.(flag)}
-                className="inline-flex items-center gap-1 h-8 px-2 rounded-lg text-[12px] font-semibold text-[#7A0A17] hover:bg-[#FDF2F3]"
+                className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center transition-colors"
+                aria-label={`View ${flag.label}`}
+                title="View"
               >
-                <Eye size={14} />
-                View
+                <Eye size={13} />
               </button>
               {onEdit ? (
                 <button
                   type="button"
                   onClick={() => onEdit(flag)}
-                  className="size-8 rounded-lg grid place-items-center text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111]"
+                  className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center transition-colors"
                   aria-label={`Edit ${flag.label}`}
                   title="Edit"
                 >
-                  <Pencil size={14} />
+                  <Edit2 size={13} />
                 </button>
               ) : null}
               {onDelete ? (
                 <button
                   type="button"
                   onClick={() => onDelete(flag)}
-                  className="size-8 rounded-lg grid place-items-center text-[#E8395B] hover:bg-[#FEF2F2]"
+                  className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center transition-colors"
                   aria-label={`Delete ${flag.label}`}
                   title="Delete"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={13} />
                 </button>
               ) : null}
             </div>
@@ -1052,22 +1489,24 @@ function HandoverPreview({ onViewItem }) {
               Verified
             </span>
           )}
-          <button
-            type="button"
-            onClick={() => onViewItem(item)}
-            className="text-[#E8B923] shrink-0"
-            aria-label={`View ${item.label}`}
-          >
-            <Eye size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={() => toast.success(`${item.label} download started.`)}
-            className="text-[#22C55E] shrink-0"
-            aria-label={`Download ${item.label}`}
-          >
-            <Download size={14} />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => onViewItem(item)}
+              className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center transition-colors"
+              aria-label={`View ${item.label}`}
+            >
+              <Eye size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => toast.success(`${item.label} download started.`)}
+              className="size-7 rounded-lg text-[#16A34A] hover:bg-[#E7F8EF] grid place-items-center transition-colors"
+              aria-label={`Download ${item.label}`}
+            >
+              <Download size={13} />
+            </button>
+          </div>
         </div>
       ))}
     </div>
@@ -1101,12 +1540,17 @@ function meetingPrefillFromDeal(deal) {
   };
 }
 
-function NextActionList({ items, onOpen }) {
+function NextActionList({ items, onOpen, compact = false, fill = false }) {
   if (!items.length) {
     return <p className="text-[12.5px] text-[#9CA3AF]">No tasks or meetings yet.</p>;
   }
+  const rowPad = compact ? "py-1" : "py-2";
   return (
-    <div className="grid grid-cols-[max-content_minmax(0,1fr)]">
+    <div
+      className={`grid grid-cols-[max-content_minmax(0,1fr)] ${
+        fill ? "h-full auto-rows-fr content-stretch" : ""
+      }`}
+    >
       {items.map((item) => {
         if (item.kind === "soon") {
           return (
@@ -1116,16 +1560,16 @@ function NextActionList({ items, onOpen }) {
               onClick={() => onOpen?.(item)}
               className="col-span-2 grid grid-cols-subgrid items-center text-left"
             >
-              <div className="flex items-center gap-2 py-2 pr-3">
+              <div className={`flex items-center gap-2 ${rowPad} pr-3`}>
                 <Clock size={16} className="text-[#C5CAD3] shrink-0" strokeWidth={1.8} />
                 <div>
                   <p className={`text-[13px] font-bold leading-none whitespace-nowrap ${item.urgent ? "text-[#E8395B]" : "text-[#1F2937]"}`}>{item.headline}</p>
                   {item.startTime ? (
-                    <p className="text-[11px] text-[#9CA3AF] mt-1 leading-none whitespace-nowrap">Start Time: {item.startTime}</p>
+                    <p className="text-[11px] text-[#9CA3AF] mt-0.5 leading-none whitespace-nowrap">Start Time: {item.startTime}</p>
                   ) : null}
                 </div>
               </div>
-              <div className="min-w-0 h-full flex items-center gap-2 border-l border-[#E5E7EB] pl-3 py-2">
+              <div className={`min-w-0 h-full flex items-center gap-2 border-l border-[#E5E7EB] pl-3 ${rowPad}`}>
                 <span className="text-[11px] font-bold text-[#7C3AED] bg-[#F3E8FF] px-1.5 py-0.5 rounded-md shrink-0">
                   {item.stage}
                 </span>
@@ -1142,16 +1586,16 @@ function NextActionList({ items, onOpen }) {
             onClick={() => onOpen?.(item)}
             className="col-span-2 grid grid-cols-subgrid items-center text-left"
           >
-            <div className="flex items-center gap-2 py-2 pr-3">
+            <div className={`flex items-center gap-2 ${rowPad} pr-3`}>
               <Calendar size={16} className="text-[#C5CAD3] shrink-0" strokeWidth={1.8} />
               <div>
                 <p className="text-[13px] font-bold text-[#1F2937] leading-none whitespace-nowrap">{stamp.date}</p>
                 {stamp.time ? (
-                  <p className="text-[11px] text-[#9CA3AF] mt-1 leading-none whitespace-nowrap">{stamp.time}</p>
+                  <p className="text-[11px] text-[#9CA3AF] mt-0.5 leading-none whitespace-nowrap">{stamp.time}</p>
                 ) : null}
               </div>
             </div>
-            <div className="min-w-0 h-full flex items-center gap-2 border-l border-[#E5E7EB] pl-3 py-2">
+            <div className={`min-w-0 h-full flex items-center gap-2 border-l border-[#E5E7EB] pl-3 ${rowPad}`}>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-semibold text-[#2563EB] leading-snug">{item.text}</p>
                 {item.by ? <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 leading-snug">by {item.by}</p> : null}
@@ -1165,7 +1609,7 @@ function NextActionList({ items, onOpen }) {
   );
 }
 
-function CardHead({ icon: Icon, title, action, onAction, accent = false, brandAction = false }) {
+function CardHead({ icon: Icon, title, action, onAction, accent = false, brandAction = false, dense = false }) {
   const tone = accent || brandAction ? "#7A0A17" : "#111";
   const actionClass = brandAction
     ? "text-[#7A0A17] hover:text-[#640712]"
@@ -1173,7 +1617,7 @@ function CardHead({ icon: Icon, title, action, onAction, accent = false, brandAc
       ? "text-[#9CA3AF] hover:text-[#6B7280]"
       : "text-[#E8395B] hover:underline";
   return (
-    <div className="flex items-center justify-between gap-2 mb-3.5">
+    <div className={`flex items-center justify-between gap-2 ${dense ? "mb-2" : "mb-3.5"}`}>
       <div className="flex items-center gap-2 min-w-0">
         <Icon size={16} className="shrink-0" style={{ color: tone }} strokeWidth={2.2} />
         <h3 className="text-[15px] font-bold truncate" style={{ color: tone }}>{title}</h3>
@@ -1334,6 +1778,7 @@ export default function OverviewDashboard({
   };
   const [searchParams, setSearchParams] = useSearchParams();
   const [discountOpen, setDiscountOpen] = useState(() => searchParams.get("openDiscount") === "1");
+  const [quickMatchOpen, setQuickMatchOpen] = useState(false);
   const discountOpenedAt = useRef(0);
   if (searchParams.get("openDiscount") === "1" && discountOpenedAt.current === 0) {
     discountOpenedAt.current = Date.now();
@@ -1828,12 +2273,12 @@ export default function OverviewDashboard({
                 )}
               </span>
               <span className="absolute bottom-0 right-0 size-6 rounded-full bg-[#7A0A17] text-white grid place-items-center ring-2 ring-white">
-                <Pencil size={12} strokeWidth={2.4} />
+                <Edit2 size={12} strokeWidth={2.4} />
               </span>
             </button>
             <div className="min-w-0 flex-1 pt-0.5">
               <div className="flex items-center gap-1.5 min-w-0">
-                <h2 className="text-[17px] font-bold text-[#1F2937] leading-none truncate min-w-0">{deal.name || "Lead"}</h2>
+                <h2 className="text-[16px] font-bold text-[#111] leading-none truncate min-w-0">{deal.name || "Lead"}</h2>
                 <span className="inline-flex shrink-0" title="Premium client" aria-label="Premium client">
                   <Star size={15} className="text-[#F5B400]" fill="#F5B400" strokeWidth={0} />
                 </span>
@@ -1841,20 +2286,20 @@ export default function OverviewDashboard({
                   <button
                     type="button"
                     onClick={onView}
-                    className="p-0.5 rounded-md text-[#E8B923] hover:bg-[#FFF6E8] transition-colors"
+                    className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center transition-colors"
                     title="View"
                     aria-label="View profile"
                   >
-                    <Eye size={16} strokeWidth={1.9} />
+                    <Eye size={13} />
                   </button>
                   <button
                     type="button"
                     onClick={onEdit}
-                    className="p-0.5 rounded-md text-[#2563EB] hover:bg-[#E8F2FE] transition-colors"
+                    className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center transition-colors"
                     title="Edit"
                     aria-label="Edit profile"
                   >
-                    <Pencil size={16} strokeWidth={1.9} />
+                    <Edit2 size={13} />
                   </button>
                   <button
                     type="button"
@@ -1864,7 +2309,7 @@ export default function OverviewDashboard({
                     aria-label="View lead score details"
                   >
                     {scoreText || "-"}
-                    <Flag size={12} className="text-[#22C55E]" fill="#22C55E" strokeWidth={0} aria-hidden />
+                    <Flag size={12} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} aria-hidden />
                   </button>
                 </div>
               </div>
@@ -1899,25 +2344,25 @@ export default function OverviewDashboard({
                   <button
                     type="button"
                     onClick={() => toast.info("Calling via masked number...")}
-                    className="p-0.5 rounded-lg text-[#16A34A] hover:bg-[#E7F8EF] transition-colors"
+                    className="size-7 rounded-lg text-[#16A34A] hover:bg-[#E7F8EF] grid place-items-center transition-colors"
                     title="Call"
                     aria-label="Call"
                   >
-                    <Phone size={16} strokeWidth={1.9} />
+                    <Phone size={14} strokeWidth={2} />
                   </button>
                   <button
                     type="button"
                     onClick={() => setMessageOpen(true)}
-                    className="p-0.5 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] transition-colors"
+                    className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center transition-colors"
                     title="Message"
                     aria-label="Message"
                   >
-                    <MessageSquare size={16} strokeWidth={1.9} />
+                    <MessageSquare size={14} strokeWidth={2} />
                   </button>
                   <EmailActivityButton
-                    className="relative p-0.5 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] transition-colors"
+                    className="relative size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center transition-colors"
                     hasUnread
-                    size={16}
+                    size={14}
                     recipientName={deal.name || "Client"}
                     recipientEmail={shown(deal.email)}
                   />
@@ -1926,7 +2371,7 @@ export default function OverviewDashboard({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-4 gap-y-4 mt-5">
+          <div className="grid grid-cols-2 gap-4 mt-5">
             <ProfileStat icon={UserRound} label="Age" value={ageFromDob(deal.dob)} />
             <ProfileStat icon={Briefcase} label="Profession" value={shown(deal.profession)} />
             <ProfileStat icon={MapPin} label="Area" value={areaLine(deal)} />
@@ -1943,14 +2388,14 @@ export default function OverviewDashboard({
         </section>
 
         <div className="flex min-w-0 flex-col gap-4 xl:h-full">
-          <div className="grid shrink-0 grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-3.5 auto-rows-[76px]">
+          <div className="grid shrink-0 grid-cols-1 sm:grid-cols-2 gap-3 auto-rows-[76px]">
             <ActionTile
               icon={Link2}
-              iconBg="#E8F8EF"
-              iconColor="#22C55E"
+              iconBg="#E7F8EF"
+              iconColor="#16A34A"
               title="Send Link"
               titleColor="#1F2937"
-              subtitle={paymentReady ? "Share biodata or payment link" : "Share a biodata link"}
+              subtitle={paymentReady ? "Share payment, biodata, review or app link" : "Share biodata, review or app link"}
               onClick={onSend}
             />
             <ActionTile
@@ -1992,14 +2437,14 @@ export default function OverviewDashboard({
               iconBg="#E7F8EF"
               iconColor="#16A34A"
               title="Upload Biodata"
-              titleColor="#2563EB"
+              titleColor="#1F2937"
               subtitle="Set next action or reminder"
               onClick={() => setBiodataOpen(true)}
             />
             <ActionTile
               icon={SquareCheck}
               iconBg="#E8F2FE"
-              iconColor="#3B82F6"
+              iconColor="#2563EB"
               title="Create Task"
               titleColor="#1F2937"
               detail={
@@ -2174,7 +2619,7 @@ export default function OverviewDashboard({
 
             <section
               ref={nextCardRef}
-              className={`bg-white border border-[#EEF1F4] rounded-2xl p-4 min-w-0 shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${quoteOpen ? "self-start" : "xl:h-full"}`}
+              className={`bg-white border border-[#EEF1F4] rounded-2xl p-4 min-w-0 shadow-[0_1px_2px_rgba(16,24,40,0.04)] flex flex-col ${quoteOpen ? "self-start" : "xl:h-full"}`}
               style={frozenCardStyle("next")}
             >
               <CardHead
@@ -2182,9 +2627,12 @@ export default function OverviewDashboard({
                 title="Next Action"
                 action="View All"
                 brandAction
+                dense
                 onAction={() => setNextActionOpen(true)}
               />
-              <NextActionList items={nextItems} onOpen={openNextAction} />
+              <div className="min-h-0 flex-1">
+                <NextActionList items={nextItems} onOpen={openNextAction} compact fill />
+              </div>
             </section>
           </div>
         </div>
@@ -2212,29 +2660,41 @@ export default function OverviewDashboard({
         </section>
       </div>
 
+      <div className="grid grid-cols-1 xl:grid-cols-[340px_minmax(0,1fr)] gap-3 items-stretch">
+        <PartnerPreferenceSnapshot
+          deal={deal}
+          onQuickMatch={() => setQuickMatchOpen(true)}
+        />
+        <SuccessStoriesBlock
+          area={shown(deal?.area || deal?.areaOfHouse)}
+          deal={deal}
+        />
+      </div>
+
       <div className="grid grid-cols-1 xl:grid-cols-[340px_minmax(0,1fr)_300px] gap-3 items-start">
         {renderPanel(panels[1])}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 min-w-0 items-start">
           <button
             type="button"
             onClick={() => setDiscountOpen(true)}
-            className="w-full flex items-center gap-2.5 rounded-2xl border border-[#EEF1F4] bg-white px-3.5 py-2.5 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:border-[#E2E6EB] transition-colors"
+            className="w-full flex items-center gap-3 h-12 px-3.5 rounded-2xl border border-[#EEF1F4] bg-white text-left shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:border-[#E2E6EB] transition-colors"
           >
-            <span className="size-8 rounded-full bg-[#7A0A17] text-white grid place-items-center shrink-0">
-              <Zap size={15} strokeWidth={2.4} fill="currentColor" />
+            <span className="flex items-center gap-2 flex-1 min-w-0">
+              <Zap size={16} className="text-[#7A0A17] shrink-0" strokeWidth={2.2} />
+              <span className="text-[13px] font-bold text-[#7A0A17] truncate">Request Discount</span>
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[13px] font-bold text-[#1F2937] leading-tight">Request Discount</span>
-              <span className="block text-[11.5px] text-[#6B7280] mt-0.5 leading-snug">
-                Get special discount on selected packages
-              </span>
-            </span>
-            <ChevronRight size={18} className="text-[#9CA3AF] shrink-0" strokeWidth={2} />
+            <ChevronDown size={16} className="text-[#9CA3AF] shrink-0" strokeWidth={2} />
           </button>
           {renderPanel(panels[0])}
         </div>
         {renderPanel(panels[2])}
       </div>
+
+      <QuickMatchSuggestionsModal
+        open={quickMatchOpen}
+        onClose={() => setQuickMatchOpen(false)}
+        deal={deal}
+      />
 
       <DueCompletedModal
         open={meetingsOpen}

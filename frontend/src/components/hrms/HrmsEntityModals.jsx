@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Edit, Eye, Star, Trash2 } from "lucide-react";
+import { AlertTriangle, Eye, Edit2, Star, Trash2 } from "lucide-react";
 import Modal from "../ui/Modal";
 
 const FIELD =
@@ -216,7 +216,7 @@ export function TrainingEditModal({ open, onClose, training, onSave }) {
       onClose={onClose}
       title="Edit training"
       subtitle={training?.program}
-      icon={<Edit size={17} />}
+      icon={<Edit2 size={17} />}
       iconBg="#E0F2FE"
       iconColor="#0284C7"
       width="max-w-3xl"
@@ -371,7 +371,7 @@ export function GoalEditModal({ open, onClose, goal, onSave }) {
       onClose={onClose}
       title="Edit goal"
       subtitle={goal?.title}
-      icon={<Edit size={17} />}
+      icon={<Edit2 size={17} />}
       iconBg="#E0F2FE"
       iconColor="#0284C7"
       width="max-w-3xl"

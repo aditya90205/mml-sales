@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bookmark, Copy, Eye, PenSquare, Sparkles } from "lucide-react";
+import { Bookmark, Copy, Eye, Edit2, Sparkles } from "lucide-react";
 import { toast } from "react-toastify";
 
 const CHANNEL_META = {
@@ -97,7 +97,9 @@ export default function ChannelTemplateModal({ open, onClose, channel = "email" 
                 <div className="flex items-center gap-2 mt-2.5 text-[13px] text-[#374151] min-w-0">
                   <span className="text-[#DC2626] font-bold text-[11px] border border-[#DC2626]/30 rounded px-1 shrink-0">PDF</span>
                   <span className="truncate">File - &lt;Candidate name&gt; MML offer.pdf</span>
-                  <Eye size={16} className="text-[#CA8A04] shrink-0 cursor-pointer" />
+                  <button type="button" className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center shrink-0 transition-colors" aria-label="View attachment">
+                    <Eye size={13} />
+                  </button>
                 </div>
               )}
             </div>
@@ -109,8 +111,8 @@ export default function ChannelTemplateModal({ open, onClose, channel = "email" 
                   placeholder="https//sharejobprofile.mml"
                   className="flex-1 min-w-0 bg-transparent text-[13px] text-[#9CA3AF] outline-none"
                 />
-                <button type="button" onClick={handleCopyLink} aria-label="Copy link" className="shrink-0">
-                  <Copy size={15} className="text-[#6B7280]" />
+                <button type="button" onClick={handleCopyLink} aria-label="Copy link" className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center shrink-0 transition-colors">
+                  <Copy size={13} />
                 </button>
               </div>
             </div>
@@ -151,17 +153,25 @@ export default function ChannelTemplateModal({ open, onClose, channel = "email" 
             <div className="flex items-center gap-2 text-[13px] min-w-0">
               <span className="font-bold text-[#111] shrink-0">Subject -</span>
               <span className="text-[#6B7280] flex-1 min-w-0 truncate">Special discount of 30% approved for you</span>
-              <PenSquare size={15} className="text-[#2563EB] cursor-pointer shrink-0" />
+              <button type="button" className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center shrink-0 transition-colors" aria-label="Edit subject">
+                <Edit2 size={13} />
+              </button>
             </div>
           )}
 
           <div className="min-w-0 pb-2">
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-[13px] font-bold text-[#111]">Description</label>
-              <div className="flex items-center gap-2.5">
-                <Eye size={15} className="text-[#CA8A04] cursor-pointer" />
-                <Bookmark size={15} className="text-[#16A34A] cursor-pointer" />
-                <PenSquare size={15} className="text-[#2563EB] cursor-pointer" />
+              <div className="flex items-center gap-1">
+                <button type="button" className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center transition-colors" aria-label="Preview description">
+                  <Eye size={13} />
+                </button>
+                <button type="button" className="size-7 rounded-lg text-[#16A34A] hover:bg-[#DCFCE7] grid place-items-center transition-colors" aria-label="Bookmark template">
+                  <Bookmark size={13} />
+                </button>
+                <button type="button" className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center transition-colors" aria-label="Edit description">
+                  <Edit2 size={13} />
+                </button>
               </div>
             </div>
             <textarea

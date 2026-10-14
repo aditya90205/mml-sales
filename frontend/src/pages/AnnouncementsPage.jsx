@@ -183,7 +183,7 @@ export default function AnnouncementsPage({ embedded = false }) {
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             {!embedded && (
-              <h1 className="text-[26px] font-bold text-[#111] tracking-tight">Announcements</h1>
+              <h1 className="text-[22px] font-bold text-[#111] tracking-tight">Announcements</h1>
             )}
             <p className={`text-[13px] text-[#9CA3AF] ${embedded ? "" : "mt-0.5"}`}>
               {unreadCount} unread announcement{unreadCount === 1 ? "" : "s"}

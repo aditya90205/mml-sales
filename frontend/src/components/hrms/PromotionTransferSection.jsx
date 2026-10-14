@@ -7,7 +7,7 @@ import {
   FileText,
   Upload,
   Info,
-  Pencil,
+  Edit2,
   Plus,
   StickyNote,
   TrendingUp,
@@ -706,10 +706,10 @@ export function PromotionSection({ employee, showAll = false, embedded = false }
                       <button
                         type="button"
                         onClick={() => setSelected(row)}
-                        className="size-8 rounded-lg bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#D97706] grid place-items-center transition-colors"
+                        className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center transition-colors"
                         aria-label="View promotion details"
                       >
-                        <Eye size={14} />
+                        <Eye size={13} />
                       </button>
                     </td>
                   </tr>
@@ -861,25 +861,25 @@ export function TransferSection({ employee, showAll = false, embedded = false })
                         <button
                           type="button"
                           onClick={() => setSelected(row)}
-                          className="size-8 rounded-lg bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#D97706] grid place-items-center transition-colors"
+                          className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center transition-colors"
                           aria-label="View transfer"
                           title="View"
                         >
-                          <Eye size={14} />
+                          <Eye size={13} />
                         </button>
                         <button
                           type="button"
                           onClick={() => openEdit(row)}
                           disabled={row.status !== "Pending"}
-                          className={`size-8 rounded-lg grid place-items-center transition-colors ${
+                          className={`size-7 rounded-lg grid place-items-center transition-colors ${
                             row.status === "Pending"
-                              ? "bg-[#E8F2FE] hover:bg-[#DBEAFE] text-[#2563EB]"
-                              : "bg-[#F3F4F6] text-[#9CA3AF] cursor-not-allowed opacity-60"
+                              ? "text-[#2563EB] hover:bg-[#E8F2FE]"
+                              : "text-[#9CA3AF] cursor-not-allowed opacity-60"
                           }`}
                           aria-label="Edit transfer"
                           title={row.status === "Pending" ? "Edit" : "Only pending can be edited"}
                         >
-                          <Pencil size={14} />
+                          <Edit2 size={13} />
                         </button>
                       </div>
                     </td>

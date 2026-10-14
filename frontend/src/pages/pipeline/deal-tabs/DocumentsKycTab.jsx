@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
-import { Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { Edit2, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import StatusPill from "../../../components/common/StatusPill";
@@ -23,7 +23,7 @@ const ACTION_BTN =
   "inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-lg bg-white border border-black/15 text-[12.5px] font-semibold text-[#111] hover:bg-[#FAFAFB] transition-colors shrink-0";
 
 const ICON_BTN =
-  "inline-flex items-center justify-center size-9 rounded-lg border border-black/10 text-[#6B7280] hover:bg-[#FAFAFB] hover:text-[#111] transition-colors shrink-0";
+  "inline-flex items-center justify-center size-7 rounded-lg grid place-items-center transition-colors shrink-0";
 
 function MandatoryToggle({ checked, onChange }) {
   return (
@@ -192,17 +192,17 @@ const DocumentsKycTab = forwardRef(function DocumentsKycTab({ empty = false, emb
             </div>
             <div className="flex items-center gap-1.5 shrink-0 ml-auto">
               {doc.assigned === false ? <StatusPill tone="gray">Not assigned</StatusPill> : null}
-              <button type="button" onClick={() => openEdit(doc)} className={ICON_BTN} title="Edit" aria-label="Edit">
-                <Pencil size={14} />
+              <button type="button" onClick={() => openEdit(doc)} className={`${ICON_BTN} text-[#2563EB] hover:bg-[#E8F2FE]`} title="Edit" aria-label="Edit">
+                <Edit2 size={13} />
               </button>
               <button
                 type="button"
                 onClick={() => deleteDoc(doc.id)}
-                className={`${ICON_BTN} hover:text-[#DC2626] hover:border-[#FECACA]`}
+                className={`${ICON_BTN} text-[#7A0A17] hover:bg-[#FDF2F3]`}
                 title="Delete"
                 aria-label="Delete"
               >
-                <Trash2 size={14} />
+                <Trash2 size={13} />
               </button>
               <button type="button" onClick={() => startUpload(doc.id)} className={ACTION_BTN}>
                 <Upload size={14} />

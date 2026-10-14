@@ -14,6 +14,8 @@
     scroll-behavior: smooth;
     --app-scale: 1;
     --app-vh: 100vh;
+    /* Closed messaging dock bar height — minimal clearance so content isn't covered */
+    --messaging-dock-safe: 52px;
   }
 
   body {

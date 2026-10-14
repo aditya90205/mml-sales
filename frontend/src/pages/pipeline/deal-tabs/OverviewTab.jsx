@@ -16,7 +16,7 @@ import {
   Mail,
   MapPin,
   MessageSquare,
-  Pencil,
+  Edit2,
   Phone,
   Star,
   User,
@@ -545,14 +545,14 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved, 
         onClose={() => setSendOpen(false)}
         deal={deal}
         currentStage={currentStage}
-        linkTypes={atLeast(currentStage, "P1") ? ["payment", "biodata"] : ["biodata"]}
+        linkTypes={
+          atLeast(currentStage, "P1")
+            ? ["payment", "biodata", "review", "app"]
+            : ["biodata", "review", "app"]
+        }
         initialType={atLeast(currentStage, "P1") ? "payment" : "biodata"}
         title="Send link"
-        subtitle={
-          atLeast(currentStage, "P1")
-            ? "Share a payment or biodata link on mml.com"
-            : "Share a biodata link on mml.com"
-        }
+        subtitle="Share a payment, biodata, Google Review, or app download link"
       />
       <Modal
         open={mode === "view"}
@@ -577,7 +577,7 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved, 
               onClick={openEdit}
               className="inline-flex items-center gap-1.5 h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
             >
-              <Pencil size={14} />
+              <Edit2 size={13} />
               Edit
             </button>
           </>

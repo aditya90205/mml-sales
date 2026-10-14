@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pencil } from "lucide-react";
+import { Edit2 } from "lucide-react";
 import Modal from "../../../../components/ui/Modal";
 import {
   SECTIONS_META,
@@ -43,7 +43,7 @@ function SectionEditBody({ sectionKey, values, chips, onClose, onSave }) {
       onClose={onClose}
       title={`Edit ${meta.label}`}
       subtitle={`Section ${String(sectionIndex + 1).padStart(2, "0")} of ${String(SECTIONS_META.length).padStart(2, "0")} — changes save only after client OTP`}
-      icon={<Pencil size={18} />}
+      icon={<Edit2 size={18} />}
       iconBg="#F3E8F0"
       iconColor="#7A0A17"
       width="max-w-4xl"

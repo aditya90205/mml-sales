@@ -28,7 +28,7 @@ function SectionHeader({
           Section {String(index + 1).padStart(2, "0")} of {String(totalSections).padStart(2, "0")}
         </p>
         <div className="flex items-end justify-between gap-3 flex-wrap mt-1">
-          <h2 className="text-[26px] font-bold text-[#111] tracking-tight leading-tight">{label}</h2>
+          <h2 className="text-[16px] font-bold text-[#111] tracking-tight leading-tight">{label}</h2>
           <p className="text-[12.5px] text-[#9CA3AF] shrink-0 pb-1">
             {filled} of {total} filled in this section
           </p>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Eye, EyeOff, Pencil, ShieldCheck } from "lucide-react";
+import { Check, Eye, EyeOff, Edit2, ShieldCheck } from "lucide-react";
 import {
   SECTIONS_META,
   SECTION_BLOCKS,
@@ -354,7 +354,7 @@ function ClientRecordSectionCard({ index, label, entries, captured, blankCount, 
             className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-xl border border-[#7A0A17]/30 bg-white text-[12px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors"
             aria-label={`Edit ${label}`}
           >
-            <Pencil size={13} />
+            <Edit2 size={13} />
             Edit
           </button>
         </div>

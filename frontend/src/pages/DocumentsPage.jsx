@@ -115,9 +115,10 @@ function DocumentsTab() {
               <button
                 type="button"
                 onClick={() => toast.info(`Viewing ${doc.title}`)}
-                className="text-[#9CA3AF] hover:text-[#111] shrink-0"
+                className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center shrink-0 transition-colors"
+                aria-label={`View ${doc.title}`}
               >
-                <Eye size={15} />
+                <Eye size={13} />
               </button>
             </div>
             <p className="text-[11px] text-[#9CA3AF] mb-2.5">Last Update: {doc.updated}</p>
@@ -209,7 +210,7 @@ export default function DocumentsPage({ embedded = false }) {
     <div className={embedded ? "flex flex-col gap-4" : "flex flex-col gap-5 p-5 md:p-6 min-h-full"}>
       {!embedded && (
       <div>
-        <h1 className="text-[22px] font-extrabold text-[#111827] tracking-tight">
+        <h1 className="text-[22px] font-bold text-[#111] tracking-tight">
           Documents & Media
         </h1>
         <p className="text-[13px] text-[#6B7280] mt-0.5">

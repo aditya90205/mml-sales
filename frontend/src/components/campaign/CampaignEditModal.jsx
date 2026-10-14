@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Bell, Mail, MessageSquare, Plus, Upload, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ChannelTemplateModal from "./ChannelTemplateModal.jsx";
+import WhatsAppIcon from "../common/WhatsAppIcon.jsx";
 
 const CHANNELS = [
   { key: "email", label: "Email", icon: Mail },
-  { key: "whatsapp", label: "WhatsApp", icon: MessageSquare },
+  { key: "whatsapp", label: "WhatsApp", icon: WhatsAppIcon },
   { key: "push", label: "Push Notification", icon: Bell },
   { key: "sms", label: "SMS", icon: MessageSquare },
 ];
@@ -365,7 +366,11 @@ export default function CampaignEditModal({ open, campaign, onClose, onSave, onB
                         onChange={() => toggleChannel(key)}
                         className="size-4 accent-[#7A0A17] shrink-0"
                       />
-                      <Icon size={16} className="text-[#7A0A17] shrink-0" />
+                      {key === "whatsapp" ? (
+                        <WhatsAppIcon size={16} withBg={false} color="#7A0A17" className="shrink-0" />
+                      ) : (
+                        <Icon size={16} className="text-[#7A0A17] shrink-0" />
+                      )}
                       <span className="text-[13px] font-semibold text-[#111]">{label}</span>
                       <span className="ml-auto text-[11px] text-[#9CA3AF]">Click to configure template</span>
                     </div>

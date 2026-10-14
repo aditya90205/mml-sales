@@ -179,7 +179,7 @@ export default function MediaLibraryPage({ embedded = false }) {
     <div className={`flex flex-col gap-5 min-h-full ${embedded ? "" : "p-5 md:p-6"}`}>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         {!embedded && (
-          <h1 className="text-[22px] font-extrabold text-[#111827] tracking-tight">Media Library</h1>
+          <h1 className="text-[22px] font-bold text-[#111] tracking-tight">Media Library</h1>
         )}
         <button
           type="button"

@@ -1,4 +1,4 @@
-import { CircleDot, Pencil, Star } from "lucide-react";
+import { CircleDot, Edit2, Star } from "lucide-react";
 import Modal from "../ui/Modal";
 
 const PRIORITY_STYLES = {
@@ -96,7 +96,7 @@ export default function OthersDetailsModal({ open, item, onClose, onEdit }) {
             onClick={() => onEdit?.(item)}
             className="h-9 px-4 rounded-xl border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors inline-flex items-center gap-1.5"
           >
-            <Pencil size={13} /> Edit
+            <Edit2 size={13} /> Edit
           </button>
           <button
             type="button"

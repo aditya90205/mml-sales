@@ -51,7 +51,7 @@ export default function MoveToP2Page({ lead, onBack, onMoveToP2 }) {
 
       {/* Page Header Bar */}
       <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-black/8 shrink-0 flex-wrap gap-4">
-        <h1 className="text-[20px] font-bold text-[#111] tracking-tight">
+        <h1 className="text-[22px] font-bold text-[#111] tracking-tight">
           Add Bio-data to advance to P2
         </h1>
         <div className="flex items-center gap-2.5">

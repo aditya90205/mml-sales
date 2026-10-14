@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -17,15 +17,23 @@ import {
 import { toast } from "react-toastify";
 import ChannelTemplateModal from "../components/campaign/ChannelTemplateModal.jsx";
 import CreateGroupModal from "../components/campaign/CreateGroupModal.jsx";
-import { addCampaign } from "../utils/campaignsStore.js";
+import WhatsAppIcon from "../components/common/WhatsAppIcon.jsx";
+import { addCampaign, readCampaigns } from "../utils/campaignsStore.js";
 import { readSavedGroups } from "../utils/clientGroups.js";
 
 const CHANNELS = [
   { key: "email", label: "Email", icon: Mail },
-  { key: "whatsapp", label: "WhatsApp", icon: MessageSquare },
+  { key: "whatsapp", label: "WhatsApp", icon: WhatsAppIcon },
   { key: "push", label: "Push Notification", icon: Bell },
   { key: "sms", label: "SMS", icon: MessageSquare },
 ];
+
+const CHANNEL_KEY_BY_LABEL = {
+  Email: "email",
+  WhatsApp: "whatsapp",
+  Push: "push",
+  SMS: "sms",
+};
 
 const TIMEZONE_OPTIONS = [
   "(IST+05:30) India Standard Time (India)",
@@ -37,6 +45,52 @@ const TIMEZONE_OPTIONS = [
 
 const INPUT =
   "w-full h-11 border border-black/12 rounded-xl px-3.5 text-[13px] text-[#111] outline-none focus:border-[#7A0A17]/40 bg-white";
+
+const DEFAULT_CHANNELS = { email: true, whatsapp: true, push: false, sms: true };
+
+function channelsFromCampaign(channelStr, selectedChannels) {
+  if (selectedChannels && typeof selectedChannels === "object") {
+    return { ...DEFAULT_CHANNELS, ...selectedChannels };
+  }
+  const selected = { email: false, whatsapp: false, push: false, sms: false };
+  String(channelStr || "")
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean)
+    .forEach((label) => {
+      const key = CHANNEL_KEY_BY_LABEL[label];
+      if (key) selected[key] = true;
+    });
+  const anyOn = Object.values(selected).some(Boolean);
+  return anyOn ? selected : { ...DEFAULT_CHANNELS };
+}
+
+function startModeFromCampaign(campaign) {
+  if (campaign?.startMode === "Manual" || campaign?.startMode === "Time based") return campaign.startMode;
+  return campaign?.start === "Manual" ? "Manual" : campaign?.start ? "Time based" : "Manual";
+}
+
+function stopModeFromCampaign(campaign) {
+  if (
+    campaign?.stopMode === "Manual" ||
+    campaign?.stopMode === "Time based" ||
+    campaign?.stopMode === "Customer Action"
+  ) {
+    return campaign.stopMode;
+  }
+  if (campaign?.end === "Manual") return "Manual";
+  if (String(campaign?.end || "").toLowerCase().includes("action")) return "Customer Action";
+  return campaign?.end ? "Time based" : "Manual";
+}
+
+function scheduleFromCampaign(schedule) {
+  if (!schedule || typeof schedule !== "object") return emptySchedule();
+  return {
+    date: schedule.date || "",
+    time: schedule.time || "",
+    timezone: schedule.timezone || TIMEZONE_OPTIONS[0],
+  };
+}
 
 function FieldLabel({ children, required }) {
   return (
@@ -146,11 +200,19 @@ function ScheduleTimeCard({ title, value, onChange }) {
   );
 }
 
-export default function CreateCampaignPage() {
+const STAGE_TEMP_GROUPS = ["Hot", "Warm", "Cold"];
+
+export default function CreateCampaignPage({ embedded = false, onClose, initialGroup = "" }) {
   const navigate = useNavigate();
+  const leave = () => {
+    if (onClose) onClose();
+    else navigate("/campaign/management");
+  };
+  const [existingCampaigns, setExistingCampaigns] = useState(() => readCampaigns());
+  const [selectedCampaignId, setSelectedCampaignId] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [group, setGroup] = useState("");
+  const [group, setGroup] = useState(() => String(initialGroup || "").trim());
   const [groupOptions, setGroupOptions] = useState(() => readSavedGroups());
   const [country, setCountry] = useState("");
   const [startMode, setStartMode] = useState("Manual");
@@ -158,7 +220,7 @@ export default function CreateCampaignPage() {
   const [startSchedule, setStartSchedule] = useState(emptySchedule);
   const [endSchedule, setEndSchedule] = useState(emptySchedule);
   const [maxRetry, setMaxRetry] = useState("03");
-  const [selectedChannels, setSelectedChannels] = useState({ email: true, whatsapp: true, push: false, sms: true });
+  const [selectedChannels, setSelectedChannels] = useState(() => ({ ...DEFAULT_CHANNELS }));
   const [activeModal, setActiveModal] = useState(null);
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [uploadFileName, setUploadFileName] = useState("");
@@ -166,9 +228,73 @@ export default function CreateCampaignPage() {
 
   const groupSelectOptions = useMemo(() => {
     const names = groupOptions.map((g) => g.name);
-    const extras = ["Common Pool", "Doctors", "P3 Pipeline", "New Opportunity"].filter((n) => !names.includes(n));
-    return [...names, ...extras];
+    const seen = new Set();
+    const out = [];
+    for (const n of [...STAGE_TEMP_GROUPS, ...names, "Common Pool", "Doctors", "P3 Pipeline", "New Opportunity"]) {
+      if (seen.has(n)) continue;
+      seen.add(n);
+      out.push(n);
+    }
+    return out;
   }, [groupOptions]);
+
+  const resetToNewCampaign = (preferredGroup = initialGroup) => {
+    setSelectedCampaignId("");
+    setName("");
+    setDescription("");
+    setGroup(String(preferredGroup || "").trim());
+    setCountry("");
+    setStartMode("Manual");
+    setStopMode("Manual");
+    setStartSchedule(emptySchedule());
+    setEndSchedule(emptySchedule());
+    setMaxRetry("03");
+    setSelectedChannels({ ...DEFAULT_CHANNELS });
+    setUploadFileName("");
+    setActiveModal(null);
+  };
+
+  const applyExistingCampaign = (campaign) => {
+    if (!campaign) return;
+    setSelectedCampaignId(String(campaign.id));
+    setName(campaign.name || "");
+    setDescription(campaign.description || campaign.tag || "");
+    setGroup(String(campaign.group || campaign.target || "").trim());
+    setCountry(campaign.country || "");
+    setStartMode(startModeFromCampaign(campaign));
+    setStopMode(stopModeFromCampaign(campaign));
+    setStartSchedule(scheduleFromCampaign(campaign.startSchedule));
+    setEndSchedule(scheduleFromCampaign(campaign.endSchedule));
+    setMaxRetry(campaign.maxRetry || "03");
+    setSelectedChannels(channelsFromCampaign(campaign.channel, campaign.selectedChannels));
+    setUploadFileName(campaign.uploadFileName || "");
+    setActiveModal(null);
+  };
+
+  const handleExistingCampaignChange = (e) => {
+    const id = e.target.value;
+    if (!id) {
+      resetToNewCampaign();
+      return;
+    }
+    const campaign = existingCampaigns.find((c) => String(c.id) === String(id));
+    if (!campaign) {
+      resetToNewCampaign();
+      return;
+    }
+    applyExistingCampaign(campaign);
+    toast.info(`Loaded “${campaign.name}”. Edit fields and save to create a new campaign.`);
+  };
+
+  useEffect(() => {
+    setExistingCampaigns(readCampaigns());
+  }, []);
+
+  useEffect(() => {
+    const next = String(initialGroup || "").trim();
+    if (!next || selectedCampaignId) return;
+    setGroup(next);
+  }, [initialGroup, selectedCampaignId]);
 
   const toggleChannel = (key) => {
     setSelectedChannels((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -220,7 +346,7 @@ export default function CreateCampaignPage() {
       status: startMode === "Time based" ? "Scheduled" : "Not Started",
     });
     toast.success(`Campaign "${created.name}" saved.`);
-    navigate("/campaign/management");
+    leave();
   };
 
   const handleGroupSaved = (created) => {
@@ -229,10 +355,10 @@ export default function CreateCampaignPage() {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="px-5 pt-5 pb-8 flex flex-col gap-5 min-w-0">
+    <div className={embedded ? "flex flex-col" : "flex flex-col flex-1 min-h-0"}>
+      <div className={`${embedded ? "px-5 pt-5 pb-6" : "px-5 pt-5 pb-8"} flex flex-col gap-5 min-w-0`}>
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <h1 className="text-[26px] font-bold text-[#111] tracking-tight">Create New Campaign</h1>
+          <h1 className="text-[22px] font-bold text-[#111] tracking-tight">Create New Campaign</h1>
           <div className="flex items-center gap-2.5 shrink-0">
             <button
               type="button"
@@ -243,12 +369,12 @@ export default function CreateCampaignPage() {
             </button>
             <button
               type="button"
-              onClick={() => navigate("/campaign/management")}
+              onClick={leave}
               className="inline-flex items-center gap-1.5 h-[38px] px-3.5 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors shrink-0"
-              aria-label="Back to campaigns"
+              aria-label={embedded ? "Close" : "Back to campaigns"}
             >
-              <ArrowLeft size={15} />
-              Back
+              {embedded ? <X size={15} /> : <ArrowLeft size={15} />}
+              {embedded ? "Close" : "Back"}
             </button>
           </div>
         </div>
@@ -258,6 +384,45 @@ export default function CreateCampaignPage() {
             <div className="flex items-center gap-2.5">
               <StepBadge n={1} />
               <h2 className="text-[15px] font-bold text-[#111]">Create Campaign</h2>
+            </div>
+            <div>
+              <FieldLabel>Select existing campaign</FieldLabel>
+              <div className="flex items-center gap-2">
+                <div className="relative min-w-0 flex-1">
+                  <select
+                    value={selectedCampaignId}
+                    onChange={handleExistingCampaignChange}
+                    className={`${INPUT} pr-10 appearance-none`}
+                    aria-label="Select existing campaign to auto-fill"
+                  >
+                    <option value="">Create new campaign</option>
+                    {existingCampaigns.map((campaign) => (
+                      <option key={campaign.id} value={campaign.id}>
+                        {campaign.name}
+                        {campaign.status ? ` · ${campaign.status}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={15}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none"
+                  />
+                </div>
+                {selectedCampaignId ? (
+                  <button
+                    type="button"
+                    onClick={() => resetToNewCampaign()}
+                    className="inline-flex items-center gap-1.5 h-11 px-3.5 rounded-xl bg-white border border-black/12 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors shrink-0"
+                    aria-label="Clear selection"
+                  >
+                    <X size={14} />
+                    Clear
+                  </button>
+                ) : null}
+              </div>
+              <p className="mt-1.5 text-[12px] text-[#9CA3AF]">
+                Pick an existing campaign to auto-fill, or keep “Create new campaign” for a blank form.
+              </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
               <div>
@@ -455,7 +620,11 @@ export default function CreateCampaignPage() {
                       onChange={() => toggleChannel(key)}
                       className="size-4 accent-[#7A0A17] shrink-0"
                     />
-                    <Icon size={16} className="text-[#7A0A17] shrink-0" />
+                    {key === "whatsapp" ? (
+                      <WhatsAppIcon size={16} withBg={false} color="#7A0A17" className="shrink-0" />
+                    ) : (
+                      <Icon size={16} className="text-[#7A0A17] shrink-0" />
+                    )}
                     <span className="text-[13px] font-semibold text-[#111]">{label}</span>
                     <span className="ml-auto text-[11px] text-[#9CA3AF]">Click to configure template</span>
                   </div>

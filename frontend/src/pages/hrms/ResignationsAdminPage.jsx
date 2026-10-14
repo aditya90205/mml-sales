@@ -272,7 +272,7 @@ export default function ResignationsAdminPage() {
           >
             <ArrowLeft size={13} /> Back to HRMS
           </Link>
-          <h1 className="text-[26px] font-bold text-[#111] tracking-tight mt-1.5">Resignations</h1>
+          <h1 className="text-[22px] font-bold text-[#111] tracking-tight mt-1.5">Resignations</h1>
           <p className="text-[13.5px] text-[#6B7280] mt-1">
             Track every resignation request end-to-end and complete the exit process.
           </p>

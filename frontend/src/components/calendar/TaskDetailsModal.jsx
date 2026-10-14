@@ -11,7 +11,7 @@ import {
   Layers,
   Paperclip,
   Upload,
-  Pencil,
+  Edit2,
   Plus,
   Send,
   Sparkles,
@@ -194,10 +194,10 @@ export default function TaskDetailsModal({
             <button
               type="button"
               onClick={() => onEdit(task)}
-              className="p-1.5 rounded-lg text-[#2b7fff] hover:bg-[#E8F2FE] transition-colors"
+              className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center transition-colors"
               aria-label="Edit task"
             >
-              <Pencil size={16} />
+              <Edit2 size={13} />
             </button>
           ) : null}
           <button
@@ -323,10 +323,10 @@ export default function TaskDetailsModal({
                       comments: comments.filter((_, idx) => idx !== i),
                     })
                   }
-                  className="p-1 text-[#E8395B] hover:bg-[#FDECEE] rounded-md"
+                  className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center transition-colors"
                   aria-label="Delete comment"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={13} />
                 </button>
               </div>
               <p className="text-[13px] text-[#111]">{c.text}</p>
@@ -469,9 +469,10 @@ export default function TaskDetailsModal({
                     setEditingChecklistIndex(i);
                     setEditingChecklistText(item.text);
                   }}
-                  className="p-1 text-[#2b7fff] hover:bg-[#E8F2FE] rounded-md"
+                  className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center transition-colors"
+                  aria-label="Edit checklist item"
                 >
-                  <Pencil size={14} />
+                  <Edit2 size={13} />
                 </button>
                 <button
                   type="button"
@@ -481,9 +482,10 @@ export default function TaskDetailsModal({
                       checklist: checklist.filter((_, idx) => idx !== i),
                     })
                   }
-                  className="p-1 text-[#E8395B] hover:bg-[#FDECEE] rounded-md"
+                  className="size-7 rounded-lg text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center transition-colors"
+                  aria-label="Delete checklist item"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={13} />
                 </button>
               </div>
             </div>

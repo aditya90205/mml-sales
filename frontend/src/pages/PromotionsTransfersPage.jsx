@@ -9,7 +9,7 @@ export default function PromotionsTransfersPage() {
           <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#E8395B]">
             YOU ARE VIEWING
           </p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight mt-1">
+          <h1 className="text-[22px] font-bold text-[#111] tracking-tight mt-1">
             Promotion and Transfers
           </h1>
           <p className="text-[13.5px] text-[#6B7280] mt-1">

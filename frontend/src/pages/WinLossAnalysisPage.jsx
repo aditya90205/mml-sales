@@ -139,11 +139,11 @@ function ReasonsHoverIcon({ reasons, label }) {
     <span ref={ref} onMouseEnter={open} onMouseLeave={scheduleClose} className="inline-flex">
       <button
         type="button"
-        className="size-8 grid place-items-center rounded-lg hover:bg-black/4 transition-colors"
+        className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center transition-colors"
         title={`View top reasons for ${label}`}
         aria-label={`View top reasons for ${label}`}
       >
-        <Eye size={16} className="text-[#CA8A04]" />
+        <Eye size={13} />
       </button>
 
       {pos &&

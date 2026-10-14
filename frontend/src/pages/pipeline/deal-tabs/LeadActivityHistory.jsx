@@ -7,7 +7,7 @@ import {
   Handshake,
   Image,
   Paperclip,
-  Pencil,
+  Edit2,
   Phone,
   Star,
   StickyNote,
@@ -42,7 +42,7 @@ const TYPE_META = {
   created: { icon: UserPlus, bg: "#EEF2FF", color: "#4338CA" },
   assignment: { icon: UserRound, bg: "#F3E8F0", color: "#7A0A17" },
   call: { icon: Phone, bg: "#E8F2FE", color: "#2563EB" },
-  details: { icon: Pencil, bg: "#F3E8F0", color: "#7A0A17" },
+  details: { icon: Edit2, bg: "#F3E8F0", color: "#7A0A17" },
   stage: { icon: ArrowRightLeft, bg: "#E7F8EF", color: "#16A34A" },
   score: { icon: Star, bg: "#FFF3E4", color: "#D97706" },
   document: { icon: FileText, bg: "#EEF2FF", color: "#4338CA" },
@@ -257,7 +257,7 @@ export default function LeadActivityHistory({ lead, currentStage = "P0" }) {
     <div className="bg-white border border-black/8 rounded-2xl p-5 flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
-          <h2 className="text-[17px] font-bold text-[#111] truncate">
+          <h2 className="text-[16px] font-bold text-[#111] truncate">
             Lead History — {name}
           </h2>
           <p className="text-[12.5px] text-[#6B7280] mt-0.5">

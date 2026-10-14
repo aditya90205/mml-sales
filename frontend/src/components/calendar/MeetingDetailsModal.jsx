@@ -1,4 +1,4 @@
-import { CalendarDays, Pencil, Sparkles, Users2 } from "lucide-react";
+import { CalendarDays, Edit2, Sparkles, Users2 } from "lucide-react";
 import Modal from "../ui/Modal";
 import { aiInsightsForItem, calendarItemLifecycle, lifecycleLabel } from "../../utils/calendarLifecycle";
 
@@ -387,7 +387,7 @@ export default function MeetingDetailsModal({
             onClick={() => onEdit?.(meeting)}
             className="h-9 px-4 rounded-xl border border-black/10 text-[13px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors inline-flex items-center gap-1.5"
           >
-            <Pencil size={13} /> Edit
+            <Edit2 size={13} /> Edit
           </button>
           <button
             type="button"

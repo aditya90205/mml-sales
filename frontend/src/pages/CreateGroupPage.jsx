@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Download, Mail, MessageSquare, Phone, Plus, Sparkles, X } from "lucide-react";
+import { Download, Mail, Phone, Plus, Sparkles, X } from "lucide-react";
+import WhatsAppIcon from "../components/common/WhatsAppIcon.jsx";
 import { toast } from "react-toastify";
 import ClientStatusBadge from "../components/common/ClientStatusBadge.jsx";
 import SendEmailModal from "../components/common/SendEmailModal.jsx";
@@ -189,7 +190,7 @@ export default function CreateGroupPage() {
     <div className="flex flex-col flex-1 min-h-0">
       <div className="px-5 pt-5 pb-8 flex flex-col gap-8 min-w-0 w-full">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-[26px] font-bold text-[#111] tracking-tight">Create Group</h1>
+          <h1 className="text-[22px] font-bold text-[#111] tracking-tight">Create Group</h1>
           <button
             type="button"
             onClick={() => toast.info("Exporting results...")}
@@ -298,7 +299,7 @@ export default function CreateGroupPage() {
         {results && (
           <div className="border-t border-black/8 pt-6 flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <h2 className="text-[18px] font-bold text-[#111]">
+              <h2 className="text-[16px] font-bold text-[#111]">
                 Matching Clients{" "}
                 <span className="text-[#9CA3AF] font-medium">
                   ({selectedIds.size} of {results.length} selected)
@@ -386,7 +387,7 @@ export default function CreateGroupPage() {
                               <Phone size={14} className="text-[#16A34A]" />
                             </button>
                             <button type="button" onClick={() => toast.info(`Messaging ${c.name}...`)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Message ${c.name}`}>
-                              <MessageSquare size={14} className="text-[#7A0A17]" />
+                              <WhatsAppIcon size={12} circle />
                             </button>
                             <button type="button" onClick={() => setEmailFor(c)} className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors" aria-label={`Email ${c.name}`}>
                               <Mail size={14} className="text-[#2563EB]" />

@@ -281,7 +281,7 @@ function GlobalLeaderboardSection({ onMessage, onEmail }) {
   return (
     <section className="bg-white border border-black/10 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <h2 className="text-[22px] font-bold text-[#111] tracking-tight">Global Leaderboard</h2>
+        <h2 className="text-[16px] font-bold text-[#111] tracking-tight">Global Leaderboard</h2>
         <LiveBadge />
       </div>
 

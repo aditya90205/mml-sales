@@ -1,7 +1,8 @@
 import { useEffect, useId, useState } from "react";
-import { Bell, Copy, FileText, IndianRupee, Mail, MessageSquare, Send, Upload } from "lucide-react";
+import { Bell, Copy, Download, FileText, IndianRupee, Mail, Send, Star, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
+import WhatsAppIcon from "./WhatsAppIcon.jsx";
 import { defaultLinkMessage, shareUrl } from "../../utils/shareLinks";
 import { recordLeadActivity } from "../../utils/leadActivityStore.js";
 
@@ -9,13 +10,34 @@ const LINK_TYPE_META = {
   payment: { id: "payment", label: "Payment link", icon: IndianRupee },
   biodata: { id: "biodata", label: "Biodata upload", icon: Upload },
   quote: { id: "quote", label: "Quotation", icon: FileText },
+  review: { id: "review", label: "Google Review", icon: Star },
+  app: { id: "app", label: "App Download", icon: Download },
 };
 
-const SEND_CHANNELS = [
+const DEFAULT_CHANNELS = [
   { id: "email", label: "Email", icon: Mail },
-  { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
+  { id: "whatsapp", label: "WhatsApp", icon: WhatsAppIcon },
   { id: "inapp", label: "In-app notification", icon: Bell },
 ];
+
+const REVIEW_CHANNELS = [
+  { id: "google", label: "Google", icon: Star },
+  { id: "inapp", label: "In-app link", icon: Bell },
+];
+
+function channelsForType(linkType) {
+  if (linkType === "app") return [];
+  if (linkType === "review") return REVIEW_CHANNELS;
+  return DEFAULT_CHANNELS;
+}
+
+function defaultChannelIds(linkType, email) {
+  const available = channelsForType(linkType);
+  if (available.length === 0) return [];
+  if (linkType === "review") return ["google"];
+  if (email && email !== "—" && email !== "-") return ["email"];
+  return available[0] ? [available[0].id] : [];
+}
 
 export default function SendLinkModal({
   open,
@@ -44,14 +66,22 @@ export default function SendLinkModal({
   const activeType = options.some((opt) => opt.id === linkType) ? linkType : options[0]?.id || "payment";
   const linkLabel = LINK_TYPE_META[activeType]?.label || "Link";
   const link = shareUrl(deal, activeType);
+  const availableChannels = channelsForType(activeType);
+  const showChannels = availableChannels.length > 0;
 
   useEffect(() => {
     if (!open && !embedded) return;
     const nextType = options.some((opt) => opt.id === initialType) ? initialType : options[0]?.id || "payment";
-    setChannels(email && email !== "—" && email !== "-" ? ["email"] : ["whatsapp"]);
+    setChannels(defaultChannelIds(nextType, email));
     setLinkType(nextType);
     setMessage(defaultLinkMessage(deal, nextType));
   }, [open, embedded, initialType, deal?.name, email]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const selectLinkType = (id) => {
+    setLinkType(id);
+    setChannels(defaultChannelIds(id, email));
+    setMessage(defaultLinkMessage(deal, id));
+  };
 
   const toggleChannel = (id) => {
     setChannels((current) =>
@@ -69,7 +99,7 @@ export default function SendLinkModal({
 
   const handleSend = (e) => {
     e.preventDefault();
-    if (channels.length === 0) {
+    if (showChannels && channels.length === 0) {
       toast.error("Select at least one channel.");
       return;
     }
@@ -87,16 +117,26 @@ export default function SendLinkModal({
       return;
     }
     const body = typed.includes(link) ? typed : `${typed}\n${link}`;
-    const selected = SEND_CHANNELS.filter((opt) => channels.includes(opt.id)).map((opt) => opt.label);
-    const via = selected.join(", ");
+    const selected = availableChannels.filter((opt) => channels.includes(opt.id)).map((opt) => opt.label);
+    const via = selected.length ? selected.join(", ") : null;
     if (deal && currentStage) {
+      const activityType =
+        activeType === "quote"
+          ? "quote"
+          : activeType === "review" || activeType === "app"
+            ? "message"
+            : "payment";
       recordLeadActivity(deal, currentStage, {
-        type: activeType === "quote" ? "quote" : "payment",
+        type: activityType,
         title: `${linkLabel} sent to client`,
-        detail: `Sent via ${via} — ${body}`,
+        detail: via ? `Sent via ${via} — ${body}` : body,
       });
     }
-    toast.success(`${linkLabel} sent to ${deal?.name || "client"} via ${via}.`);
+    toast.success(
+      via
+        ? `${linkLabel} sent to ${deal?.name || "client"} via ${via}.`
+        : `${linkLabel} sent to ${deal?.name || "client"}.`
+    );
     onSent?.({ linkType: activeType, channels: selected, message: body });
     if (closeOnSend) onClose?.();
   };
@@ -125,10 +165,7 @@ export default function SendLinkModal({
                   <button
                     key={opt.id}
                     type="button"
-                    onClick={() => {
-                      setLinkType(opt.id);
-                      setMessage(defaultLinkMessage(deal, opt.id));
-                    }}
+                    onClick={() => selectLinkType(opt.id)}
                     className={`inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-[13px] font-semibold border transition-colors ${
                       active
                         ? "bg-[#7A0A17] text-white border-[#7A0A17]"
@@ -143,31 +180,37 @@ export default function SendLinkModal({
             </div>
           </div>
         ) : null}
-        <div>
-          <p className="text-[13px] font-bold text-[#111] mb-1.5">Channel</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            {SEND_CHANNELS.map((opt) => {
-              const active = channels.includes(opt.id);
-              const Icon = opt.icon;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => toggleChannel(opt.id)}
-                  className={`inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-[13px] font-semibold border transition-colors ${
-                    active
-                      ? "bg-[#7A0A17] text-white border-[#7A0A17]"
-                      : "bg-white text-[#374151] border-black/12 hover:bg-[#FAFAFB]"
-                  }`}
-                >
-                  <Icon size={14} />
-                  {opt.label}
-                </button>
-              );
-            })}
+        {showChannels ? (
+          <div>
+            <p className="text-[13px] font-bold text-[#111] mb-1.5">Channel</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              {availableChannels.map((opt) => {
+                const active = channels.includes(opt.id);
+                const Icon = opt.icon;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => toggleChannel(opt.id)}
+                    className={`inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-[13px] font-semibold border transition-colors ${
+                      active
+                        ? "bg-[#7A0A17] text-white border-[#7A0A17]"
+                        : "bg-white text-[#374151] border-black/12 hover:bg-[#FAFAFB]"
+                    }`}
+                  >
+                    {opt.id === "whatsapp" ? (
+                      <WhatsAppIcon size={14} withBg={false} color="currentColor" />
+                    ) : (
+                      <Icon size={14} />
+                    )}
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        ) : null}
         <div>
           <label className="block text-[13px] font-bold text-[#111] mb-1.5">Link</label>
           <div className="flex items-center gap-2 h-11 border border-black/12 rounded-xl px-3.5 bg-[#FAFAFB]">

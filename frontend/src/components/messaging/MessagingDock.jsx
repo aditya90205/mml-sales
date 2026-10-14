@@ -20,6 +20,8 @@ const LIST_CLOSED_W = 272;
 const CHAT_W = 400;
 const CHAT_MIN_W = 280;
 const BAR_H = 52;
+/** Keep in sync with --messaging-dock-safe in index.css. */
+export const MESSAGING_DOCK_SAFE = BAR_H;
 const INPUT_LINE_H = 32;
 const INPUT_MAX_H = 68;
 const EMOJIS = ["😀", "😊", "👍", "🙏", "❤️", "🎉", "✅", "👏", "🔥", "😄", "🤝", "📌"];
@@ -62,7 +64,7 @@ function Face({ src, name, online, size = 40 }) {
         />
       ) : (
         <span
-          className="grid place-items-center rounded-full bg-[#FDE8E8] font-semibold text-[#7A1230]"
+          className="grid place-items-center rounded-full bg-[#FDE8E8] font-semibold text-[#7A0A17]"
           style={{ width: size, height: size, fontSize: size < 36 ? 11 : 13 }}
         >
           {initials}
@@ -81,7 +83,7 @@ function Face({ src, name, online, size = 40 }) {
 function UnreadBadge({ count }) {
   if (!count) return null;
   return (
-    <span className="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#7A1230] px-1 text-[10px] font-bold text-white">
+    <span className="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#7A0A17] px-1 text-[10px] font-bold text-white">
       {count > 9 ? "9+" : count}
     </span>
   );
@@ -229,7 +231,7 @@ function ChatPane({ contact, draft, setDraft, onSend, onClose, onToggle, minimiz
               }`}
               style={
                 mine
-                  ? { backgroundColor: "#7A1230", color: "#fff" }
+                  ? { backgroundColor: "#7A0A17", color: "#fff" }
                   : { backgroundColor: "#D6EBFF", color: "#1F2937" }
               }
             >
@@ -246,7 +248,7 @@ function ChatPane({ contact, draft, setDraft, onSend, onClose, onToggle, minimiz
                     style={
                       mine
                         ? { backgroundColor: "rgba(255,255,255,0.22)" }
-                        : { backgroundColor: "#FDE8E8", color: "#7A1230" }
+                        : { backgroundColor: "#FDE8E8", color: "#7A0A17" }
                     }
                   >
                     FILE
@@ -309,7 +311,7 @@ function ChatPane({ contact, draft, setDraft, onSend, onClose, onToggle, minimiz
             ))}
           </div>
         )}
-        <div className="min-w-0 self-center rounded-2xl border border-[#E5E7EB] bg-white focus-within:border-[#7A1230]/40">
+        <div className="min-w-0 self-center rounded-2xl border border-[#E5E7EB] bg-white focus-within:border-[#7A0A17]/40">
           <textarea
             ref={inputRef}
             rows={1}
@@ -355,7 +357,7 @@ function ChatPane({ contact, draft, setDraft, onSend, onClose, onToggle, minimiz
               aria-label="Add emoji"
               onClick={() => setEmojiOpen((open) => !open)}
               className={`grid size-7 place-items-center rounded-lg hover:bg-[#F4F7FB] ${
-                emojiOpen ? "text-[#7A1230]" : "text-[#8AA0BE]"
+                emojiOpen ? "text-[#7A0A17]" : "text-[#8AA0BE]"
               }`}
             >
               <Smile size={16} />
@@ -375,7 +377,7 @@ function ChatPane({ contact, draft, setDraft, onSend, onClose, onToggle, minimiz
           onClick={submit}
           disabled={!draft.trim()}
           aria-label="Send message"
-          className="grid size-10 place-items-center justify-self-end self-center rounded-full bg-[#7A1230] text-white transition-colors hover:bg-[#641026] disabled:cursor-not-allowed"
+          className="grid size-10 place-items-center justify-self-end self-center rounded-full bg-[#7A0A17] text-white transition-colors hover:bg-[#641026] disabled:cursor-not-allowed"
         >
           <Send size={16} />
         </button>
@@ -605,7 +607,7 @@ export default function MessagingDock() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search messages..."
-                className="h-9 w-full rounded-lg border border-[#E5E7EB] bg-[#FAFBFC] pl-9 pr-8 text-[13px] text-[#1F2937] outline-none placeholder:text-[#9CA3AF] focus:border-[#7A1230]/45 focus:bg-white"
+                className="h-9 w-full rounded-lg border border-[#E5E7EB] bg-[#FAFBFC] pl-9 pr-8 text-[13px] text-[#1F2937] outline-none placeholder:text-[#9CA3AF] focus:border-[#7A0A17]/45 focus:bg-white"
               />
               {query && (
                 <button
@@ -635,7 +637,7 @@ export default function MessagingDock() {
                   onClick={() => setTab(key)}
                   className={`h-9 rounded-lg text-[13px] font-semibold transition-colors ${
                     selected
-                      ? "bg-[#7A1230] text-white"
+                      ? "bg-[#7A0A17] text-white"
                       : "border border-[#E5E7EB] bg-white text-[#374151] hover:bg-[#FAFBFC]"
                   }`}
                 >

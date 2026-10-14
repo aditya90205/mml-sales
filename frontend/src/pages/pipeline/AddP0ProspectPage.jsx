@@ -65,7 +65,7 @@ export default function AddP0ProspectPage({ onBack, onAddProspect }) {
 
       {/* Page Header Bar */}
       <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-black/8 shrink-0 flex-wrap gap-4">
-        <h1 className="text-[20px] font-bold text-[#111] tracking-tight">Add P0 Prospect</h1>
+        <h1 className="text-[22px] font-bold text-[#111] tracking-tight">Add P0 Prospect</h1>
         <div className="flex items-center gap-2.5">
           {onBulkUpload ? (
             <button type="button" onClick={onBack} className={BULK_IMPORT_BTN}>
