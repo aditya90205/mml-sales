@@ -276,16 +276,18 @@ export default function HrmsDashboard({
           />
           <div className="min-w-0">
             <p className="hrms-meta text-[#6B7280]">Welcome Back,</p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <h1 className="hrms-page-title tracking-tight leading-tight">{USER.name}</h1>
-              <Link to="/profile" className="size-7 rounded-lg text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center transition-colors" aria-label="View profile" title="View profile">
-                <Eye size={13} />
-              </Link>
-              <Link to="/profile" className="size-7 rounded-lg text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center transition-colors" aria-label="Edit profile" title="Edit profile">
-                <Edit2 size={13} />
-              </Link>
+              <div className="flex items-center">
+                <Link to="/profile" className="size-5 rounded-md text-[#D97706] hover:bg-[#FEF3C7] grid place-items-center transition-colors" aria-label="View profile" title="View profile">
+                  <Eye size={14} />
+                </Link>
+                <Link to="/profile" className="size-5 rounded-md text-[#2563EB] hover:bg-[#E8F2FE] grid place-items-center transition-colors" aria-label="Edit profile" title="Edit profile">
+                  <Edit2 size={14} />
+                </Link>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-0.5 hrms-meta text-[#6B7280]">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5 hrms-meta text-[#6B7280]">
               <span>Senior Sales Manager</span>
               <span className="inline-flex items-center gap-1">
                 <User size={12} className="text-[#9CA3AF]" />
