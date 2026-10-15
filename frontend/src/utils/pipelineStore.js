@@ -1,7 +1,13 @@
 import { addLeadActivity } from "./leadActivityStore.js";
 import { syncIntakeValues } from "./biodataDraftStore.js";
 import { splitName, lookingForFromGender } from "./leadFields.js";
-import { clientIdWithSeries, isSeriesClientId, buildClientId, syncClientSeries } from "./clientsData.js";
+import {
+  clientIdWithSeries,
+  isSeriesClientId,
+  buildClientId,
+  syncClientSeries,
+  syncClientsWithPipelineLeads,
+} from "./clientsData.js";
 
 const EVENT = "mml-sales-pipeline";
 const STORAGE_KEY = "mml-sales-pipeline-leads";
@@ -480,8 +486,26 @@ function releaseDueColdHolds() {
   });
 }
 
+function leadRowsForClientSync(data = leads) {
+  const rows = [];
+  for (const stageId of STAGE_IDS) {
+    for (const lead of data[stageId] || []) {
+      rows.push({
+        id: lead.id,
+        name: lead.name,
+        mmlId: lead.mmlId,
+        owner: lead.owner,
+        mobile: lead.mobile,
+      });
+    }
+  }
+  return rows;
+}
+
 let leads = loadLeads();
 releaseDueColdHolds();
+// Same person on Clients ↔ Pipeline: Active row opens that lead's overview stage.
+syncClientsWithPipelineLeads(leadRowsForClientSync(leads));
 
 function emit() {
   persistLeads();
@@ -661,6 +685,43 @@ export function findLeadByName(name) {
     if (lead) return { lead: { ...lead }, stageId };
   }
   return null;
+}
+
+/** Resolve a Client Database row to its pipeline lead (name → linked id → client/mml id). */
+export function findLeadForClient(client) {
+  if (!client) return null;
+  // Prefer name so Client Overview and Sales Pipeline show the same person/stage.
+  const byName = findLeadByName(client.name);
+  if (byName) return byName;
+
+  if (client.linkedLeadId) {
+    const byLink = findLeadById(client.linkedLeadId);
+    if (byLink) {
+      const clientName = String(client.name || "").trim().toLowerCase();
+      const leadName = String(byLink.lead?.name || "").trim().toLowerCase();
+      if (!clientName || !leadName || clientName === leadName) return byLink;
+    }
+  }
+
+  const code = String(client.clientId || "").replace(/\D/g, "");
+  if (code.length >= 5) {
+    for (const stageId of STAGE_IDS) {
+      for (const lead of leads[stageId] || []) {
+        const leadCode = String(lead.clientId || lead.mmlId || "").replace(/\D/g, "");
+        if (leadCode && leadCode === code) return { lead: { ...lead }, stageId };
+      }
+    }
+  }
+  return null;
+}
+
+/** Deep-link to a lead's Overview (P0–P6) dashboard. */
+export function pipelineOverviewPath(leadId) {
+  if (!leadId) return "/pipeline";
+  const params = new URLSearchParams();
+  params.set("openLead", String(leadId));
+  params.set("tab", "overview");
+  return `/pipeline?${params.toString()}`;
 }
 
 /** Match a pipeline lead by exact mobile (last 10) and/or email — not by name. */

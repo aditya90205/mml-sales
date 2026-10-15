@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
   Download,
+  Eye,
   Filter,
   Flag,
   Mail,
@@ -18,9 +19,11 @@ import SendEmailModal from "../components/common/SendEmailModal.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import ClientGroupsChart, { statsFromClients } from "../components/clients/ClientGroupsChart.jsx";
+import ClientProfileModal from "../components/clients/ClientProfileModal.jsx";
 import { BRANCHES, PROBABILITY_META, readClients, subscribeClients } from "../utils/clientsData.js";
 import { groupQuery, readSavedGroups, removeSavedGroup } from "../utils/clientGroups.js";
 import { matchesAll } from "../utils/clientQuery.js";
+import { findLeadForClient, pipelineOverviewPath } from "../utils/pipelineStore.js";
 
 const COLUMNS = [
   { label: "Client Name", key: "name" },
@@ -147,14 +150,17 @@ function LastCallCell({ date, reason }) {
   );
 }
 
-function IconBtn({ label, onClick, children }) {
+function IconBtn({ label, onClick, children, className = "" }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick?.(e);
+      }}
       title={label}
       aria-label={label}
-      className="size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors"
+      className={`size-7 grid place-items-center rounded-lg hover:bg-black/4 transition-colors ${className}`}
     >
       {children}
     </button>
@@ -228,6 +234,7 @@ export default function ClientDatabasePage() {
   const [marriedFilter, setMarriedFilter] = useState("all");
   const [messageFor, setMessageFor] = useState(null);
   const [emailFor, setEmailFor] = useState(null);
+  const [viewFor, setViewFor] = useState(null);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [perPageOpen, setPerPageOpen] = useState(false);
@@ -365,10 +372,27 @@ export default function ClientDatabasePage() {
     toast.error(`${name} group removed.`);
   };
 
+  /** Active + pipeline-linked only → same overview as Sales Pipeline. No link = no-op. */
+  const handleRowClick = (client) => {
+    if (client.status !== "Active") return;
+    const hit = findLeadForClient(client);
+    if (!hit?.lead?.id) return;
+    navigate(pipelineOverviewPath(hit.lead.id));
+  };
+
   const renderRow = (c) => {
     const prob = PROBABILITY_META[c.probability] || PROBABILITY_META.medium;
+    const isActive = c.status === "Active";
+    const pipelineHit = isActive ? findLeadForClient(c) : null;
+    const canOpenOverview = Boolean(pipelineHit?.lead?.id);
     return (
-      <tr key={c.id} className="border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors">
+      <tr
+        key={c.id}
+        onClick={() => handleRowClick(c)}
+        className={`border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors ${
+          canOpenOverview ? "cursor-pointer" : ""
+        }`}
+      >
         <td className="px-4 py-3">
           <span className="inline-flex items-center gap-2">
             <Flag size={12} style={{ color: prob.color }} fill={prob.color} strokeWidth={0} className="shrink-0" />
@@ -393,6 +417,13 @@ export default function ClientDatabasePage() {
         <LastCallCell date={c.lastContact} reason={c.reason} />
         <td className="px-4 py-3">
           <div className="flex items-center gap-0.5">
+            <IconBtn
+              label={`View ${c.name}`}
+              onClick={() => setViewFor(c)}
+              className="text-[#D97706] hover:bg-[#FEF3C7]"
+            >
+              <Eye size={14} />
+            </IconBtn>
             <IconBtn label={`Call ${c.name}`} onClick={() => toast.info(`Calling ${c.name}...`)}>
               <Phone size={14} className="text-[#16A34A]" />
             </IconBtn>
@@ -698,6 +729,7 @@ export default function ClientDatabasePage() {
         onClose={() => setEmailFor(null)}
         recipientName={emailFor?.name || "Client"}
       />
+      <ClientProfileModal open={Boolean(viewFor)} onClose={() => setViewFor(null)} client={viewFor} />
     </div>
   );
 }

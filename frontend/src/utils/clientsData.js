@@ -759,6 +759,73 @@ export const CLIENTS = [
 
 const EVENT = "mml-sales-clients";
 
+/**
+ * Keep Client Database and Sales Pipeline on the same identity:
+ * same name → same linkedLeadId / clientId, Active so row → overview matches the board.
+ * Called from pipelineStore after leads load (avoids circular imports at module top).
+ */
+export function syncClientsWithPipelineLeads(leadRows = []) {
+  const byName = new Map();
+  for (const row of leadRows) {
+    const key = String(row?.name || "").trim().toLowerCase();
+    if (!key || !row?.id || byName.has(key)) continue;
+    byName.set(key, row);
+  }
+
+  const linkedNames = new Set();
+
+  for (const c of CLIENTS) {
+    const key = String(c.name || "").trim().toLowerCase();
+    const lead = byName.get(key);
+    if (lead) {
+      // On Sales Pipeline → Active, same id/stage as board overview
+      c.linkedLeadId = lead.id;
+      c.status = "Active";
+      if (isSeriesClientId(lead.mmlId)) {
+        c.clientId = String(lead.mmlId);
+        const prefix = String(lead.mmlId).slice(0, 3);
+        c.clientSeries =
+          prefix === "500" ? "paid" : prefix === "300" ? "committed" : "unpaid";
+      }
+      linkedNames.add(key);
+      continue;
+    }
+    // Not on Sales Pipeline → Inactive, no overview deep-link
+    if (c.linkedLeadId) delete c.linkedLeadId;
+    c.status = "Inactive";
+  }
+
+  for (const [key, lead] of byName) {
+    if (linkedNames.has(key)) continue;
+    const nextId = CLIENTS.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0) + 1;
+    const prefix = String(lead.mmlId || "").slice(0, 3);
+    const series = prefix === "500" ? "paid" : prefix === "300" ? "committed" : "unpaid";
+    const mobileDigits = digitsOnly(lead.mobile || "");
+    CLIENTS.push({
+      id: nextId,
+      name: lead.name,
+      clientId: isSeriesClientId(lead.mmlId) ? String(lead.mmlId) : buildClientId(series),
+      clientSeries: series,
+      formId: `MML-${3934 + nextId}`,
+      phone: mobileDigits ? `******${mobileDigits.slice(-4)}` : "******0000",
+      status: "Active",
+      married: false,
+      address: "*********** New Delhi",
+      owner: lead.owner || "Rohit Kumar",
+      branch: "South Extension",
+      lastContact: todayLabel(),
+      reason: "Linked from Sales Pipeline",
+      gender: "Male",
+      area: "South Extension",
+      education: "—",
+      incomeLpa: 0,
+      budgetLakh: 0,
+      probability: "medium",
+      linkedLeadId: lead.id,
+    });
+  }
+}
+
 function emit() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new Event(EVENT));
