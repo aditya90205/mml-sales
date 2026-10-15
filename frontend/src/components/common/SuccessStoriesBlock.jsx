@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Camera,
   ChevronLeft,
   ChevronRight,
   Heart,
-  Link2,
   MapPin,
   Plus,
   Share2,
@@ -28,12 +26,14 @@ function normalizeAreaKey(value) {
     .trim();
 }
 
-/** Demo success stories — filtered by lead area on Overview. */
+/** Demo success / roka-closure stories — filtered by lead area on Overview. */
 const AREA_SUCCESS_STORIES = [
   {
     id: "ss-gk-1",
     area: "Greater Kailash II",
     couple: "Aarav & Meera",
+    age: "29 & 27",
+    profession: "Software Eng. · Marketing",
     package: "Premium",
     closedOn: "12 Mar 2026",
     note: "Matched within 45 days. Both families from GK-II.",
@@ -41,11 +41,27 @@ const AREA_SUCCESS_STORIES = [
     rating: 5,
     image:
       "https://images.unsplash.com/photo-1519741497674-611481863552?w=240&h=240&fit=crop&crop=faces",
+    gallery: [
+      {
+        id: "ss-gk-1-g1",
+        kind: "image",
+        name: "Ceremony photo",
+        url: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&h=450&fit=crop",
+      },
+      {
+        id: "ss-gk-1-g2",
+        kind: "image",
+        name: "Family moment",
+        url: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&h=450&fit=crop",
+      },
+    ],
   },
   {
     id: "ss-gk-2",
     area: "Greater Kailash II",
     couple: "Kabir & Ananya",
+    age: "31 & 28",
+    profession: "CA · Doctor",
     package: "Exclusive",
     closedOn: "28 Jan 2026",
     note: "Home visit closed the deal after two shortlists.",
@@ -53,11 +69,21 @@ const AREA_SUCCESS_STORIES = [
     rating: 5,
     image:
       "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=240&h=240&fit=crop&crop=faces",
+    gallery: [
+      {
+        id: "ss-gk-2-g1",
+        kind: "image",
+        name: "Reception",
+        url: "https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=800&h=450&fit=crop",
+      },
+    ],
   },
   {
     id: "ss-gk-3",
     area: "Greater Kailash II",
     couple: "Rohan & Priya",
+    age: "28 & 26",
+    profession: "MBA · Teacher",
     package: "Premium",
     closedOn: "09 Nov 2025",
     note: "Same society network — GK-II referrals.",
@@ -70,6 +96,8 @@ const AREA_SUCCESS_STORIES = [
     id: "ss-gk-5",
     area: "Greater Kailash II",
     couple: "Aditya & Ishita",
+    age: "30 & 27",
+    profession: "Banking · Designer",
     package: "Premium",
     closedOn: "21 Sep 2025",
     note: "Both families within 2 km of GK-II market.",
@@ -82,6 +110,8 @@ const AREA_SUCCESS_STORIES = [
     id: "ss-gk-6",
     area: "Greater Kailash II",
     couple: "Dev & Kiara",
+    age: "32 & 29",
+    profession: "Entrepreneur · HR",
     package: "Exclusive",
     closedOn: "14 Jun 2025",
     note: "Closed after branch manager home visit.",
@@ -94,6 +124,8 @@ const AREA_SUCCESS_STORIES = [
     id: "ss-gk-7",
     area: "Greater Kailash II",
     couple: "Yash & Rhea",
+    age: "27 & 25",
+    profession: "Engineer · Architect",
     package: "Classic",
     closedOn: "03 Apr 2025",
     note: "Referral from a GK-II closed client.",
@@ -106,6 +138,8 @@ const AREA_SUCCESS_STORIES = [
     id: "ss-gk-4",
     area: "Greater Kailash I",
     couple: "Vikram & Sneha",
+    age: "33 & 30",
+    profession: "Govt. Officer · Lawyer",
     package: "Classic",
     closedOn: "02 Aug 2025",
     note: "Sibling referral from GK-I.",
@@ -118,6 +152,8 @@ const AREA_SUCCESS_STORIES = [
     id: "ss-gk-i-2",
     area: "Greater Kailash I",
     couple: "Nikhil & Pooja",
+    age: "29 & 27",
+    profession: "Product Mgr · CA",
     package: "Premium",
     closedOn: "19 Oct 2025",
     note: "GK-I society introduction via RM.",
@@ -130,6 +166,8 @@ const AREA_SUCCESS_STORIES = [
     id: "ss-sx-1",
     area: "South Extension",
     couple: "Arjun & Diya",
+    age: "30 & 28",
+    profession: "Doctor · Consultant",
     package: "Premium",
     closedOn: "18 Feb 2026",
     note: "Cross-branch shortlist accepted in week 3.",
@@ -142,18 +180,22 @@ const AREA_SUCCESS_STORIES = [
     id: "ss-sx-2",
     area: "South Extension",
     couple: "Harsh & Simran",
+    age: "28 & 26",
+    profession: "B.Tech · MBA",
     package: "Exclusive",
     closedOn: "07 Jan 2026",
     note: "South Ex office walk-in converted in 30 days.",
     quote: "Professional, warm, and very clear about next steps. We felt looked after.",
     rating: 5,
     image:
-      "https://images.unsplash.com/photo-1460978813357-27c3a8a4e4cd?w=240&h=240&fit=crop&crop=faces",
+      "https://images.unsplash.com/photo-1519741497674-611481863552?w=240&h=240&fit=crop&crop=faces",
   },
   {
     id: "ss-rj-1",
     area: "Rajouri Garden",
     couple: "Manish & Neha",
+    age: "31 & 28",
+    profession: "Business · Teacher",
     package: "Premium",
     closedOn: "05 Dec 2025",
     note: "NRI family closed after video intros.",
@@ -166,6 +208,8 @@ const AREA_SUCCESS_STORIES = [
     id: "ss-rj-2",
     area: "Rajouri Garden",
     couple: "Kunal & Aisha",
+    age: "27 & 25",
+    profession: "Software · Designer",
     package: "Classic",
     closedOn: "22 Nov 2025",
     note: "West Delhi network match.",
@@ -194,6 +238,129 @@ function successStoriesForArea(area) {
   return AREA_SUCCESS_STORIES.filter((story) => areasMatch(story.area, area));
 }
 
+function locationTokens(locationStr) {
+  return String(locationStr || "")
+    .toLowerCase()
+    .split(/[,/|&]+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .flatMap((part) => {
+      if (part.includes("ncr") || part.includes("delhi")) {
+        return [
+          "delhi",
+          "ncr",
+          "gurgaon",
+          "noida",
+          "gurugram",
+          "south extension",
+          "rohini",
+          "vasant",
+          "defence",
+          "rajouri",
+          "greater kailash",
+          "kailash",
+        ];
+      }
+      if (part.includes("mumbai")) return ["mumbai", "bombay"];
+      if (part.includes("kailash") || part.includes("gk")) {
+        return ["greater kailash", "kailash", "gk"];
+      }
+      return part.split(/\s+/).filter((w) => w.length > 2);
+    });
+}
+
+function parseAgeNums(ageStr) {
+  return String(ageStr || "")
+    .match(/\d+/g)
+    ?.map(Number)
+    .filter((n) => Number.isFinite(n) && n > 0 && n < 120) || [];
+}
+
+function parsePreferenceAgeRange(ageFrom, ageTo, fallback = "26 - 31") {
+  const from = Number(ageFrom);
+  const to = Number(ageTo);
+  if (Number.isFinite(from) && Number.isFinite(to)) return { from, to };
+  if (Number.isFinite(from)) return { from, to: from };
+  if (Number.isFinite(to)) return { from: to, to };
+  const match = String(fallback || "").match(/(\d+)\s*[-–—]\s*(\d+)/);
+  if (match) return { from: Number(match[1]), to: Number(match[2]) };
+  return { from: 26, to: 31 };
+}
+
+/**
+ * Roka / closure couple profiles for pitching — location-first, then age & profession.
+ */
+export function getClosureProfiles(deal) {
+  const leadArea = shown(deal?.area || deal?.areaOfHouse);
+  const preferredLocation = shown(
+    deal?.intakeValues?.outOfCitySpecify || deal?.preferredLocation || leadArea
+  );
+  const locTokens = [
+    ...locationTokens(leadArea),
+    ...locationTokens(preferredLocation),
+  ];
+  const uniqueTokens = [...new Set(locTokens)];
+  const ageRange = parsePreferenceAgeRange(
+    deal?.intakeValues?.desiredAgeFrom || deal?.desiredAgeFrom,
+    deal?.intakeValues?.desiredAgeTo || deal?.desiredAgeTo
+  );
+  const professionHint = String(
+    deal?.profession || deal?.intakeValues?.profession || deal?.intakeValues?.minimumEducation || ""
+  ).toLowerCase();
+
+  return AREA_SUCCESS_STORIES.map((story) => {
+    const reasons = [];
+    let score = 20;
+    const locBlob = String(story.area || "").toLowerCase();
+    const locHit =
+      (leadArea && areasMatch(story.area, leadArea)) ||
+      uniqueTokens.some((token) => locBlob.includes(token));
+
+    if (locHit) {
+      score += 45;
+      reasons.push(story.area || "Preferred location");
+    }
+
+    const ages = parseAgeNums(story.age);
+    const ageHit = ages.some((age) => age >= ageRange.from && age <= ageRange.to);
+    if (ageHit) {
+      score += 18;
+      reasons.push(`Age ${story.age}`);
+    }
+
+    const profBlob = String(story.profession || "").toLowerCase();
+    const profTokens = professionHint
+      .split(/[,/|&·\s]+/)
+      .map((p) => p.trim())
+      .filter((p) => p.length > 2);
+    const profHit = profTokens.some((token) => profBlob.includes(token));
+    if (profHit) {
+      score += 14;
+      reasons.push(story.profession);
+    }
+
+    return {
+      ...story,
+      location: story.area,
+      matchScore: Math.min(98, Math.max(35, score)),
+      matchReasons: reasons.slice(0, 3),
+      locHit,
+    };
+  })
+    .sort(
+      (a, b) =>
+        Number(b.locHit) - Number(a.locHit) ||
+        b.matchScore - a.matchScore ||
+        String(a.couple).localeCompare(String(b.couple))
+    );
+}
+
+export function closureProfileCount(deal) {
+  const all = getClosureProfiles(deal);
+  const local = all.filter((p) => p.locHit);
+  return local.length || all.length;
+}
+
 function SuccessStoryStars({ rating = 5, size = 12 }) {
   return (
     <div className="flex items-center gap-0.5" aria-label={`${rating} out of 5 stars`}>
@@ -210,12 +377,36 @@ function SuccessStoryStars({ rating = 5, size = 12 }) {
   );
 }
 
-function storyHasMedia(story) {
-  return Boolean(story?.image);
+/** Card thumbnail — couple profile photo only (not gallery media). */
+function getStoryProfileImage(story) {
+  if (story?.profileImage) return story.profileImage;
+  // Legacy: `image` was the card photo (unless it was saved as video-only media)
+  if (story?.image && story.mediaKind !== "video") return story.image;
+  return "";
+}
+
+/** Extra images/videos shown inside the detail modal — separate from profile photo. */
+function getStoryGallery(story) {
+  if (Array.isArray(story?.gallery) && story.gallery.length) {
+    return story.gallery.filter((item) => item?.url);
+  }
+  const items = [];
+  // Legacy single uploads that were NOT the profile card photo
+  if (story?.video) {
+    items.push({ id: "legacy-video", kind: "video", url: story.video, name: story.videoName });
+  } else if (story?.mediaKind === "video" && story?.image) {
+    items.push({ id: "legacy-video", kind: "video", url: story.image, name: story.mediaName });
+  }
+  if (story?.mediaKind === "both" && story?.image && story?.profileImage && story.image !== story.profileImage) {
+    items.push({ id: "legacy-image", kind: "image", url: story.image, name: story.imageName });
+  }
+  return items;
 }
 
 function SuccessStoryCard({ story, onOpen, onShare, className = "", ...rest }) {
-  const isVideo = story.mediaKind === "video";
+  const profileImage = getStoryProfileImage(story);
+  const gallery = getStoryGallery(story);
+  const hasGalleryVideo = gallery.some((item) => item.kind === "video");
   return (
     <article
       {...rest}
@@ -228,39 +419,29 @@ function SuccessStoryCard({ story, onOpen, onShare, className = "", ...rest }) {
         aria-label={`Open ${story.couple} review`}
       >
         <div className="relative w-[88px] shrink-0 self-stretch bg-[#F3F4F6]">
-          {storyHasMedia(story) ? (
-            isVideo ? (
-              <video
-                src={story.image}
-                className="size-full object-cover"
-                muted
-                playsInline
-                preload="metadata"
-              />
-            ) : (
-              <img
-                src={story.image}
-                alt={story.couple}
-                className="size-full object-cover"
-                loading="lazy"
-              />
-            )
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt={story.couple}
+              className="size-full object-cover"
+              loading="lazy"
+            />
           ) : (
             <div className="size-full grid place-items-center text-[#D1D5DB]">
               <Heart size={22} strokeWidth={1.8} />
             </div>
           )}
-          {isVideo && storyHasMedia(story) ? (
-            <span className="absolute inset-0 grid place-items-center bg-black/25 pointer-events-none">
-              <Video size={18} className="text-white" strokeWidth={2.2} />
+          {hasGalleryVideo ? (
+            <span className="absolute bottom-1.5 right-1.5 size-6 rounded-md bg-black/55 text-white grid place-items-center pointer-events-none">
+              <Video size={12} strokeWidth={2.4} />
             </span>
           ) : null}
         </div>
         <div className="flex-1 min-w-0 px-3 py-2.5 pr-8 flex flex-col gap-1">
           <p className="text-[13px] font-bold text-[#7A0A17] leading-tight truncate">{story.couple}</p>
           <SuccessStoryStars rating={story.rating || 5} />
-          <p className="text-[11.5px] text-[#6B7280] leading-snug line-clamp-3">
-            {story.quote || story.note}
+          <p className="mt-0.5 text-[11.5px] text-[#6B7280] leading-snug line-clamp-3">
+            {shown(story.quote) || shown(story.note) || "No review yet."}
           </p>
         </div>
       </button>
@@ -282,19 +463,18 @@ function SuccessStoryCard({ story, onOpen, onShare, className = "", ...rest }) {
 
 function SuccessStoryDetailModal({ story, open, onClose, onShare }) {
   if (!story) return null;
-  const isVideo = story.mediaKind === "video";
-  const hasMedia = storyHasMedia(story);
+  const profileImage = getStoryProfileImage(story);
+  const gallery = getStoryGallery(story);
+  const review = shown(story.quote) || shown(story.note) || "No review text added.";
   const sourceLabel =
-    story.source === "google" ? "Google Review" : story.source === "inapp" ? "In-app Review" : null;
+    story.source === "google" ? "Google Review" : story.source === "inapp" ? "In-app Review" : "Testimonial";
 
   return (
     <Modal
       open={open}
       onClose={onClose}
       title={story.couple}
-      subtitle={[sourceLabel, story.area, story.closedOn ? `Closed ${story.closedOn}` : null]
-        .filter(Boolean)
-        .join(" · ")}
+      subtitle="Testimonial"
       icon={<Heart size={18} />}
       iconBg="#F6E4E8"
       iconColor="#7A0A17"
@@ -321,72 +501,213 @@ function SuccessStoryDetailModal({ story, open, onClose, onShare }) {
       }
     >
       <div className="flex flex-col gap-4">
-        {hasMedia ? (
-          <div className="rounded-xl overflow-hidden border border-[#EEF1F4] bg-[#111] aspect-video">
-            {isVideo ? (
-              <video
-                src={story.image}
-                className="size-full object-contain bg-black"
-                controls
-                playsInline
-                preload="metadata"
+        <div className="rounded-2xl border border-[#F3D5DA] bg-[#FDF8F9] px-4 py-4">
+          <div className="flex items-center gap-3">
+            {profileImage ? (
+              <img
+                src={profileImage}
+                alt={story.couple}
+                className="size-12 rounded-xl object-cover border border-[#F3D5DA] shrink-0"
               />
             ) : (
-              <img
-                src={story.image}
-                alt={story.couple}
-                className="size-full object-cover"
-              />
+              <span className="size-12 rounded-xl bg-white border border-[#F3D5DA] text-[#7A0A17] grid place-items-center shrink-0">
+                <Heart size={18} strokeWidth={2.2} />
+              </span>
             )}
+            <div className="min-w-0">
+              <p className="text-[14px] font-bold text-[#7A0A17] truncate">{story.couple}</p>
+              <div className="mt-1">
+                <SuccessStoryStars rating={story.rating || 5} size={16} />
+              </div>
+            </div>
           </div>
-        ) : null}
-
-        <div className="flex flex-col gap-2">
-          <SuccessStoryStars rating={story.rating || 5} size={18} />
-          <p className="text-[14px] text-[#374151] leading-relaxed">
-            {story.quote || story.note || "No review text added."}
-          </p>
-          {story.note && story.quote && story.note !== story.quote ? (
-            <p className="text-[12.5px] text-[#6B7280] leading-snug">{story.note}</p>
-          ) : null}
+          <p className="mt-3.5 text-[14.5px] text-[#374151] leading-relaxed">“{review}”</p>
+          <p className="mt-2 text-[11.5px] font-semibold text-[#9CA3AF]">{sourceLabel}</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {story.package ? (
-            <span className="inline-flex items-center h-7 px-2.5 rounded-lg bg-[#F3F4F6] text-[11.5px] font-semibold text-[#4B5563]">
-              {story.package}
-            </span>
-          ) : null}
-          {sourceLabel ? (
-            <span className="inline-flex items-center h-7 px-2.5 rounded-lg bg-[#F6E4E8] text-[11.5px] font-semibold text-[#7A0A17]">
-              {sourceLabel}
-            </span>
-          ) : null}
-          {story.mediaName ? (
-            <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg bg-[#EEF2FF] text-[11.5px] font-semibold text-[#4338CA]">
-              {isVideo ? <Video size={12} /> : <Camera size={12} />}
-              {story.mediaName}
-            </span>
-          ) : null}
-        </div>
-
-        {story.googleLink ? (
-          <a
-            href={story.googleLink}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#7A0A17] hover:underline"
-          >
-            <Link2 size={14} strokeWidth={2.2} />
-            Open Google review
-          </a>
+        {gallery.length ? (
+          <div className="flex flex-col gap-2.5">
+            <p className="text-[12.5px] font-bold text-[#111]">Photos &amp; videos</p>
+            <div className="flex flex-col gap-2.5">
+              {gallery.map((item) => (
+                <div
+                  key={item.id || item.url}
+                  className="rounded-xl overflow-hidden border border-[#EEF1F4] bg-[#111] aspect-video"
+                >
+                  {item.kind === "video" ? (
+                    <video
+                      src={item.url}
+                      className="size-full object-contain bg-black"
+                      controls
+                      playsInline
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
+                      src={item.url}
+                      alt={item.name || story.couple}
+                      className="size-full object-cover"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         ) : null}
       </div>
     </Modal>
   );
 }
 
-function SuccessStoriesTestimonials({ stories, onAdd, onViewAll, onOpen, onShare }) {
+function ClosureProfileCard({ profile, onOpen, onShare }) {
+  return (
+    <li>
+      <article className="relative rounded-xl border border-[#EEF1F4] bg-white overflow-hidden hover:border-[#7A0A17]/25 hover:bg-[#FDFCFC] transition-colors flex">
+        <button
+          type="button"
+          onClick={() => onOpen?.(profile)}
+          className="flex flex-1 min-w-0 text-left"
+          aria-label={`Open ${profile.couple} closure profile`}
+        >
+          <div className="relative w-[88px] shrink-0 self-stretch bg-[#F3F4F6]">
+            {profile.image ? (
+              <img
+                src={profile.image}
+                alt={profile.couple}
+                className="size-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="size-full grid place-items-center text-[#D1D5DB]">
+                <Heart size={22} strokeWidth={1.8} />
+              </div>
+            )}
+            {profile.locHit ? (
+              <span className="absolute top-1.5 left-1.5 h-5 px-1.5 rounded-md bg-[#7A0A17] text-white text-[9px] font-bold uppercase tracking-wide grid place-items-center">
+                Near
+              </span>
+            ) : null}
+          </div>
+          <div className="flex-1 min-w-0 px-3 py-2.5 pr-8 flex flex-col gap-1">
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-[13.5px] font-bold text-[#7A0A17] leading-tight truncate">
+                {profile.couple}
+              </p>
+              <span className="shrink-0 text-[10px] font-semibold text-[#7A0A17] bg-[#F6E4E8] px-1.5 py-0.5 rounded-md">
+                Roka
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5 text-[11.5px] text-[#6B7280] leading-snug">
+              <p className="truncate">
+                <span className="font-semibold text-[#4B5563]">Age:</span> {profile.age || "—"}
+              </p>
+              <p className="truncate">
+                <span className="font-semibold text-[#4B5563]">Profession:</span>{" "}
+                {profile.profession || "—"}
+              </p>
+              <p className="truncate inline-flex items-center gap-1 min-w-0">
+                <MapPin size={11} className="text-[#9CA3AF] shrink-0" />
+                <span className="truncate">
+                  <span className="font-semibold text-[#4B5563]">Location:</span>{" "}
+                  {profile.area || profile.location || "—"}
+                </span>
+              </p>
+            </div>
+            {profile.closedOn ? (
+              <p className="text-[10.5px] text-[#9CA3AF] mt-0.5">Closed {profile.closedOn}</p>
+            ) : null}
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onShare?.(profile);
+          }}
+          className="absolute bottom-2 right-2 size-6 rounded-md text-[#9CA3AF] hover:text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center transition-colors z-[1]"
+          aria-label={`Share ${profile.couple} closure profile`}
+          title="Share"
+        >
+          <Share2 size={13} strokeWidth={2.2} />
+        </button>
+      </article>
+    </li>
+  );
+}
+
+function preferenceSummaryFromDeal(deal) {
+  const intake = deal?.intakeValues || {};
+  const ageFrom = shown(intake.desiredAgeFrom || deal?.desiredAgeFrom);
+  const ageTo = shown(intake.desiredAgeTo || deal?.desiredAgeTo);
+  const age =
+    ageFrom && ageTo ? `${ageFrom} - ${ageTo}` : ageFrom || ageTo || "26 - 31";
+  const location =
+    shown(intake.outOfCitySpecify || deal?.preferredLocation || deal?.area || deal?.areaOfHouse) ||
+    "Delhi NCR";
+  const profession = shown(deal?.profession || intake.profession || intake.minimumEducation);
+  return { age, location, profession };
+}
+
+function ClosureProfilesModal({ open, onClose, deal, onOpenProfile, onShare }) {
+  const preference = preferenceSummaryFromDeal(deal);
+  const leadArea = shown(deal?.area || deal?.areaOfHouse) || preference.location;
+  const profiles = useMemo(() => (open ? getClosureProfiles(deal) : []), [open, deal]);
+  const localCount = profiles.filter((p) => p.locHit).length;
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Closure Profiles"
+      subtitle={
+        localCount > 0
+          ? `${localCount} roka closures near ${leadArea}`
+          : `${profiles.length} roka closures · Age · Profession · Location`
+      }
+      icon={<Heart size={18} />}
+      iconBg="#F6E4E8"
+      iconColor="#7A0A17"
+      width="max-w-2xl"
+      zClass="z-[85]"
+      contain
+    >
+      <p className="mb-4 text-[12px] leading-relaxed text-[#6B7280] bg-[#FDF2F3] border border-[#7A0A17]/12 rounded-xl px-3 py-2.5">
+        <span className="font-semibold text-[#7A0A17]">Matched on: </span>
+        Age {preference.age} · {preference.location}
+        {preference.profession ? ` · ${preference.profession}` : ""} — location first
+      </p>
+
+      {profiles.length === 0 ? (
+        <div className="py-10 text-center">
+          <Heart size={28} className="mx-auto text-[#D1D5DB] mb-2" />
+          <p className="text-[14px] font-semibold text-[#374151]">No closure profiles yet</p>
+          <p className="text-[12.5px] text-[#9CA3AF] mt-1">
+            Try another area or widen partner location preference.
+          </p>
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-2.5">
+          {profiles.map((profile) => (
+            <ClosureProfileCard
+              key={profile.id}
+              profile={profile}
+              onOpen={(item) => {
+                onClose?.();
+                onOpenProfile?.(item);
+              }}
+              onShare={(item) => {
+                onClose?.();
+                onShare?.(item);
+              }}
+            />
+          ))}
+        </ul>
+      )}
+    </Modal>
+  );
+}
+
+function SuccessStoriesTestimonials({ stories, onAdd, onViewAll, onOpen, onShare, onClosure, closureCount }) {
   const list = stories?.length ? stories : FALLBACK_TESTIMONIALS;
   const scrollerRef = useRef(null);
   const [canPrev, setCanPrev] = useState(false);
@@ -459,6 +780,18 @@ function SuccessStoriesTestimonials({ stories, onAdd, onViewAll, onOpen, onShare
               </button>
             </div>
           ) : null}
+          {onClosure ? (
+            <button
+              type="button"
+              onClick={onClosure}
+              className="inline-flex items-center gap-1 h-8 px-3 rounded-lg border border-[#7A0A17]/35 bg-white text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#FDF2F3] transition-colors shrink-0"
+            >
+              Closure Profiles
+              {Number(closureCount) > 0 ? (
+                <span className="text-[11px] font-bold tabular-nums">({closureCount})</span>
+              ) : null}
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={onAdd}
@@ -498,6 +831,7 @@ export default function SuccessStoriesBlock({ area = "", deal = null, className 
   const leadArea = shown(area);
   const [successStoriesOpen, setSuccessStoriesOpen] = useState(false);
   const [addSuccessStoryOpen, setAddSuccessStoryOpen] = useState(false);
+  const [closureOpen, setClosureOpen] = useState(false);
   const [customSuccessStories, setCustomSuccessStories] = useState([]);
   const [viewingSuccessStory, setViewingSuccessStory] = useState(null);
   const [sharingSuccessStory, setSharingSuccessStory] = useState(null);
@@ -510,6 +844,7 @@ export default function SuccessStoriesBlock({ area = "", deal = null, className 
     return [...custom, ...tagged];
   }, [leadArea, customSuccessStories]);
   const areaSuccessCount = areaSuccessStories.length;
+  const closureCount = useMemo(() => closureProfileCount(deal), [deal]);
 
   return (
     <>
@@ -520,6 +855,8 @@ export default function SuccessStoriesBlock({ area = "", deal = null, className 
           onViewAll={() => setSuccessStoriesOpen(true)}
           onOpen={setViewingSuccessStory}
           onShare={setSharingSuccessStory}
+          onClosure={deal ? () => setClosureOpen(true) : undefined}
+          closureCount={closureCount}
         />
       </div>
 
@@ -569,12 +906,14 @@ export default function SuccessStoriesBlock({ area = "", deal = null, className 
                     <div className="min-w-0">
                       <p className="text-[13.5px] font-bold text-[#1F2937] leading-tight">{story.couple}</p>
                       <p className="text-[12px] text-[#6B7280] mt-0.5 leading-snug">
-                        {story.package} · Closed {story.closedOn}
-                        {story.source === "google"
-                          ? " · Google"
-                          : story.source === "inapp"
-                            ? " · In-app"
-                            : ""}
+                        {[
+                          shown(story.age) ? `Age ${story.age}` : null,
+                          shown(story.profession) || null,
+                          story.package ? `${story.package}` : null,
+                          story.closedOn ? `Closed ${story.closedOn}` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </p>
                     </div>
                     <span className="inline-flex items-center gap-1 shrink-0 text-[11px] font-semibold text-[#7A0A17] bg-[#F6E4E8] px-2 py-0.5 rounded-md">
@@ -623,6 +962,14 @@ export default function SuccessStoriesBlock({ area = "", deal = null, className 
           setCustomSuccessStories((current) => [story, ...current]);
           setViewingSuccessStory(story);
         }}
+      />
+
+      <ClosureProfilesModal
+        open={closureOpen}
+        onClose={() => setClosureOpen(false)}
+        deal={deal}
+        onOpenProfile={setViewingSuccessStory}
+        onShare={setSharingSuccessStory}
       />
     </>
   );

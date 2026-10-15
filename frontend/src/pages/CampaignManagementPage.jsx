@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { createPortal } from "react-dom";
 import {
   ChevronDown,
   Copy,
@@ -25,6 +25,7 @@ import charmTickDouble from "../assets/charm_tick-double.png";
 import biEnvelopeOpen from "../assets/bi_envelope-open.png";
 import { readCampaigns, removeCampaign, saveCampaigns } from "../utils/campaignsStore.js";
 import { WHATSAPP_GREEN } from "../components/common/WhatsAppIcon.jsx";
+import CreateCampaignPage from "./CreateCampaignPage.jsx";
 
 const LEADS_BY_CHANNEL = [
   { label: "SMS", value: 142, color: "#7A0A17" },
@@ -189,12 +190,18 @@ function usePagedTable(rows, searchKeys) {
   };
 }
 
-export default function CampaignManagementPage() {
+export default function CampaignManagementPage({ embedded = false, onClose }) {
   const [rows, setRows] = useState(() => readCampaigns());
   const [channelModalOpen, setChannelModalOpen] = useState(false);
   const [viewCampaign, setViewCampaign] = useState(null);
   const [editCampaign, setEditCampaign] = useState(null);
+  const [createCampaignOpen, setCreateCampaignOpen] = useState(false);
   const table = usePagedTable(rows, ["name", "tag", "target", "channel", "owner", "status"]);
+
+  const closeCreateCampaign = () => {
+    setCreateCampaignOpen(false);
+    setRows(readCampaigns());
+  };
 
   const persistRows = (next) => {
     setRows(next);
@@ -233,10 +240,23 @@ export default function CampaignManagementPage() {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="px-5 pt-5 pb-8 flex flex-col gap-5 min-w-0">
+    <div className={embedded ? "flex flex-col" : "flex flex-col flex-1 min-h-0"}>
+      <div className={`${embedded ? "px-5 pt-5 pb-6" : "px-5 pt-5 pb-8"} flex flex-col gap-5 min-w-0`}>
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <h1 className="text-[22px] font-bold text-[#111] tracking-tight">Campaign Management</h1>
+          <div className="flex items-center gap-2.5 min-w-0">
+            {embedded ? (
+              <button
+                type="button"
+                onClick={() => onClose?.()}
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors shrink-0"
+                aria-label="Close"
+              >
+                <X size={15} />
+                Close
+              </button>
+            ) : null}
+            <h1 className="text-[22px] font-bold text-[#111] tracking-tight">Campaign Management</h1>
+          </div>
           <div className="flex items-center gap-2.5">
             <button
               type="button"
@@ -245,12 +265,13 @@ export default function CampaignManagementPage() {
             >
               <Download size={14} /> Export
             </button>
-            <Link
-              to="/campaign/create"
+            <button
+              type="button"
+              onClick={() => setCreateCampaignOpen(true)}
               className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
             >
               <Plus size={15} /> New Campaign
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -404,6 +425,27 @@ export default function CampaignManagementPage() {
         }}
         onSave={handleSaveEdit}
       />
+      {createCampaignOpen &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Create New Campaign"
+          >
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={closeCreateCampaign}
+              aria-hidden
+            />
+            <div className="relative z-10 w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl bg-[#F7F8FA] shadow-xl">
+              <div className="max-h-[92vh] overflow-y-auto scrollbar-thin">
+                <CreateCampaignPage embedded onClose={closeCreateCampaign} />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

@@ -29,8 +29,9 @@ import {
   TrendingUp,
   IndianRupee,
   User,
-  Megaphone,
   Mail,
+  Bell,
+  ArrowUp,
 } from "lucide-react";
 import AIAssistant from "../components/common/AIAssistant.jsx";
 import SuccessStoriesBlock from "../components/common/SuccessStoriesBlock.jsx";
@@ -39,9 +40,11 @@ import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
 import ClientNameHoverTip from "../components/common/ClientNameHoverTip.jsx";
 import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
+import WhatsAppIcon from "../components/common/WhatsAppIcon.jsx";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import LeadActivityHistory from "./pipeline/deal-tabs/LeadActivityHistory";
 import CreateCampaignPage from "./CreateCampaignPage.jsx";
+import CampaignManagementPage from "./CampaignManagementPage.jsx";
 import CreateLeadModal from "../components/pipeline/CreateLeadModal";
 import BiodataUploadModal from "../components/pipeline/BiodataUploadModal";
 import BiodataProfileModal from "../components/pipeline/BiodataProfileModal";
@@ -836,8 +839,34 @@ function PerformanceScoreCard({ period, myLeads }) {
   );
 }
 
-function UpNextCard({ item, onDetails }) {
-  const isToday = item ? sameCalendarDay(item.date, new Date()) : false;
+function upNextDisplayName(item) {
+  if (!item) return "";
+  const meta = item.meta || {};
+  const client = String(meta.client || "").trim();
+  if (client && client.toLowerCase() !== "multiple") return client;
+  const people = Array.isArray(meta.people) ? meta.people.filter(Boolean) : [];
+  if (people[0]) return people[0];
+  return item.title || "Upcoming";
+}
+
+function upNextTemperature(item) {
+  const meta = item?.meta || {};
+  if (meta.temperature) return meta.temperature;
+  if (String(meta.priority || "").toLowerCase() === "high") return "Hot";
+  if (/call|visit|meeting/i.test(item?.title || "") || item?.category === "meeting") return "Hot";
+  return "Warm";
+}
+
+function UpNextCard({ item, onDetails, onCall }) {
+  const name = upNextDisplayName(item);
+  const temperature = item ? upNextTemperature(item) : null;
+  const tempStyle = TEMPERATURE_STYLES[temperature] || TEMPERATURE_STYLES.Hot;
+  const isNow =
+    item &&
+    sameCalendarDay(item.date, new Date()) &&
+    typeof item.startH === "number" &&
+    item.startH <= new Date().getHours() + new Date().getMinutes() / 60;
+
   return (
     <div className="relative overflow-hidden flex-1 min-w-0 rounded-2xl border border-[#7A0A17]/15 bg-gradient-to-br from-[#FFF5F6] to-[#FDECEE] p-3.5 shadow-[0_1px_2px_rgba(122,10,23,0.06)]">
       <div className="absolute inset-y-0 left-0 w-1 bg-[#7A0A17]" />
@@ -848,16 +877,19 @@ function UpNextCard({ item, onDetails }) {
         </>
       ) : (
         <>
-          <div className="flex items-center justify-between gap-2 pl-1.5">
+          <div className="flex items-start justify-between gap-2 pl-1.5">
             <p className="text-[10.5px] font-bold text-[#7A0A17] tracking-wide whitespace-nowrap">
-              UP NEXT · {formatHourTime(item.startH).toUpperCase()}
+              UP NEXT · {isNow ? "NOW" : formatHourTime(item.startH).toUpperCase()}
             </p>
-            <span className="text-[10px] font-bold text-white bg-[#7A0A17] rounded-md px-1.5 py-0.5">
-              {isToday ? "Today" : item.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            <span
+              className="text-[10px] font-bold text-white rounded-md px-1.5 py-0.5 shrink-0"
+              style={{ backgroundColor: tempStyle.color }}
+            >
+              {temperature}
             </span>
           </div>
           <div className="flex items-center justify-between gap-2 mt-2 pl-1.5">
-            <p className="text-[13.5px] font-bold text-[#111] leading-snug">{item.title}</p>
+            <p className="text-[15px] font-bold text-[#111] leading-snug truncate">{name}</p>
             <button
               type="button"
               onClick={() => onDetails?.(item)}
@@ -866,9 +898,14 @@ function UpNextCard({ item, onDetails }) {
               Details
             </button>
           </div>
-          <p className="inline-flex items-center mt-2.5 ml-1.5 text-[11.5px] font-semibold text-[#7A0A17] bg-white/70 border border-[#7A0A17]/12 px-2 py-0.5 rounded-md">
-            {formatHourTime(item.startH)} – {formatHourTime(item.endH)}
-          </p>
+          <button
+            type="button"
+            onClick={() => onCall?.(item)}
+            className="mt-3 ml-1.5 inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg bg-white border border-[#7A0A17]/35 text-[12px] font-bold text-[#7A0A17] hover:bg-[#FFF8F9] transition-colors"
+          >
+            <Phone size={13} strokeWidth={2.4} />
+            Call Now
+          </button>
         </>
       )}
     </div>
@@ -938,13 +975,6 @@ const STAGE_LABEL_BY_ID = {
   P6: "P6 · Service Handover",
 };
 
-const CHANNEL_STYLES = {
-  WhatsApp: { bg: "#E7F8EF", color: "#16A34A" },
-  SMS: { bg: "#EEF0FE", color: "#6366F1" },
-  Email: { bg: "#FFF3E4", color: "#F59E0B" },
-  Push: { bg: "#FDECEE", color: "#E8395B" },
-};
-
 function resolveAllResponseRows(campaigns = []) {
   const byId = new Map((Array.isArray(campaigns) ? campaigns : []).map((c) => [c.id, c]));
   const seen = new Set();
@@ -967,70 +997,132 @@ function resolveAllResponseRows(campaigns = []) {
   return rows;
 }
 
-function leadContactLine(lead = {}) {
-  const mobile = String(lead.mobile || "").trim();
-  const email = String(lead.email || "").trim();
-  if (mobile && email) return `${mobile} · ${email}`;
-  return mobile || email || lead.mmlId || "—";
-}
+const CAMPAIGN_CHANNEL_RATES = [
+  {
+    key: "whatsapp",
+    label: "WhatsApp",
+    rate: "2.4%",
+    icon: WhatsAppIcon,
+    iconProps: { size: 12, withBg: false, color: "#16A34A" },
+    chipBg: "#E7F8EF",
+  },
+  {
+    key: "sms",
+    label: "SMS",
+    rate: "1.8%",
+    icon: Mail,
+    iconProps: { size: 12, className: "text-[#3B82F6]", strokeWidth: 2.25 },
+    chipBg: "#EEF4FF",
+  },
+  {
+    key: "push",
+    label: "In app Notifications",
+    rate: "2.8%",
+    icon: Bell,
+    iconProps: { size: 12, className: "text-[#F59E0B]", strokeWidth: 2.25 },
+    chipBg: "#FFF7ED",
+  },
+  {
+    key: "email",
+    label: "Email",
+    rate: "1.2%",
+    icon: Mail,
+    iconProps: { size: 12, className: "text-[#8B5CF6]", strokeWidth: 2.25 },
+    chipBg: "#F5F3FF",
+  },
+];
 
 function CampaignPerformanceCard({
-  messagesSent = 34,
-  messagesTrend = "+10%",
   responseCount = 94,
-  responsesTrend = "+10%",
-  onClick,
+  responsesTrend = "10%",
+  channels = CAMPAIGN_CHANNEL_RATES,
+  onResponsesClick,
+  onChannelsClick,
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="bg-white border border-black/8 rounded-2xl p-3.5 flex-1 min-w-0 text-left hover:bg-[#FAFAFB] transition-colors"
-      title="View campaign responses"
-    >
-      <div className="flex items-center gap-2">
-        <Megaphone size={15} className="text-[#E8395B] shrink-0" strokeWidth={2.25} />
-        <p className="text-[13px] font-bold text-[#111]">Campaign Performance</p>
-      </div>
+    <div className="bg-white border border-black/8 rounded-2xl p-2.5 flex-1 min-w-0 text-left">
+      <div className="grid grid-cols-[minmax(0,1.35fr)_minmax(0,0.9fr)] gap-2 items-stretch h-full">
+        <button
+          type="button"
+          onClick={onChannelsClick}
+          className="px-1.5 min-w-0 text-left rounded-xl py-1 hover:bg-[#FAFAFB] transition-colors"
+          title="Open campaign"
+        >
+          <ul className="flex flex-col gap-2">
+            {channels.map((ch) => {
+              const Icon = ch.icon;
+              return (
+                <li key={ch.key} className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="inline-flex size-5 items-center justify-center rounded-md shrink-0"
+                    style={{ backgroundColor: ch.chipBg }}
+                  >
+                    <Icon {...(ch.iconProps || {})} />
+                  </span>
+                  <span className="text-[11.5px] font-medium text-[#374151] truncate flex-1 min-w-0">
+                    {ch.label}
+                  </span>
+                  <span className="text-[11.5px] font-bold text-[#111] tabular-nums shrink-0">{ch.rate}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </button>
 
-      <div className="mt-3 grid grid-cols-2 divide-x divide-[#E5E7EB]">
-        <div className="pr-3 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="inline-flex size-6 items-center justify-center rounded-md bg-[#EEF4FF] shrink-0">
-              <Mail size={13} className="text-[#3B82F6]" strokeWidth={2.25} />
-            </span>
-            <span className="text-[11.5px] font-medium text-[#6B7280] truncate">Messages Sent</span>
-          </div>
-          <p className="text-[26px] font-bold text-[#111] leading-none mt-2 tabular-nums">{messagesSent}</p>
-          <p className="text-[12px] font-bold text-[#16A34A] mt-1.5 tabular-nums">{messagesTrend}</p>
-        </div>
-
-        <div className="pl-3 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span
-              className="inline-flex size-6 items-center justify-center rounded-md bg-[#FDECEE] shrink-0"
-              style={{ boxShadow: "0 0 0 3px rgba(232,57,91,0.12)" }}
-            >
-              <MessageSquare size={13} className="text-[#E8395B]" strokeWidth={2.25} />
-            </span>
-            <span className="text-[11.5px] font-medium text-[#6B7280] truncate">Responses</span>
-          </div>
-          <p className="text-[26px] font-bold text-[#111] leading-none mt-2 tabular-nums">{responseCount}</p>
-          <p className="text-[12px] font-bold text-[#16A34A] mt-1.5 tabular-nums">{responsesTrend}</p>
-        </div>
+        <button
+          type="button"
+          onClick={onResponsesClick}
+          className="min-w-0 text-left rounded-xl border border-[#E5E7EB] px-3 py-2 hover:bg-[#FAFAFB] transition-colors flex flex-col justify-center"
+          title="View campaign responses"
+        >
+          <span className="text-[11.5px] font-medium text-[#6B7280]">Responses</span>
+          <p className="text-[28px] font-bold text-[#111] leading-none mt-1.5 tabular-nums">{responseCount}</p>
+          <p className="inline-flex items-center gap-0.5 text-[12px] font-bold text-[#16A34A] mt-1.5 tabular-nums">
+            <ArrowUp size={12} strokeWidth={2.75} />
+            {String(responsesTrend).replace(/^\+/, "")}
+          </p>
+        </button>
       </div>
-    </button>
+    </div>
   );
 }
 
+const RESPONSE_TABLE_COLS = [
+  { label: "Name", key: "name", width: "16%" },
+  { label: "Campaign name", key: "campaignName", width: "16%" },
+  { label: "Campaign id", key: "campaignId", width: "10%" },
+  { label: "Source", key: "source", width: "12%" },
+  { label: "Stage", key: "stage", width: "14%" },
+  { label: "Response", key: "response", width: "32%" },
+];
+
 function CampaignResponseModal({ open, onClose, rows, onOpenLead }) {
+  const tableRows = useMemo(
+    () =>
+      (rows || []).map((row) => ({
+        ...row,
+        name: row.lead?.name || "",
+        source: row.lead?.source || row.channel || "",
+        stage: row.stageLabel || row.stageId || "",
+        response: row.reply || "",
+      })),
+    [rows]
+  );
+  const { sorted, sort, toggle } = useTableSort(tableRows, {
+    defaultKey: "name",
+    getValue: (row, key) => {
+      if (key === "campaignId") return Number(row.campaignId) || 0;
+      return row?.[key];
+    },
+  });
+
   return (
     <Modal
       open={open}
       onClose={onClose}
       title="Campaign responses"
       subtitle={`${rows.length} lead${rows.length === 1 ? "" : "s"} replied`}
-      width="max-w-xl"
+      width="max-w-5xl"
       icon={<MessageSquare size={18} />}
       iconBg="#EEF0FE"
       iconColor="#6366F1"
@@ -1040,65 +1132,83 @@ function CampaignResponseModal({ open, onClose, rows, onOpenLead }) {
           No responses yet. Run a campaign to see lead replies here.
         </p>
       ) : (
-        <ul className="flex flex-col gap-3">
-          {rows.map((row) => {
-            const lead = row.lead || {};
-            const temp = TEMPERATURE_STYLES[lead.temperature] || { color: "#6B7280", bg: "#F3F4F6" };
-            const ch = CHANNEL_STYLES[row.channel] || { bg: "#F3F4F6", color: "#6B7280" };
-            return (
-              <li key={`${row.leadId}-${row.campaignId}-${row.respondedAtLabel}`}>
-                <button
-                  type="button"
-                  onClick={() => onOpenLead?.(lead)}
-                  className="w-full text-left rounded-2xl border border-black/8 bg-[#FAFAFB] hover:bg-white hover:border-black/12 transition-colors p-3.5"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-[14px] font-bold text-[#111] truncate">{lead.name}</p>
-                        {lead.temperature ? (
-                          <span
-                            className="text-[10px] font-bold rounded-md px-1.5 py-0.5"
-                            style={{ backgroundColor: temp.bg, color: temp.color }}
-                          >
-                            {lead.temperature}
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="text-[11.5px] text-[#6B7280] mt-1 truncate">
-                        {leadContactLine(lead)}
-                      </p>
-                      <p className="text-[11px] text-[#9CA3AF] mt-0.5">
-                        {row.campaignName ? `${row.campaignName} · ` : ""}
-                        {row.stageLabel}
-                        {lead.source ? ` · ${lead.source}` : ""}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      <span
-                        className="text-[10px] font-bold rounded-md px-1.5 py-0.5"
-                        style={{ backgroundColor: ch.bg, color: ch.color }}
-                      >
-                        {row.channel}
-                      </span>
-                      <span className="text-[11px] text-[#9CA3AF] font-medium whitespace-nowrap">
-                        {row.respondedAtLabel}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-3 rounded-xl bg-white border border-black/6 px-3 py-2.5">
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-[#9CA3AF]">
-                      Response
-                    </p>
-                    <p className="text-[13px] text-[#111] leading-snug mt-1">
-                      {row.reply || "Replied to campaign"}
-                    </p>
-                  </div>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="border border-black/8 rounded-xl overflow-x-auto -mx-1">
+          <table className="w-full min-w-[720px] text-left border-collapse table-fixed">
+            <colgroup>
+              {RESPONSE_TABLE_COLS.map((col) => (
+                <col key={col.key} style={{ width: col.width }} />
+              ))}
+            </colgroup>
+            <thead>
+              <tr className="border-b border-black/6 bg-[#FAFAFB]/80">
+                {RESPONSE_TABLE_COLS.map((h) => (
+                  <SortableTh
+                    key={h.key}
+                    label={h.label}
+                    sortKey={h.key}
+                    sort={sort}
+                    onSort={toggle}
+                    dense
+                    className="px-2.5 py-2.5 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-tight align-bottom"
+                  />
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((row) => {
+                const lead = row.lead || {};
+                const temp = TEMPERATURE_STYLES[lead.temperature] || { color: "#6B7280", bg: "#F3F4F6" };
+                return (
+                  <tr
+                    key={`${row.leadId}-${row.campaignId}-${row.respondedAtLabel}`}
+                    onClick={() => onOpenLead?.(lead)}
+                    className="border-b border-black/6 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
+                    title="Open lead overview"
+                  >
+                    <td className="px-2.5 py-2.5 align-middle overflow-hidden">
+                      <ClientNameHoverTip name={lead.name} temperature={lead.temperature} mmlId={lead.mmlId}>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: temp.color }} />
+                          <div className="min-w-0">
+                            <p className="text-[12.5px] font-semibold text-[#111] truncate hover:text-[#7A0A17] hover:underline">
+                              {lead.name || "—"}
+                            </p>
+                            {lead.temperature ? (
+                              <span
+                                className="text-[10px] font-bold rounded px-1 py-px"
+                                style={{ backgroundColor: temp.bg, color: temp.color }}
+                              >
+                                {lead.temperature}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </ClientNameHoverTip>
+                    </td>
+                    <td className="px-2.5 py-2.5 align-middle overflow-hidden">
+                      <p className="text-[12px] text-[#374151] truncate">{row.campaignName || "—"}</p>
+                    </td>
+                    <td className="px-2.5 py-2.5 align-middle overflow-hidden">
+                      <p className="text-[12px] font-semibold text-[#111] tabular-nums">{row.campaignId ?? "—"}</p>
+                    </td>
+                    <td className="px-2.5 py-2.5 align-middle overflow-hidden">
+                      <p className="text-[12px] text-[#374151] truncate">{lead.source || row.channel || "—"}</p>
+                    </td>
+                    <td className="px-2.5 py-2.5 align-middle overflow-hidden">
+                      <p className="text-[12px] text-[#374151] truncate">{row.stageLabel || row.stageId || "—"}</p>
+                    </td>
+                    <td className="px-2.5 py-2.5 align-middle overflow-hidden">
+                      <p className="text-[12px] text-[#111] leading-snug line-clamp-2">{row.reply || "—"}</p>
+                      {row.respondedAtLabel ? (
+                        <p className="text-[10px] text-[#9CA3AF] mt-0.5">{row.respondedAtLabel}</p>
+                      ) : null}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </Modal>
   );
@@ -1944,6 +2054,7 @@ export default function Dashboard() {
   );
   const [campaigns, setCampaigns] = useState(readCampaigns);
   const [responseModalOpen, setResponseModalOpen] = useState(false);
+  const [campaignPageOpen, setCampaignPageOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedMeetingEvent, setSelectedMeetingEvent] = useState(null);
   const [selectedTaskEvent, setSelectedTaskEvent] = useState(null);
@@ -2429,15 +2540,6 @@ export default function Dashboard() {
           addExtraEvent(meetingFormToCalendarItem(form, "meeting"));
         }}
       />
-      <CampaignResponseModal
-        open={responseModalOpen}
-        onClose={() => setResponseModalOpen(false)}
-        rows={campaignResponseRows}
-        onOpenLead={(lead) => {
-          setResponseModalOpen(false);
-          navigate(leadDetailPath(lead));
-        }}
-      />
       <CreateTaskModal
         open={showCreateTask}
         onClose={() => setShowCreateTask(false)}
@@ -2507,13 +2609,19 @@ export default function Dashboard() {
           <AIAssistant />
           <div className="flex flex-col gap-4 min-h-0">
             <div className="flex items-stretch gap-3">
-              <UpNextCard item={upNext} onDetails={openCalendarItem} />
+              <UpNextCard
+                item={upNext}
+                onDetails={openCalendarItem}
+                onCall={(ev) => {
+                  openCalendarItem(ev);
+                  toast.info("Opening call details…");
+                }}
+              />
               <CampaignPerformanceCard
-                messagesSent={34}
-                messagesTrend="+10%"
-                responseCount={94}
-                responsesTrend="+10%"
-                onClick={() => setResponseModalOpen(true)}
+                responseCount={campaignResponseRows.length || 94}
+                responsesTrend="10%"
+                onResponsesClick={() => setResponseModalOpen(true)}
+                onChannelsClick={() => setCampaignPageOpen(true)}
               />
             </div>
             <RecentUpdatesCard />
@@ -2537,6 +2645,36 @@ export default function Dashboard() {
 
         <SuccessStoriesBlock />
       </div>
+      <CampaignResponseModal
+        open={responseModalOpen}
+        onClose={() => setResponseModalOpen(false)}
+        rows={campaignResponseRows}
+        onOpenLead={(lead) => {
+          setResponseModalOpen(false);
+          navigate(leadDetailPath(lead));
+        }}
+      />
+      {campaignPageOpen &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[55] flex items-center justify-center p-4 sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Campaign Management"
+          >
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setCampaignPageOpen(false)}
+              aria-hidden
+            />
+            <div className="relative z-10 w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl bg-[#F7F8FA] shadow-xl">
+              <div className="max-h-[92vh] overflow-y-auto scrollbar-thin">
+                <CampaignManagementPage embedded onClose={() => setCampaignPageOpen(false)} />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

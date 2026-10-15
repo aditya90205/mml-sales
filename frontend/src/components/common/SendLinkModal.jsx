@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from "react";
-import { Bell, Copy, Download, FileText, IndianRupee, Mail, Send, Star, Upload } from "lucide-react";
+import { Bell, Copy, Download, FileText, ImagePlus, IndianRupee, Mail, Send, Star, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "../ui/Modal";
 import WhatsAppIcon from "./WhatsAppIcon.jsx";
@@ -9,6 +9,7 @@ import { recordLeadActivity } from "../../utils/leadActivityStore.js";
 const LINK_TYPE_META = {
   payment: { id: "payment", label: "Payment link", icon: IndianRupee },
   biodata: { id: "biodata", label: "Biodata upload", icon: Upload },
+  media: { id: "media", label: "Video and image upload", icon: ImagePlus },
   quote: { id: "quote", label: "Quotation", icon: FileText },
   review: { id: "review", label: "Google Review", icon: Star },
   app: { id: "app", label: "App Download", icon: Download },

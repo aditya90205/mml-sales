@@ -637,7 +637,7 @@ export default function CreateCampaignPage({ embedded = false, onClose, initialG
         <div className="flex items-center justify-end gap-2.5">
           <button
             type="button"
-            onClick={() => navigate("/campaign/management")}
+            onClick={leave}
             className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
           >
             Cancel

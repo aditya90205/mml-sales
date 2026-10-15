@@ -9,7 +9,7 @@ import {
   Bar,
   LabelList,
 } from "recharts";
-import { BarChart3, ChevronDown, Users } from "lucide-react";
+import { BarChart3, ChevronDown, UserCheck, Users, UsersRound, UserX } from "lucide-react";
 
 /** Matches Dashboard "Leads to Conversion" funnel palette. */
 export const CLIENT_CHART_LEGEND = [
@@ -18,6 +18,14 @@ export const CLIENT_CHART_LEGEND = [
   { key: "commonPool", label: "Common pool", color: "#4A3AA7" },
   { key: "inactive", label: "Inactive", color: "#9CA3AF" },
 ];
+
+/** Dashboard StatCard-style icon / color for each KPI (data keys unchanged). */
+const KPI_CARD_META = {
+  total: { icon: Users, bg: "#E8F2FE", fg: "#2A78D6" },
+  active: { icon: UserCheck, bg: "#E7F8EF", fg: "#1BAF7A" },
+  commonPool: { icon: UsersRound, bg: "#F0EBFE", fg: "#4A3AA7" },
+  inactive: { icon: UserX, bg: "#F3F4F6", fg: "#6B7280" },
+};
 
 const PERIOD_OPTIONS = [
   { id: "this_week", label: "This Week" },
@@ -309,29 +317,47 @@ export default function ClientGroupsChart({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(240px,0.75fr)_1.4fr] gap-3 items-stretch">
-        {/* Left: KPI status grid */}
-        <div className="grid grid-cols-2 gap-2.5 min-w-0 content-start">
-          {totals.map((s) => (
-            <div key={s.key} className="border border-black/8 rounded-xl px-3 py-2.5 flex flex-col justify-center">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span
-                  className="size-6 rounded-md grid place-items-center shrink-0"
-                  style={{ backgroundColor: `${s.color}1A` }}
-                >
-                  <Users size={12} style={{ color: s.color }} strokeWidth={1.8} />
-                </span>
-                <p className="text-[11px] text-[#9CA3AF] leading-none">{s.label}</p>
-              </div>
-              <p className="text-[16px] font-bold text-[#111] leading-tight tabular-nums">{formatNum(s.value)}</p>
-              <p
-                className={`text-[10px] font-semibold mt-0.5 leading-tight ${
-                  s.change == null ? "text-[#9CA3AF]" : s.change >= 0 ? "text-[#16A34A]" : "text-[#DC2626]"
-                }`}
+        {/* Left: KPI cards — same layout/typography as Dashboard StatCard */}
+        <div className="grid grid-cols-2 gap-3 min-w-0 content-start">
+          {totals.map((s) => {
+            const meta = KPI_CARD_META[s.key] || KPI_CARD_META.total;
+            const Icon = meta.icon;
+            const note =
+              s.change == null
+                ? `No prior ${period === "this_week" ? "week" : "month"}`
+                : `${s.change}% ${noteSuffix}`;
+            const noteTone = s.change == null ? "gray" : s.change >= 0 ? "green" : "red";
+            return (
+              <div
+                key={s.key}
+                className="bg-white border border-black/8 rounded-2xl px-3.5 py-3 flex items-center gap-3 min-w-0"
               >
-                {s.change == null ? `No prior ${period === "this_week" ? "week" : "month"}` : `${s.change}% ${noteSuffix}`}
-              </p>
-            </div>
-          ))}
+                <span
+                  className="size-10 rounded-[10px] grid place-items-center shrink-0"
+                  style={{ backgroundColor: meta.bg }}
+                >
+                  <Icon size={18} style={{ color: meta.fg }} strokeWidth={1.7} />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-bold text-[#111] leading-tight truncate">{s.label}</p>
+                  <p className="text-[20px] font-bold text-[#111] leading-tight mt-0.5 tabular-nums">
+                    {formatNum(s.value)}
+                  </p>
+                  <p
+                    className={`text-[10px] mt-0.5 leading-tight ${
+                      noteTone === "green"
+                        ? "text-[#16A34A] font-medium"
+                        : noteTone === "red"
+                          ? "text-[#E8395B] font-semibold"
+                          : "text-[#6B7280]"
+                    }`}
+                  >
+                    {note}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Right: week-wise chart (Dashboard style) */}

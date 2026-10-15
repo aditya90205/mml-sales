@@ -9,6 +9,7 @@ export const STATIC_SHARE_URLS = {
 const SLUGS = {
   payment: "pay",
   biodata: "biodata",
+  media: "media",
   quote: "quote",
 };
 
@@ -28,6 +29,9 @@ export function defaultLinkMessage(deal, linkType) {
   const link = shareUrl(deal, linkType);
   if (linkType === "biodata") {
     return `Hi ${name}, please upload your biodata using this link:\n${link}`;
+  }
+  if (linkType === "media") {
+    return `Hi ${name}, please upload your photos and videos using this link:\n${link}`;
   }
   if (linkType === "quote") {
     return `Hi ${name}, your quotation is ready. Please review it here:\n${link}`;

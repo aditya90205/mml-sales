@@ -547,12 +547,12 @@ function DealDetailsCard({ deal, currentStage, onPremiumChange, onDetailsSaved, 
         currentStage={currentStage}
         linkTypes={
           atLeast(currentStage, "P1")
-            ? ["payment", "biodata", "review", "app"]
-            : ["biodata", "review", "app"]
+            ? ["payment", "biodata", "media", "review", "app"]
+            : ["biodata", "media", "review", "app"]
         }
         initialType={atLeast(currentStage, "P1") ? "payment" : "biodata"}
         title="Send link"
-        subtitle="Share a payment, biodata, Google Review, or app download link"
+        subtitle="Share a payment, biodata, video/image, Google Review, or app download link"
       />
       <Modal
         open={mode === "view"}

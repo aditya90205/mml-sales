@@ -1300,7 +1300,7 @@ function QuickMatchProfileShareModal({ open, onClose, profile }) {
 
   const shareText = [
     profile.name,
-    profile.formId || profile.clientId,
+    profile.clientId || profile.formId,
     profile.gender,
     profile.matchAge ? `${profile.matchAge} yrs` : null,
     profile.education,
@@ -1329,7 +1329,7 @@ function QuickMatchProfileShareModal({ open, onClose, profile }) {
       open={open}
       onClose={onClose}
       title={profile.name || "Profile"}
-      subtitle={[profile.formId || profile.clientId, profile.gender, profile.matchAge ? `${profile.matchAge} yrs` : null]
+      subtitle={[profile.clientId || profile.formId, profile.gender, profile.matchAge ? `${profile.matchAge} yrs` : null]
         .filter(Boolean)
         .join(" · ")}
       icon={<Share2 size={18} />}
@@ -1366,7 +1366,7 @@ function QuickMatchProfileShareModal({ open, onClose, profile }) {
 async function shareQuickMatchProfile(profile) {
   const shareText = [
     profile?.name,
-    profile?.formId || profile?.clientId,
+    profile?.clientId || profile?.formId,
     profile?.gender,
     profile?.matchAge ? `${profile.matchAge} yrs` : null,
     profile?.education,
@@ -1452,7 +1452,7 @@ function QuickMatchProfileRow({ profile, onOpen }) {
             <div className="min-w-0 flex-1">
               <p className="text-[14px] font-bold text-[#111] truncate leading-tight">{profile.name}</p>
               <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 leading-tight">
-                {profile.formId || profile.clientId}
+                {profile.clientId || profile.formId}
                 {profile.gender ? ` · ${profile.gender}` : ""}
                 {` · ${profile.matchAge} yrs`}
               </p>
@@ -2682,7 +2682,7 @@ export default function OverviewDashboard({
               iconColor="#16A34A"
               title="Send Link"
               titleColor="#1F2937"
-              subtitle={paymentReady ? "Share payment, biodata, review or app link" : "Share biodata, review or app link"}
+              subtitle={paymentReady ? "Share payment, biodata, media, review or app link" : "Share biodata, media, review or app link"}
               onClick={onSend}
             />
             <ActionTile

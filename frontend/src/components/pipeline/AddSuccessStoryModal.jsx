@@ -9,7 +9,9 @@ import {
   searchInAppReviews,
 } from "../../utils/successStoryReviews";
 
-const MEDIA_ACCEPT = "image/*,video/*";
+const IMAGE_ACCEPT = "image/*";
+const VIDEO_ACCEPT = "video/*";
+const GALLERY_ACCEPT = "image/*,video/*";
 
 const SOURCE_OPTIONS = [
   { id: "google", label: "Google Review", icon: Star },
@@ -49,7 +51,8 @@ export default function AddSuccessStoryModal({
   zClass = "z-[90]",
 }) {
   const formId = `add-success-story-${useId().replace(/:/g, "")}`;
-  const fileRef = useRef(null);
+  const profileRef = useRef(null);
+  const galleryRef = useRef(null);
   const [source, setSource] = useState("google");
   const [googleLink, setGoogleLink] = useState(STATIC_SHARE_URLS.review);
   const [googleFetched, setGoogleFetched] = useState(false);
@@ -57,8 +60,9 @@ export default function AddSuccessStoryModal({
   const [couple, setCouple] = useState("");
   const [quote, setQuote] = useState("");
   const [rating, setRating] = useState(5);
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
+  const [profileFile, setProfileFile] = useState(null);
+  const [profilePreview, setProfilePreview] = useState(null);
+  const [galleryItems, setGalleryItems] = useState([]);
   const [inAppQuery, setInAppQuery] = useState("");
   const [selectedInAppId, setSelectedInAppId] = useState("");
 
@@ -70,10 +74,17 @@ export default function AddSuccessStoryModal({
     setCouple(defaultCouple || "");
     setQuote("");
     setRating(5);
-    setFile(null);
+    setProfileFile(null);
+    setGalleryItems((current) => {
+      current.forEach((item) => {
+        if (item.preview) URL.revokeObjectURL(item.preview);
+      });
+      return [];
+    });
     setInAppQuery(defaultCouple || "");
     setSelectedInAppId("");
-    if (fileRef.current) fileRef.current.value = "";
+    if (profileRef.current) profileRef.current.value = "";
+    if (galleryRef.current) galleryRef.current.value = "";
   };
 
   useEffect(() => {
@@ -83,20 +94,62 @@ export default function AddSuccessStoryModal({
   }, [open]);
 
   useEffect(() => {
-    if (!file || !isImageFile(file)) {
-      setPreview(null);
+    if (!profileFile) {
+      setProfilePreview(null);
       return undefined;
     }
-    const url = URL.createObjectURL(file);
-    setPreview(url);
+    const url = URL.createObjectURL(profileFile);
+    setProfilePreview(url);
     return () => URL.revokeObjectURL(url);
-  }, [file]);
+  }, [profileFile]);
 
   const inAppResults = useMemo(() => searchInAppReviews(inAppQuery), [inAppQuery]);
 
-  const clearFile = () => {
-    setFile(null);
-    if (fileRef.current) fileRef.current.value = "";
+  const clearProfile = () => {
+    setProfileFile(null);
+    if (profileRef.current) profileRef.current.value = "";
+  };
+
+  const clearGallery = () => {
+    setGalleryItems((current) => {
+      current.forEach((item) => {
+        if (item.preview) URL.revokeObjectURL(item.preview);
+      });
+      return [];
+    });
+    if (galleryRef.current) galleryRef.current.value = "";
+  };
+
+  const removeGalleryItem = (id) => {
+    setGalleryItems((current) => {
+      const target = current.find((item) => item.id === id);
+      if (target?.preview) URL.revokeObjectURL(target.preview);
+      return current.filter((item) => item.id !== id);
+    });
+  };
+
+  const addGalleryFiles = (fileList) => {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+
+    const nextItems = [];
+    for (const file of files) {
+      if (!isImageFile(file) && !isVideoFile(file)) {
+        toast.error(`${file.name} is not an image or video.`);
+        continue;
+      }
+      nextItems.push({
+        id: `gallery-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        file,
+        kind: isVideoFile(file) ? "video" : "image",
+        preview: URL.createObjectURL(file),
+        name: file.name,
+      });
+    }
+    if (nextItems.length) {
+      setGalleryItems((current) => [...current, ...nextItems]);
+    }
+    if (galleryRef.current) galleryRef.current.value = "";
   };
 
   const handleSourceChange = (next) => {
@@ -109,7 +162,8 @@ export default function AddSuccessStoryModal({
     setQuote("");
     setRating(5);
     setInAppQuery(defaultCouple || "");
-    clearFile();
+    clearProfile();
+    clearGallery();
     if (next === "google") {
       setGoogleLink(STATIC_SHARE_URLS.review);
     }
@@ -157,8 +211,6 @@ export default function AddSuccessStoryModal({
     setRating(5);
   };
 
-  const mediaRequired = source === "google";
-
   const handleSubmit = (e) => {
     e.preventDefault();
     const name = couple.trim();
@@ -181,8 +233,8 @@ export default function AddSuccessStoryModal({
         toast.error("Enter the couple name.");
         return;
       }
-      if (!file) {
-        toast.error("Upload a photo or video for this review.");
+      if (!profileFile) {
+        toast.error("Upload a profile photo for the card.");
         return;
       }
     } else {
@@ -196,13 +248,19 @@ export default function AddSuccessStoryModal({
       }
     }
 
-    if (file && !isImageFile(file) && !isVideoFile(file)) {
-      toast.error("Only image or video files are allowed.");
+    if (profileFile && !isImageFile(profileFile)) {
+      toast.error("Profile photo must be an image.");
       return;
     }
 
-    const mediaKind = file ? (isVideoFile(file) ? "video" : "image") : undefined;
-    const mediaUrl = file ? URL.createObjectURL(file) : "";
+    const profileUrl = profileFile ? URL.createObjectURL(profileFile) : "";
+    const gallery = galleryItems.map((item) => ({
+      id: item.id,
+      kind: item.kind,
+      url: item.preview || URL.createObjectURL(item.file),
+      name: item.name,
+    }));
+
     const story = {
       id: `ss-local-${Date.now()}`,
       area: area || "General",
@@ -219,9 +277,11 @@ export default function AddSuccessStoryModal({
           : "In-app review",
       quote: quote.trim() || "Shared a success story with MML.",
       rating,
-      image: mediaUrl || undefined,
-      mediaKind,
-      mediaName: file?.name,
+      /** Card thumbnail */
+      image: profileUrl || undefined,
+      profileImage: profileUrl || undefined,
+      /** Extra photos/videos for the detail modal only */
+      gallery,
       source,
       googleLink: source === "google" ? googleLink.trim() : "",
       inAppReviewId: source === "inapp" ? selectedInAppId : "",
@@ -237,7 +297,7 @@ export default function AddSuccessStoryModal({
       open={open}
       onClose={onClose}
       title="Add Success Story"
-      subtitle="Attach a Google or in-app review with a photo or video"
+      subtitle="Profile photo on the card · extra photos & videos open in the story"
       icon={<Heart size={18} />}
       iconBg="#F6E4E8"
       iconColor="#7A0A17"
@@ -324,7 +384,7 @@ export default function AddSuccessStoryModal({
             {googleFetched ? (
               <p className="mt-1.5 text-[12px] text-[#16A34A] inline-flex items-center gap-1 font-medium">
                 <Check size={12} strokeWidth={2.4} />
-                Review loaded — edit fields below if needed, then upload media.
+                Review loaded — edit fields below if needed, then add media.
               </p>
             ) : (
               <p className="mt-1.5 text-[12px] text-[#6B7280] leading-snug">
@@ -462,64 +522,148 @@ export default function AddSuccessStoryModal({
 
         <div>
           <p className="text-[13px] font-bold text-[#111] mb-1.5">
-            Photo or video
-            {mediaRequired ? <span className="text-[#E8395B]"> *</span> : (
+            Profile photo
+            {source === "google" ? <span className="text-[#E8395B]"> *</span> : (
               <span className="text-[#9CA3AF] font-medium"> (optional)</span>
             )}
           </p>
-          <p className="text-[11.5px] text-[#9CA3AF] mb-1.5 leading-snug">
-            Story media only — profile photo is uploaded separately on the lead.
+          <p className="text-[11.5px] text-[#9CA3AF] mb-2 leading-snug">
+            Shows on the Success Stories card only.
           </p>
           <input
-            ref={fileRef}
+            ref={profileRef}
             type="file"
-            accept={MEDIA_ACCEPT}
+            accept={IMAGE_ACCEPT}
             className="hidden"
             onChange={(e) => {
               const next = e.target.files?.[0] || null;
-              setFile(next);
+              if (next && !isImageFile(next)) {
+                toast.error("Profile photo must be an image.");
+                e.target.value = "";
+                return;
+              }
+              setProfileFile(next);
             }}
           />
-          {file ? (
-            <div className="rounded-xl border border-black/12 bg-[#FAFAFB] p-3.5">
-              {preview ? (
+          {profileFile ? (
+            <div className="rounded-xl border border-black/12 bg-[#FAFAFB] p-3 flex items-center gap-3">
+              {profilePreview ? (
                 <img
-                  src={preview}
-                  alt="Success story media"
-                  className="h-36 w-full object-cover rounded-lg border border-black/8 bg-white mb-2.5"
+                  src={profilePreview}
+                  alt="Profile"
+                  className="size-16 rounded-xl object-cover border border-black/8 bg-white shrink-0"
                 />
               ) : (
-                <div className="h-20 rounded-lg border border-black/8 bg-white flex items-center justify-center gap-2 text-[12px] font-medium text-[#6B7280] mb-2.5 px-3">
-                  <Video size={16} className="text-[#7A0A17] shrink-0" />
-                  <span className="truncate">{file.name}</span>
-                </div>
+                <span className="size-16 rounded-xl bg-white border border-black/8 grid place-items-center shrink-0">
+                  <ImagePlus size={18} className="text-[#7A0A17]" />
+                </span>
               )}
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[12px] text-[#16A34A] truncate min-w-0 flex items-center gap-1.5">
-                  {isVideoFile(file) ? <Video size={12} /> : <ImagePlus size={12} />}
-                  {file.name}
-                </p>
-                <button
-                  type="button"
-                  onClick={clearFile}
-                  className="inline-flex items-center justify-center size-7 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#111] shrink-0"
-                  aria-label="Remove media"
-                >
-                  <X size={14} />
-                </button>
+              <div className="min-w-0 flex-1">
+                <p className="text-[12.5px] font-semibold text-[#111] truncate">{profileFile.name}</p>
+                <p className="text-[11px] text-[#9CA3AF] mt-0.5">Card profile photo</p>
               </div>
+              <button
+                type="button"
+                onClick={clearProfile}
+                className="size-7 rounded-lg grid place-items-center text-[#6B7280] hover:bg-white hover:text-[#111] shrink-0"
+                aria-label="Remove profile photo"
+              >
+                <X size={14} />
+              </button>
             </div>
           ) : (
             <button
               type="button"
-              onClick={() => fileRef.current?.click()}
-              className="w-full rounded-xl border border-dashed border-black/15 bg-[#FAFAFB] px-4 py-6 flex flex-col items-center gap-2 hover:bg-[#F5F5F6] transition-colors"
+              onClick={() => profileRef.current?.click()}
+              className="w-full rounded-xl border border-dashed border-black/15 bg-[#FAFAFB] px-4 py-5 flex flex-col items-center gap-1.5 hover:bg-[#F5F5F6] transition-colors"
+            >
+              <span className="size-9 rounded-full bg-[#FDF2F3] text-[#7A0A17] grid place-items-center">
+                <ImagePlus size={16} />
+              </span>
+              <span className="text-[13px] font-semibold text-[#111]">Upload profile photo</span>
+              <span className="text-[11.5px] text-[#9CA3AF]">JPG, PNG — card thumbnail</span>
+            </button>
+          )}
+        </div>
+
+        <div>
+          <p className="text-[13px] font-bold text-[#111] mb-1.5">
+            Story photos &amp; videos
+            <span className="text-[#9CA3AF] font-medium"> (optional)</span>
+          </p>
+          <p className="text-[11.5px] text-[#9CA3AF] mb-2 leading-snug">
+            Separate from profile — open inside the story modal. Add images and videos together.
+          </p>
+          <input
+            ref={galleryRef}
+            type="file"
+            accept={GALLERY_ACCEPT}
+            multiple
+            className="hidden"
+            onChange={(e) => addGalleryFiles(e.target.files)}
+          />
+
+          {galleryItems.length ? (
+            <div className="flex flex-col gap-2">
+              <ul className="flex flex-col gap-2">
+                {galleryItems.map((item) => (
+                  <li
+                    key={item.id}
+                    className="rounded-xl border border-black/12 bg-[#FAFAFB] p-2.5 flex items-center gap-3"
+                  >
+                    {item.kind === "video" ? (
+                      <video
+                        src={item.preview}
+                        className="size-14 rounded-lg object-cover border border-black/8 bg-black shrink-0"
+                        muted
+                        playsInline
+                        preload="metadata"
+                      />
+                    ) : (
+                      <img
+                        src={item.preview}
+                        alt={item.name}
+                        className="size-14 rounded-lg object-cover border border-black/8 bg-white shrink-0"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[12.5px] font-semibold text-[#111] truncate flex items-center gap-1.5">
+                        {item.kind === "video" ? <Video size={12} /> : <ImagePlus size={12} />}
+                        {item.name}
+                      </p>
+                      <p className="text-[11px] text-[#9CA3AF] mt-0.5 capitalize">{item.kind}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeGalleryItem(item.id)}
+                      className="size-7 rounded-lg grid place-items-center text-[#6B7280] hover:bg-white hover:text-[#111] shrink-0"
+                      aria-label={`Remove ${item.name}`}
+                    >
+                      <X size={14} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() => galleryRef.current?.click()}
+                className="h-10 rounded-xl border border-dashed border-[#7A0A17]/30 text-[#7A0A17] text-[12.5px] font-semibold hover:bg-[#FDF2F3] transition-colors inline-flex items-center justify-center gap-1.5"
+              >
+                <Upload size={14} />
+                Add more photos / videos
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => galleryRef.current?.click()}
+              className="w-full rounded-xl border border-dashed border-black/15 bg-[#FAFAFB] px-4 py-5 flex flex-col items-center gap-1.5 hover:bg-[#F5F5F6] transition-colors"
             >
               <span className="size-9 rounded-full bg-[#FDF2F3] text-[#7A0A17] grid place-items-center">
                 <Upload size={16} />
               </span>
-              <span className="text-[13px] font-semibold text-[#111]">Upload photo or video</span>
-              <span className="text-[11.5px] text-[#9CA3AF]">JPG, PNG, MP4 or similar</span>
+              <span className="text-[13px] font-semibold text-[#111]">Upload photos &amp; videos</span>
+              <span className="text-[11.5px] text-[#9CA3AF]">Multi-select · JPG, PNG, MP4…</span>
             </button>
           )}
         </div>

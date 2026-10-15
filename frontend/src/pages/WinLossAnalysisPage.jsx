@@ -1,18 +1,55 @@
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Download, Eye } from "lucide-react";
+import {
+  BadgePercent,
+  Download,
+  Eye,
+  Handshake,
+  IndianRupee,
+  Target,
+  TrendingDown,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
-import { AppPage, MetricCard, NativeSelect, OutlineBtn, Panel, PrimaryBtn, Td } from "../components/common/AppPage.jsx";
+import { AppPage, NativeSelect, OutlineBtn, Panel, PrimaryBtn, Td } from "../components/common/AppPage.jsx";
 import { GoalsPerformanceCard, LeadsConversionCard } from "../components/reports/GoalsAndConversionCharts.jsx";
 
+/** Dashboard StatCard-style icon / color for each KPI. */
 const STATS = [
-  { label: "Deals closed", value: "7", note: "▲ 2 vs June", noteTone: "green" },
-  { label: "Closure rate", value: "11.4%", note: "Branch avg 9.8%", noteTone: "grey" },
-  { label: "Avg. deal value", value: "₹44,200", note: "▼ 4% — discounts", noteTone: "red" },
-  { label: "Revenue closed", value: "₹5.2L", note: "118% of target", noteTone: "grey" },
-  { label: "Lost to price", value: "46%", note: "Top loss reason", noteTone: "grey" },
+  { label: "Deals closed", value: "7", note: "▲ 2 vs June", noteTone: "green", icon: Handshake, bg: "#FDECEE", fg: "#E8395B" },
+  { label: "Closure rate", value: "11.4%", note: "Branch avg 9.8%", noteTone: "grey", icon: Target, bg: "#EEF0FE", fg: "#6366F1" },
+  { label: "Avg. deal value", value: "₹44,200", note: "▼ 4% — discounts", noteTone: "red", icon: IndianRupee, bg: "#FFF3E4", fg: "#F59E0B" },
+  { label: "Revenue closed", value: "₹5.2L", note: "118% of target", noteTone: "grey", icon: BadgePercent, bg: "#E7F8EF", fg: "#16A34A" },
+  { label: "Lost to price", value: "46%", note: "Top loss reason", noteTone: "grey", icon: TrendingDown, bg: "#FCE9EC", fg: "#E8395B" },
 ];
+
+function StatCard({ stat }) {
+  const Icon = stat.icon;
+  return (
+    <div className="bg-white border border-black/8 rounded-2xl px-3.5 py-3 flex items-center gap-3 min-w-0">
+      <span className="size-10 rounded-[10px] grid place-items-center shrink-0" style={{ backgroundColor: stat.bg }}>
+        <Icon size={18} style={{ color: stat.fg }} strokeWidth={1.7} />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[13px] font-bold text-[#111] leading-tight truncate">{stat.label}</p>
+        <p className="text-[20px] font-bold text-[#111] leading-tight mt-0.5">{stat.value}</p>
+        {stat.note && (
+          <p
+            className={`text-[10px] mt-0.5 leading-tight ${
+              stat.noteTone === "green"
+                ? "text-[#16A34A] font-medium"
+                : stat.noteTone === "red"
+                  ? "text-[#E8395B] font-semibold"
+                  : "text-[#6B7280]"
+            }`}
+          >
+            {stat.note}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const REASONS = [
   { id: "price", label: "Price / Budget / ROI" },
@@ -201,7 +238,7 @@ export default function WinLossAnalysisPage() {
     >
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
         {STATS.map((s) => (
-          <MetricCard key={s.label} compact className="shadow-[0_1px_2px_rgba(0,0,0,0.04)]" {...s} />
+          <StatCard key={s.label} stat={s} />
         ))}
       </div>
 
