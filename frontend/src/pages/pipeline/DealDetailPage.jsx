@@ -1018,7 +1018,7 @@ export default function DealDetailPage({
                   onClick={() => openWinLossModal("cold")}
                   className="inline-flex items-center gap-1.5 h-[38px] px-4 rounded-xl bg-white border border-black/10 text-[13px] font-medium text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
                 >
-                  Move to Cold &amp; Hold
+                  Move to Hold
                   <ChevronDown size={14} className="text-[#9CA3AF]" />
                 </button>
               )}
@@ -1039,7 +1039,7 @@ export default function DealDetailPage({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-bold text-[#7A0A17]">
-                  {holdStatus === "cold" ? "Moved to Cold & Hold" : "Marked as Lost"}
+                  {holdStatus === "cold" ? "Moved to Hold" : "Marked as Lost"}
                 </p>
                 <p className="text-[12px] text-[#6B7280] mt-0.5 leading-snug">
                   {holdStatus === "cold"

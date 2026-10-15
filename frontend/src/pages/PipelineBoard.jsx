@@ -27,6 +27,7 @@ import {
 import { toast } from "react-toastify";
 import { leadHasMobileNumber, P2_MOBILE_REQUIRED_MESSAGE } from "../utils/leadFields.js";
 import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
+import ClientNameHoverTip from "../components/common/ClientNameHoverTip.jsx";
 import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import Modal from "../components/ui/Modal.jsx";
@@ -168,7 +169,7 @@ function leadPatchFromDetails(details = {}) {
 const TEMPERATURE_STYLES = {
   Hot:  { color: "#E8395B", bg: "#FDECEE" },
   Warm: { color: "#F59E0B", bg: "#FFF3E4" },
-  Cold: { color: "#7A0A17", bg: "#FCF5F6" },
+  Cold: { color: "#3B82F6", bg: "#E8F2FE" },
   Lost: { color: "#7A0A17", bg: "#FCF5F6" },
 };
 const TONE_FALLBACK = { color: "#6B7280", bg: "#F3F4F6" };
@@ -719,6 +720,9 @@ function PipelineTableView({
                 const pri    = PRIORITY_STYLES[lead.priority] || TONE_FALLBACK;
                 const urgent = lead.hrs <= 8;
                 const checked = selectedLeadIds.includes(lead.id);
+                const onHold = lead.dealStatus === "cold";
+                const stageName =
+                  stage.id === "P0" ? `P0 ${p0BoardLabel(lead)}` : `${stage.id} - ${stage.label}`;
                 return (
                   <tr
                     key={lead.id || idx}
@@ -738,8 +742,8 @@ function PipelineTableView({
                     </td>
                     {/* Client Name */}
                     <td className="px-3 py-2.5 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: stage.color }} />
+                      <ClientNameHoverTip name={lead.name} temperature={lead.temperature} mmlId={lead.mmlId} className="items-center gap-1.5">
+                        <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: temp.color }} />
                         <div>
                           <div className="flex items-center gap-1">
                             <button
@@ -756,7 +760,7 @@ function PipelineTableView({
                           </div>
                           <p className="text-[10px] text-[#9CA3AF]">{lead.mmlId}</p>
                         </div>
-                      </div>
+                      </ClientNameHoverTip>
                     </td>
 
                     {/* Owner */}
@@ -783,13 +787,17 @@ function PipelineTableView({
                               : "Move to P2"
                           }
                         >
-                          {stage.id === "P0" ? `P0 ${p0BoardLabel(lead)}` : `${stage.id} - ${stage.label}`}{" "}
-                          <span style={{ color: temp.color }} className="font-semibold no-underline">({lead.temperature})</span>
+                          {stageName}
+                          {onHold ? (
+                            <span className="font-semibold no-underline text-[#7A0A17]"> (Hold)</span>
+                          ) : null}
                         </button>
                       ) : (
                         <p className="text-[12px] text-[#374151]">
-                          {stage.id} - {stage.label}{" "}
-                          <span style={{ color: temp.color }} className="font-semibold">({lead.temperature})</span>
+                          {stageName}
+                          {onHold ? (
+                            <span className="font-semibold text-[#7A0A17]"> (Hold)</span>
+                          ) : null}
                         </p>
                       )}
                     </td>

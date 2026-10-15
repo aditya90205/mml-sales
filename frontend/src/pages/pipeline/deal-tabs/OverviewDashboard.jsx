@@ -32,6 +32,7 @@ import {
   Plus,
   RefreshCw,
   Send,
+  Share2,
   ShieldCheck,
   Sparkles,
   SquareCheck,
@@ -108,7 +109,7 @@ import {
 const TEMPERATURE_TONES = {
   Hot: { color: "#E8395B", bg: "#FDECEE" },
   Warm: { color: "#F59E0B", bg: "#FFF3E4" },
-  Cold: { color: "#7A0A17", bg: "#FCF5F6" },
+  Cold: { color: "#3B82F6", bg: "#E8F2FE" },
   Lost: { color: "#7A0A17", bg: "#FCF5F6" },
 };
 
@@ -1145,7 +1146,250 @@ function CompatibilityMatchHoverCard({ score, seed }) {
   );
 }
 
-function QuickMatchProfileRow({ profile }) {
+function quickMatchLookingFor(gender) {
+  const g = String(gender || "").trim().toLowerCase();
+  if (g === "male") return "Bride";
+  if (g === "female") return "Groom";
+  return "-";
+}
+
+function quickMatchFamilyIncome(incomeLpa) {
+  const n = Number(incomeLpa);
+  if (!Number.isFinite(n) || n <= 0) return "-";
+  if (n < 25) return "Under ₹25 Lakh";
+  if (n < 50) return "₹25 Lakh to ₹50 Lakh";
+  if (n < 100) return "₹50 Lakh to ₹1 Crore";
+  return "₹1 Crore+";
+}
+
+function quickMatchProfileCompletion(profile) {
+  const fields = [
+    profile?.name,
+    profile?.clientId,
+    profile?.formId,
+    profile?.gender,
+    profile?.education,
+    profile?.area || profile?.branch,
+    profile?.incomeLpa,
+    profile?.matchAge,
+  ];
+  const filledCount = fields.filter((v) => String(v ?? "").trim() && String(v).trim() !== "-").length;
+  return Math.round((filledCount / fields.length) * 100);
+}
+
+function QuickMatchProfileDetailCard({ profile }) {
+  if (!profile) return null;
+
+  const completion = quickMatchProfileCompletion(profile);
+  const temperature =
+    profile.probability === "high" ? "Hot" : profile.probability === "low" ? "Cold" : "Warm";
+  const tempTone = TEMPERATURE_TONES[temperature] || TEMPERATURE_TONES.Warm;
+  const priority =
+    profile.probability === "high" ? "High" : profile.probability === "low" ? "Low" : "Medium";
+  const priorityTone = PRIORITY_TONES[priority] || PRIORITY_TONES.Medium;
+  const scoreSeed = Number(profile.id) || 0;
+  const leadScore = (7 + ((scoreSeed % 20) / 10)).toFixed(1);
+  const area =
+    [shown(profile.area), shown(profile.branch), shown(profile.city)]
+      .filter(Boolean)
+      .filter((v, i, arr) => arr.indexOf(v) === i)
+      .join(", ") || shown(profile.address) || "-";
+
+  return (
+    <div className="bg-white border border-[#EEF1F4] rounded-2xl p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+      <div className="flex items-center justify-between gap-3">
+        <span className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md bg-[#15803D] text-white whitespace-nowrap">
+          Profile Complete
+        </span>
+        <span className="text-[16px] font-bold text-[#166534] shrink-0 leading-none tabular-nums">
+          {completion}%
+        </span>
+      </div>
+      <div className="mt-2.5 h-[5px] rounded-full bg-[#BBF7D0] overflow-hidden">
+        <div className="h-full rounded-full bg-[#15803D]" style={{ width: `${completion}%` }} />
+      </div>
+
+      <div className="flex items-start gap-3.5 mt-4">
+        <span className="relative size-[76px] shrink-0 rounded-full">
+          <span className="size-full rounded-full bg-[#F3E4E6] text-[#7A0A17] text-[20px] font-bold grid place-items-center overflow-hidden">
+            {initials(profile.name) || "—"}
+          </span>
+        </span>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <h2 className="text-[16px] font-bold text-[#111] leading-none truncate min-w-0">
+              {profile.name || "Profile"}
+            </h2>
+            <span className="inline-flex shrink-0" title="Premium client" aria-label="Premium client">
+              <Star size={15} className="text-[#F5B400]" fill="#F5B400" strokeWidth={0} />
+            </span>
+            <div className="ml-auto flex items-center gap-1 shrink-0 pl-1">
+              <span className="inline-flex items-center gap-0.5 text-[13px] font-bold text-[#1F2937] tabular-nums leading-none px-0.5 py-0.5">
+                {leadScore}
+                <Flag size={12} className="text-[#16A34A]" fill="#16A34A" strokeWidth={0} aria-hidden />
+              </span>
+            </div>
+          </div>
+          <div className="mt-2 space-y-0.5">
+            <p className="grid grid-cols-[4.75rem_0.6rem_minmax(0,1fr)] items-baseline text-[12px] leading-snug text-[#9CA3AF]">
+              <span>Client ID</span>
+              <span>:</span>
+              <span className="truncate text-[#6B7280]">{shown(profile.clientId) || "-"}</span>
+            </p>
+            <p className="grid grid-cols-[4.75rem_0.6rem_minmax(0,1fr)] items-baseline text-[12px] leading-snug text-[#9CA3AF]">
+              <span>Form ID</span>
+              <span>:</span>
+              <span className="truncate text-[#6B7280]">{shown(profile.formId) || "-"}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 mt-2.5 flex-nowrap">
+            <span
+              className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap shrink-0"
+              style={{ color: tempTone.color, backgroundColor: tempTone.bg }}
+            >
+              {temperature}
+            </span>
+            <span
+              className="inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap shrink-0"
+              style={{ color: priorityTone.color, backgroundColor: priorityTone.bg }}
+            >
+              {priority}
+            </span>
+            <div className="ml-auto flex items-center gap-1 shrink-0">
+              <span className="size-7 rounded-lg text-[#16A34A] grid place-items-center" title="Call" aria-hidden>
+                <Phone size={14} strokeWidth={2} />
+              </span>
+              <span className="size-7 rounded-lg text-[#7A0A17] grid place-items-center" title="Message" aria-hidden>
+                <MessageSquare size={14} strokeWidth={2} />
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mt-5">
+        <ProfileStat icon={UserRound} label="Age" value={profile.matchAge ? String(profile.matchAge) : "-"} />
+        <ProfileStat icon={Briefcase} label="Profession" value={shown(profile.education) || "Professional"} />
+        <ProfileStat icon={MapPin} label="Area" value={area} />
+        <ProfileStat icon={Heart} label="Looking For" value={quickMatchLookingFor(profile.gender)} />
+        <ProfileStat icon={Users} label="Inquiry By" value={shown(profile.enquiryBy) || "Self"} />
+        <ProfileStat icon={Calendar} label="Gender" value={shown(profile.gender) || "-"} />
+        <ProfileStat icon={IndianRupee} label="Family Income" value={quickMatchFamilyIncome(profile.incomeLpa)} />
+        <ProfileStat icon={Globe} label="Branch" value={shown(profile.branch) || "-"} />
+      </div>
+
+      {Number(profile.matchScore) > 0 ? (
+        <div className="mt-4 pt-3.5 border-t border-[#EEF1F4] flex items-center justify-between gap-3">
+          <p className="text-[12px] text-[#6B7280] min-w-0 truncate">
+            {profile.matchReasons?.length ? `Fits: ${profile.matchReasons.join(" · ")}` : "Quick match suggestion"}
+          </p>
+          <div className="shrink-0 flex flex-col items-center gap-0.5">
+            <MatchScoreRing score={profile.matchScore} size={48} stroke={4.5} />
+            <span className="text-[9px] font-bold uppercase tracking-[0.08em] text-[#7A0A17]/75 leading-none">
+              match
+            </span>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function QuickMatchProfileShareModal({ open, onClose, profile }) {
+  if (!profile) return null;
+
+  const shareText = [
+    profile.name,
+    profile.formId || profile.clientId,
+    profile.gender,
+    profile.matchAge ? `${profile.matchAge} yrs` : null,
+    profile.education,
+    profile.area || profile.branch,
+    Number(profile.incomeLpa) > 0 ? formatMatchIncome(profile.incomeLpa) : null,
+    profile.matchScore ? `${profile.matchScore}% match` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const handleShare = async () => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareText);
+        toast.success("Profile details copied to clipboard");
+      } else {
+        toast.info(shareText);
+      }
+    } catch {
+      toast.info(shareText);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={profile.name || "Profile"}
+      subtitle={[profile.formId || profile.clientId, profile.gender, profile.matchAge ? `${profile.matchAge} yrs` : null]
+        .filter(Boolean)
+        .join(" · ")}
+      icon={<Share2 size={18} />}
+      iconBg="#F6E4E8"
+      iconColor="#7A0A17"
+      width="max-w-md"
+      zClass="z-[80]"
+      contain
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-10 px-5 rounded-xl bg-white border border-black/12 text-[#111] text-[13px] font-semibold hover:bg-[#FAFAFB] transition-colors"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-xl bg-[#7A0A17] text-white text-[13px] font-semibold hover:bg-[#640712] transition-colors"
+          >
+            <Share2 size={14} strokeWidth={2.2} />
+            Share
+          </button>
+        </>
+      }
+    >
+      <QuickMatchProfileDetailCard profile={profile} />
+    </Modal>
+  );
+}
+
+async function shareQuickMatchProfile(profile) {
+  const shareText = [
+    profile?.name,
+    profile?.formId || profile?.clientId,
+    profile?.gender,
+    profile?.matchAge ? `${profile.matchAge} yrs` : null,
+    profile?.education,
+    profile?.area || profile?.branch,
+    Number(profile?.incomeLpa) > 0 ? formatMatchIncome(profile.incomeLpa) : null,
+    profile?.matchScore ? `${profile.matchScore}% match` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(shareText);
+      toast.success("Profile details copied to clipboard");
+    } else {
+      toast.info(shareText);
+    }
+  } catch {
+    toast.info(shareText);
+  }
+}
+
+function QuickMatchProfileRow({ profile, onOpen }) {
   const [hovered, setHovered] = useState(false);
   const badgeRef = useRef(null);
   const [popoverPos, setPopoverPos] = useState(null);
@@ -1181,7 +1425,18 @@ function QuickMatchProfileRow({ profile }) {
   }, [hovered]);
 
   return (
-    <li className="rounded-xl border border-[#EEF1F4] bg-white px-3.5 py-3 hover:border-[#7A0A17]/25 hover:bg-[#FDFCFC] transition-colors">
+    <li
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen?.(profile)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen?.(profile);
+        }
+      }}
+      className="rounded-xl border border-[#EEF1F4] bg-white px-3.5 py-3 hover:border-[#7A0A17]/25 hover:bg-[#FDFCFC] transition-colors cursor-pointer"
+    >
       <div className="flex items-center gap-3">
         <span className="size-11 rounded-full bg-[#F6E4E8] text-[#7A0A17] text-[13px] font-bold grid place-items-center shrink-0 self-center">
           {String(profile.name || "?")
@@ -1193,13 +1448,27 @@ function QuickMatchProfileRow({ profile }) {
         </span>
 
         <div className="min-w-0 flex-1 flex flex-col justify-center gap-1.5">
-          <div className="min-w-0">
-            <p className="text-[14px] font-bold text-[#111] truncate leading-tight">{profile.name}</p>
-            <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 leading-tight">
-              {profile.formId || profile.clientId}
-              {profile.gender ? ` · ${profile.gender}` : ""}
-              {` · ${profile.matchAge} yrs`}
-            </p>
+          <div className="min-w-0 flex items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] font-bold text-[#111] truncate leading-tight">{profile.name}</p>
+              <p className="text-[11.5px] text-[#9CA3AF] mt-0.5 leading-tight">
+                {profile.formId || profile.clientId}
+                {profile.gender ? ` · ${profile.gender}` : ""}
+                {` · ${profile.matchAge} yrs`}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                shareQuickMatchProfile(profile);
+              }}
+              className="size-7 shrink-0 rounded-lg text-[#9CA3AF] hover:text-[#7A0A17] hover:bg-[#FDF2F3] grid place-items-center transition-colors"
+              title="Share profile"
+              aria-label={`Share ${profile.name || "profile"}`}
+            >
+              <Share2 size={14} strokeWidth={2.2} />
+            </button>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             {profile.education ? (
@@ -1230,6 +1499,7 @@ function QuickMatchProfileRow({ profile }) {
           ref={badgeRef}
           className="shrink-0 w-[72px] flex flex-col items-center justify-center gap-0.5 self-center cursor-default rounded-xl transition-transform hover:scale-105"
           title="Hover for compatibility breakdown"
+          onClick={(e) => e.stopPropagation()}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
@@ -1261,6 +1531,7 @@ function QuickMatchProfileRow({ profile }) {
 function QuickMatchSuggestionsModal({ open, onClose, deal }) {
   const preference = partnerPreferenceFromDeal(deal);
   const matches = useMemo(() => (open ? getQuickMatchSuggestions(deal) : []), [open, deal]);
+  const [viewProfile, setViewProfile] = useState(null);
   const preferSummary = [
     `Age ${preference.age}`,
     preference.location,
@@ -1271,40 +1542,56 @@ function QuickMatchSuggestionsModal({ open, onClose, deal }) {
     .filter(Boolean)
     .join(" · ");
 
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Quick Match Suggestions"
-      subtitle={`${matches.length} profiles matching partner preference`}
-      icon={<Sparkles size={18} />}
-      iconBg="#F6E4E8"
-      iconColor="#7A0A17"
-      width="max-w-2xl"
-      zClass="z-[70]"
-      contain
-    >
-      <p className="mb-4 text-[12px] leading-relaxed text-[#6B7280] bg-[#FDF2F3] border border-[#7A0A17]/12 rounded-xl px-3 py-2.5">
-        <span className="font-semibold text-[#7A0A17]">Preference: </span>
-        {preferSummary}
-      </p>
+  useEffect(() => {
+    if (!open) setViewProfile(null);
+  }, [open]);
 
-      {matches.length === 0 ? (
-        <div className="py-10 text-center">
-          <Heart size={28} className="mx-auto text-[#D1D5DB] mb-2" />
-          <p className="text-[14px] font-semibold text-[#374151]">No matching profiles yet</p>
-          <p className="text-[12.5px] text-[#9CA3AF] mt-1">
-            Try widening age, location, or education preferences.
-          </p>
-        </div>
-      ) : (
-        <ul className="flex flex-col gap-2.5">
-          {matches.map((profile) => (
-            <QuickMatchProfileRow key={profile.id} profile={profile} />
-          ))}
-        </ul>
-      )}
-    </Modal>
+  return (
+    <>
+      <Modal
+        open={open}
+        onClose={onClose}
+        title="Quick Match Suggestions"
+        subtitle={`${matches.length} profiles matching partner preference`}
+        icon={<Sparkles size={18} />}
+        iconBg="#F6E4E8"
+        iconColor="#7A0A17"
+        width="max-w-2xl"
+        zClass="z-[70]"
+        contain
+      >
+        <p className="mb-4 text-[12px] leading-relaxed text-[#6B7280] bg-[#FDF2F3] border border-[#7A0A17]/12 rounded-xl px-3 py-2.5">
+          <span className="font-semibold text-[#7A0A17]">Preference: </span>
+          {preferSummary}
+        </p>
+
+        {matches.length === 0 ? (
+          <div className="py-10 text-center">
+            <Heart size={28} className="mx-auto text-[#D1D5DB] mb-2" />
+            <p className="text-[14px] font-semibold text-[#374151]">No matching profiles yet</p>
+            <p className="text-[12.5px] text-[#9CA3AF] mt-1">
+              Try widening age, location, or education preferences.
+            </p>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-2.5">
+            {matches.map((profile) => (
+              <QuickMatchProfileRow
+                key={profile.id}
+                profile={profile}
+                onOpen={setViewProfile}
+              />
+            ))}
+          </ul>
+        )}
+      </Modal>
+
+      <QuickMatchProfileShareModal
+        open={Boolean(viewProfile)}
+        onClose={() => setViewProfile(null)}
+        profile={viewProfile}
+      />
+    </>
   );
 }
 

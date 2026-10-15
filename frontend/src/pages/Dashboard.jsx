@@ -29,12 +29,15 @@ import {
   TrendingUp,
   IndianRupee,
   User,
+  Megaphone,
+  Mail,
 } from "lucide-react";
 import AIAssistant from "../components/common/AIAssistant.jsx";
 import SuccessStoriesBlock from "../components/common/SuccessStoriesBlock.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import EmailActivityButton from "../components/common/EmailActivityButton.jsx";
+import ClientNameHoverTip from "../components/common/ClientNameHoverTip.jsx";
 import FollowUpHoverCard from "../components/common/FollowUpHoverCard.jsx";
 import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import LeadActivityHistory from "./pipeline/deal-tabs/LeadActivityHistory";
@@ -65,11 +68,8 @@ import {
   meetingFormToCalendarItem,
   mergeCalendarEvents,
   readExtraEvents,
-  readUnscheduled,
-  removeUnscheduled,
   sameCalendarDay,
   subscribeCalendar,
-  unscheduledToMeetingForm,
 } from "../utils/calendarStore.js";
 import { CLIENTS, upsertClientFromBiodata } from "../utils/clientsData.js";
 import { addLeadToStage, addP0Lead, countStageLeads, findLeadById, findLeadByMobileOrEmail, moveLeadToStage, p0StatusOf, readLeads, subscribePipeline, updateLead } from "../utils/pipelineStore.js";
@@ -78,6 +78,7 @@ import { buildLeadIntakePayload, leadPatchFromIntake, pipelinePatchFromBiodata, 
 import { assignPendingBiodataFile, rememberBiodataFile, rememberPendingBiodataFile } from "../utils/biodataFileStore.js";
 import { addTaskFromForm, getTodayTaskStats, readTasks, subscribeTasks } from "../utils/tasksStore.js";
 import { buildPerformanceReport } from "../utils/performanceStats.js";
+import { readCampaigns } from "../utils/campaignsStore.js";
 import { VISITS } from "./pipeline/deal-tabs/VisitsMeetingsTab.jsx";
 import salesFunnelSvg from "../assets/sales-funnel.svg";
 import salesPersonProfile from "../assets/sale-person-profile.jpg";
@@ -295,7 +296,7 @@ const PERFORMANCE_DETAIL_META = {
 const LEAD_HEALTH = [
   { key: "hot",  label: "Hot Leads",  count: 18, icon: Flame,     bg: "#FDECEE", fg: "#E8395B" },
   { key: "warm", label: "Warm Leads", count: 18, icon: Flame,     bg: "#FFF3E4", fg: "#F59E0B" },
-  { key: "cold", label: "Cold Leads", count: 18, icon: Snowflake, bg: "#FCF5F6", fg: "#7A0A17" },
+  { key: "cold", label: "Cold Leads", count: 18, icon: Snowflake, bg: "#E8F2FE", fg: "#3B82F6" },
 ];
 
 const FUNNEL_STAGE_IDS = ["P0", "P1", "P2", "P3", "P4", "P5", "P6"];
@@ -367,7 +368,7 @@ const PRIORITY_STYLES = {
 const TEMPERATURE_STYLES = {
   Hot:  { color: "#E8395B", bg: "#FDECEE" },
   Warm: { color: "#F59E0B", bg: "#FFF3E4" },
-  Cold: { color: "#7A0A17", bg: "#FCF5F6" },
+  Cold: { color: "#3B82F6", bg: "#E8F2FE" },
 };
 
 /** Same short My Leads set the dashboard showed before the full pipeline list. */
@@ -874,28 +875,232 @@ function UpNextCard({ item, onDetails }) {
   );
 }
 
-function UnscheduledCard({ item, onSchedule }) {
+/** Demo campaign responses mapped to known pipeline lead IDs. */
+const DEMO_CAMPAIGN_RESPONSES = [
+  {
+    leadId: "p0-1",
+    campaignId: 2,
+    channel: "WhatsApp",
+    respondedAtLabel: "12 min ago",
+    reply: "Hi, saw your hoarding near South Ex. Interested in Premium package — please share details.",
+  },
+  {
+    leadId: "p0-2",
+    campaignId: 2,
+    channel: "WhatsApp",
+    respondedAtLabel: "28 min ago",
+    reply: "Yes, call me after 7 PM. Looking for a match in Delhi NCR.",
+  },
+  {
+    leadId: "p1-2",
+    campaignId: 2,
+    channel: "SMS",
+    respondedAtLabel: "1 hr ago",
+    reply: "Got your SMS. Can we schedule a visit this weekend?",
+  },
+  {
+    leadId: "p2-2",
+    campaignId: 2,
+    channel: "WhatsApp",
+    respondedAtLabel: "3 hrs ago",
+    reply: "Please send the brochure. Budget around ₹50k–₹1L.",
+  },
+  {
+    leadId: "p3-1",
+    campaignId: 3,
+    channel: "Email",
+    respondedAtLabel: "2 hrs ago",
+    reply: "Interested in the 30% offer. Is it valid for existing negotiation deals?",
+  },
+  {
+    leadId: "p4-1",
+    campaignId: 3,
+    channel: "Email",
+    respondedAtLabel: "Yesterday",
+    reply: "Confirming — ready to close if the discount applies to Premium.",
+  },
+  {
+    leadId: "p1-1",
+    campaignId: 4,
+    channel: "Push",
+    respondedAtLabel: "Yesterday",
+    reply: "Attended the Rohini sabha. Please follow up with profiles.",
+  },
+];
+
+const STAGE_LABEL_BY_ID = {
+  P0: "P0 · New Opportunity",
+  P1: "P1 · Qualified",
+  P2: "P2 · Profile Create",
+  P3: "P3 · Video Call/Visit",
+  P4: "P4 · Negotiation",
+  P5: "P5 · Closed Won",
+  P6: "P6 · Service Handover",
+};
+
+const CHANNEL_STYLES = {
+  WhatsApp: { bg: "#E7F8EF", color: "#16A34A" },
+  SMS: { bg: "#EEF0FE", color: "#6366F1" },
+  Email: { bg: "#FFF3E4", color: "#F59E0B" },
+  Push: { bg: "#FDECEE", color: "#E8395B" },
+};
+
+function resolveAllResponseRows(campaigns = []) {
+  const byId = new Map((Array.isArray(campaigns) ? campaigns : []).map((c) => [c.id, c]));
+  const seen = new Set();
+  const rows = [];
+  for (const entry of DEMO_CAMPAIGN_RESPONSES) {
+    const key = `${entry.leadId}-${entry.campaignId}-${entry.respondedAtLabel}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const found = findLeadById(entry.leadId);
+    if (!found?.lead) continue;
+    const campaign = byId.get(entry.campaignId);
+    rows.push({
+      ...entry,
+      campaignName: campaign?.name || `Campaign ${entry.campaignId}`,
+      lead: found.lead,
+      stageId: found.stageId,
+      stageLabel: STAGE_LABEL_BY_ID[found.stageId] || found.stageId,
+    });
+  }
+  return rows;
+}
+
+function leadContactLine(lead = {}) {
+  const mobile = String(lead.mobile || "").trim();
+  const email = String(lead.email || "").trim();
+  if (mobile && email) return `${mobile} · ${email}`;
+  return mobile || email || lead.mmlId || "—";
+}
+
+function CampaignPerformanceCard({
+  messagesSent = 34,
+  messagesTrend = "+10%",
+  responseCount = 94,
+  responsesTrend = "+10%",
+  onClick,
+}) {
   return (
-    <div className="bg-white border border-black/8 rounded-2xl p-3.5 flex-1 min-w-0">
-      <p className="text-[10.5px] font-bold text-[#9CA3AF] tracking-wide">UNSCHEDULED</p>
-      {item ? (
-        <button
-          type="button"
-          onClick={() => onSchedule?.(item)}
-          className="flex items-start gap-2 mt-3 w-full text-left rounded-xl hover:bg-[#FAFAFB] transition-colors -mx-1 px-1 py-1"
-        >
-          <span className="size-2 rounded-full bg-[#E8395B] shrink-0 mt-1.5" />
-          <div className="min-w-0">
-            <p className="text-[13.5px] font-bold text-[#111] leading-snug truncate">{item.title}</p>
-            <p className="text-[11px] text-[#9CA3AF] mt-0.5">
-              {item.type} • {item.duration}
-            </p>
+    <button
+      type="button"
+      onClick={onClick}
+      className="bg-white border border-black/8 rounded-2xl p-3.5 flex-1 min-w-0 text-left hover:bg-[#FAFAFB] transition-colors"
+      title="View campaign responses"
+    >
+      <div className="flex items-center gap-2">
+        <Megaphone size={15} className="text-[#E8395B] shrink-0" strokeWidth={2.25} />
+        <p className="text-[13px] font-bold text-[#111]">Campaign Performance</p>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 divide-x divide-[#E5E7EB]">
+        <div className="pr-3 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex size-6 items-center justify-center rounded-md bg-[#EEF4FF] shrink-0">
+              <Mail size={13} className="text-[#3B82F6]" strokeWidth={2.25} />
+            </span>
+            <span className="text-[11.5px] font-medium text-[#6B7280] truncate">Messages Sent</span>
           </div>
-        </button>
+          <p className="text-[26px] font-bold text-[#111] leading-none mt-2 tabular-nums">{messagesSent}</p>
+          <p className="text-[12px] font-bold text-[#16A34A] mt-1.5 tabular-nums">{messagesTrend}</p>
+        </div>
+
+        <div className="pl-3 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span
+              className="inline-flex size-6 items-center justify-center rounded-md bg-[#FDECEE] shrink-0"
+              style={{ boxShadow: "0 0 0 3px rgba(232,57,91,0.12)" }}
+            >
+              <MessageSquare size={13} className="text-[#E8395B]" strokeWidth={2.25} />
+            </span>
+            <span className="text-[11.5px] font-medium text-[#6B7280] truncate">Responses</span>
+          </div>
+          <p className="text-[26px] font-bold text-[#111] leading-none mt-2 tabular-nums">{responseCount}</p>
+          <p className="text-[12px] font-bold text-[#16A34A] mt-1.5 tabular-nums">{responsesTrend}</p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function CampaignResponseModal({ open, onClose, rows, onOpenLead }) {
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Campaign responses"
+      subtitle={`${rows.length} lead${rows.length === 1 ? "" : "s"} replied`}
+      width="max-w-xl"
+      icon={<MessageSquare size={18} />}
+      iconBg="#EEF0FE"
+      iconColor="#6366F1"
+    >
+      {rows.length === 0 ? (
+        <p className="text-[13px] text-[#9CA3AF] text-center py-8">
+          No responses yet. Run a campaign to see lead replies here.
+        </p>
       ) : (
-        <p className="text-[12px] text-[#9CA3AF] mt-3">Loading next activity…</p>
+        <ul className="flex flex-col gap-3">
+          {rows.map((row) => {
+            const lead = row.lead || {};
+            const temp = TEMPERATURE_STYLES[lead.temperature] || { color: "#6B7280", bg: "#F3F4F6" };
+            const ch = CHANNEL_STYLES[row.channel] || { bg: "#F3F4F6", color: "#6B7280" };
+            return (
+              <li key={`${row.leadId}-${row.campaignId}-${row.respondedAtLabel}`}>
+                <button
+                  type="button"
+                  onClick={() => onOpenLead?.(lead)}
+                  className="w-full text-left rounded-2xl border border-black/8 bg-[#FAFAFB] hover:bg-white hover:border-black/12 transition-colors p-3.5"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-[14px] font-bold text-[#111] truncate">{lead.name}</p>
+                        {lead.temperature ? (
+                          <span
+                            className="text-[10px] font-bold rounded-md px-1.5 py-0.5"
+                            style={{ backgroundColor: temp.bg, color: temp.color }}
+                          >
+                            {lead.temperature}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="text-[11.5px] text-[#6B7280] mt-1 truncate">
+                        {leadContactLine(lead)}
+                      </p>
+                      <p className="text-[11px] text-[#9CA3AF] mt-0.5">
+                        {row.campaignName ? `${row.campaignName} · ` : ""}
+                        {row.stageLabel}
+                        {lead.source ? ` · ${lead.source}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <span
+                        className="text-[10px] font-bold rounded-md px-1.5 py-0.5"
+                        style={{ backgroundColor: ch.bg, color: ch.color }}
+                      >
+                        {row.channel}
+                      </span>
+                      <span className="text-[11px] text-[#9CA3AF] font-medium whitespace-nowrap">
+                        {row.respondedAtLabel}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-3 rounded-xl bg-white border border-black/6 px-3 py-2.5">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-[#9CA3AF]">
+                      Response
+                    </p>
+                    <p className="text-[13px] text-[#111] leading-snug mt-1">
+                      {row.reply || "Replied to campaign"}
+                    </p>
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       )}
-    </div>
+    </Modal>
   );
 }
 
@@ -1576,6 +1781,7 @@ function MyLeadsCard({
               const pri = PRIORITY_STYLES[lead.priority] || { color: "#6B7280", bg: "#F3F4F6" };
               const urgent = Number(lead.hrs) <= 8;
               const checked = selectedLeadIds.includes(lead.id);
+              const onHold = lead.dealStatus === "cold";
               return (
                 <tr
                   key={lead.id}
@@ -1596,8 +1802,8 @@ function MyLeadsCard({
                     </td>
                   )}
                   <td className="px-1.5 py-2 align-middle overflow-hidden">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: stage.color }} />
+                    <ClientNameHoverTip name={lead.name} temperature={lead.temperature} mmlId={lead.mmlId} className="items-center gap-1.5 min-w-0">
+                      <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: temp.color }} />
                       <div className="min-w-0">
                         <div className="flex items-center gap-1">
                           <button
@@ -1614,12 +1820,14 @@ function MyLeadsCard({
                         </div>
                         <p className="text-[10px] text-[#9CA3AF] truncate">{lead.mmlId}</p>
                       </div>
-                    </div>
+                    </ClientNameHoverTip>
                   </td>
                   <td className="px-1.5 py-2 align-middle overflow-hidden">
                     <p className="text-[11.5px] text-[#374151] leading-tight">
-                      {stage.id === "P0" ? `P0 ${stage.label}` : `${stage.id} - ${stage.label}`}{" "}
-                      <span style={{ color: temp.color }} className="font-semibold">({lead.temperature || "—"})</span>
+                      {stage.id === "P0" ? `P0 ${stage.label}` : `${stage.id} - ${stage.label}`}
+                      {onHold ? (
+                        <span className="font-semibold text-[#7A0A17]"> (Hold)</span>
+                      ) : null}
                     </p>
                   </td>
                   <td className="px-1.5 py-2 whitespace-nowrap overflow-hidden">
@@ -1731,12 +1939,11 @@ export default function Dashboard() {
   const [showBiodataUpload, setShowBiodataUpload] = useState(false);
   const [leadInitial, setLeadInitial] = useState(null);
   const [biodataCompareWith, setBiodataCompareWith] = useState(null);
-  const [meetingPrefill, setMeetingPrefill] = useState(null);
-  const [schedulingUnscheduledId, setSchedulingUnscheduledId] = useState(null);
-  const [unscheduledItems, setUnscheduledItems] = useState(readUnscheduled);
   const [calendarEvents, setCalendarEvents] = useState(() =>
     mergeCalendarEvents(INITIAL_EVENTS, readExtraEvents())
   );
+  const [campaigns, setCampaigns] = useState(readCampaigns);
+  const [responseModalOpen, setResponseModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedMeetingEvent, setSelectedMeetingEvent] = useState(null);
   const [selectedTaskEvent, setSelectedTaskEvent] = useState(null);
@@ -1750,11 +1957,13 @@ export default function Dashboard() {
   useEffect(
     () =>
       subscribeCalendar(() => {
-        setUnscheduledItems(readUnscheduled());
         setCalendarEvents(mergeCalendarEvents(INITIAL_EVENTS, readExtraEvents()));
       }),
     []
   );
+  useEffect(() => {
+    setCampaigns(readCampaigns());
+  }, []);
   useEffect(() => subscribePipeline(() => setLeadsByStage(readLeads())), []);
   useEffect(() => {
     const refresh = () => setStats(buildDashboardStats());
@@ -1791,6 +2000,11 @@ export default function Dashboard() {
   }, [dashboardRows]);
 
   const upNext = useMemo(() => findUpNextEvent(calendarEvents), [calendarEvents]);
+
+  const campaignResponseRows = useMemo(
+    () => resolveAllResponseRows(campaigns),
+    [campaigns, leadsByStage]
+  );
 
   const closeCalendarDetails = () => {
     setSelectedEvent(null);
@@ -2208,22 +2422,20 @@ export default function Dashboard() {
       ) : null}
       <CreateMeetingEventModal
         open={showCreateMeeting}
-        onClose={() => {
-          setShowCreateMeeting(false);
-          setMeetingPrefill(null);
-          setSchedulingUnscheduledId(null);
-        }}
+        onClose={() => setShowCreateMeeting(false)}
         entityLabel="Meeting"
         defaultDate={new Date()}
-        initial={meetingPrefill}
-        scheduleOnly={Boolean(schedulingUnscheduledId)}
         onSave={(form) => {
           addExtraEvent(meetingFormToCalendarItem(form, "meeting"));
-          if (schedulingUnscheduledId) {
-            removeUnscheduled(schedulingUnscheduledId);
-            setSchedulingUnscheduledId(null);
-            setMeetingPrefill(null);
-          }
+        }}
+      />
+      <CampaignResponseModal
+        open={responseModalOpen}
+        onClose={() => setResponseModalOpen(false)}
+        rows={campaignResponseRows}
+        onOpenLead={(lead) => {
+          setResponseModalOpen(false);
+          navigate(leadDetailPath(lead));
         }}
       />
       <CreateTaskModal
@@ -2281,11 +2493,7 @@ export default function Dashboard() {
                 setShowCreateLead(true);
               }}
               onCreateTask={() => setShowCreateTask(true)}
-              onCreateMeeting={() => {
-                setMeetingPrefill(null);
-                setSchedulingUnscheduledId(null);
-                setShowCreateMeeting(true);
-              }}
+              onCreateMeeting={() => setShowCreateMeeting(true)}
               onUploadBiodata={() => {
                 setBiodataCompareWith(null);
                 setShowBiodataUpload(true);
@@ -2300,13 +2508,12 @@ export default function Dashboard() {
           <div className="flex flex-col gap-4 min-h-0">
             <div className="flex items-stretch gap-3">
               <UpNextCard item={upNext} onDetails={openCalendarItem} />
-              <UnscheduledCard
-                item={unscheduledItems[0] || null}
-                onSchedule={(item) => {
-                  setSchedulingUnscheduledId(item.id);
-                  setMeetingPrefill(unscheduledToMeetingForm(item));
-                  setShowCreateMeeting(true);
-                }}
+              <CampaignPerformanceCard
+                messagesSent={34}
+                messagesTrend="+10%"
+                responseCount={94}
+                responsesTrend="+10%"
+                onClick={() => setResponseModalOpen(true)}
               />
             </div>
             <RecentUpdatesCard />
