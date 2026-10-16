@@ -1475,9 +1475,12 @@ export default function PipelineBoard() {
             <div className="relative z-10 w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl bg-[#F7F8FA] shadow-xl">
               <div className="max-h-[92vh] overflow-y-auto scrollbar-thin">
                 <CreateCampaignPage
-                  key={`create-${campaignStageGroup || "none"}`}
+                  key={`create-${selectedLeadIds.length ? "custom" : campaignStageGroup || "none"}`}
                   embedded
-                  initialGroup={campaignStageGroup}
+                  fromSelectedLeads={selectedLeadIds.length > 0}
+                  initialGroup={
+                    selectedLeadIds.length > 0 ? "custom" : campaignStageGroup
+                  }
                   onClose={closeCreateCampaign}
                 />
               </div>

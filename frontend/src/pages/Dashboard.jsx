@@ -1010,9 +1010,9 @@ const CAMPAIGN_CHANNEL_RATES = [
     key: "sms",
     label: "SMS",
     rate: "1.8%",
-    icon: Mail,
-    iconProps: { size: 12, className: "text-[#3B82F6]", strokeWidth: 2.25 },
-    chipBg: "#EEF4FF",
+    icon: MessageSquare,
+    iconProps: { size: 12, className: "text-[#7A0A17]", strokeWidth: 2.25 },
+    chipBg: "#FDF2F3",
   },
   {
     key: "push",
@@ -1819,7 +1819,7 @@ function MyLeadsCard({
           )}
           <div className="hidden sm:flex items-center gap-2">
             {[
-              { label: "Low Probability", color: "#E8395B" },
+              { label: "Low", color: "#E8395B" },
               { label: "Medium",           color: "#F59E0B" },
               { label: "High",             color: "#16A34A" },
             ].map((f) => (

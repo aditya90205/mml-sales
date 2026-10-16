@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Calendar,
+  CalendarOff,
   CheckSquare,
   ChevronDown,
   Flag,
@@ -54,6 +55,10 @@ import {
 import { buildDemoHistory, ensureLeadHistory, recordLeadActivity } from "../../utils/leadActivityStore.js";
 import { formatLookingForLabel, leadHasMobileNumber, P2_MOBILE_REQUIRED_MESSAGE, splitName } from "../../utils/leadFields.js";
 import { addExtraEvent, taskFormToCalendarItem } from "../../utils/calendarStore.js";
+import {
+  getSubscriptionExpiryMeta,
+  isSubscriptionExpiredForLead,
+} from "../../utils/clientStatusTag.js";
 import { pushNotification } from "../../utils/notifications.js";
 
 const BASE_TABS = [
@@ -388,6 +393,8 @@ export default function DealDetailPage({
       ? "cold"
       : "lost"
     : null;
+  const subscriptionExpired = !holdStatus && isSubscriptionExpiredForLead(lead);
+  const expiryMeta = subscriptionExpired ? getSubscriptionExpiryMeta(lead) : null;
   const isLost = holdStatus === "lost";
   const holdMetaItems = holdStatus
     ? [
@@ -414,6 +421,24 @@ export default function DealDetailPage({
                 .join(" · "),
             }
           : null,
+      ].filter(Boolean)
+    : [];
+  const expiryMetaItems = subscriptionExpired
+    ? [
+        {
+          label: "Stage",
+          value: stageLabelForHold(currentStage, isContactedP0),
+        },
+        expiryMeta?.packageName
+          ? {
+              label: "Plan",
+              value: expiryMeta.months
+                ? `${expiryMeta.packageName} · ${expiryMeta.months} months`
+                : expiryMeta.packageName,
+            }
+          : null,
+        expiryMeta?.expiredOn ? { label: "Expired on", value: expiryMeta.expiredOn } : null,
+        { label: "Next steps", value: "Renew package to resume matchmaking" },
       ].filter(Boolean)
     : [];
 
@@ -1067,12 +1092,47 @@ export default function DealDetailPage({
             </div>
           ) : null}
 
+          {subscriptionExpired ? (
+            <div
+              role="status"
+              className="flex flex-wrap items-start gap-3 rounded-xl border border-[#F5C2C7] bg-[#FDECEE] px-4 py-3"
+            >
+              <span className="size-8 rounded-lg bg-white grid place-items-center shrink-0 text-[#E8395B]">
+                <CalendarOff size={16} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-bold text-[#E8395B]">Subscription plan expired</p>
+                <p className="text-[12px] text-[#6B7280] mt-0.5 leading-snug">
+                  This client&apos;s subscription plan has expired. P0 to P6 are inactive until the
+                  package is renewed.
+                </p>
+                {expiryMetaItems.length ? (
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5 text-[12px] leading-snug text-[#374151]">
+                    {expiryMetaItems.map((item, index) => (
+                      <p key={`${item.label}-${index}`} className="min-w-0 flex items-start gap-2">
+                        {index % 2 === 1 ? (
+                          <span className="hidden sm:inline text-[#D1D5DB] font-normal shrink-0" aria-hidden>
+                            |
+                          </span>
+                        ) : null}
+                        <span className="min-w-0">
+                          <span className="font-semibold text-[#E8395B]">{item.label}:</span>{" "}
+                          <span className="break-words">{item.value}</span>
+                        </span>
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="flex-1 min-w-0">
               <StageStepper
                 variant="overview"
                 durations={stageDurations}
-                muted={Boolean(holdStatus)}
+                muted={Boolean(holdStatus) || subscriptionExpired}
                 activeStageId={
                   currentStage !== "P0"
                     ? currentStage
@@ -1089,6 +1149,14 @@ export default function DealDetailPage({
                 className="inline-flex items-center gap-1.5 h-[38px] px-5 rounded-xl bg-[#E5E7EB] text-[#9CA3AF] text-[13px] font-semibold cursor-not-allowed shrink-0"
               >
                 {holdStatus === "cold" ? "On hold" : "Marked lost"}
+              </button>
+            ) : subscriptionExpired ? (
+              <button
+                type="button"
+                disabled
+                className="inline-flex items-center gap-1.5 h-[38px] px-5 rounded-xl bg-[#E5E7EB] text-[#9CA3AF] text-[13px] font-semibold cursor-not-allowed shrink-0"
+              >
+                Subscription expired
               </button>
             ) : nextStage ? (
               <button

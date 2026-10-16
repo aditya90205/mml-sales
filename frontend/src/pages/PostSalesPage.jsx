@@ -18,6 +18,7 @@ import Modal from "../components/ui/Modal.jsx";
 import CreateMeetingEventModal from "../components/calendar/CreateMeetingEventModal";
 import CreateTaskModal from "../components/calendar/CreateTaskModal";
 import { CLIENTS, PROBABILITY_META } from "../utils/clientsData.js";
+import { resolveClientSubLabel } from "../utils/clientStatusTag.js";
 
 const TABS = [
   { k: "overview", label: "Overview" },
@@ -1147,7 +1148,7 @@ export default function PostSalesPage() {
                         <Td>{c.clientId}</Td>
                         <Td>{c.phone}</Td>
                         <Td>
-                          <ClientStatusBadge status={c.status} married={c.married} />
+                          <ClientStatusBadge status={c.status} subLabel={resolveClientSubLabel(c)} />
                         </Td>
                         <Td>{c.address}</Td>
                         <Td>{c.owner}</Td>

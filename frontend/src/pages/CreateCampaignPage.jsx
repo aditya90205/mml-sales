@@ -21,6 +21,8 @@ import WhatsAppIcon from "../components/common/WhatsAppIcon.jsx";
 import { addCampaign, readCampaigns } from "../utils/campaignsStore.js";
 import { readSavedGroups } from "../utils/clientGroups.js";
 
+const CUSTOM_GROUP_NAME = "custom";
+
 const CHANNELS = [
   { key: "email", label: "Email", icon: Mail },
   { key: "whatsapp", label: "WhatsApp", icon: WhatsAppIcon },
@@ -202,18 +204,25 @@ function ScheduleTimeCard({ title, value, onChange }) {
 
 const STAGE_TEMP_GROUPS = ["Hot", "Warm", "Cold"];
 
-export default function CreateCampaignPage({ embedded = false, onClose, initialGroup = "" }) {
+export default function CreateCampaignPage({
+  embedded = false,
+  onClose,
+  initialGroup = "",
+  fromSelectedLeads = false,
+}) {
   const navigate = useNavigate();
   const leave = () => {
     if (onClose) onClose();
     else navigate("/campaign/management");
   };
   const [existingCampaigns, setExistingCampaigns] = useState(() => readCampaigns());
+  const [savedGroups, setSavedGroups] = useState(() => readSavedGroups());
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [group, setGroup] = useState(() => String(initialGroup || "").trim());
-  const [groupOptions, setGroupOptions] = useState(() => readSavedGroups());
+  const [group, setGroup] = useState(() =>
+    fromSelectedLeads ? CUSTOM_GROUP_NAME : String(initialGroup || "").trim()
+  );
   const [country, setCountry] = useState("");
   const [startMode, setStartMode] = useState("Manual");
   const [stopMode, setStopMode] = useState("Manual");
@@ -227,22 +236,30 @@ export default function CreateCampaignPage({ embedded = false, onClose, initialG
   const fileInputRef = useRef(null);
 
   const groupSelectOptions = useMemo(() => {
-    const names = groupOptions.map((g) => g.name);
+    const names = [
+      ...STAGE_TEMP_GROUPS,
+      ...savedGroups.map((g) => g.name),
+      "Common Pool",
+      "Doctors",
+      "P3 Pipeline",
+      "New Opportunity",
+    ];
+    if (group && !names.includes(group)) names.push(group);
     const seen = new Set();
     const out = [];
-    for (const n of [...STAGE_TEMP_GROUPS, ...names, "Common Pool", "Doctors", "P3 Pipeline", "New Opportunity"]) {
-      if (seen.has(n)) continue;
+    for (const n of names) {
+      if (!n || seen.has(n)) continue;
       seen.add(n);
       out.push(n);
     }
     return out;
-  }, [groupOptions]);
+  }, [savedGroups, group]);
 
   const resetToNewCampaign = (preferredGroup = initialGroup) => {
     setSelectedCampaignId("");
     setName("");
     setDescription("");
-    setGroup(String(preferredGroup || "").trim());
+    setGroup(fromSelectedLeads ? CUSTOM_GROUP_NAME : String(preferredGroup || "").trim());
     setCountry("");
     setStartMode("Manual");
     setStopMode("Manual");
@@ -259,7 +276,9 @@ export default function CreateCampaignPage({ embedded = false, onClose, initialG
     setSelectedCampaignId(String(campaign.id));
     setName(campaign.name || "");
     setDescription(campaign.description || campaign.tag || "");
-    setGroup(String(campaign.group || campaign.target || "").trim());
+    if (!fromSelectedLeads) {
+      setGroup(String(campaign.group || campaign.target || "").trim());
+    }
     setCountry(campaign.country || "");
     setStartMode(startModeFromCampaign(campaign));
     setStopMode(stopModeFromCampaign(campaign));
@@ -288,13 +307,17 @@ export default function CreateCampaignPage({ embedded = false, onClose, initialG
 
   useEffect(() => {
     setExistingCampaigns(readCampaigns());
+    setSavedGroups(readSavedGroups());
   }, []);
 
   useEffect(() => {
-    const next = String(initialGroup || "").trim();
-    if (!next || selectedCampaignId) return;
-    setGroup(next);
-  }, [initialGroup, selectedCampaignId]);
+    if (selectedCampaignId) return;
+    if (fromSelectedLeads) {
+      setGroup(CUSTOM_GROUP_NAME);
+      return;
+    }
+    setGroup(String(initialGroup || "").trim());
+  }, [initialGroup, fromSelectedLeads, selectedCampaignId]);
 
   const toggleChannel = (key) => {
     setSelectedChannels((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -306,6 +329,7 @@ export default function CreateCampaignPage({ embedded = false, onClose, initialG
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadFileName(file.name);
+    if (!fromSelectedLeads) setGroup(CUSTOM_GROUP_NAME);
     toast.success(`"${file.name}" attached for this campaign.`);
     e.target.value = "";
   };
@@ -319,6 +343,10 @@ export default function CreateCampaignPage({ embedded = false, onClose, initialG
   const handleSave = () => {
     if (!name.trim()) {
       toast.error("Please enter a campaign name.");
+      return;
+    }
+    if (!String(group || "").trim() && !uploadFileName) {
+      toast.error("Please select a target group or upload a file.");
       return;
     }
     if (startMode === "Time based" && (!startSchedule.date || !startSchedule.time)) {
@@ -350,8 +378,9 @@ export default function CreateCampaignPage({ embedded = false, onClose, initialG
   };
 
   const handleGroupSaved = (created) => {
-    setGroupOptions(readSavedGroups());
-    setGroup(created.name);
+    setSavedGroups(readSavedGroups());
+    setGroup(created?.name || CUSTOM_GROUP_NAME);
+    setCreateGroupOpen(false);
   };
 
   return (
@@ -453,24 +482,55 @@ export default function CreateCampaignPage({ embedded = false, onClose, initialG
             </div>
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_1fr_auto] gap-4 items-end">
               <div>
-                <FieldLabel required>Select Group</FieldLabel>
-                <select
-                  value={group}
-                  onChange={(e) => setGroup(e.target.value)}
-                  className="w-full h-11 border border-black/12 rounded-xl px-3.5 text-[13px] text-[#111] outline-none bg-white"
-                >
-                  <option value="">Select Group</option>
-                  {groupSelectOptions.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
+                <FieldLabel required>Group Name</FieldLabel>
+                {fromSelectedLeads ? (
+                  <input
+                    value={group}
+                    onChange={(e) => setGroup(e.target.value)}
+                    placeholder={CUSTOM_GROUP_NAME}
+                    aria-label="Custom group name from selected leads"
+                    className="w-full h-11 border border-black/12 rounded-xl px-3.5 text-[13px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40 bg-white"
+                  />
+                ) : (
+                  <div className="relative">
+                    <select
+                      value={group}
+                      onChange={(e) => setGroup(e.target.value)}
+                      aria-label="Select target group"
+                      className={`${INPUT} pr-10 appearance-none`}
+                    >
+                      <option value="">Select a group</option>
+                      {groupSelectOptions.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      size={15}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none"
+                    />
+                  </div>
+                )}
               </div>
               <button
                 type="button"
-                onClick={() => setCreateGroupOpen(true)}
-                className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-white border border-[#7A0A17]/30 text-[13px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors shrink-0"
+                disabled={fromSelectedLeads}
+                aria-disabled={fromSelectedLeads}
+                onClick={() => {
+                  if (fromSelectedLeads) return;
+                  setCreateGroupOpen(true);
+                }}
+                title={
+                  fromSelectedLeads
+                    ? "Custom group is set from selected leads"
+                    : "Create a client group"
+                }
+                className={`inline-flex items-center gap-1.5 h-11 px-4 rounded-xl border text-[13px] font-semibold shrink-0 transition-colors ${
+                  fromSelectedLeads
+                    ? "bg-white border-black/10 text-[#9CA3AF] cursor-not-allowed"
+                    : "bg-white border-[#7A0A17]/30 text-[#7A0A17] hover:bg-[#FCF5F6]"
+                }`}
               >
                 <Plus size={14} /> Create Client Group
               </button>

@@ -1,7 +1,8 @@
-import { MousePointerClick, Edit2 } from "lucide-react";
+import { MessageSquareReply, Pencil } from "lucide-react";
 import { toast } from "react-toastify";
 import WhatsAppIcon from "../common/WhatsAppIcon.jsx";
 import { parseChannels } from "../../utils/campaignChannels.js";
+import { buildCampaignDetailKpis } from "../../utils/campaignMetrics.js";
 import hugeiconsSent from "../../assets/hugeicons_sent.png";
 import charmTickDouble from "../../assets/charm_tick-double.png";
 import biEnvelopeOpen from "../../assets/bi_envelope-open.png";
@@ -13,21 +14,17 @@ const AUDIENCE_SIZE_BY_TARGET = {
   "IIT, IIM": "96 Contacts",
   "P3 Pipeline": "134 Contacts",
   "New Opportunity": "310 Contacts",
+  Hot: "Hot stage leads",
+  Warm: "Warm stage leads",
+  Cold: "Cold stage leads",
 };
 
-const KPI_STATS = [
-  { key: "sent", label: "Sent", value: "25", img: hugeiconsSent },
-  { key: "delivered", label: "Delivered", value: "20", img: charmTickDouble },
-  { key: "opened", label: "Opened", value: "14", img: biEnvelopeOpen },
-  { key: "clicked", label: "Clicked", value: "08", icon: MousePointerClick, fg: "#E8395B" },
-];
-
 const STATUS_STYLES = {
-  "Not Started": "bg-[#DCFCE7] text-[#15803D]",
-  Active: "bg-[#DCFCE7] text-[#15803D]",
-  Completed: "bg-[#DBEAFE] text-[#2563EB]",
-  Scheduled: "bg-[#FEF3C7] text-[#D97706]",
-  "Stop Manually": "bg-[#FEE2E2] text-[#DC2626]",
+  "Not Started": { bg: "#E7F8EF", color: "#15803D" },
+  Active: { bg: "#E7F8EF", color: "#15803D" },
+  Completed: { bg: "#DBEAFE", color: "#2563EB" },
+  Scheduled: { bg: "#FEF3C7", color: "#D97706" },
+  "Stop Manually": { bg: "#FEE2E2", color: "#DC2626" },
 };
 
 function OverviewField({ label, children }) {
@@ -39,12 +36,30 @@ function OverviewField({ label, children }) {
   );
 }
 
-export default function CampaignViewModal({ open, onClose, campaign, onEdit }) {
+export default function CampaignViewModal({ open, onClose, campaign, campaigns, onEdit }) {
   if (!open || !campaign) return null;
 
   const channels = parseChannels(campaign.channel);
-  const audienceSize = AUDIENCE_SIZE_BY_TARGET[campaign.target] || "—";
+  const audienceFromLeads = Array.isArray(campaign.leadIds) ? campaign.leadIds.length : 0;
+  const audienceSize =
+    audienceFromLeads > 0
+      ? `${audienceFromLeads} Contact${audienceFromLeads === 1 ? "" : "s"}`
+      : AUDIENCE_SIZE_BY_TARGET[campaign.target] || "—";
   const triggerType = campaign.start === "Manual" ? "Manual Trigger" : "Scheduled Batch";
+  const statusTone = STATUS_STYLES[campaign.status] || { bg: "#F1F2F4", color: "#6B7280" };
+  const kpis = buildCampaignDetailKpis(campaign, campaigns);
+  const kpiStats = [
+    { key: "sent", label: "Sent", value: kpis.labels.sent, img: hugeiconsSent },
+    { key: "delivered", label: "Delivered", value: kpis.labels.delivered, img: charmTickDouble },
+    { key: "opened", label: "Opened", value: kpis.labels.opened, img: biEnvelopeOpen },
+    {
+      key: "responses",
+      label: "Responses",
+      value: kpis.labels.responses,
+      icon: MessageSquareReply,
+      fg: "#E8395B",
+    },
+  ];
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" aria-modal="true" role="dialog">
@@ -63,7 +78,7 @@ export default function CampaignViewModal({ open, onClose, campaign, onEdit }) {
             onClick={() => onEdit?.(campaign)}
             className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-[#7A0A17]/30 text-[13px] font-semibold text-[#7A0A17] hover:bg-[#FCF5F6] transition-colors shrink-0"
           >
-            <Edit2 size={13} />
+            <Pencil size={14} />
             Edit
           </button>
         </div>
@@ -89,7 +104,10 @@ export default function CampaignViewModal({ open, onClose, campaign, onEdit }) {
 
             <div>
               <p className="text-[11px] font-bold text-[#111] mb-1.5">Status</p>
-              <span className={`inline-block text-[10.5px] font-semibold px-2 py-0.5 rounded-md whitespace-nowrap ${STATUS_STYLES[campaign.status] || "bg-[#F3F4F6] text-[#6B7280]"}`}>
+              <span
+                className="inline-flex items-center justify-center px-3.5 py-[6px] rounded-[6px] text-[11px] font-semibold leading-none whitespace-nowrap"
+                style={{ backgroundColor: statusTone.bg, color: statusTone.color }}
+              >
                 {campaign.status}
               </span>
             </div>
@@ -98,7 +116,7 @@ export default function CampaignViewModal({ open, onClose, campaign, onEdit }) {
           {/* KPI + Overview */}
           <div className="flex flex-col gap-5">
             <div className="grid grid-cols-4 gap-2.5">
-              {KPI_STATS.map((s) => {
+              {kpiStats.map((s) => {
                 const Icon = s.icon;
                 return (
                   <div key={s.key} className="border border-black/10 rounded-xl px-2.5 py-3 flex flex-col items-center text-center gap-1.5">
@@ -108,7 +126,7 @@ export default function CampaignViewModal({ open, onClose, campaign, onEdit }) {
                       <Icon size={17} style={{ color: s.fg }} strokeWidth={1.8} />
                     )}
                     <p className="text-[10px] text-[#9CA3AF]">{s.label}</p>
-                    <p className="text-[17px] font-bold text-[#111] leading-none">{s.value}</p>
+                    <p className="text-[17px] font-bold text-[#111] leading-none tabular-nums">{s.value}</p>
                   </div>
                 );
               })}
@@ -124,24 +142,29 @@ export default function CampaignViewModal({ open, onClose, campaign, onEdit }) {
                 <OverviewField label="Trigger Type">{triggerType}</OverviewField>
                 <OverviewField label="Start Date & Time">{campaign.start}</OverviewField>
                 <OverviewField label="End Date & Time">{campaign.end}</OverviewField>
+                <OverviewField label="No. of Responses">
+                  <span className="tabular-nums">{kpis.labels.responses}</span>
+                </OverviewField>
               </div>
 
               <div>
                 <p className="text-[10px] font-extrabold uppercase tracking-wide text-[#9CA3AF] mb-1.5">Active Channels</p>
                 <div className="flex items-center gap-2">
-                  {channels.map(({ label, Icon, isWhatsApp }) => (
-                    <span
-                      key={label}
-                      title={label}
-                      className="size-8 rounded-lg bg-[#FCF5F6] border border-[#7A0A17]/20 grid place-items-center"
-                    >
-                      {isWhatsApp ? (
-                        <WhatsAppIcon size={15} withBg={false} color="#7A0A17" />
-                      ) : (
+                  {channels.map(({ label, Icon, isWhatsApp }) =>
+                    isWhatsApp ? (
+                      <span key={label} title={label}>
+                        <WhatsAppIcon size={16} />
+                      </span>
+                    ) : (
+                      <span
+                        key={label}
+                        title={label}
+                        className="size-8 rounded-lg bg-[#FCF5F6] border border-[#7A0A17]/20 grid place-items-center"
+                      >
                         <Icon size={15} className="text-[#7A0A17]" />
-                      )}
-                    </span>
-                  ))}
+                      </span>
+                    )
+                  )}
                 </div>
               </div>
             </div>

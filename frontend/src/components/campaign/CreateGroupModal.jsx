@@ -7,6 +7,7 @@ import SendEmailModal from "../common/SendEmailModal.jsx";
 import Modal from "../ui/Modal.jsx";
 import { CLIENTS } from "../../utils/clientsData.js";
 import { addSavedGroup } from "../../utils/clientGroups.js";
+import { resolveClientSubLabel } from "../../utils/clientStatusTag.js";
 import {
   FIELD_OPTIONS,
   OPERATOR_OPTIONS,
@@ -16,6 +17,8 @@ import {
   usesSelectValue,
   valueOptionsFor,
 } from "../../utils/clientQuery.js";
+
+const CUSTOM_GROUP_NAME = "custom";
 
 function FieldSelect({ value, onChange, options, placeholder, className = "w-[200px]" }) {
   return (
@@ -108,7 +111,7 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
 
   useEffect(() => {
     if (!open) return;
-    setGroupName("");
+    setGroupName(CUSTOM_GROUP_NAME);
     setDescription("girls from Rohini who studied at IIM");
     setMatchMode("ALL");
     setConditions([
@@ -119,6 +122,12 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
     setResults(null);
     setSelectedIds(new Set());
   }, [open]);
+
+  // When leads are selected and name is empty, fill "custom" automatically.
+  useEffect(() => {
+    if (!open || selectedIds.size === 0) return;
+    setGroupName((prev) => (prev.trim() ? prev : CUSTOM_GROUP_NAME));
+  }, [open, selectedIds]);
 
   const updateCondition = (id, next) => {
     setConditions((prev) => prev.map((c) => (c.id === id ? next : c)));
@@ -135,7 +144,7 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
   const clearAll = () => {
     setConditions([makeCondition()]);
     setDescription("");
-    setGroupName("");
+    setGroupName(CUSTOM_GROUP_NAME);
     setResults(null);
     setSelectedIds(new Set());
   };
@@ -143,6 +152,7 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
   const applyResults = (matched) => {
     setResults(matched);
     setSelectedIds(new Set(matched.map((c) => c.id)));
+    if (matched.length > 0) setGroupName((prev) => (prev.trim() ? prev : CUSTOM_GROUP_NAME));
     toast.success(`${matched.length} matching client${matched.length === 1 ? "" : "s"} found.`);
   };
 
@@ -215,6 +225,7 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
       title="Create Group"
       subtitle="Describe who you're looking for, or build conditions manually."
       width="max-w-5xl"
+      zClass="z-[90]"
       footer={
         <>
           <button
@@ -242,7 +253,7 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
             <input
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
-              placeholder="e.g. Female IIM Alumni"
+              placeholder={CUSTOM_GROUP_NAME}
               aria-label="Group name"
               className="h-11 w-[520px] max-w-full shrink-0 border border-black/12 rounded-lg px-3.5 text-[14px] text-[#111] placeholder:text-[#9CA3AF] outline-none focus:border-[#7A0A17]/40"
             />
@@ -399,7 +410,7 @@ export default function CreateGroupModal({ open, onClose, onSaved }) {
                         <td className="px-3 py-2.5 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.branch}</td>
                         <td className="px-3 py-2.5">
                           <div className="flex justify-center">
-                            <ClientStatusBadge status={c.status} married={c.married} />
+                            <ClientStatusBadge status={c.status} subLabel={resolveClientSubLabel(c)} />
                           </div>
                         </td>
                         <td className="px-3 py-2.5">

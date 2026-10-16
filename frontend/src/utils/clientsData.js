@@ -132,13 +132,17 @@ export const CLIENTS = [
     clientSeries: "unpaid",
     formId: "MML-3941",
     phone: "******6155",
-    status: "Active",
+    status: "Inactive",
     married: false,
+    subscriptionExpired: true,
+    packageName: "Exclusive Privé",
+    packageMonths: 12,
+    subscriptionExpiredAt: "2026-08-01",
     address: "*********** Rajouri Garden, New Delhi",
     owner: "Rohit Kumar",
     branch: "Rajouri Garden",
     lastContact: "21/08/26",
-    reason: "Negotiating 10% discount",
+    reason: "Subscription plan expired",
     gender: "Male",
     area: "Rajouri Garden",
     education: "B.Tech - IIT",
@@ -166,6 +170,33 @@ export const CLIENTS = [
     incomeLpa: 41,
     budgetLakh: 45,
     probability: "high",
+  },
+  {
+    // Pipeline P5 — 2nd expired demo (with Virat) so Inactive row → overview works
+    id: 37,
+    name: "Rohit Sharma",
+    clientId: "50032642",
+    clientSeries: "paid",
+    formId: "MML-3971",
+    phone: "******6242",
+    status: "Inactive",
+    married: false,
+    subscriptionExpired: true,
+    packageName: "Premium",
+    packageMonths: 12,
+    subscriptionExpiredAt: "2026-07-20",
+    address: "*********** South Extension, New Delhi",
+    owner: "Rohit Kumar",
+    branch: "South Extension",
+    lastContact: "20/08/26",
+    reason: "Subscription plan expired",
+    gender: "Male",
+    area: "South Extension",
+    education: "MBA",
+    incomeLpa: 48,
+    budgetLakh: 50,
+    probability: "medium",
+    linkedLeadId: "p5-1",
   },
   {
     id: 9,
@@ -761,7 +792,8 @@ const EVENT = "mml-sales-clients";
 
 /**
  * Keep Client Database and Sales Pipeline on the same identity:
- * same name → same linkedLeadId / clientId, Active so row → overview matches the board.
+ * same name → same linkedLeadId / clientId. Active when on board;
+ * subscription-expired clients stay Inactive but keep the link so row → overview works.
  * Called from pipelineStore after leads load (avoids circular imports at module top).
  */
 export function syncClientsWithPipelineLeads(leadRows = []) {
@@ -778,9 +810,10 @@ export function syncClientsWithPipelineLeads(leadRows = []) {
     const key = String(c.name || "").trim().toLowerCase();
     const lead = byName.get(key);
     if (lead) {
-      // On Sales Pipeline → Active, same id/stage as board overview
+      // On Sales Pipeline → same id/stage as board overview
       c.linkedLeadId = lead.id;
-      c.status = "Active";
+      // Expired subscription: stay Inactive but keep linkedLeadId for overview deep-link
+      c.status = c.subscriptionExpired ? "Inactive" : "Active";
       if (isSeriesClientId(lead.mmlId)) {
         c.clientId = String(lead.mmlId);
         const prefix = String(lead.mmlId).slice(0, 3);

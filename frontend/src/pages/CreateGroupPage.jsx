@@ -7,6 +7,7 @@ import ClientStatusBadge from "../components/common/ClientStatusBadge.jsx";
 import SendEmailModal from "../components/common/SendEmailModal.jsx";
 import { CLIENTS } from "../utils/clientsData.js";
 import { addSavedGroup } from "../utils/clientGroups.js";
+import { resolveClientSubLabel } from "../utils/clientStatusTag.js";
 import {
   FIELD_OPTIONS,
   OPERATOR_OPTIONS,
@@ -378,7 +379,7 @@ export default function CreateGroupPage() {
                         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.branch}</td>
                         <td className="px-4 py-3">
                           <div className="flex justify-center">
-                            <ClientStatusBadge status={c.status} married={c.married} />
+                            <ClientStatusBadge status={c.status} subLabel={resolveClientSubLabel(c)} />
                           </div>
                         </td>
                         <td className="px-4 py-3">

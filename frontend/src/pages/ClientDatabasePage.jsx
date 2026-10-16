@@ -6,10 +6,10 @@ import {
   Download,
   Eye,
   Filter,
-  Flag,
   Mail,
   MessageSquare,
   Phone,
+  Star,
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -20,9 +20,10 @@ import SendMessageModal from "../components/common/SendMessageModal.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import ClientGroupsChart, { statsFromClients } from "../components/clients/ClientGroupsChart.jsx";
 import ClientProfileModal from "../components/clients/ClientProfileModal.jsx";
-import { BRANCHES, PROBABILITY_META, readClients, subscribeClients } from "../utils/clientsData.js";
+import { BRANCHES, readClients, subscribeClients } from "../utils/clientsData.js";
 import { groupQuery, readSavedGroups, removeSavedGroup } from "../utils/clientGroups.js";
 import { matchesAll } from "../utils/clientQuery.js";
+import { canOpenClientOverview, resolveClientSubLabel } from "../utils/clientStatusTag.js";
 import { findLeadForClient, pipelineOverviewPath } from "../utils/pipelineStore.js";
 
 const COLUMNS = [
@@ -372,19 +373,18 @@ export default function ClientDatabasePage() {
     toast.error(`${name} group removed.`);
   };
 
-  /** Active + pipeline-linked only → same overview as Sales Pipeline. No link = no-op. */
+  /** Active, Hold, or Subscription Expired + pipeline-linked → same overview as Sales Pipeline. */
   const handleRowClick = (client) => {
-    if (client.status !== "Active") return;
     const hit = findLeadForClient(client);
-    if (!hit?.lead?.id) return;
+    if (!canOpenClientOverview(client, hit)) return;
     navigate(pipelineOverviewPath(hit.lead.id));
   };
 
   const renderRow = (c) => {
-    const prob = PROBABILITY_META[c.probability] || PROBABILITY_META.medium;
-    const isActive = c.status === "Active";
-    const pipelineHit = isActive ? findLeadForClient(c) : null;
-    const canOpenOverview = Boolean(pipelineHit?.lead?.id);
+    const pipelineHit = findLeadForClient(c);
+    const subLabel = resolveClientSubLabel(c, pipelineHit);
+    const canOpenOverview = canOpenClientOverview(c, pipelineHit);
+    const starred = Boolean(pipelineHit?.lead?.starred);
     return (
       <tr
         key={c.id}
@@ -394,16 +394,20 @@ export default function ClientDatabasePage() {
         }`}
       >
         <td className="px-4 py-3">
-          <span className="inline-flex items-center gap-2">
-            <Flag size={12} style={{ color: prob.color }} fill={prob.color} strokeWidth={0} className="shrink-0" />
+          <span className="inline-flex items-center gap-1.5">
             <span className="text-[13px] font-bold text-[#111] whitespace-nowrap">{c.name}</span>
+            {starred && (
+              <span className="inline-flex shrink-0" title="Premium client" aria-label="Premium client">
+                <Star size={12} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />
+              </span>
+            )}
           </span>
         </td>
         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.formId}</td>
         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.clientId}</td>
         <td className="px-4 py-3">
           <div className="flex justify-center">
-            <ClientStatusBadge status={c.status} married={c.married} />
+            <ClientStatusBadge status={c.status} subLabel={subLabel} />
           </div>
         </td>
         <td className="px-4 py-3 max-w-[220px]">
@@ -667,15 +671,6 @@ export default function ClientDatabasePage() {
                 : "All clients"
             }
           />
-        </div>
-
-        <div className="flex items-center gap-6 flex-wrap text-[13px] font-medium text-[#374151]">
-          {Object.entries(PROBABILITY_META).map(([key, meta]) => (
-            <span key={key} className="flex items-center gap-1.5">
-              <Flag size={14} style={{ color: meta.color }} fill={meta.color} strokeWidth={0} />
-              {meta.label}
-            </span>
-          ))}
         </div>
 
         <div className="border border-black/8 rounded-xl bg-white overflow-hidden">

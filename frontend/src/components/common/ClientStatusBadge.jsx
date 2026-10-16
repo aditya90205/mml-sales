@@ -3,16 +3,22 @@ const STATUS = {
   Inactive: { bg: "#FDECEE", color: "#E8395B" },
 };
 
+const SUB_LABEL = {
+  Hold: { bg: "#FCF5F6", color: "#7A0A17" },
+  "Subscription Expired": { bg: "#FDECEE", color: "#E8395B" },
+};
+
 /**
  * Client-database status cell.
- * Single status is a rounded rectangle. Married clients render as one stacked
- * block: status on top, "Married" below, with a thin divider — matching the
- * Client Database mock.
+ * Single status is a rounded rectangle. When `subLabel` is set (Hold /
+ * Subscription Expired), renders as one stacked block: status on top, label
+ * below — same layout that previously showed Married.
  */
-export default function ClientStatusBadge({ status, married = false }) {
+export default function ClientStatusBadge({ status, subLabel = "" }) {
   const tone = STATUS[status] || { bg: "#F1F2F4", color: "#6B7280" };
+  const label = String(subLabel || "").trim();
 
-  if (!married) {
+  if (!label) {
     return (
       <span
         className="inline-flex items-center justify-center min-w-[78px] px-3.5 py-[6px] rounded-[6px] text-[11px] font-semibold leading-none whitespace-nowrap"
@@ -23,6 +29,8 @@ export default function ClientStatusBadge({ status, married = false }) {
     );
   }
 
+  const subTone = SUB_LABEL[label] || { bg: "#F1F2F4", color: "#6B7280" };
+
   return (
     <span className="inline-flex flex-col overflow-hidden rounded-[6px] min-w-[78px] text-center align-middle">
       <span
@@ -31,8 +39,11 @@ export default function ClientStatusBadge({ status, married = false }) {
       >
         {status}
       </span>
-      <span className="px-3.5 py-[6px] text-[11px] font-medium leading-none whitespace-nowrap bg-[#F1F2F4] text-[#6B7280] border-t border-black/[0.06]">
-        Married
+      <span
+        className="px-3.5 py-[6px] text-[11px] font-medium leading-none whitespace-nowrap border-t border-black/[0.06]"
+        style={{ backgroundColor: subTone.bg, color: subTone.color }}
+      >
+        {label}
       </span>
     </span>
   );

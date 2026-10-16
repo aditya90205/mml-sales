@@ -6,7 +6,7 @@ import {
   Download,
   Eye,
   Filter,
-  MousePointerClick,
+  MessageSquareReply,
   Plus,
   Trash2,
   UserRoundCheck,
@@ -23,6 +23,12 @@ import biStopCircle from "../assets/bi_stop-circle.png";
 import hugeiconsSent from "../assets/hugeicons_sent.png";
 import charmTickDouble from "../assets/charm_tick-double.png";
 import biEnvelopeOpen from "../assets/bi_envelope-open.png";
+import {
+  buildCampaignPageKpis,
+  campaignHasResponses,
+  campaignResponseCount,
+  effectiveCampaignSent,
+} from "../utils/campaignMetrics.js";
 import { readCampaigns, removeCampaign, saveCampaigns } from "../utils/campaignsStore.js";
 import { WHATSAPP_GREEN } from "../components/common/WhatsAppIcon.jsx";
 import CreateCampaignPage from "./CreateCampaignPage.jsx";
@@ -34,13 +40,13 @@ const LEADS_BY_CHANNEL = [
   { label: "Email", value: 66, color: "#D6A419" },
 ];
 
-const STAT_CARDS = [
-  { key: "leads", label: "Leads Generated", value: "412", note: "+10% vs Month", noteTone: "green", icon: Users, bg: "#FCE9EC", fg: "#E8395B" },
-  { key: "active", label: "Active Campaigns", value: "07", note: "+10% Last Month", noteTone: "green", icon: UserRoundCheck, bg: "#EFEAFB", fg: "#7C3AED" },
-  { key: "sent", label: "Sent", value: "25", note: "14 Calls | 12 Video Calls", noteTone: "muted", img: hugeiconsSent, bg: "#FFF3E0" },
-  { key: "delivered", label: "Delivered", value: "20", note: "18.4% Conversion", noteTone: "green", img: charmTickDouble, bg: "#E7F8EF" },
-  { key: "opened", label: "Opened", value: "14", note: "+15.3% this Month", noteTone: "green", img: biEnvelopeOpen, bg: "#E7EEFC" },
-  { key: "clicked", label: "Clicked", value: "08", note: null, noteTone: "muted", icon: MousePointerClick, bg: "#FCE9EC", fg: "#E8395B" },
+const STAT_CARD_DEFS = [
+  { key: "leads", label: "Leads Generated", noteTone: "muted", icon: Users, bg: "#FCE9EC", fg: "#E8395B" },
+  { key: "active", label: "Active Campaigns", noteTone: "muted", icon: UserRoundCheck, bg: "#EFEAFB", fg: "#7C3AED" },
+  { key: "sent", label: "Sent", noteTone: "muted", img: hugeiconsSent, bg: "#FFF3E0" },
+  { key: "delivered", label: "Delivered", noteTone: "muted", img: charmTickDouble, bg: "#E7F8EF" },
+  { key: "opened", label: "Opened", noteTone: "muted", img: biEnvelopeOpen, bg: "#E7EEFC" },
+  { key: "responses", label: "No. of Responses", noteTone: "muted", icon: MessageSquareReply, bg: "#FCE9EC", fg: "#E8395B" },
 ];
 
 const STATUS_STYLES = {
@@ -51,10 +57,45 @@ const STATUS_STYLES = {
   "Stop Manually": "bg-[#FEE2E2] text-[#DC2626]",
 };
 
-function StatCard({ stat }) {
+/** Match a campaign row to a KPI card filter (same pattern as telecaller). */
+function matchesKpiFilter(row, key, allRows = []) {
+  if (!key || key === "leads") return true;
+  const status = row.status;
+  const replyCount = campaignResponseCount(allRows, row.id);
+  const sentCount = effectiveCampaignSent(row, replyCount);
+  switch (key) {
+    case "active":
+      return status === "Active";
+    case "sent":
+      return sentCount > 0;
+    case "delivered":
+      return (
+        sentCount > 0 &&
+        (status === "Active" || status === "Completed" || status === "Stop Manually")
+      );
+    case "opened":
+      return replyCount > 0 && (status === "Completed" || status === "Active");
+    case "responses":
+      return campaignHasResponses(row, allRows);
+    default:
+      return true;
+  }
+}
+
+function StatCard({ stat, active, onSelect }) {
   const Icon = stat.icon;
   return (
-    <div className="bg-white border border-black/8 rounded-2xl px-3.5 py-3 flex items-center gap-3 min-w-0">
+    <button
+      type="button"
+      onClick={() => onSelect?.(stat.key)}
+      title={`Filter campaigns by ${stat.label}`}
+      aria-pressed={active}
+      className="bg-white border border-black/8 rounded-2xl px-3.5 py-3 flex items-center gap-3 min-w-0 text-left transition-[border-color,box-shadow,background-color] hover:border-black/15 hover:shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
+      style={{
+        backgroundColor: active ? "#FCF5F6" : "#FFFFFF",
+        borderColor: active ? "rgba(122,10,23,0.25)" : undefined,
+      }}
+    >
       <span className="size-10 rounded-[10px] grid place-items-center shrink-0" style={{ backgroundColor: stat.bg }}>
         {stat.img ? (
           <img src={stat.img} alt="" width={18} height={18} className="object-contain" />
@@ -63,8 +104,18 @@ function StatCard({ stat }) {
         )}
       </span>
       <div className="min-w-0">
-        <p className="text-[13px] font-bold text-[#111] leading-tight truncate">{stat.label}</p>
-        <p className="text-[20px] font-bold text-[#111] leading-tight mt-0.5">{stat.value}</p>
+        <p
+          className="text-[13px] font-bold leading-tight truncate"
+          style={{ color: active ? "#7A0A17" : "#111" }}
+        >
+          {stat.label}
+        </p>
+        <p
+          className="text-[20px] font-bold leading-tight tabular-nums mt-0.5"
+          style={{ color: active ? "#7A0A17" : "#111" }}
+        >
+          {stat.value}
+        </p>
         {stat.note && (
           <p className={`text-[10px] mt-0.5 leading-tight ${
             stat.noteTone === "green"
@@ -77,7 +128,7 @@ function StatCard({ stat }) {
           </p>
         )}
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -154,6 +205,7 @@ const CAMPAIGN_COLS = [
   { label: "Start Date & Time", key: "start" },
   { label: "End Date & Time", key: "end" },
   { label: "Owner", key: "owner" },
+  { label: "No. of Responses", key: "responseCount" },
   { label: "Status", key: "status" },
   { label: "Actions", key: "actions", unsortable: true },
 ];
@@ -192,11 +244,47 @@ function usePagedTable(rows, searchKeys) {
 
 export default function CampaignManagementPage({ embedded = false, onClose }) {
   const [rows, setRows] = useState(() => readCampaigns());
+  const [kpiFilter, setKpiFilter] = useState("leads");
   const [channelModalOpen, setChannelModalOpen] = useState(false);
   const [viewCampaign, setViewCampaign] = useState(null);
   const [editCampaign, setEditCampaign] = useState(null);
   const [createCampaignOpen, setCreateCampaignOpen] = useState(false);
-  const table = usePagedTable(rows, ["name", "tag", "target", "channel", "owner", "status"]);
+
+  const kpiTotals = useMemo(() => buildCampaignPageKpis(rows), [rows]);
+
+  const statCards = useMemo(() => {
+    const notes = {
+      leads: kpiTotals.leads ? "From campaign sends & replies" : "No leads linked yet",
+      active: `${rows.length} total campaigns`,
+      sent: kpiTotals.sent ? "From send history & replies" : "No sends yet",
+      delivered: kpiTotals.delivered ? "Active / completed sends" : "No deliveries yet",
+      opened: kpiTotals.opened ? "Based on replies received" : "No opens tracked yet",
+      responses: kpiTotals.responses ? "Lead replies received" : "No responses yet",
+    };
+    return STAT_CARD_DEFS.map((def) => ({
+      ...def,
+      value: kpiTotals.labels[def.key] ?? "0",
+      note: notes[def.key] || null,
+    }));
+  }, [kpiTotals, rows.length]);
+
+  const kpiFilteredRows = useMemo(
+    () =>
+      rows
+        .filter((row) => matchesKpiFilter(row, kpiFilter, rows))
+        .map((row) => ({
+          ...row,
+          responseCount: campaignResponseCount(rows, row.id),
+        })),
+    [rows, kpiFilter]
+  );
+
+  const table = usePagedTable(kpiFilteredRows, ["name", "tag", "target", "channel", "owner", "status"]);
+
+  const selectKpiFilter = (key) => {
+    setKpiFilter((prev) => (key === "leads" ? "leads" : prev === key ? "leads" : key));
+    table.setPage(1);
+  };
 
   const closeCreateCampaign = () => {
     setCreateCampaignOpen(false);
@@ -276,8 +364,13 @@ export default function CampaignManagementPage({ embedded = false, onClose }) {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {STAT_CARDS.map((stat) => (
-            <StatCard key={stat.key} stat={stat} />
+          {statCards.map((stat) => (
+            <StatCard
+              key={stat.key}
+              stat={stat}
+              active={kpiFilter === stat.key}
+              onSelect={selectKpiFilter}
+            />
           ))}
         </div>
 
@@ -326,7 +419,7 @@ export default function CampaignManagementPage({ embedded = false, onClose }) {
               <tbody className="divide-y divide-black/6">
                 {table.paged.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-3 py-10 text-center text-[12px] text-[#9CA3AF] font-medium">
+                    <td colSpan={CAMPAIGN_COLS.length} className="px-3 py-10 text-center text-[12px] text-[#9CA3AF] font-medium">
                       No campaigns found.
                     </td>
                   </tr>
@@ -342,6 +435,9 @@ export default function CampaignManagementPage({ embedded = false, onClose }) {
                       <td className="px-3 py-2.5 text-[12px] font-medium text-[#374151] whitespace-nowrap">{row.start}</td>
                       <td className="px-3 py-2.5 text-[12px] font-medium text-[#374151] whitespace-nowrap">{row.end}</td>
                       <td className="px-3 py-2.5 text-[12px] font-medium text-[#374151] whitespace-nowrap">{row.owner}</td>
+                      <td className="px-3 py-2.5 text-[12.5px] font-bold text-[#111] tabular-nums whitespace-nowrap">
+                        {Number(row.responseCount) || 0}
+                      </td>
                       <td className="px-3 py-2.5"><StatusBadge label={row.status} /></td>
                       <td className="px-3 py-2.5">
                         <div className="flex items-center gap-1">
@@ -412,6 +508,7 @@ export default function CampaignManagementPage({ embedded = false, onClose }) {
       <CampaignViewModal
         open={Boolean(viewCampaign)}
         campaign={viewCampaign}
+        campaigns={rows}
         onClose={() => setViewCampaign(null)}
         onEdit={handleEditCampaign}
       />
