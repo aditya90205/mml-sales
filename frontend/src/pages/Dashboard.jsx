@@ -75,7 +75,8 @@ import {
   sameCalendarDay,
   subscribeCalendar,
 } from "../utils/calendarStore.js";
-import { CLIENTS, upsertClientFromBiodata } from "../utils/clientsData.js";
+import { readClients, subscribeClients, upsertClientFromBiodata } from "../utils/clientsData.js";
+import { statsFromClients } from "../components/clients/ClientGroupsChart.jsx";
 import { addLeadToStage, addP0Lead, countStageLeads, findLeadById, findLeadByMobileOrEmail, moveLeadToStage, p0StatusOf, readLeads, subscribePipeline, updateLead } from "../utils/pipelineStore.js";
 import { contactToLeadFields, hasValidMobileOrEmail } from "../utils/leadFields.js";
 import { buildLeadIntakePayload, leadPatchFromIntake, pipelinePatchFromBiodata, setPendingBiodata, takePendingBiodata } from "../utils/biodataDraftStore.js";
@@ -117,8 +118,8 @@ const STAT_CARD_META = [
 ];
 
 function buildDashboardStats() {
-  const totalClients = CLIENTS.length;
-  const activeClients = CLIENTS.filter((c) => c.status === "Active").length;
+  // Same source + status rules as Client Database overview (statsFromClients).
+  const { total: totalClients, active: activeClients } = statsFromClients(readClients());
   const p0Count = countStageLeads("P0");
   const today = getTodayTaskStats();
   return [
@@ -1870,9 +1871,11 @@ export default function Dashboard() {
     const refresh = () => setStats(buildDashboardStats());
     const unsubPipeline = subscribePipeline(refresh);
     const unsubTasks = subscribeTasks(refresh);
+    const unsubClients = subscribeClients(refresh);
     return () => {
       unsubPipeline();
       unsubTasks();
+      unsubClients();
     };
   }, []);
 

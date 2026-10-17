@@ -57,6 +57,7 @@ import BiodataProfileModal from "../../../components/pipeline/BiodataProfileModa
 import LeadScoreModal from "../../../components/pipeline/LeadScoreModal";
 import Modal from "../../../components/ui/Modal";
 import { packageTerm, paymentVerifyKey, usePaymentVerifyForDeal } from "../../../utils/paymentVerifyStore";
+import { isSubscriptionExpiredForLead } from "../../../utils/clientStatusTag.js";
 import CreateMeetingEventModal from "../../../components/calendar/CreateMeetingEventModal";
 import TaskDetailsModal, { calendarEventToTaskView } from "../../../components/calendar/TaskDetailsModal";
 import EventDetailsModal, { calendarEventToEventView } from "../../../components/calendar/EventDetailsModal";
@@ -740,10 +741,16 @@ function AddonPayBar({
   onPay,
   showPay = true,
   payLabel = "Pay",
+  payTone = "brand",
   showVerify = false,
   onVerify,
   disabled = false,
 }) {
+  const payBtnClass =
+    payTone === "expired"
+      ? "h-8 px-3.5 rounded-lg bg-[#E8395B] text-white text-[12px] font-semibold hover:bg-[#D12F4D] transition-colors disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-[#E8395B]"
+      : "h-8 px-4 rounded-lg bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-[#7A0A17]";
+
   return (
     <div className="flex items-center justify-between gap-2">
       <p className="text-[13px] text-[#374151]">
@@ -767,8 +774,14 @@ function AddonPayBar({
               type="button"
               onClick={onPay}
               disabled={disabled}
-              title={disabled ? "Payment actions are disabled for Cold / Lost leads" : undefined}
-              className="h-8 px-4 rounded-lg bg-[#7A0A17] text-white text-[12.5px] font-semibold hover:bg-[#640712] transition-colors disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-[#7A0A17]"
+              title={
+                disabled
+                  ? "Payment actions are disabled for Cold / Lost leads"
+                  : payTone === "expired"
+                    ? "Subscription plan expired — renew package"
+                    : undefined
+              }
+              className={payBtnClass}
             >
               {payLabel}
             </button>
@@ -1922,7 +1935,7 @@ function CardHead({ icon: Icon, title, action, onAction, accent = false, brandAc
   );
 }
 
-function PackageDetailModal({ open, onClose, pkg, term, addons = [], amount }) {
+function PackageDetailModal({ open, onClose, pkg, term, addons = [], amount, expired = false }) {
   if (!pkg) return null;
   const included = (pkg.features || []).filter((feature) => feature.included);
   const months = term?.months || pkg.months || 12;
@@ -1931,11 +1944,11 @@ function PackageDetailModal({ open, onClose, pkg, term, addons = [], amount }) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Package detail"
-      subtitle={pkg.subtitle || `${months} months`}
+      title={expired ? "Subscription expired" : "Package detail"}
+      subtitle={expired ? "This package term has ended" : pkg.subtitle || `${months} months`}
       icon={<Gift size={18} />}
-      iconBg="#FFF2E0"
-      iconColor="#E8B400"
+      iconBg={expired ? "#FDECEE" : "#FFF2E0"}
+      iconColor={expired ? "#E8395B" : "#E8B400"}
       width="max-w-md"
       zClass="z-[80]"
       footer={
@@ -1949,7 +1962,16 @@ function PackageDetailModal({ open, onClose, pkg, term, addons = [], amount }) {
       }
     >
       <div className="flex flex-col gap-4">
-        <div className="rounded-xl bg-[#FFF2E0] px-4 py-3 flex items-center gap-2.5">
+        {expired ? (
+          <div className="rounded-xl border border-[#F5C2C7] bg-[#FDECEE] px-4 py-3">
+            <p className="text-[13px] font-bold text-[#E8395B]">Subscription plan expired</p>
+            <p className="text-[12px] text-[#6B7280] mt-0.5 leading-snug">
+              Renew the package to restore active pipeline stages.
+            </p>
+          </div>
+        ) : null}
+
+        <div className={`rounded-xl px-4 py-3 flex items-center gap-2.5 ${expired ? "bg-[#FDECEE]" : "bg-[#FFF2E0]"}`}>
           <Crown size={18} className="text-[#E8B400] shrink-0" fill="#E8B400" strokeWidth={1.5} />
           <div className="min-w-0 flex-1">
             <p className="text-[14px] font-semibold text-[#1A5AA8] truncate">{pkg.name} Package</p>
@@ -1965,8 +1987,10 @@ function PackageDetailModal({ open, onClose, pkg, term, addons = [], amount }) {
             <span className="font-semibold text-[#111]">{formatPackageDate(term?.validFrom)}</span>
           </div>
           <div className="flex items-center justify-between gap-3 text-[13px]">
-            <span className="text-[#6B7280]">Expires</span>
-            <span className="font-semibold text-[#111]">{formatPackageDate(term?.validUntil)}</span>
+            <span className="text-[#6B7280]">{expired ? "Expired on" : "Expires"}</span>
+            <span className={`font-semibold ${expired ? "text-[#E8395B]" : "text-[#111]"}`}>
+              {formatPackageDate(term?.validUntil)}
+            </span>
           </div>
         </div>
 
@@ -2261,6 +2285,8 @@ export default function OverviewDashboard({
     .filter((item) => item.type === "Add-on")
     .reduce((sum, item) => sum + (Number(item.rate) || 0) * (Number(item.qty) || 1), 0);
   const verifiedTerm = paymentVerified ? packageTerm(paymentVerify) : null;
+  /** Expired clients often still show Select Package / Pay (not verified). Hold (Cold/Lost) keeps Pay locked. */
+  const subscriptionExpired = !payLocked && isSubscriptionExpiredForLead(deal);
   const calendarActions = useMemo(() => {
     const start = new Date(Date.now() + 5 * 60 * 60 * 1000);
     const underSixHours = {
@@ -2776,7 +2802,11 @@ export default function OverviewDashboard({
                   else openPackageModal("full");
                 }}
               />
-              <div className="w-full rounded-xl bg-[#FFF2E0] px-4 py-3 flex items-center gap-2.5">
+              <div
+                className={`w-full rounded-xl px-4 py-3 flex items-center gap-2.5 ${
+                  subscriptionExpired ? "bg-[#FDECEE]" : "bg-[#FFF2E0]"
+                }`}
+              >
                 <Crown size={18} className="text-[#E8B400] shrink-0" fill="#E8B400" strokeWidth={1.5} />
                 <div className="flex-1 min-w-0">
                   <p className={`text-[14px] font-semibold text-[#1A5AA8] truncate ${verifiedTerm ? "leading-none" : ""}`}>
@@ -2784,7 +2814,9 @@ export default function OverviewDashboard({
                   </p>
                   {verifiedTerm ? (
                     <p
-                      className="text-[11px] font-normal text-[#9CA3AF] leading-none mt-1 truncate"
+                      className={`text-[11px] font-normal leading-none mt-1 truncate ${
+                        subscriptionExpired ? "text-[#E8395B]" : "text-[#9CA3AF]"
+                      }`}
                       title={`Valid from ${formatPackageDate(verifiedTerm.validFrom)} to ${formatPackageDate(verifiedTerm.validUntil)}`}
                     >
                       {formatPackageDate(verifiedTerm.validFrom)} – {formatPackageDate(verifiedTerm.validUntil)}
@@ -2793,8 +2825,12 @@ export default function OverviewDashboard({
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-[14px] font-semibold text-[#1A5AA8] leading-none">{packagePrice}</p>
-                  <p className="text-[11px] font-normal text-[#9CA3AF] leading-none mt-1">
-                    {packageAmount === 51000 ? "Default" : "(Approx.)"}
+                  <p
+                    className={`text-[11px] font-normal leading-none mt-1 ${
+                      subscriptionExpired ? "text-[#E8395B] font-semibold" : "text-[#9CA3AF]"
+                    }`}
+                  >
+                    {subscriptionExpired ? "Expired" : packageAmount === 51000 ? "Default" : "(Approx.)"}
                   </p>
                 </div>
                 <button
@@ -2886,9 +2922,18 @@ export default function OverviewDashboard({
                   <AddonPayBar
                     extra={addonExtraAmount}
                     packageAmount={packageAmount}
-                    showPay={paymentReady}
-                    payLabel={paymentVerified ? "Detail" : "Pay"}
-                    showVerify={paymentReady && paymentLinkSent && !paymentVerified}
+                    showPay={paymentReady || subscriptionExpired}
+                    payLabel={
+                      subscriptionExpired
+                        ? "Renew"
+                        : paymentVerified
+                          ? "Detail"
+                          : "Pay"
+                    }
+                    payTone="brand"
+                    showVerify={
+                      paymentReady && paymentLinkSent && !paymentVerified && !subscriptionExpired
+                    }
                     disabled={payLocked}
                     onVerify={() => {
                       if (payLocked) return;
@@ -2896,6 +2941,10 @@ export default function OverviewDashboard({
                     }}
                     onPay={() => {
                       if (payLocked) return;
+                      if (subscriptionExpired) {
+                        setPayQuoteOpen(true);
+                        return;
+                      }
                       if (paymentVerified) setPackageDetailOpen(true);
                       else setPayQuoteOpen(true);
                     }}
@@ -3081,6 +3130,7 @@ export default function OverviewDashboard({
       <PackageDetailModal
         open={packageDetailOpen}
         onClose={() => setPackageDetailOpen(false)}
+        expired={subscriptionExpired}
         pkg={
           PACKAGES.find((item) =>
             String(paymentVerify?.packageName || "").toLowerCase().includes(item.name.toLowerCase())

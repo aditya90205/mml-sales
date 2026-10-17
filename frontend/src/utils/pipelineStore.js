@@ -7,6 +7,8 @@ import {
   buildClientId,
   syncClientSeries,
   syncClientsWithPipelineLeads,
+  readClients,
+  updateClient,
 } from "./clientsData.js";
 
 const EVENT = "mml-sales-pipeline";
@@ -674,13 +676,18 @@ function leadRowsForClientSync(data = leads) {
   const rows = [];
   for (const stageId of STAGE_IDS) {
     for (const lead of data[stageId] || []) {
+      const dealStatus = lead.dealStatus || (lead.lost ? "lost" : "");
+      const clientSeries = lead.clientSeries || seriesForStage(stageId);
       rows.push({
         id: lead.id,
         name: lead.name,
         mmlId: lead.mmlId,
         owner: lead.owner,
         mobile: lead.mobile,
-        dealStatus: lead.dealStatus || "",
+        dealStatus,
+        lost: Boolean(lead.lost) || dealStatus === "lost",
+        clientSeries,
+        stageId,
       });
     }
   }
@@ -691,15 +698,154 @@ function syncClientsFromLeads(data = leads) {
   syncClientsWithPipelineLeads(leadRowsForClientSync(data));
 }
 
+/** Client with profile fields filled → should open pipeline overview. */
+function clientHasFilledData(c) {
+  if (!c || !String(c.name || "").trim()) return false;
+  return Boolean(
+    c.education ||
+      c.incomeLpa ||
+      c.budgetLakh ||
+      c.area ||
+      (c.address && String(c.address).replace(/\*/g, "").trim())
+  );
+}
+
+/**
+ * Every Client Database row with filled data gets a pipeline lead + linkedLeadId.
+ * Status → stage mapping:
+ *   Active / paid / Expired → live lead on P5 (paid)
+ *   Hold                     → cold / on hold (P1)
+ *   Unpaid / Pipeline        → live unpaid lead on P0 (not lost)
+ *   Explicit lost reason     → lost on P1
+ */
+function linkAllClientsToPipeline() {
+  const clients = readClients();
+  const toLink = [];
+  for (const c of clients) {
+    if (!clientHasFilledData(c)) continue;
+    const existing = findLeadForClient(c);
+    if (existing?.lead?.id) {
+      if (String(c.linkedLeadId || "") !== String(existing.lead.id)) {
+        updateClient(c.id, { linkedLeadId: existing.lead.id });
+      }
+      continue;
+    }
+    toLink.push(c);
+  }
+  if (!toLink.length) return;
+
+  leads = cloneLeads(leads);
+  for (const c of toLink) {
+    const isHold = c.onHold === true;
+    const isExpired = c.subscriptionExpired === true;
+    const series = String(c.clientSeries || "").toLowerCase();
+    // Paid = series / id prefix only (stale Active+unpaid seed must not become P5)
+    const isPaid = series === "paid" || String(c.clientId || "").startsWith("500");
+    const reasonLower = String(c.reason || "").toLowerCase();
+    const isExplicitLost =
+      !isHold &&
+      !isPaid &&
+      !isExpired &&
+      (/\blost\b/.test(reasonLower) || reasonLower.includes("unreachable"));
+
+    let stageId = "P0";
+    if (isHold) stageId = "P1";
+    else if (isPaid || isExpired) stageId = "P5";
+    else if (isExplicitLost) stageId = "P1";
+    else stageId = "P0";
+
+    const id = `${stageId.toLowerCase()}-c${c.id}`;
+    if (findLeadById(id)) {
+      updateClient(c.id, { linkedLeadId: id });
+      continue;
+    }
+    const names = splitName(c.name);
+    const mmlId = isSeriesClientId(c.clientId)
+      ? String(c.clientId)
+      : buildClientId(c.clientSeries || (isPaid ? "paid" : "unpaid"));
+    const phoneDigits = String(c.phone || "").replace(/\D/g, "");
+
+    let statusFlags = {};
+    if (isHold) {
+      statusFlags = {
+        dealStatus: "cold",
+        temperatureBeforeHold: "Warm",
+        reactivateMode: "manual",
+        winLossReasons: c.reason || "On hold from Client Database",
+        winLossTone: "Cold",
+        temperature: "Cold",
+        score: 6.5,
+        priority: "Low",
+        completion: 50,
+        nextAction: "Follow up — hold",
+      };
+    } else if (isExplicitLost) {
+      statusFlags = {
+        lost: true,
+        dealStatus: "lost",
+        temperature: "Cold",
+        score: 6,
+        priority: "Low",
+        completion: 40,
+        winLossReasons: c.reason || "Inactive — linked from Client Database",
+        nextAction: "Re-engage inactive client",
+      };
+    } else if (isPaid || isExpired) {
+      statusFlags = {
+        temperature: "Warm",
+        score: 8,
+        priority: "Medium",
+        completion: 100,
+        nextAction: c.reason || "Continue matching",
+      };
+    } else {
+      // Unpaid / Pipeline status → stay live on Sales Pipeline (P0), not lost
+      statusFlags = {
+        temperature: "Hot",
+        score: 7,
+        priority: "Medium",
+        completion: 40,
+        nextAction: c.reason || "Qualify unpaid lead",
+      };
+    }
+
+    const lead = sampleLead(
+      {
+        id,
+        name: c.name,
+        firstName: names.firstName,
+        lastName: names.lastName,
+        mmlId,
+        starred: false,
+        days: 8,
+        hrs: 24,
+        source: "Client Database",
+        lastDiscussion: "20/08/25, 11:30 AM",
+        owner: c.owner || "Rohit Kumar",
+        mobile: phoneDigits.length >= 4 ? `98${phoneDigits.slice(-8).padStart(8, "0")}` : undefined,
+        ...statusFlags,
+      },
+      { profile: true }
+    );
+    const resolved = withResolvedMmlId(lead, stageId);
+    leads[stageId] = [resolved, ...(leads[stageId] || [])];
+    updateClient(c.id, { linkedLeadId: id });
+  }
+  persistLeads();
+  syncClientsFromLeads(leads);
+}
+
 let leads = loadLeads();
 releaseDueColdHolds();
-// Same person on Clients ↔ Pipeline: Active / Hold / Expired row opens that lead's overview.
+// Same person on Clients ↔ Pipeline: Active / Hold / Expired / Inactive → overview.
 syncClientsFromLeads(leads);
+linkAllClientsToPipeline();
 
 function emit() {
   persistLeads();
   // Keep Client Database status + linkedLeadId in sync when Hold / Lost changes.
   syncClientsFromLeads(leads);
+  linkAllClientsToPipeline();
   if (typeof window === "undefined") return;
   window.dispatchEvent(new Event(EVENT));
 }

@@ -1,16 +1,18 @@
 const STATUS = {
   Active: { bg: "#E7F8EF", color: "#15803D" },
+  Pipeline: { bg: "#E8F2FE", color: "#2A78D6" },
   Inactive: { bg: "#FDECEE", color: "#E8395B" },
 };
 
 const SUB_LABEL = {
   Hold: { bg: "#FCF5F6", color: "#7A0A17" },
+  Lost: { bg: "#FCF5F6", color: "#7A0A17" },
   "Subscription Expired": { bg: "#FDECEE", color: "#E8395B" },
 };
 
 /**
  * Client-database status cell.
- * Single status is a rounded rectangle. When `subLabel` is set (Hold /
+ * Single status is a rounded rectangle. When `subLabel` is set (Hold / Lost /
  * Subscription Expired), renders as one stacked block: status on top, label
  * below — same layout that previously showed Married.
  */

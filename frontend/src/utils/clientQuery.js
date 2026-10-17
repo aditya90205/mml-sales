@@ -4,7 +4,7 @@ export const OPERATOR_OPTIONS = ["is", "is not", "contains", "greater than", "le
 
 const STATIC_VALUE_OPTIONS = {
   Gender: ["Female", "Male"],
-  Status: ["Active", "Inactive"],
+  Status: ["Active", "Pipeline", "Inactive"],
   "Education / College": ["IIM", "IIT", "MBA", "MBBS", "B.Tech", "B.Com"],
 };
 

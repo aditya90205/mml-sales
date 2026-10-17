@@ -10,6 +10,7 @@ import {
   LabelList,
 } from "recharts";
 import { BarChart3, ChevronDown, UserCheck, Users, UsersRound, UserX } from "lucide-react";
+import { isInCommonPool } from "../../utils/clientStatusTag.js";
 
 /** Matches Dashboard "Leads to Conversion" funnel palette. */
 export const CLIENT_CHART_LEGEND = [
@@ -66,33 +67,6 @@ function parseLastContact(str) {
   if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
   const [dd, mm, yy] = parts;
   return new Date(2000 + yy, mm - 1, dd);
-}
-
-function currentBounds(periodId, ref = PERIOD_REF) {
-  if (periodId === "this_week") {
-    return WEEK_BUCKETS.find((b) => ref >= b.start && ref <= b.end) || WEEK_BUCKETS[WEEK_BUCKETS.length - 1];
-  }
-  const start = new Date(ref.getFullYear(), ref.getMonth(), 1);
-  const end = new Date(ref.getFullYear(), ref.getMonth() + 1, 0, 23, 59, 59, 999);
-  return { start, end };
-}
-
-function previousBounds(periodId, ref = PERIOD_REF) {
-  if (periodId === "this_week") {
-    const current = currentBounds("this_week", ref);
-    const idx = WEEK_BUCKETS.findIndex((b) => b.week === current.week);
-    if (idx > 0) return WEEK_BUCKETS[idx - 1];
-    const end = new Date(current.start);
-    end.setDate(end.getDate() - 1);
-    end.setHours(23, 59, 59, 999);
-    const start = new Date(end);
-    start.setDate(start.getDate() - 6);
-    start.setHours(0, 0, 0, 0);
-    return { start, end };
-  }
-  const start = new Date(ref.getFullYear(), ref.getMonth() - 1, 1);
-  const end = new Date(ref.getFullYear(), ref.getMonth(), 0, 23, 59, 59, 999);
-  return { start, end };
 }
 
 function inBounds(client, { start, end }) {
@@ -245,6 +219,10 @@ export default function ClientGroupsChart({
   data = [],
   title = "Client Overview",
   sourceLabel,
+  /** Active KPI filter key: "total" | "active" | "commonPool" | "inactive" | null */
+  activeKpi = null,
+  /** Called with the KPI key when a tile is clicked */
+  onKpiClick,
 }) {
   const [period, setPeriod] = useState("this_month");
 
@@ -255,14 +233,9 @@ export default function ClientGroupsChart({
       ? weeksFromClients(allClients)
       : WEEK_BUCKETS.map((b) => ({ week: b.week, range: b.range, ...sumRowStats(data) }));
 
-    const current = currentBounds(period);
-    const previous = previousBounds(period);
-    const kpis = hasClientLists
-      ? statsFromClients(allClients.filter((c) => inBounds(c, current)))
-      : sumRowStats(data);
-    const prev = hasClientLists
-      ? statsFromClients(allClients.filter((c) => inBounds(c, previous)))
-      : { total: 0, active: 0, commonPool: 0, inactive: 0 };
+    // KPIs match the table / Dashboard (full filtered set). Period only drives the week chart.
+    const kpis = hasClientLists ? statsFromClients(allClients) : sumRowStats(data);
+    const prev = { total: 0, active: 0, commonPool: 0, inactive: 0 };
 
     return { weekRows: weeks, prevTotals: prev, kpiStats: kpis, clientCount: allClients.length || kpis.total };
   }, [data, period]);
@@ -309,7 +282,8 @@ export default function ClientGroupsChart({
           <div>
             <h2 className="text-[15px] font-bold text-[#111] leading-tight">{title}</h2>
             <p className="text-[11px] text-[#9CA3AF]">
-              {sourceLabel || "All clients"} · {formatNum(clientCount)} client{clientCount === 1 ? "" : "s"} · {periodLabel.toLowerCase()}
+              {sourceLabel || "All clients"} · {formatNum(clientCount)} client{clientCount === 1 ? "" : "s"}
+              {periodLabel ? ` · chart: ${periodLabel.toLowerCase()}` : ""}
             </p>
           </div>
         </div>
@@ -327,10 +301,20 @@ export default function ClientGroupsChart({
                 ? `No prior ${period === "this_week" ? "week" : "month"}`
                 : `${s.change}% ${noteSuffix}`;
             const noteTone = s.change == null ? "gray" : s.change >= 0 ? "green" : "red";
+            const selected = activeKpi === s.key || (s.key === "total" && !activeKpi);
+            const clickable = typeof onKpiClick === "function";
+            const Tag = clickable ? "button" : "div";
             return (
-              <div
+              <Tag
                 key={s.key}
-                className="bg-white border border-black/8 rounded-2xl px-3.5 py-3 flex items-center gap-3 min-w-0"
+                type={clickable ? "button" : undefined}
+                onClick={clickable ? () => onKpiClick(s.key) : undefined}
+                aria-pressed={clickable ? selected : undefined}
+                className={`bg-white border rounded-2xl px-3.5 py-3 flex items-center gap-3 min-w-0 text-left transition-[border-color,box-shadow] ${
+                  selected
+                    ? "border-[#7A0A17]/25 shadow-[0_2px_10px_rgba(122,10,23,0.06)]"
+                    : `border-black/8${clickable ? " hover:border-black/15 hover:shadow-[0_2px_10px_rgba(0,0,0,0.04)]" : ""}`
+                } ${clickable ? "cursor-pointer" : ""}`}
               >
                 <span
                   className="size-10 rounded-[10px] grid place-items-center shrink-0"
@@ -355,7 +339,7 @@ export default function ClientGroupsChart({
                     {note}
                   </p>
                 </div>
-              </div>
+              </Tag>
             );
           })}
         </div>
@@ -441,7 +425,7 @@ export function statsFromClients(clients = []) {
   const total = clients.length;
   const active = clients.filter((c) => c.status === "Active").length;
   const inactive = clients.filter((c) => c.status === "Inactive").length;
-  // Common pool: cold / low-probability clients (shared pool proxy in mock data)
-  const commonPool = clients.filter((c) => c.probability === "low").length;
+  // Common pool: cold / on hold / lost
+  const commonPool = clients.filter((c) => isInCommonPool(c)).length;
   return { total, active, commonPool, inactive };
 }

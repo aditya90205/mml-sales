@@ -69,17 +69,39 @@ export function getSubscriptionExpiryMeta(lead) {
 }
 
 /**
- * Priority: Hold > Subscription Expired > "".
- * @returns {"Hold"|"Subscription Expired"|""}
+ * Priority: Hold > Lost > Subscription Expired > "".
+ * Hold / Lost stack under the status badge (same layout); expired → Inactive + label.
+ * @returns {"Hold"|"Lost"|"Subscription Expired"|""}
  */
 export function resolveClientSubLabel(client, leadHit = null) {
   const hit = leadHit || findLeadForClient(client);
   const lead = hit?.lead || null;
-  if (lead?.dealStatus === "cold" || client?.onHold === true) return "Hold";
+  const deal = String(lead?.dealStatus || "").toLowerCase();
+  if (deal === "cold" || client?.onHold === true) return "Hold";
+  if (deal === "lost" || lead?.lost === true) return "Lost";
   if (isPackageExpired(lead, client) || client?.subscriptionExpired === true) {
     return "Subscription Expired";
   }
   return "";
+}
+
+/**
+ * Common pool column: "Yes" only for lost / cold / hold; otherwise "".
+ * @returns {"Yes"|""}
+ */
+export function commonPoolLabel(client, leadHit = null) {
+  const hit = leadHit || findLeadForClient(client);
+  const lead = hit?.lead || null;
+  const deal = String(lead?.dealStatus || "").toLowerCase();
+
+  if (deal === "lost" || lead?.lost === true) return "Yes";
+  if (deal === "cold" || client?.onHold === true) return "Yes";
+  return "";
+}
+
+/** Common pool: cold / on hold / lost leads. */
+export function isInCommonPool(client, leadHit = null) {
+  return Boolean(commonPoolLabel(client, leadHit));
 }
 
 /** Lead id for overview deep-link (pipeline hit, else client.linkedLeadId). */

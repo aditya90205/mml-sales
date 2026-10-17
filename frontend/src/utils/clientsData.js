@@ -19,6 +19,7 @@ export const CLIENTS = [
     incomeLpa: 32,
     budgetLakh: 25,
     probability: "low",
+    linkedLeadId: "p1-1",
   },
   {
     id: 2,
@@ -808,10 +809,39 @@ export const CLIENTS = [
 
 const EVENT = "mml-sales-clients";
 
+/** Resolve unpaid | committed | paid from lead series, mmlId prefix, or client fields. */
+export function resolveClientSeries(lead = null, client = null) {
+  const fromLead = String(lead?.clientSeries || "").toLowerCase();
+  if (fromLead === "paid" || fromLead === "committed" || fromLead === "unpaid") return fromLead;
+  const id = String(lead?.mmlId || client?.clientId || "");
+  if (isSeriesClientId(id)) {
+    const prefix = id.slice(0, 3);
+    if (prefix === "500") return "paid";
+    if (prefix === "300") return "committed";
+    return "unpaid";
+  }
+  const fromClient = String(client?.clientSeries || "").toLowerCase();
+  if (fromClient === "paid" || fromClient === "committed" || fromClient === "unpaid") return fromClient;
+  return "unpaid";
+}
+
+/**
+ * Active only after full payment (paid series / P5–P6).
+ * Unpaid / committed live leads → Pipeline (still on Sales Pipeline board).
+ * Hold, lost, subscription expired → Inactive.
+ */
+export function statusFromPaymentAndFlags({ series, subscriptionExpired, onHold, lost } = {}) {
+  if (subscriptionExpired || onHold || lost) return "Inactive";
+  if (series === "paid") return "Active";
+  // unpaid | committed — show in pipeline, not Active
+  return "Pipeline";
+}
+
 /**
  * Keep Client Database and Sales Pipeline on the same identity:
- * same name → same linkedLeadId / clientId. Active when on board;
- * Hold / subscription-expired stay Inactive but keep the link so row → overview works.
+ * same name → same linkedLeadId / clientId.
+ * Active when fully paid; unpaid/committed → Pipeline; Hold / expired / lost → Inactive.
+ * Unmatched clients keep status + link (never strip).
  * Called from pipelineStore after leads load / change (avoids circular imports at module top).
  */
 export function syncClientsWithPipelineLeads(leadRows = []) {
@@ -830,33 +860,35 @@ export function syncClientsWithPipelineLeads(leadRows = []) {
     if (lead) {
       // On Sales Pipeline → same id/stage as board overview
       c.linkedLeadId = lead.id;
-      // Hold or expired: stay Inactive but keep linkedLeadId for overview deep-link
-      const onHold =
-        String(lead.dealStatus || "").toLowerCase() === "cold" || c.onHold === true;
+      const deal = String(lead.dealStatus || "").toLowerCase();
+      const onHold = deal === "cold" || c.onHold === true;
+      const lost = deal === "lost" || lead.lost === true;
       if (onHold) c.onHold = true;
-      c.status = c.subscriptionExpired || onHold ? "Inactive" : "Active";
+      const series = resolveClientSeries(lead, c);
+      c.clientSeries = series;
       if (isSeriesClientId(lead.mmlId)) {
         c.clientId = String(lead.mmlId);
-        const prefix = String(lead.mmlId).slice(0, 3);
-        c.clientSeries =
-          prefix === "500" ? "paid" : prefix === "300" ? "committed" : "unpaid";
       }
+      // Active only after payment; unpaid/committed → Pipeline
+      c.status = statusFromPaymentAndFlags({
+        series,
+        subscriptionExpired: c.subscriptionExpired,
+        onHold,
+        lost,
+      });
       linkedNames.add(key);
       continue;
     }
-    // Not on Sales Pipeline → Inactive. Keep Hold / Expired links for overview deep-link.
-    if (!(c.onHold || c.subscriptionExpired) && c.linkedLeadId) {
-      delete c.linkedLeadId;
-    }
-    c.status = "Inactive";
+    // Not on Sales Pipeline — keep existing linkedLeadId + status (Inactive filled rows stay linked)
   }
 
   for (const [key, lead] of byName) {
     if (linkedNames.has(key)) continue;
     const nextId = CLIENTS.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0) + 1;
-    const prefix = String(lead.mmlId || "").slice(0, 3);
-    const series = prefix === "500" ? "paid" : prefix === "300" ? "committed" : "unpaid";
+    const series = resolveClientSeries(lead);
     const mobileDigits = digitsOnly(lead.mobile || "");
+    const onHold = String(lead.dealStatus || "").toLowerCase() === "cold";
+    const lost = Boolean(lead.lost) || String(lead.dealStatus || "").toLowerCase() === "lost";
     CLIENTS.push({
       id: nextId,
       name: lead.name,
@@ -864,7 +896,8 @@ export function syncClientsWithPipelineLeads(leadRows = []) {
       clientSeries: series,
       formId: `MML-${3934 + nextId}`,
       phone: mobileDigits ? `******${mobileDigits.slice(-4)}` : "******0000",
-      status: "Active",
+      status: statusFromPaymentAndFlags({ series, onHold, lost }),
+      ...(onHold ? { onHold: true } : {}),
       married: false,
       address: "*********** New Delhi",
       owner: lead.owner || "Rohit Kumar",
@@ -947,10 +980,23 @@ export function syncClientSeries({ linkedLeadId, id, series = "unpaid", clientCo
   const nextCode = isSeriesClientId(clientCode)
     ? clientIdWithSeries(clientCode, series)
     : clientIdWithSeries(CLIENTS[idx].clientId, series);
-  if (CLIENTS[idx].clientId === nextCode && CLIENTS[idx].clientSeries === series) {
-    return { ...CLIENTS[idx] };
+  const prev = CLIENTS[idx];
+  if (prev.clientId === nextCode && prev.clientSeries === series) {
+    return { ...prev };
   }
-  CLIENTS[idx] = { ...CLIENTS[idx], clientId: nextCode, clientSeries: series };
+  const onHold = prev.onHold === true;
+  const lost = false;
+  CLIENTS[idx] = {
+    ...prev,
+    clientId: nextCode,
+    clientSeries: series,
+    status: statusFromPaymentAndFlags({
+      series,
+      subscriptionExpired: prev.subscriptionExpired,
+      onHold,
+      lost,
+    }),
+  };
   emit();
   return { ...CLIENTS[idx] };
 }
@@ -1040,7 +1086,8 @@ export function upsertClientFromBiodata({
       : {}),
     lastContact: todayLabel(),
     reason: "Biodata uploaded — profile updated",
-    status: "Active",
+    // Unpaid until payment completes (P5/P6) → Pipeline
+    status: "Pipeline",
     ...(linkedLeadId ? { linkedLeadId } : {}),
     biodataFile: fields.fileName || undefined,
   };
@@ -1052,8 +1099,13 @@ export function upsertClientFromBiodata({
     (clientId != null && findClientById(clientId)) || findClientByName(fullName);
 
   if (existing) {
+    // Preserve Active if already paid; do not force Pipeline over paid Active
+    const nextPatch = { ...patch };
+    if (resolveClientSeries(null, existing) === "paid" && existing.status === "Active") {
+      delete nextPatch.status;
+    }
     return updateClient(existing.id, {
-      ...patch,
+      ...nextPatch,
       owner: existing.owner || owner,
       branch: existing.branch || "South Extension",
     });
@@ -1067,7 +1119,7 @@ export function upsertClientFromBiodata({
     clientSeries: "unpaid",
     formId: `MML-${3934 + nextId}`,
     phone: phoneMask || "******0000",
-    status: "Active",
+    status: "Pipeline",
     married: false,
     address: patch.address || "*********** New Delhi",
     owner,

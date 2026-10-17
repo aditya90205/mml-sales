@@ -25,6 +25,8 @@ import { groupQuery, readSavedGroups, removeSavedGroup } from "../utils/clientGr
 import { matchesAll } from "../utils/clientQuery.js";
 import {
   canOpenClientOverview,
+  commonPoolLabel,
+  isInCommonPool,
   overviewLeadIdForClient,
   resolveClientSubLabel,
 } from "../utils/clientStatusTag.js";
@@ -37,8 +39,8 @@ import {
 const COLUMNS = [
   { label: "Client Name", key: "name" },
   { label: "Form ID", key: "formId" },
-  { label: "Client ID", key: "clientId" },
   { label: "Status", key: "status" },
+  { label: "Common Pool", key: "commonPool", unsortable: true },
   { label: "Area", key: "area" },
   { label: "Customer Service", key: "owner" },
   { label: "Branch", key: "branch" },
@@ -235,6 +237,8 @@ export default function ClientDatabasePage() {
   const [savedGroups, setSavedGroups] = useState([]);
   const [activeGroupIds, setActiveGroupIds] = useState([]);
   const [statusFilter, setStatusFilter] = useState("all");
+  /** KPI tile filter: "total" | "active" | "commonPool" | "inactive" */
+  const [kpiFilter, setKpiFilter] = useState("total");
   const [grouping, setGrouping] = useState("none");
   const [branchFilter, setBranchFilter] = useState("all");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -304,10 +308,11 @@ export default function ClientDatabasePage() {
 
   const extraFilterCount = [genderFilter, probFilter, marriedFilter].filter((v) => v !== "all").length;
 
-  const filtered = useMemo(() => {
-    // Only pipeline-linked clients (Active / Hold / Expired) — same overview as Sales Pipeline.
-    // Plain Inactive with no lead are hidden (no overview to open).
-    let rows = clients.filter((c) => canOpenClientOverview(c));
+  /** Filters for KPI universe (excludes KPI tile + status dropdown — those drive the table only). */
+  const baseFiltered = useMemo(() => {
+    // Same universe as Dashboard Total Clients — all clients in the store.
+    // Overview click still requires a pipeline link (see canOpenClientOverview on the row).
+    let rows = clients;
     const q = search.trim().toLowerCase();
     if (q) {
       rows = rows.filter((c) =>
@@ -316,7 +321,6 @@ export default function ClientDatabasePage() {
         )
       );
     }
-    if (statusFilter !== "all") rows = rows.filter((c) => c.status === statusFilter);
     if (branchFilter !== "all") rows = rows.filter((c) => c.branch === branchFilter);
     if (genderFilter !== "all") rows = rows.filter((c) => c.gender === genderFilter);
     if (probFilter !== "all") rows = rows.filter((c) => c.probability === probFilter);
@@ -338,7 +342,22 @@ export default function ClientDatabasePage() {
       }
     }
     return rows;
-  }, [clients, search, statusFilter, branchFilter, genderFilter, probFilter, marriedFilter, activeGroupIds, savedGroups]);
+  }, [clients, search, branchFilter, genderFilter, probFilter, marriedFilter, activeGroupIds, savedGroups]);
+
+  /** Table rows — KPI / status filter applied on top of baseFiltered. */
+  const filtered = useMemo(() => {
+    let rows = baseFiltered;
+    if (kpiFilter === "active" || statusFilter === "Active") {
+      rows = rows.filter((c) => c.status === "Active");
+    } else if (statusFilter === "Pipeline") {
+      rows = rows.filter((c) => c.status === "Pipeline");
+    } else if (kpiFilter === "inactive" || statusFilter === "Inactive") {
+      rows = rows.filter((c) => c.status === "Inactive");
+    } else if (kpiFilter === "commonPool") {
+      rows = rows.filter((c) => isInCommonPool(c));
+    }
+    return rows;
+  }, [baseFiltered, kpiFilter, statusFilter]);
 
   const { sorted, sort, toggle } = useTableSort(filtered, { defaultKey: null, defaultDir: "asc" });
 
@@ -348,7 +367,7 @@ export default function ClientDatabasePage() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter, branchFilter, genderFilter, probFilter, marriedFilter, activeGroupIds, perPage, grouping]);
+  }, [search, statusFilter, kpiFilter, branchFilter, genderFilter, probFilter, marriedFilter, activeGroupIds, perPage, grouping]);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -371,8 +390,8 @@ export default function ClientDatabasePage() {
   }, [paged, grouping]);
 
   const chartData = useMemo(
-    () => [{ group: "Clients", clients: filtered, ...statsFromClients(filtered) }],
-    [filtered]
+    () => [{ group: "Clients", clients: baseFiltered, ...statsFromClients(baseFiltered) }],
+    [baseFiltered]
   );
 
   const toggleGroup = (id) => {
@@ -395,11 +414,23 @@ export default function ClientDatabasePage() {
     return true;
   };
 
+  const handleKpiClick = (key) => {
+    setKpiFilter(key);
+    // Keep status dropdown in sync when filtering via Active / Inactive KPI
+    if (key === "active") setStatusFilter("Active");
+    else if (key === "inactive") setStatusFilter("Inactive");
+    else if (key === "total" || key === "commonPool") setStatusFilter("all");
+  };
+
   const renderRow = (c) => {
     const pipelineHit = findLeadForClient(c);
     const subLabel = resolveClientSubLabel(c, pipelineHit);
+    // Subscription expired always shows Inactive (even if paid series still Active in store)
+    const status =
+      subLabel === "Subscription Expired" ? "Inactive" : c.status;
     const canOpenOverview = canOpenClientOverview(c, pipelineHit);
     const starred = Boolean(pipelineHit?.lead?.starred);
+    const poolLabel = commonPoolLabel(c, pipelineHit);
     return (
       <tr
         key={c.id}
@@ -409,21 +440,28 @@ export default function ClientDatabasePage() {
         }`}
       >
         <td className="px-4 py-3">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="text-[13px] font-bold text-[#111] whitespace-nowrap">{c.name}</span>
-            {starred && (
-              <span className="inline-flex shrink-0" title="Premium client" aria-label="Premium client">
-                <Star size={12} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />
-              </span>
-            )}
-          </span>
+          <div className="min-w-0">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="text-[13px] font-bold text-[#111] whitespace-nowrap">{c.name}</span>
+              {starred && (
+                <span className="inline-flex shrink-0" title="Premium client" aria-label="Premium client">
+                  <Star size={12} className="text-[#F59E0B]" fill="#F59E0B" strokeWidth={0} />
+                </span>
+              )}
+            </span>
+            <p className="text-[10px] text-[#9CA3AF]">{c.clientId || "—"}</p>
+          </div>
         </td>
         <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.formId}</td>
-        <td className="px-4 py-3 text-[13px] font-medium text-[#374151] whitespace-nowrap">{c.clientId}</td>
         <td className="px-4 py-3">
           <div className="flex justify-center">
-            <ClientStatusBadge status={c.status} subLabel={subLabel} />
+            <ClientStatusBadge status={status} subLabel={subLabel} />
           </div>
+        </td>
+        <td className="px-4 py-3 text-center">
+          <span className="text-[13px] font-medium text-[#374151]">
+            {poolLabel || "—"}
+          </span>
         </td>
         <td className="px-4 py-3 max-w-[220px]">
           <p className="text-[13px] font-medium text-[#374151] truncate">{c.area || "—"}</p>
@@ -563,10 +601,16 @@ export default function ClientDatabasePage() {
 
           <NativeSelect
             value={statusFilter}
-            onChange={setStatusFilter}
+            onChange={(v) => {
+              setStatusFilter(v);
+              if (v === "Active") setKpiFilter("active");
+              else if (v === "Inactive") setKpiFilter("inactive");
+              else setKpiFilter("total"); // all | Pipeline
+            }}
             options={[
               { value: "all", label: "All" },
               { value: "Active", label: "Active" },
+              { value: "Pipeline", label: "Pipeline" },
               { value: "Inactive", label: "Inactive" },
             ]}
           />
@@ -693,6 +737,8 @@ export default function ClientDatabasePage() {
                 ? `${activeGroupIds.length} group${activeGroupIds.length === 1 ? "" : "s"}`
                 : "All clients"
             }
+            activeKpi={kpiFilter}
+            onKpiClick={handleKpiClick}
           />
         </div>
 
