@@ -45,6 +45,7 @@ import LeadScoreModal from "../components/pipeline/LeadScoreModal";
 import LeadActivityHistory from "./pipeline/deal-tabs/LeadActivityHistory";
 import CreateCampaignPage from "./CreateCampaignPage.jsx";
 import CampaignManagementPage from "./CampaignManagementPage.jsx";
+import CampaignResponseModal from "../components/campaign/CampaignResponseModal.jsx";
 import CreateLeadModal from "../components/pipeline/CreateLeadModal";
 import BiodataUploadModal from "../components/pipeline/BiodataUploadModal";
 import BiodataProfileModal from "../components/pipeline/BiodataProfileModal";
@@ -82,6 +83,7 @@ import { assignPendingBiodataFile, rememberBiodataFile, rememberPendingBiodataFi
 import { addTaskFromForm, getTodayTaskStats, readTasks, subscribeTasks } from "../utils/tasksStore.js";
 import { buildPerformanceReport } from "../utils/performanceStats.js";
 import { readCampaigns } from "../utils/campaignsStore.js";
+import { resolveCampaignResponseRows } from "../utils/campaignMetrics.js";
 import { VISITS } from "./pipeline/deal-tabs/VisitsMeetingsTab.jsx";
 import salesFunnelSvg from "../assets/sales-funnel.svg";
 import salesPersonProfile from "../assets/sale-person-profile.jpg";
@@ -912,91 +914,6 @@ function UpNextCard({ item, onDetails, onCall }) {
   );
 }
 
-/** Demo campaign responses mapped to known pipeline lead IDs. */
-const DEMO_CAMPAIGN_RESPONSES = [
-  {
-    leadId: "p0-1",
-    campaignId: 2,
-    channel: "WhatsApp",
-    respondedAtLabel: "12 min ago",
-    reply: "Hi, saw your hoarding near South Ex. Interested in Premium package — please share details.",
-  },
-  {
-    leadId: "p0-2",
-    campaignId: 2,
-    channel: "WhatsApp",
-    respondedAtLabel: "28 min ago",
-    reply: "Yes, call me after 7 PM. Looking for a match in Delhi NCR.",
-  },
-  {
-    leadId: "p1-2",
-    campaignId: 2,
-    channel: "SMS",
-    respondedAtLabel: "1 hr ago",
-    reply: "Got your SMS. Can we schedule a visit this weekend?",
-  },
-  {
-    leadId: "p2-2",
-    campaignId: 2,
-    channel: "WhatsApp",
-    respondedAtLabel: "3 hrs ago",
-    reply: "Please send the brochure. Budget around ₹50k–₹1L.",
-  },
-  {
-    leadId: "p3-1",
-    campaignId: 3,
-    channel: "Email",
-    respondedAtLabel: "2 hrs ago",
-    reply: "Interested in the 30% offer. Is it valid for existing negotiation deals?",
-  },
-  {
-    leadId: "p4-1",
-    campaignId: 3,
-    channel: "Email",
-    respondedAtLabel: "Yesterday",
-    reply: "Confirming — ready to close if the discount applies to Premium.",
-  },
-  {
-    leadId: "p1-1",
-    campaignId: 4,
-    channel: "Push",
-    respondedAtLabel: "Yesterday",
-    reply: "Attended the Rohini sabha. Please follow up with profiles.",
-  },
-];
-
-const STAGE_LABEL_BY_ID = {
-  P0: "P0 · New Opportunity",
-  P1: "P1 · Qualified",
-  P2: "P2 · Profile Create",
-  P3: "P3 · Video Call/Visit",
-  P4: "P4 · Negotiation",
-  P5: "P5 · Closed Won",
-  P6: "P6 · Service Handover",
-};
-
-function resolveAllResponseRows(campaigns = []) {
-  const byId = new Map((Array.isArray(campaigns) ? campaigns : []).map((c) => [c.id, c]));
-  const seen = new Set();
-  const rows = [];
-  for (const entry of DEMO_CAMPAIGN_RESPONSES) {
-    const key = `${entry.leadId}-${entry.campaignId}-${entry.respondedAtLabel}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const found = findLeadById(entry.leadId);
-    if (!found?.lead) continue;
-    const campaign = byId.get(entry.campaignId);
-    rows.push({
-      ...entry,
-      campaignName: campaign?.name || `Campaign ${entry.campaignId}`,
-      lead: found.lead,
-      stageId: found.stageId,
-      stageLabel: STAGE_LABEL_BY_ID[found.stageId] || found.stageId,
-    });
-  }
-  return rows;
-}
-
 const CAMPAIGN_CHANNEL_RATES = [
   {
     key: "whatsapp",
@@ -1084,133 +1001,6 @@ function CampaignPerformanceCard({
         </button>
       </div>
     </div>
-  );
-}
-
-const RESPONSE_TABLE_COLS = [
-  { label: "Name", key: "name", width: "16%" },
-  { label: "Campaign name", key: "campaignName", width: "16%" },
-  { label: "Campaign id", key: "campaignId", width: "10%" },
-  { label: "Source", key: "source", width: "12%" },
-  { label: "Stage", key: "stage", width: "14%" },
-  { label: "Response", key: "response", width: "32%" },
-];
-
-function CampaignResponseModal({ open, onClose, rows, onOpenLead }) {
-  const tableRows = useMemo(
-    () =>
-      (rows || []).map((row) => ({
-        ...row,
-        name: row.lead?.name || "",
-        source: row.lead?.source || row.channel || "",
-        stage: row.stageLabel || row.stageId || "",
-        response: row.reply || "",
-      })),
-    [rows]
-  );
-  const { sorted, sort, toggle } = useTableSort(tableRows, {
-    defaultKey: "name",
-    getValue: (row, key) => {
-      if (key === "campaignId") return Number(row.campaignId) || 0;
-      return row?.[key];
-    },
-  });
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Campaign responses"
-      subtitle={`${rows.length} lead${rows.length === 1 ? "" : "s"} replied`}
-      width="max-w-5xl"
-      icon={<MessageSquare size={18} />}
-      iconBg="#EEF0FE"
-      iconColor="#6366F1"
-    >
-      {rows.length === 0 ? (
-        <p className="text-[13px] text-[#9CA3AF] text-center py-8">
-          No responses yet. Run a campaign to see lead replies here.
-        </p>
-      ) : (
-        <div className="border border-black/8 rounded-xl overflow-x-auto -mx-1">
-          <table className="w-full min-w-[720px] text-left border-collapse table-fixed">
-            <colgroup>
-              {RESPONSE_TABLE_COLS.map((col) => (
-                <col key={col.key} style={{ width: col.width }} />
-              ))}
-            </colgroup>
-            <thead>
-              <tr className="border-b border-black/6 bg-[#FAFAFB]/80">
-                {RESPONSE_TABLE_COLS.map((h) => (
-                  <SortableTh
-                    key={h.key}
-                    label={h.label}
-                    sortKey={h.key}
-                    sort={sort}
-                    onSort={toggle}
-                    dense
-                    className="px-2.5 py-2.5 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-tight align-bottom"
-                  />
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((row) => {
-                const lead = row.lead || {};
-                const temp = TEMPERATURE_STYLES[lead.temperature] || { color: "#6B7280", bg: "#F3F4F6" };
-                return (
-                  <tr
-                    key={`${row.leadId}-${row.campaignId}-${row.respondedAtLabel}`}
-                    onClick={() => onOpenLead?.(lead)}
-                    className="border-b border-black/6 last:border-0 hover:bg-[#FAFAFB] transition-colors cursor-pointer"
-                    title="Open lead overview"
-                  >
-                    <td className="px-2.5 py-2.5 align-middle overflow-hidden">
-                      <ClientNameHoverTip name={lead.name} temperature={lead.temperature} mmlId={lead.mmlId}>
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: temp.color }} />
-                          <div className="min-w-0">
-                            <p className="text-[12.5px] font-semibold text-[#111] truncate hover:text-[#7A0A17] hover:underline">
-                              {lead.name || "—"}
-                            </p>
-                            {lead.temperature ? (
-                              <span
-                                className="text-[10px] font-bold rounded px-1 py-px"
-                                style={{ backgroundColor: temp.bg, color: temp.color }}
-                              >
-                                {lead.temperature}
-                              </span>
-                            ) : null}
-                          </div>
-                        </div>
-                      </ClientNameHoverTip>
-                    </td>
-                    <td className="px-2.5 py-2.5 align-middle overflow-hidden">
-                      <p className="text-[12px] text-[#374151] truncate">{row.campaignName || "—"}</p>
-                    </td>
-                    <td className="px-2.5 py-2.5 align-middle overflow-hidden">
-                      <p className="text-[12px] font-semibold text-[#111] tabular-nums">{row.campaignId ?? "—"}</p>
-                    </td>
-                    <td className="px-2.5 py-2.5 align-middle overflow-hidden">
-                      <p className="text-[12px] text-[#374151] truncate">{lead.source || row.channel || "—"}</p>
-                    </td>
-                    <td className="px-2.5 py-2.5 align-middle overflow-hidden">
-                      <p className="text-[12px] text-[#374151] truncate">{row.stageLabel || row.stageId || "—"}</p>
-                    </td>
-                    <td className="px-2.5 py-2.5 align-middle overflow-hidden">
-                      <p className="text-[12px] text-[#111] leading-snug line-clamp-2">{row.reply || "—"}</p>
-                      {row.respondedAtLabel ? (
-                        <p className="text-[10px] text-[#9CA3AF] mt-0.5">{row.respondedAtLabel}</p>
-                      ) : null}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </Modal>
   );
 }
 
@@ -2113,7 +1903,7 @@ export default function Dashboard() {
   const upNext = useMemo(() => findUpNextEvent(calendarEvents), [calendarEvents]);
 
   const campaignResponseRows = useMemo(
-    () => resolveAllResponseRows(campaigns),
+    () => resolveCampaignResponseRows(campaigns),
     [campaigns, leadsByStage]
   );
 

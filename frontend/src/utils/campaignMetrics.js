@@ -1,5 +1,15 @@
 import { findLeadById } from "./pipelineStore.js";
 
+const STAGE_LABEL_BY_ID = {
+  P0: "P0 · New Opportunity",
+  P1: "P1 · Qualified",
+  P2: "P2 · Profile Create",
+  P3: "P3 · Video Call/Visit",
+  P4: "P4 · Negotiation",
+  P5: "P5 · Closed Won",
+  P6: "P6 · Service Handover",
+};
+
 /**
  * Demo replies mapped to known pipeline lead IDs (same seed as Dashboard).
  * Used only when those campaigns still exist — counts stay consistent across UI.
@@ -94,6 +104,7 @@ export function resolveCampaignResponseRows(campaigns = [], { campaignId } = {})
       campaignName: campaign.name || `Campaign ${entry.campaignId}`,
       lead: found.lead,
       stageId: found.stageId,
+      stageLabel: STAGE_LABEL_BY_ID[found.stageId] || found.stageId,
     });
   }
 
@@ -115,6 +126,7 @@ export function resolveCampaignResponseRows(campaigns = [], { campaignId } = {})
         campaignName: campaign.name || `Campaign ${campaign.id}`,
         lead: found.lead,
         stageId: found.stageId,
+        stageLabel: STAGE_LABEL_BY_ID[found.stageId] || found.stageId,
       });
     });
   });

@@ -75,16 +75,21 @@ export function getSubscriptionExpiryMeta(lead) {
 export function resolveClientSubLabel(client, leadHit = null) {
   const hit = leadHit || findLeadForClient(client);
   const lead = hit?.lead || null;
-  if (lead?.dealStatus === "cold") return "Hold";
-  if (isPackageExpired(lead, client)) return "Subscription Expired";
+  if (lead?.dealStatus === "cold" || client?.onHold === true) return "Hold";
+  if (isPackageExpired(lead, client) || client?.subscriptionExpired === true) {
+    return "Subscription Expired";
+  }
   return "";
 }
 
-/** Row can open pipeline overview when Active, or Inactive with Hold/Expired + linked lead. */
+/** Lead id for overview deep-link (pipeline hit, else client.linkedLeadId). */
+export function overviewLeadIdForClient(client, leadHit = null) {
+  const hit = leadHit || findLeadForClient(client);
+  return hit?.lead?.id || client?.linkedLeadId || null;
+}
+
+/** Row can open pipeline overview when a Sales Pipeline lead is linked (any status). */
 export function canOpenClientOverview(client, leadHit = null) {
   const hit = leadHit || findLeadForClient(client);
-  if (!hit?.lead?.id) return false;
-  if (client?.status === "Active") return true;
-  const sub = resolveClientSubLabel(client, hit);
-  return sub === "Hold" || sub === "Subscription Expired";
+  return Boolean(overviewLeadIdForClient(client, hit));
 }

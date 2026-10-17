@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import {
   ChevronDown,
   Copy,
@@ -16,6 +17,7 @@ import {
 import { toast } from "react-toastify";
 import CampaignViewModal from "../components/campaign/CampaignViewModal.jsx";
 import CampaignEditModal from "../components/campaign/CampaignEditModal.jsx";
+import CampaignResponseModal from "../components/campaign/CampaignResponseModal.jsx";
 import SearchField from "../components/common/SearchField.jsx";
 import { SortableTh, useTableSort } from "../components/common/useTableSort.jsx";
 import biPlayCircle from "../assets/bi_play-circle.png";
@@ -28,8 +30,10 @@ import {
   campaignHasResponses,
   campaignResponseCount,
   effectiveCampaignSent,
+  resolveCampaignResponseRows,
 } from "../utils/campaignMetrics.js";
 import { readCampaigns, removeCampaign, saveCampaigns } from "../utils/campaignsStore.js";
+import { pipelineOverviewPath } from "../utils/pipelineStore.js";
 import { WHATSAPP_GREEN } from "../components/common/WhatsAppIcon.jsx";
 import CreateCampaignPage from "./CreateCampaignPage.jsx";
 
@@ -243,14 +247,24 @@ function usePagedTable(rows, searchKeys) {
 }
 
 export default function CampaignManagementPage({ embedded = false, onClose }) {
+  const navigate = useNavigate();
   const [rows, setRows] = useState(() => readCampaigns());
   const [kpiFilter, setKpiFilter] = useState("leads");
   const [channelModalOpen, setChannelModalOpen] = useState(false);
   const [viewCampaign, setViewCampaign] = useState(null);
   const [editCampaign, setEditCampaign] = useState(null);
   const [createCampaignOpen, setCreateCampaignOpen] = useState(false);
+  const [responseModal, setResponseModal] = useState(null);
 
   const kpiTotals = useMemo(() => buildCampaignPageKpis(rows), [rows]);
+
+  const responseModalRows = useMemo(() => {
+    if (!responseModal) return [];
+    if (responseModal.campaignId == null) {
+      return resolveCampaignResponseRows(rows);
+    }
+    return resolveCampaignResponseRows(rows, { campaignId: responseModal.campaignId });
+  }, [responseModal, rows]);
 
   const statCards = useMemo(() => {
     const notes = {
@@ -282,6 +296,9 @@ export default function CampaignManagementPage({ embedded = false, onClose }) {
   const table = usePagedTable(kpiFilteredRows, ["name", "tag", "target", "channel", "owner", "status"]);
 
   const selectKpiFilter = (key) => {
+    if (key === "responses") {
+      setResponseModal({ campaignId: null, title: "Campaign responses" });
+    }
     setKpiFilter((prev) => (key === "leads" ? "leads" : prev === key ? "leads" : key));
     table.setPage(1);
   };
@@ -435,8 +452,28 @@ export default function CampaignManagementPage({ embedded = false, onClose }) {
                       <td className="px-3 py-2.5 text-[12px] font-medium text-[#374151] whitespace-nowrap">{row.start}</td>
                       <td className="px-3 py-2.5 text-[12px] font-medium text-[#374151] whitespace-nowrap">{row.end}</td>
                       <td className="px-3 py-2.5 text-[12px] font-medium text-[#374151] whitespace-nowrap">{row.owner}</td>
-                      <td className="px-3 py-2.5 text-[12.5px] font-bold text-[#111] tabular-nums whitespace-nowrap">
-                        {Number(row.responseCount) || 0}
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setResponseModal({
+                              campaignId: row.id,
+                              title: `${row.name} — responses`,
+                            })
+                          }
+                          title={
+                            Number(row.responseCount) > 0
+                              ? `View ${row.responseCount} response${Number(row.responseCount) === 1 ? "" : "s"}`
+                              : "No responses yet"
+                          }
+                          className={`text-[12.5px] font-bold tabular-nums transition-colors ${
+                            Number(row.responseCount) > 0
+                              ? "text-[#7A0A17] hover:underline"
+                              : "text-[#9CA3AF] hover:text-[#6B7280]"
+                          }`}
+                        >
+                          {Number(row.responseCount) || 0}
+                        </button>
                       </td>
                       <td className="px-3 py-2.5"><StatusBadge label={row.status} /></td>
                       <td className="px-3 py-2.5">
@@ -505,6 +542,16 @@ export default function CampaignManagementPage({ embedded = false, onClose }) {
       </div>
 
       <LeadsByChannelModal open={channelModalOpen} onClose={() => setChannelModalOpen(false)} />
+      <CampaignResponseModal
+        open={Boolean(responseModal)}
+        onClose={() => setResponseModal(null)}
+        rows={responseModalRows}
+        title={responseModal?.title || "Campaign responses"}
+        onOpenLead={(lead) => {
+          setResponseModal(null);
+          if (lead?.id) navigate(pipelineOverviewPath(lead.id));
+        }}
+      />
       <CampaignViewModal
         open={Boolean(viewCampaign)}
         campaign={viewCampaign}

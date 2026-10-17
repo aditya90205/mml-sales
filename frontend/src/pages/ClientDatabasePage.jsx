@@ -23,8 +23,16 @@ import ClientProfileModal from "../components/clients/ClientProfileModal.jsx";
 import { BRANCHES, readClients, subscribeClients } from "../utils/clientsData.js";
 import { groupQuery, readSavedGroups, removeSavedGroup } from "../utils/clientGroups.js";
 import { matchesAll } from "../utils/clientQuery.js";
-import { canOpenClientOverview, resolveClientSubLabel } from "../utils/clientStatusTag.js";
-import { findLeadForClient, pipelineOverviewPath } from "../utils/pipelineStore.js";
+import {
+  canOpenClientOverview,
+  overviewLeadIdForClient,
+  resolveClientSubLabel,
+} from "../utils/clientStatusTag.js";
+import {
+  findLeadForClient,
+  pipelineOverviewPath,
+  subscribePipeline,
+} from "../utils/pipelineStore.js";
 
 const COLUMNS = [
   { label: "Client Name", key: "name" },
@@ -273,6 +281,8 @@ export default function ClientDatabasePage() {
   }, [location.search]);
 
   useEffect(() => subscribeClients(() => setClients(readClients())), []);
+  // Hold / Expired badges + overview affordance depend on pipeline lead flags.
+  useEffect(() => subscribePipeline(() => setClients(readClients())), []);
 
   useEffect(() => {
     if (!scrollToChart || savedGroups.length === 0) return;
@@ -295,7 +305,9 @@ export default function ClientDatabasePage() {
   const extraFilterCount = [genderFilter, probFilter, marriedFilter].filter((v) => v !== "all").length;
 
   const filtered = useMemo(() => {
-    let rows = clients;
+    // Only pipeline-linked clients (Active / Hold / Expired) — same overview as Sales Pipeline.
+    // Plain Inactive with no lead are hidden (no overview to open).
+    let rows = clients.filter((c) => canOpenClientOverview(c));
     const q = search.trim().toLowerCase();
     if (q) {
       rows = rows.filter((c) =>
@@ -373,11 +385,14 @@ export default function ClientDatabasePage() {
     toast.error(`${name} group removed.`);
   };
 
-  /** Active, Hold, or Subscription Expired + pipeline-linked → same overview as Sales Pipeline. */
-  const handleRowClick = (client) => {
+  /** Pipeline-linked client → same overview deep-link as Sales Pipeline row click. */
+  const openClientOverview = (client) => {
     const hit = findLeadForClient(client);
-    if (!canOpenClientOverview(client, hit)) return;
-    navigate(pipelineOverviewPath(hit.lead.id));
+    if (!canOpenClientOverview(client, hit)) return false;
+    const leadId = overviewLeadIdForClient(client, hit);
+    if (!leadId) return false;
+    navigate(pipelineOverviewPath(leadId));
+    return true;
   };
 
   const renderRow = (c) => {
@@ -388,7 +403,7 @@ export default function ClientDatabasePage() {
     return (
       <tr
         key={c.id}
-        onClick={() => handleRowClick(c)}
+        onClick={() => openClientOverview(c)}
         className={`border-b border-black/8 last:border-0 hover:bg-[#FAFAFB] transition-colors ${
           canOpenOverview ? "cursor-pointer" : ""
         }`}
@@ -422,8 +437,16 @@ export default function ClientDatabasePage() {
         <td className="px-4 py-3">
           <div className="flex items-center gap-0.5">
             <IconBtn
-              label={`View ${c.name}`}
-              onClick={() => setViewFor(c)}
+              label={
+                canOpenOverview
+                  ? `Open overview — ${c.name}`
+                  : `View ${c.name}`
+              }
+              onClick={() => {
+                // Same overview as row click (Active / Inactive Hold / Expired)
+                if (openClientOverview(c)) return;
+                setViewFor(c);
+              }}
               className="text-[#D97706] hover:bg-[#FEF3C7]"
             >
               <Eye size={14} />

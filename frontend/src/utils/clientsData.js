@@ -28,18 +28,20 @@ export const CLIENTS = [
     formId: "MML-3936",
     phone: "******4598",
     status: "Inactive",
+    onHold: true,
     married: true,
     address: "*********** Vasant Kunj, New Delhi",
     owner: "Rohit Kumar",
     branch: "Rajouri Garden",
     lastContact: "21/08/26",
-    reason: "Hand Over, Match confirmed",
+    reason: "Moved to Cold & Hold",
     gender: "Female",
     area: "Rajouri Garden",
     education: "MBA - IIM",
     incomeLpa: 45,
     budgetLakh: 40,
     probability: "medium",
+    linkedLeadId: "p2-3",
   },
   {
     id: 3,
@@ -48,19 +50,24 @@ export const CLIENTS = [
     clientSeries: "committed",
     formId: "MML-3937",
     phone: "******4412",
-    status: "Active",
+    status: "Inactive",
+    subscriptionExpired: true,
+    packageName: "Premium",
+    packageMonths: 12,
+    subscriptionExpiredAt: "2026-06-15",
     married: false,
     address: "*********** Rohini, New Delhi",
     owner: "Rohit Kumar",
     branch: "Gurgaon",
     lastContact: "21/08/26",
-    reason: "Comparing package benefits",
+    reason: "Subscription plan expired",
     gender: "Female",
     area: "Rohini",
     education: "MBA - IIM",
     incomeLpa: 52,
     budgetLakh: 50,
     probability: "high",
+    linkedLeadId: "p2-4",
   },
   {
     id: 4,
@@ -70,18 +77,20 @@ export const CLIENTS = [
     formId: "MML-3938",
     phone: "******7781",
     status: "Inactive",
+    onHold: true,
     married: true,
     address: "*********** JLT, Dubai",
     owner: "Rohit Kumar",
     branch: "Dubai",
     lastContact: "21/08/26",
-    reason: "Advance received",
+    reason: "Moved to Cold & Hold",
     gender: "Female",
     area: "Dubai",
     education: "MBBS",
     incomeLpa: 60,
     budgetLakh: 75,
     probability: "medium",
+    linkedLeadId: "p3-3",
   },
   {
     id: 5,
@@ -91,18 +100,23 @@ export const CLIENTS = [
     formId: "MML-3939",
     phone: "******3304",
     status: "Inactive",
+    subscriptionExpired: true,
+    packageName: "Classic",
+    packageMonths: 6,
+    subscriptionExpiredAt: "2026-07-01",
     married: false,
     address: "*********** Rohini, New Delhi",
     owner: "Rohit Kumar",
     branch: "South Extension",
     lastContact: "21/08/26",
-    reason: "Positive response both sides",
+    reason: "Subscription plan expired",
     gender: "Female",
     area: "Rohini",
     education: "B.Com",
     incomeLpa: 28,
     budgetLakh: 20,
     probability: "low",
+    linkedLeadId: "p3-4",
   },
   {
     id: 6,
@@ -111,19 +125,21 @@ export const CLIENTS = [
     clientSeries: "committed",
     formId: "MML-3940",
     phone: "******9021",
-    status: "Active",
+    status: "Inactive",
+    onHold: true,
     married: false,
     address: "*********** Rajouri Garden, New Delhi",
     owner: "Rohit Kumar",
     branch: "Rajouri Garden",
     lastContact: "21/08/26",
-    reason: "Negotiating 10% discount",
+    reason: "Moved to Cold & Hold",
     gender: "Female",
     area: "Rajouri Garden",
     education: "B.Tech - IIT",
     incomeLpa: 48,
     budgetLakh: 35,
     probability: "high",
+    linkedLeadId: "p4-3",
   },
   {
     id: 7,
@@ -134,6 +150,7 @@ export const CLIENTS = [
     phone: "******6155",
     status: "Inactive",
     married: false,
+    onHold: true,
     subscriptionExpired: true,
     packageName: "Exclusive Privé",
     packageMonths: 12,
@@ -142,13 +159,14 @@ export const CLIENTS = [
     owner: "Rohit Kumar",
     branch: "Rajouri Garden",
     lastContact: "21/08/26",
-    reason: "Subscription plan expired",
+    reason: "Moved to Cold & Hold",
     gender: "Male",
     area: "Rajouri Garden",
     education: "B.Tech - IIT",
     incomeLpa: 55,
     budgetLakh: 60,
     probability: "medium",
+    linkedLeadId: "p6-1",
   },
   {
     id: 8,
@@ -793,8 +811,8 @@ const EVENT = "mml-sales-clients";
 /**
  * Keep Client Database and Sales Pipeline on the same identity:
  * same name → same linkedLeadId / clientId. Active when on board;
- * subscription-expired clients stay Inactive but keep the link so row → overview works.
- * Called from pipelineStore after leads load (avoids circular imports at module top).
+ * Hold / subscription-expired stay Inactive but keep the link so row → overview works.
+ * Called from pipelineStore after leads load / change (avoids circular imports at module top).
  */
 export function syncClientsWithPipelineLeads(leadRows = []) {
   const byName = new Map();
@@ -812,8 +830,11 @@ export function syncClientsWithPipelineLeads(leadRows = []) {
     if (lead) {
       // On Sales Pipeline → same id/stage as board overview
       c.linkedLeadId = lead.id;
-      // Expired subscription: stay Inactive but keep linkedLeadId for overview deep-link
-      c.status = c.subscriptionExpired ? "Inactive" : "Active";
+      // Hold or expired: stay Inactive but keep linkedLeadId for overview deep-link
+      const onHold =
+        String(lead.dealStatus || "").toLowerCase() === "cold" || c.onHold === true;
+      if (onHold) c.onHold = true;
+      c.status = c.subscriptionExpired || onHold ? "Inactive" : "Active";
       if (isSeriesClientId(lead.mmlId)) {
         c.clientId = String(lead.mmlId);
         const prefix = String(lead.mmlId).slice(0, 3);
@@ -823,8 +844,10 @@ export function syncClientsWithPipelineLeads(leadRows = []) {
       linkedNames.add(key);
       continue;
     }
-    // Not on Sales Pipeline → Inactive, no overview deep-link
-    if (c.linkedLeadId) delete c.linkedLeadId;
+    // Not on Sales Pipeline → Inactive. Keep Hold / Expired links for overview deep-link.
+    if (!(c.onHold || c.subscriptionExpired) && c.linkedLeadId) {
+      delete c.linkedLeadId;
+    }
     c.status = "Inactive";
   }
 
@@ -857,6 +880,8 @@ export function syncClientsWithPipelineLeads(leadRows = []) {
       linkedLeadId: lead.id,
     });
   }
+
+  emit();
 }
 
 function emit() {
