@@ -123,7 +123,21 @@ export function packageTerm(record) {
   return { months, validFrom, validUntil };
 }
 
-export function markPaymentVerified(dealId, { transactionId, screenshotName, amount, packageName, clientName, months } = {}) {
+export function markPaymentVerified(
+  dealId,
+  {
+    transactionId,
+    screenshotName,
+    amount,
+    packageName,
+    clientName,
+    months,
+    paymentMode,
+    paymentDate,
+    remarks,
+    payerName,
+  } = {}
+) {
   const verifiedAt = new Date().toISOString();
   const tenure = Number(months) || monthsForPackageName(packageName);
   const invoiceNo = `INV-MML-${String(Date.now()).slice(-8)}`;
@@ -136,6 +150,10 @@ export function markPaymentVerified(dealId, { transactionId, screenshotName, amo
     amount: amount ?? null,
     packageName: packageName || "",
     clientName: clientName || "",
+    paymentMode: paymentMode || "",
+    paymentDate: paymentDate || "",
+    remarks: remarks || "",
+    payerName: payerName || "",
     invoiceNo,
     months: tenure,
     validFrom: verifiedAt,

@@ -3112,9 +3112,12 @@ export default function OverviewDashboard({
         onClose={() => setVerifyPaymentOpen(false)}
         dealId={paymentDealKey}
         clientName={deal?.name || ""}
+        clientId={mmlId !== "-" ? mmlId : ""}
+        formId={formId !== "-" ? formId : ""}
         packageName={packageName}
         packageMonths={activePackage.months}
         amount={packageAmount + addonExtraAmount}
+        amountPaid={0}
         onVerified={() => {
           setVerifyPaymentOpen(false);
           onPaymentVerified?.();
