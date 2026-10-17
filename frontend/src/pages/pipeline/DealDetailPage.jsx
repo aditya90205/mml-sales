@@ -55,6 +55,7 @@ import {
 import { buildDemoHistory, ensureLeadHistory, recordLeadActivity } from "../../utils/leadActivityStore.js";
 import { formatLookingForLabel, leadHasMobileNumber, P2_MOBILE_REQUIRED_MESSAGE, splitName } from "../../utils/leadFields.js";
 import { addExtraEvent, taskFormToCalendarItem } from "../../utils/calendarStore.js";
+import { subscribeClients } from "../../utils/clientsData.js";
 import {
   getSubscriptionExpiryMeta,
   isSubscriptionExpiredForLead,
@@ -379,6 +380,8 @@ export default function DealDetailPage({
   const [savedDetails, setSavedDetails] = useState(() => lead?.overviewDetails || null);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [followUpOpen, setFollowUpOpen] = useState(false);
+  const [, setClientTick] = useState(0);
+  useEffect(() => subscribeClients(() => setClientTick((n) => n + 1)), []);
   const lateTabsUnlocked = atLeast(currentStage, "P5");
   const isContactedP0 =
     currentStage === "P0" &&

@@ -91,10 +91,12 @@ export function migratePaymentVerifyForDeal(deal) {
   return write(primary, { ...old, dealId: primary });
 }
 
-export function markPaymentLinkSent(dealId) {
+export function markPaymentLinkSent(dealId, { forRenewal = false } = {}) {
   return write(dealId, {
     linkSent: true,
     linkSentAt: new Date().toISOString(),
+    // Renewal starts a fresh verify cycle (previous tenure verify no longer counts).
+    ...(forRenewal ? { verified: false, verifiedAt: null } : {}),
   });
 }
 

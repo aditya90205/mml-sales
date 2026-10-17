@@ -59,6 +59,10 @@ import {
 } from "../utils/biodataDraftStore.js";
 import { assignPendingBiodataFile, rememberBiodataFile } from "../utils/biodataFileStore.js";
 import { upsertClientFromBiodata } from "../utils/clientsData.js";
+import {
+  clearSubscriptionExpiredForLead,
+  isSubscriptionExpiredForLead,
+} from "../utils/clientStatusTag.js";
 import { recordLeadActivity } from "../utils/leadActivityStore.js";
 
 /* ───────────────────────── Data ───────────────────────── */
@@ -1316,11 +1320,14 @@ export default function PipelineBoard() {
   /** After payment verify, jump to P5 Payment Done (P0–P4 done; P6 not reached yet). */
   const handlePaymentVerified = (lead) => {
     if (!lead?.id) return;
+    const wasExpired = isSubscriptionExpiredForLead(lead);
+    if (wasExpired) clearSubscriptionExpiredForLead(lead);
     const found = findStoredLeadById(lead.id);
     if (found?.stageId === "P5" || found?.stageId === "P6") {
       const patched =
         updateLead(lead.id, { paymentVerified: true }) ||
         { lead: { ...found.lead, paymentVerified: true }, stageId: found.stageId };
+      if (wasExpired) toast.success("Package renewed. Subscription is active again.");
       stayOnDeal(patched.lead || found.lead, found.stageId);
       return;
     }

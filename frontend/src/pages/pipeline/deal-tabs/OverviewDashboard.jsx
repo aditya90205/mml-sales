@@ -57,6 +57,7 @@ import BiodataProfileModal from "../../../components/pipeline/BiodataProfileModa
 import LeadScoreModal from "../../../components/pipeline/LeadScoreModal";
 import Modal from "../../../components/ui/Modal";
 import { packageTerm, paymentVerifyKey, usePaymentVerifyForDeal } from "../../../utils/paymentVerifyStore";
+import { subscribeClients } from "../../../utils/clientsData.js";
 import { isSubscriptionExpiredForLead } from "../../../utils/clientStatusTag.js";
 import CreateMeetingEventModal from "../../../components/calendar/CreateMeetingEventModal";
 import TaskDetailsModal, { calendarEventToTaskView } from "../../../components/calendar/TaskDetailsModal";
@@ -2054,11 +2055,6 @@ export default function OverviewDashboard({
   const paymentDealKey = paymentVerifyKey(deal);
   const paymentVerify = usePaymentVerifyForDeal(deal);
   const paymentLinkSent = Boolean(paymentVerify?.linkSent);
-  /** Stage P5+ means payment is already done — don't restart the Pay flow after verify→P5. */
-  const paymentVerified =
-    Boolean(paymentVerify?.verified) ||
-    Boolean(deal?.paymentVerified) ||
-    atLeast(currentStage, "P5");
   const [openPanels, setOpenPanels] = useState([]);
   const [messageOpen, setMessageOpen] = useState(false);
   const [payQuoteOpen, setPayQuoteOpen] = useState(false);
@@ -2233,6 +2229,7 @@ export default function OverviewDashboard({
   };
 
   useEffect(() => subscribeLeadActivity(() => setTick((n) => n + 1)), []);
+  useEffect(() => subscribeClients(() => setTick((n) => n + 1)), []);
   useEffect(
     () =>
       subscribeCalendar(() => {
@@ -2284,9 +2281,18 @@ export default function OverviewDashboard({
   const addonExtraAmount = quote.items
     .filter((item) => item.type === "Add-on")
     .reduce((sum, item) => sum + (Number(item.rate) || 0) * (Number(item.qty) || 1), 0);
-  const verifiedTerm = paymentVerified ? packageTerm(paymentVerify) : null;
-  /** Expired clients often still show Select Package / Pay (not verified). Hold (Cold/Lost) keeps Pay locked. */
+  /** Expired clients re-enter Pay → Verify (renewal). Hold (Cold/Lost) keeps Pay locked. */
   const subscriptionExpired = !payLocked && isSubscriptionExpiredForLead(deal);
+  /**
+   * Stage P5+ means payment is already done — don't restart the Pay flow after verify→P5.
+   * Expired subscriptions are treated as unpaid until renewal is verified (clears expiry).
+   */
+  const paymentVerified = subscriptionExpired
+    ? false
+    : Boolean(paymentVerify?.verified) ||
+      Boolean(deal?.paymentVerified) ||
+      atLeast(currentStage, "P5");
+  const verifiedTerm = paymentVerified ? packageTerm(paymentVerify) : null;
   const calendarActions = useMemo(() => {
     const start = new Date(Date.now() + 5 * 60 * 60 * 1000);
     const underSixHours = {
@@ -2932,7 +2938,7 @@ export default function OverviewDashboard({
                     }
                     payTone="brand"
                     showVerify={
-                      paymentReady && paymentLinkSent && !paymentVerified && !subscriptionExpired
+                      (paymentReady || subscriptionExpired) && paymentLinkSent && !paymentVerified
                     }
                     disabled={payLocked}
                     onVerify={() => {
@@ -3102,6 +3108,7 @@ export default function OverviewDashboard({
           clientName={deal?.name || ""}
           deal={deal}
           currentStage={currentStage}
+          forRenewal={subscriptionExpired}
           onPaymentLinkSent={() => setPayQuoteOpen(false)}
           onChangePackage={() => openPackageModal("catalogue")}
         />

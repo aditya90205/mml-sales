@@ -1,6 +1,6 @@
 /** Resolve Hold / Subscription Expired / Pipeline stage secondary label for client status badge. */
 
-import { readClients } from "./clientsData.js";
+import { readClients, updateClient } from "./clientsData.js";
 import { getPaymentVerifyForDeal, packageTerm } from "./paymentVerifyStore.js";
 import { findLeadForClient, p0StatusOf } from "./pipelineStore.js";
 
@@ -53,6 +53,18 @@ export function isSubscriptionExpiredForLead(lead) {
   const client = clientForLead(lead);
   if (isPackageExpired(lead, client)) return true;
   return Boolean(client?.subscriptionExpired);
+}
+
+/** After renewal payment is verified — restore Active status and clear expiry flags. */
+export function clearSubscriptionExpiredForLead(lead) {
+  const client = clientForLead(lead);
+  if (!client?.id) return null;
+  return updateClient(client.id, {
+    subscriptionExpired: false,
+    subscriptionExpiredAt: null,
+    status: "Active",
+    reason: "Package renewed",
+  });
 }
 
 /**

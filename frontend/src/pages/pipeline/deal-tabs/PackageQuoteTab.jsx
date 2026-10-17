@@ -971,7 +971,7 @@ function DataRevealCard({ empty = false }) {
   );
 }
 
-function PaymentLinkPanel({ deal, clientName = "", currentStage, onLinkSent }) {
+function PaymentLinkPanel({ deal, clientName = "", currentStage, onLinkSent, forRenewal = false }) {
   const client = deal?.name ? deal : { ...deal, name: clientName };
   const dealKey = paymentVerifyKey(client);
 
@@ -986,7 +986,7 @@ function PaymentLinkPanel({ deal, clientName = "", currentStage, onLinkSent }) {
       initialType="payment"
       closeOnSend={false}
       onSent={() => {
-        markPaymentLinkSent(dealKey);
+        markPaymentLinkSent(dealKey, { forRenewal });
         onLinkSent?.();
       }}
       beforeSend={
@@ -1003,7 +1003,7 @@ function PaymentLinkPanel({ deal, clientName = "", currentStage, onLinkSent }) {
 }
 
 /** Package & Quote tab — package catalogue, quotation, and discount approvals. */
-export default function PackageQuoteTab({ empty = false, selectedKey = null, onPackageSelect, onBindSave, variant = "full", clientName = "", deal, currentStage, onPaymentLinkSent, onChangePackage }) {
+export default function PackageQuoteTab({ empty = false, selectedKey = null, onPackageSelect, onBindSave, variant = "full", clientName = "", deal, currentStage, onPaymentLinkSent, onChangePackage, forRenewal = false }) {
   const [pendingKey, setPendingKey] = useState(selectedKey);
   const onBindSaveRef = useRef(onBindSave);
   onBindSaveRef.current = onBindSave;
@@ -1082,6 +1082,7 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
             clientName={clientName}
             currentStage={currentStage}
             onLinkSent={onPaymentLinkSent}
+            forRenewal={forRenewal}
           />
         </div>
       </div>
