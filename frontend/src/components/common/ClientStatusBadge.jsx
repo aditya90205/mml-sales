@@ -13,8 +13,8 @@ const SUB_LABEL = {
 /**
  * Client-database status cell.
  * Single status is a rounded rectangle. When `subLabel` is set (Hold / Lost /
- * Subscription Expired), renders as one stacked block: status on top, label
- * below — same layout that previously showed Married.
+ * Subscription Expired / Pipeline stage), renders as one stacked block: status
+ * on top, label below — same layout that previously showed Married.
  */
 export default function ClientStatusBadge({ status, subLabel = "" }) {
   const tone = STATUS[status] || { bg: "#F1F2F4", color: "#6B7280" };
@@ -31,7 +31,14 @@ export default function ClientStatusBadge({ status, subLabel = "" }) {
     );
   }
 
-  const subTone = SUB_LABEL[label] || { bg: "#F1F2F4", color: "#6B7280" };
+  const subTone =
+    SUB_LABEL[label] ||
+    (status === "Pipeline"
+      ? { bg: "#F0F7FE", color: "#1E5AAD" }
+      : status === "Inactive"
+        ? { bg: "#FCF5F6", color: "#7A0A17" }
+        : { bg: "#F1F2F4", color: "#6B7280" });
+
 
   return (
     <span className="inline-flex flex-col overflow-hidden rounded-[6px] min-w-[78px] text-center align-middle">

@@ -1,8 +1,27 @@
-/** Resolve Hold / Subscription Expired secondary label for client status badge. */
+/** Resolve Hold / Subscription Expired / Pipeline stage secondary label for client status badge. */
 
 import { readClients } from "./clientsData.js";
 import { getPaymentVerifyForDeal, packageTerm } from "./paymentVerifyStore.js";
-import { findLeadForClient } from "./pipelineStore.js";
+import { findLeadForClient, p0StatusOf } from "./pipelineStore.js";
+
+/** Compact stage names under the Pipeline badge (updates as the lead moves). */
+const PIPELINE_STAGE_LABELS = {
+  P0: "P0 New",
+  P1: "P1 Qualified",
+  P2: "P2 Profile Creation",
+  P3: "P3 Video Call/Visit",
+  P4: "P4 Negotiation",
+  P5: "P5 Closed",
+  P6: "P6 Handover",
+};
+
+function pipelineStageSubLabel(stageId, lead) {
+  const id = String(stageId || "").toUpperCase();
+  if (id === "P0") {
+    return p0StatusOf(lead) === "contacted" ? "P0 Contacted" : "P0 New";
+  }
+  return PIPELINE_STAGE_LABELS[id] || (id ? id : "");
+}
 
 function clientForLead(lead) {
   const name = String(lead?.name || "").trim().toLowerCase();
@@ -69,9 +88,11 @@ export function getSubscriptionExpiryMeta(lead) {
 }
 
 /**
- * Priority: Hold > Lost > Subscription Expired > "".
- * Hold / Lost stack under the status badge (same layout); expired → Inactive + label.
- * @returns {"Hold"|"Lost"|"Subscription Expired"|""}
+ * Priority: Hold > Lost > Subscription Expired > Pipeline stage > "".
+ * Hold / Lost / stage stack under the status badge (same layout); expired → Inactive + label.
+ * Pipeline rows show the current board stage until the lead leaves unpaid/committed
+ * (status flips to Active / Inactive and this label clears).
+ * @returns {"Hold"|"Lost"|"Subscription Expired"|string|""}
  */
 export function resolveClientSubLabel(client, leadHit = null) {
   const hit = leadHit || findLeadForClient(client);
@@ -81,6 +102,10 @@ export function resolveClientSubLabel(client, leadHit = null) {
   if (deal === "lost" || lead?.lost === true) return "Lost";
   if (isPackageExpired(lead, client) || client?.subscriptionExpired === true) {
     return "Subscription Expired";
+  }
+  // Unpaid / committed leads stay Pipeline — show live stage under the badge
+  if (String(client?.status || "") === "Pipeline" && hit?.stageId) {
+    return pipelineStageSubLabel(hit.stageId, lead);
   }
   return "";
 }
