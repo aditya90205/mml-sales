@@ -32,6 +32,7 @@ import {
   Mail,
   Bell,
   ArrowUp,
+  Megaphone,
 } from "lucide-react";
 import AIAssistant from "../components/common/AIAssistant.jsx";
 import SuccessStoriesBlock from "../components/common/SuccessStoriesBlock.jsx";
@@ -919,6 +920,7 @@ const CAMPAIGN_CHANNEL_RATES = [
   {
     key: "whatsapp",
     label: "WhatsApp",
+    ratio: "2/3",
     rate: "2.4%",
     icon: WhatsAppIcon,
     iconProps: { size: 12, withBg: false, color: "#16A34A" },
@@ -927,6 +929,7 @@ const CAMPAIGN_CHANNEL_RATES = [
   {
     key: "sms",
     label: "SMS",
+    ratio: "1/4",
     rate: "1.8%",
     icon: MessageSquare,
     iconProps: { size: 12, className: "text-[#7A0A17]", strokeWidth: 2.25 },
@@ -935,6 +938,7 @@ const CAMPAIGN_CHANNEL_RATES = [
   {
     key: "push",
     label: "In app Notifications",
+    ratio: "3/5",
     rate: "2.8%",
     icon: Bell,
     iconProps: { size: 12, className: "text-[#F59E0B]", strokeWidth: 2.25 },
@@ -943,6 +947,7 @@ const CAMPAIGN_CHANNEL_RATES = [
   {
     key: "email",
     label: "Email",
+    ratio: "1/2",
     rate: "1.2%",
     icon: Mail,
     iconProps: { size: 12, className: "text-[#8B5CF6]", strokeWidth: 2.25 },
@@ -959,7 +964,7 @@ function CampaignPerformanceCard({
 }) {
   return (
     <div className="bg-white border border-black/8 rounded-2xl p-2.5 flex-1 min-w-0 text-left">
-      <div className="grid grid-cols-[minmax(0,1.35fr)_minmax(0,0.9fr)] gap-2 items-stretch h-full">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] gap-2 items-stretch h-full">
         <button
           type="button"
           onClick={onChannelsClick}
@@ -970,17 +975,19 @@ function CampaignPerformanceCard({
             {channels.map((ch) => {
               const Icon = ch.icon;
               return (
-                <li key={ch.key} className="flex items-center gap-2 min-w-0">
+                <li key={ch.key} className="flex items-center gap-2 min-w-0" title={ch.label}>
                   <span
                     className="inline-flex size-5 items-center justify-center rounded-md shrink-0"
                     style={{ backgroundColor: ch.chipBg }}
                   >
                     <Icon {...(ch.iconProps || {})} />
                   </span>
-                  <span className="text-[11.5px] font-medium text-[#374151] truncate flex-1 min-w-0">
-                    {ch.label}
+                  <span className="text-[12px] font-bold text-[#111] tabular-nums shrink-0">
+                    {ch.ratio}
                   </span>
-                  <span className="text-[11.5px] font-bold text-[#111] tabular-nums shrink-0">{ch.rate}</span>
+                  <span className="text-[11px] font-medium text-[#9CA3AF] tabular-nums shrink-0">
+                    {ch.rate}
+                  </span>
                 </li>
               );
             })}
@@ -990,15 +997,29 @@ function CampaignPerformanceCard({
         <button
           type="button"
           onClick={onResponsesClick}
-          className="min-w-0 text-left rounded-xl border border-[#E5E7EB] px-3 py-2 hover:bg-[#FAFAFB] transition-colors flex flex-col justify-center"
+          className="min-w-0 text-left rounded-xl px-2 py-1.5 hover:bg-[#FAFAFB] transition-colors flex flex-col justify-between gap-1.5"
           title="View campaign responses"
         >
-          <span className="text-[11.5px] font-medium text-[#6B7280]">Responses</span>
-          <p className="text-[28px] font-bold text-[#111] leading-none mt-1.5 tabular-nums">{responseCount}</p>
-          <p className="inline-flex items-center gap-0.5 text-[12px] font-bold text-[#16A34A] mt-1.5 tabular-nums">
-            <ArrowUp size={12} strokeWidth={2.75} />
-            {String(responsesTrend).replace(/^\+/, "")}
-          </p>
+          <div className="flex items-start justify-between gap-1.5">
+            <span className="text-[11.5px] font-bold text-[#111] leading-tight">
+              Campaign
+              <br />
+              Responses
+            </span>
+            <Megaphone
+              size={18}
+              className="shrink-0 text-[#7A0A17] pointer-events-none mt-0.5"
+              strokeWidth={2}
+              aria-hidden
+            />
+          </div>
+          <div className="flex flex-col items-start justify-center w-full rounded-lg border border-[#E5E7EB] px-3 py-2">
+            <p className="text-[28px] font-bold text-[#111] leading-none tabular-nums">{responseCount}</p>
+            <p className="inline-flex items-center gap-0.5 text-[12px] font-bold text-[#16A34A] mt-1 tabular-nums">
+              <ArrowUp size={12} strokeWidth={2.75} />
+              {String(responsesTrend).replace(/^\+/, "")}
+            </p>
+          </div>
         </button>
       </div>
     </div>
