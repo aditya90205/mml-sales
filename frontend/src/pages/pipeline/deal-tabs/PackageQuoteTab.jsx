@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Check, ChevronDown, MessageSquare, Package, Trash2, TrendingUp, X } from "lucide-react";
+import { Check, ChevronDown, MessageSquare, Package, Share2, Trash2, TrendingUp, X } from "lucide-react";
 import { toast } from "react-toastify";
 import ChecklistCheck from "../../../components/common/ChecklistCheck";
 import { SortableTh, useTableSort } from "../../../components/common/useTableSort.jsx";
@@ -7,6 +7,7 @@ import TableCard from "../../../components/common/TableCard";
 import StatusPill from "../../../components/common/StatusPill";
 import SendLinkModal from "../../../components/common/SendLinkModal";
 import SendMessageModal from "../../../components/common/SendMessageModal";
+import SharePackagesModal from "../../../components/common/SharePackagesModal.jsx";
 import TabHeaderButton from "../../../components/pipeline/TabHeaderButton";
 import Modal from "../../../components/ui/Modal";
 import { addCustomAddon, getAddonCatalog, useAddonCatalog } from "../../../utils/addonCatalog";
@@ -1005,6 +1006,7 @@ function PaymentLinkPanel({ deal, clientName = "", currentStage, onLinkSent, for
 /** Package & Quote tab — package catalogue, quotation, and discount approvals. */
 export default function PackageQuoteTab({ empty = false, selectedKey = null, onPackageSelect, onBindSave, variant = "full", clientName = "", deal, currentStage, onPaymentLinkSent, onChangePackage, forRenewal = false }) {
   const [pendingKey, setPendingKey] = useState(selectedKey);
+  const [shareOpen, setShareOpen] = useState(false);
   const onBindSaveRef = useRef(onBindSave);
   onBindSaveRef.current = onBindSave;
 
@@ -1106,6 +1108,14 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
 
   return (
     <div className="flex flex-col gap-5">
+      <SharePackagesModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        packages={PACKAGES}
+        currency="inr"
+        zClass="z-[110]"
+      />
+
       {!onBindSave && <p className="text-[12.5px] font-medium text-[#6B7280]">{saveHint}</p>}
 
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -1121,6 +1131,15 @@ export default function PackageQuoteTab({ empty = false, selectedKey = null, onP
               Save
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            title="Share packages"
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
+          >
+            <Share2 size={15} strokeWidth={2.2} />
+            Share
+          </button>
           <button
             type="button"
             className="h-9 px-4 rounded-xl bg-white border border-black/10 text-[12.5px] font-semibold text-[#4B5563] hover:bg-[#FAFAFB] transition-colors"
