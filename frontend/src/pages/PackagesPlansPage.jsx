@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Check, Minus, Plus, TrendingUp, X } from "lucide-react";
-import { AppPage, MetricCard, OutlineBtn, Panel, PrimaryBtn, Td } from "../components/common/AppPage.jsx";
-import StatusPill from "../components/common/StatusPill";
+import { Check, Minus, Share2, X } from "lucide-react";
+import { AppPage, OutlineBtn, Panel, Td } from "../components/common/AppPage.jsx";
+import SharePackagesModal from "../components/common/SharePackagesModal.jsx";
 
 const PACKAGES = [
   {
@@ -108,6 +108,7 @@ function ComparisonCell({ value }) {
 
 export default function PackagesPlansPage() {
   const [currency, setCurrency] = useState("inr");
+  const [shareOpen, setShareOpen] = useState(false);
 
   return (
     <AppPage
@@ -115,13 +116,22 @@ export default function PackagesPlansPage() {
       subtitle="Manage the package catalogue across all branches."
       actions={
         <>
+          <OutlineBtn onClick={() => setShareOpen(true)} title="Share packages">
+            <Share2 size={15} strokeWidth={2.2} />
+            Share
+          </OutlineBtn>
           <OutlineBtn onClick={() => setCurrency((c) => (c === "inr" ? "usd" : "inr"))}>
             {currency === "inr" ? "Currency INR" : "NRI pricing (USD)"}
           </OutlineBtn>
-        
         </>
       }
     >
+      <SharePackagesModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        packages={PACKAGES}
+        currency={currency}
+      />
     
 
       <Panel title="Package catalogue" subtitle="Live pricing and active client count per package">
